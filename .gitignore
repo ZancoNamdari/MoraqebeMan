@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+**/logs/
+**/media/
+**/staticfiles/
+
+# Env files — never commit real secrets
+.env
+.env.*
+!.env.example
+
+# Node (frontend panels)
+node_modules/
+dist/
+build/
+.next/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid
