@@ -44,7 +44,18 @@ sys.exit(1)
 PYEOF
 
 echo "Applying database migrations..."
-python3 manage.py migrate --noinput
+# Only one container should ever run migrate concurrently — Django's
+# migrate command has no built-in cross-process locking, so if the web
+# service and the celery worker both run it at the same moment on first
+# boot, they race to CREATE TABLE and one of them dies with a
+# UniqueViolation on pg_type. RUN_MIGRATIONS=0 (set on the worker in
+# docker-compose.yml) skips this step there — only identity_service
+# owns migrations.
+if [ "${RUN_MIGRATIONS:-1}" = "1" ]; then
+    python3 manage.py migrate --noinput
+else
+    echo "RUN_MIGRATIONS=0 — skipping migrate on this container."
+fi
 
 if [ "$DJANGO_ENV" = "production" ] || [ "$DJANGO_ENV" = "staging" ]; then
     echo "Collecting static files..."

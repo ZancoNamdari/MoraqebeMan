@@ -71,12 +71,16 @@ services:
     environment:
       <<: *django-env
       DATABASE_URL: postgres://identity_user:identity_pass@postgres_identity:5432/identity_db
+      RUN_MIGRATIONS: "0"
     volumes:
       - ./services/identity_service:/app
     depends_on:
-      - identity_service
-      - rabbitmq
-      - redis
+      identity_service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_started
 
 volumes:
   pg_identity_data:
