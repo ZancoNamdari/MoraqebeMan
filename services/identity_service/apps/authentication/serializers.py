@@ -28,3 +28,24 @@ class RegisterSerializer(serializers.Serializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    code = serializers.RegexField(regex=r"^\d{6}$", error_messages={"invalid": "کد تأیید باید ۶ رقم باشد."})
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    phone_number = serializers.RegexField(
+        regex=r"^09\d{9}$",
+        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
+    )
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    phone_number = serializers.RegexField(regex=r"^09\d{9}$")
+    token = serializers.CharField(max_length=64)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()

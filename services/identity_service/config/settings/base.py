@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
     "corsheaders",
     # local — split per single-responsibility, not one fat "users" app
     "apps.accounts",        # the User model itself (six-role identity record)
@@ -90,6 +91,20 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------- Celery ----------
 CELERY_BROKER_URL = env("RABBITMQ_URL", default="amqp://guest:guest@localhost:5672//")
+
+# Django's built-in Redis cache backend (no extra package needed, added
+# in Django 4.0+). Required for the login-attempt lockout guard
+# (apps/authentication/lockout.py) to actually work correctly in
+# production: with the default LocMemCache, each of gunicorn's worker
+# processes would keep its own separate failed-attempt counter, making
+# the lockout trivially bypassable by just hitting a different worker.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("REDIS_URL", default="redis://localhost:6379/1"),
+        "KEY_PREFIX": "identity_service",
+    }
+}
 CELERY_RESULT_BACKEND = env("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"

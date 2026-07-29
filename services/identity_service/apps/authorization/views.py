@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.serializers import UserSerializer
+from apps.audit.services import AuditService
 
 from .permissions import IsSuperuser
 from .services import RoleChangeError, RoleChangeRequest, RoleChangeService
@@ -21,7 +22,7 @@ class ChangeUserRoleView(APIView):
         if not new_role:
             return Response({"detail": "فیلد role الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
 
-        service = RoleChangeService()
+        service = RoleChangeService(audit_logger=AuditService())
         try:
             user = service.change_role(RoleChangeRequest(
                 target_user_id=user_id,
