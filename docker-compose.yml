@@ -42,6 +42,21 @@ services:
       timeout: 3s
       retries: 5
 
+  postgres_family:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: family_db
+      POSTGRES_USER: family_user
+      POSTGRES_PASSWORD: family_pass
+    ports: ["5437:5432"]
+    volumes:
+      - pg_family_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U family_user -d family_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   # ---------- identity service ----------
   # The only service with real code so far — see services/identity_service.
   # All other services/* directories are placeholders (empty), so they are
@@ -82,5 +97,45 @@ services:
       redis:
         condition: service_started
 
+  # ---------- family service ----------
+  # No local User table — verifies identity_service's JWTs statelessly
+  # (apps/families/authentication.py). Every other services/* directory
+  # is still an empty placeholder; add each one here as it gets built.
+  family_service:
+    build: ./services/family_service
+    command: python manage.py runserver 0.0.0.0:8005
+    environment:
+      <<: *django-env
+      DATABASE_URL: postgres://family_user:family_pass@postgres_family:5432/family_db
+      ALLOWED_HOSTS: "*"
+    volumes:
+      - ./services/family_service:/app
+    ports: ["8005:8005"]
+    depends_on:
+      postgres_family:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+
+  family_worker:
+    build: ./services/family_service
+    command: celery -A config worker -l info
+    environment:
+      <<: *django-env
+      DATABASE_URL: postgres://family_user:family_pass@postgres_family:5432/family_db
+      RUN_MIGRATIONS: "0"
+    volumes:
+      - ./services/family_service:/app
+    depends_on:
+      family_service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_started
+
 volumes:
   pg_identity_data:
+  pg_family_data:
