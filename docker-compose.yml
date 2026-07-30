@@ -1,12 +1,32 @@
+# Phase 1 monolith stack — replaces the previous per-service compose
+# file. Deliberately simple: one Django project (backend/), one
+# Postgres, one Redis (cache + Celery broker/result-backend — no
+# RabbitMQ, no per-service databases). See the architecture doc's
+# "why monolith for phase 1" section for the cost rationale, and its
+# migration section for how this expands back into microservices later.
+
 x-django-env: &django-env
   DJANGO_ENV: ${DJANGO_ENV:-development}
   DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-only-secret-change-in-prod}
   JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-change-me-super-secret}
-  RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672//
   REDIS_URL: redis://redis:6379/0
 
 services:
-  # ---------- infrastructure ----------
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: moraqebeman_db
+      POSTGRES_USER: moraqebeman_user
+      POSTGRES_PASSWORD: moraqebeman_pass
+    ports: ["5440:5432"]
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moraqebeman_user -d moraqebeman_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     ports: ["6379:6379"]
@@ -16,126 +36,36 @@ services:
       timeout: 3s
       retries: 5
 
-  rabbitmq:
-    image: rabbitmq:3.13-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"   # management UI
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres_identity:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: identity_db
-      POSTGRES_USER: identity_user
-      POSTGRES_PASSWORD: identity_pass
-    ports: ["5436:5432"]
-    volumes:
-      - pg_identity_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U identity_user -d identity_db"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  postgres_family:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: family_db
-      POSTGRES_USER: family_user
-      POSTGRES_PASSWORD: family_pass
-    ports: ["5437:5432"]
-    volumes:
-      - pg_family_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U family_user -d family_db"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  # ---------- identity service ----------
-  # The only service with real code so far — see services/identity_service.
-  # All other services/* directories are placeholders (empty), so they are
-  # intentionally NOT wired up here yet; add each one to this file as it
-  # gets built out, following this same pattern.
-  identity_service:
-    build: ./services/identity_service
-    command: python manage.py runserver 0.0.0.0:8004
+  backend:
+    build: ./backend
+    command: python manage.py runserver 0.0.0.0:8000
     environment:
       <<: *django-env
-      DATABASE_URL: postgres://identity_user:identity_pass@postgres_identity:5432/identity_db
+      DATABASE_URL: postgres://moraqebeman_user:moraqebeman_pass@postgres:5432/moraqebeman_db
       ALLOWED_HOSTS: "*"
     volumes:
-      - ./services/identity_service:/app
-    ports: ["8004:8004"]
+      - ./backend:/app
+    ports: ["8000:8000"]
     depends_on:
-      postgres_identity:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_started
-      rabbitmq:
-        condition: service_started
 
-  identity_worker:
-    build: ./services/identity_service
+  backend_worker:
+    build: ./backend
     command: celery -A config worker -l info
     environment:
       <<: *django-env
-      DATABASE_URL: postgres://identity_user:identity_pass@postgres_identity:5432/identity_db
+      DATABASE_URL: postgres://moraqebeman_user:moraqebeman_pass@postgres:5432/moraqebeman_db
       RUN_MIGRATIONS: "0"
     volumes:
-      - ./services/identity_service:/app
+      - ./backend:/app
     depends_on:
-      identity_service:
+      backend:
         condition: service_healthy
-      rabbitmq:
-        condition: service_started
-      redis:
-        condition: service_started
-
-  # ---------- family service ----------
-  # No local User table — verifies identity_service's JWTs statelessly
-  # (apps/families/authentication.py). Every other services/* directory
-  # is still an empty placeholder; add each one here as it gets built.
-  family_service:
-    build: ./services/family_service
-    command: python manage.py runserver 0.0.0.0:8005
-    environment:
-      <<: *django-env
-      DATABASE_URL: postgres://family_user:family_pass@postgres_family:5432/family_db
-      ALLOWED_HOSTS: "*"
-    volumes:
-      - ./services/family_service:/app
-    ports: ["8005:8005"]
-    depends_on:
-      postgres_family:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-
-  family_worker:
-    build: ./services/family_service
-    command: celery -A config worker -l info
-    environment:
-      <<: *django-env
-      DATABASE_URL: postgres://family_user:family_pass@postgres_family:5432/family_db
-      RUN_MIGRATIONS: "0"
-    volumes:
-      - ./services/family_service:/app
-    depends_on:
-      family_service:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_started
       redis:
         condition: service_started
 
 volumes:
-  pg_identity_data:
-  pg_family_data:
+  pg_data:
