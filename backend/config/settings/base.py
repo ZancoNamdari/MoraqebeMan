@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "apps.authorization",
     "apps.audit",
     "apps.families",
+    "apps.caregivers",
 ]
 
 MIDDLEWARE = [
