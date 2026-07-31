@@ -5,12 +5,16 @@ class FamilyProfile(models.Model):
     """One row per FAMILY-role user. user_id references identity_service's
     User.id — no real FK across services, just an integer kept consistent
     via the JWT claim on every authenticated request."""
-    user_id = models.PositiveIntegerField(unique=True, db_index=True)
-    display_name = models.CharField(max_length=150)
-    city = models.CharField(max_length=100, blank=True)
-    address = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    user_id = models.PositiveIntegerField(unique=True, db_index=True, help_text="شناسه کاربری در سرویس هویت")
+    display_name = models.CharField(max_length=150, help_text="نام نمایشی")
+    city = models.CharField(max_length=100, blank=True, help_text="شهر")
+    address = models.TextField(blank=True, help_text="نشانی")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "پروفایل خانواده"
+        verbose_name_plural = "پروفایل‌های خانواده"
 
     def __str__(self):
         return f"FamilyProfile(user_id={self.user_id}, {self.display_name})"
@@ -36,13 +40,13 @@ class PatientProfile(models.Model):
 
     full_name = models.CharField(max_length=150, help_text="نام و نام خانوادگی سالمند")
     father_name = models.CharField(max_length=150, blank=True, help_text="نام پدر")
-    birth_date = models.DateField(null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True, help_text="تاریخ تولد")
     national_id = models.CharField(max_length=10, blank=True, help_text="شماره ملی")
     birth_certificate_number = models.CharField(max_length=30, blank=True, help_text="شماره شناسنامه")
     birth_certificate_issue_place = models.CharField(max_length=150, blank=True, help_text="محل صدور شناسنامه")
 
     full_address = models.TextField(blank=True, help_text="نشانی کامل محل سکونت (شهر، خیابان، پلاک، واحد)")
-    postal_code = models.CharField(max_length=10, blank=True)
+    postal_code = models.CharField(max_length=10, blank=True, help_text="کد پستی")
 
     emergency_contact_phone = models.CharField(
         max_length=15, blank=True, help_text="شماره تماس اضطراری یکی از اعضای خانواده یا سرپرست"
@@ -61,8 +65,12 @@ class PatientProfile(models.Model):
         blank=True, help_text="اطلاعات پزشکی پایه — بیماری‌های مهم و نیازهای ویژه"
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "پروفایل بیمار"
+        verbose_name_plural = "پروفایل‌های بیمار"
 
     def __str__(self):
         return f"PatientProfile({self.full_name})"
@@ -72,14 +80,17 @@ class FamilyPatientLink(models.Model):
     """Many-to-many: a patient can be overseen by more than one family
     account (siblings coordinating care), and a family can manage more
     than one patient (father, mother, grandmother simultaneously)."""
-    family = models.ForeignKey(FamilyProfile, on_delete=models.CASCADE, related_name="patient_links")
-    patient = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name="family_links")
+    family = models.ForeignKey(FamilyProfile, on_delete=models.CASCADE, related_name="patient_links", verbose_name="خانواده")
+    patient = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name="family_links", verbose_name="سالمند")
     relation = models.CharField(max_length=50, help_text="نسبت، مثلاً فرزند/همسر/سرپرست")
     is_primary_contact = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
 
     class Meta:
         unique_together = ("family", "patient")
+        verbose_name = "ارتباط خانواده و بیمار"
+        verbose_name_plural = "ارتباط‌های خانواده و بیمار"
 
     def __str__(self):
         return f"{self.family} ↔ {self.patient} ({self.relation})"
@@ -141,46 +152,53 @@ class PatientCompatibilityQuestionnaire(models.Model):
     live, the same way earlier form corrections were flagged and applied.
     """
     patient = models.OneToOneField(
-        PatientProfile, on_delete=models.CASCADE, related_name="compatibility_questionnaire"
+        PatientProfile, on_delete=models.CASCADE, related_name="compatibility_questionnaire", verbose_name="سالمند"
     )
 
     # محور عقیدتی-مناسکی (Religious-ritual axis)
-    religious_beliefs_priority = models.CharField(max_length=20, choices=AgreementScale.choices)
-    new_treatment_openness = models.CharField(max_length=20, choices=IntensityScale.choices)
+    religious_beliefs_priority = models.CharField(max_length=20, choices=AgreementScale.choices, verbose_name="اهمیت باورهای دینی")
+    new_treatment_openness = models.CharField(max_length=20, choices=IntensityScale.choices, verbose_name="باز بودن به درمان جدید")
 
     # محور جمع‌گرایی/فاصله قدرت (Collectivism / power-distance axis)
-    caregiver_as_family_member = models.CharField(max_length=20, choices=YesNoPartial.choices)
-    respectful_disagreement_acceptance = models.CharField(max_length=20, choices=AcceptanceScale.choices)
+    caregiver_as_family_member = models.CharField(max_length=20, choices=YesNoPartial.choices, verbose_name="مراقب به عنوان عضو خانواده")
+    respectful_disagreement_acceptance = models.CharField(max_length=20, choices=AcceptanceScale.choices, verbose_name="پذیرش نظرات مخالف با احترام")
 
     # محور حریم خصوصی (Privacy axis)
-    privacy_comfort_with_caregiver = models.CharField(max_length=20, choices=YesNoPartial.choices)
+    privacy_comfort_with_caregiver = models.CharField(max_length=20, choices=YesNoPartial.choices, verbose_name="راحتی در حضور مراقب")
 
     # محور سبک زندگی (Lifestyle axis)
-    noise_smell_sensitivity = models.CharField(max_length=20, choices=IntensityScale.choices)
+    noise_smell_sensitivity = models.CharField(max_length=20, choices=IntensityScale.choices, verbose_name="حساسیت به صدا و بو")
     meal_time_strictness = models.CharField(
         max_length=20, choices=IntensityScale.choices,
         help_text="⚠️ گزینه‌های دقیق در سند منبع مشخص نشده بود — placeholder، نیاز به تأیید محصول",
+        verbose_name="سختی در رعایت زمان وعده غذایی"
     )
-    special_diet_preference = models.CharField(max_length=20, choices=YesNoPartial.choices)
+    special_diet_preference = models.CharField(max_length=20, choices=YesNoPartial.choices, verbose_name="ترجیح داشتن رژیم خاص")
 
     # محور جهت‌گیری زمانی (Time-orientation axis)
     medication_timing_priority = models.CharField(
         max_length=20, choices=IntensityScale.choices,
         help_text="⚠️ گزینه‌های دقیق در سند منبع مشخص نشده بود — placeholder، نیاز به تأیید محصول",
+        verbose_name="اهمیت زمان‌بندی داروها"
     )
 
     # محور تفاوت فرهنگی/نسلی (Cultural / generational difference axis)
-    accent_customs_annoyance = models.CharField(max_length=20, choices=DisturbanceScale.choices)
-    cultural_respect_expectation = models.CharField(max_length=20, choices=YesNoPartial.choices)
+    accent_customs_annoyance = models.CharField(max_length=20, choices=DisturbanceScale.choices, verbose_name="آزردگی از لهجه یا رسوم متفاوت مراقب")
+    cultural_respect_expectation = models.CharField(max_length=20, choices=YesNoPartial.choices, verbose_name="انتظار احترام فرهنگی")
 
     # محور انعطاف‌پذیری کلی (General flexibility axis)
     willingness_to_express_opinion = models.CharField(
         max_length=20, choices=IntensityScale.choices,
         help_text="⚠️ گزینه‌های دقیق در سند منبع مشخص نشده بود — placeholder، نیاز به تأیید محصول",
+        verbose_name="آمادگی برای بیان نظر"
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "پرسشنامه سازگاری بیمار"
+        verbose_name_plural = "پرسشنامه‌های سازگاری بیمار"
 
     def __str__(self):
         return f"PatientCompatibilityQuestionnaire(patient_id={self.patient_id})"

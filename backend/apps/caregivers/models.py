@@ -27,12 +27,16 @@ from django.db import models
 # ---------------------------------------------------------------------------
 
 class CaregiverProfile(models.Model):
-    user_id = models.PositiveIntegerField(unique=True, db_index=True)
-    is_approved = models.BooleanField(default=False)
-    approved_by_user_id = models.PositiveIntegerField(null=True, blank=True)
-    approved_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    user_id = models.PositiveIntegerField(unique=True, db_index=True,verbose_name="شناسه کاربر")
+    is_approved = models.BooleanField(default=False, verbose_name="تأیید شده")
+    approved_by_user_id = models.PositiveIntegerField(null=True, blank=True, verbose_name="شناسه کاربر تأییدکننده")
+    approved_at = models.DateTimeField(null=True, blank=True, verbose_name="تاریخ و زمان تأیید")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "پروفایل مراقب"
+        verbose_name_plural = "پروفایل‌های مراقب"
 
     def __str__(self):
         return f"CaregiverProfile(user_id={self.user_id})"
@@ -163,33 +167,37 @@ class SmokingStatus(models.TextChoices):
 
 
 class CaregiverWorkPreferences(models.Model):
-    profile = models.OneToOneField(CaregiverProfile, on_delete=models.CASCADE, related_name="work_preferences")
+    profile = models.OneToOneField(CaregiverProfile, on_delete=models.CASCADE, related_name="work_preferences", verbose_name="پروفایل")
 
-    collaboration_types = models.JSONField(default=list, help_text="چندانتخابی — لیستی از CollaborationType")
-    work_status = models.CharField(max_length=20, choices=WorkStatus.choices)
-    family_presence_preference = models.CharField(max_length=20, choices=FamilyPresencePreference.choices)
-    accepted_gender = models.CharField(max_length=20, choices=AcceptedGender.choices)
-    accepted_age_ranges = models.JSONField(default=list, help_text="چندانتخابی — لیستی از AcceptedAgeRange")
-    offered_services = models.JSONField(default=list, help_text="چندانتخابی — لیستی از OfferedService")
-    accepted_physical_conditions = models.JSONField(default=list, help_text="چندانتخابی")
-    lifting_capacity = models.CharField(max_length=20, choices=LiftingCapacity.choices)
-    service_locations = models.JSONField(default=list, help_text="چندانتخابی — لیستی از ServiceLocation")
-    max_commute_time = models.CharField(max_length=20, choices=MaxCommuteTime.choices, blank=True)
-    available_days = models.JSONField(default=list, help_text="چندانتخابی — لیستی از Weekday")
-    available_shifts = models.JSONField(default=list, help_text="چندانتخابی — لیستی از Shift؛ نکته تودرتو در کلاس Shift")
-    commute_methods = models.JSONField(default=list, blank=True, help_text="چندانتخابی — لیستی از CommuteMethod")
-    smoking_status = models.CharField(max_length=20, choices=SmokingStatus.choices, blank=True)
-    pets_ok = models.BooleanField(null=True, blank=True)
-    holiday_work_ok = models.BooleanField(null=True, blank=True)
-    overnight_stay_ok = models.BooleanField(null=True, blank=True)
+    collaboration_types = models.JSONField(default=list, help_text="چندانتخابی — لیستی از CollaborationType", verbose_name="نوع همکاری")
+    work_status = models.CharField(max_length=20, choices=WorkStatus.choices, verbose_name="وضعیت کار")
+    family_presence_preference = models.CharField(max_length=20, choices=FamilyPresencePreference.choices, verbose_name="ترجیح حضور خانواده")
+    accepted_gender = models.CharField(max_length=20, choices=AcceptedGender.choices, verbose_name="جنسیت پذیرفته")
+    accepted_age_ranges = models.JSONField(default=list, help_text="چندانتخابی — لیستی از AcceptedAgeRange", verbose_name="محدوده سنی پذیرفته")
+    offered_services = models.JSONField(default=list, help_text="چندانتخابی — لیستی از OfferedService", verbose_name="خدمات پیشنهادی")
+    accepted_physical_conditions = models.JSONField(default=list, help_text="چندانتخابی", verbose_name="شرایط فیزیکی پذیرفته")
+    lifting_capacity = models.CharField(max_length=20, choices=LiftingCapacity.choices, verbose_name="ظرفیت جابجایی اجسام فیزیکی")
+    service_locations = models.JSONField(default=list, help_text="چندانتخابی — لیستی از ServiceLocation", verbose_name="محل‌های خدماتی")
+    max_commute_time = models.CharField(max_length=20, choices=MaxCommuteTime.choices, blank=True, verbose_name="حداکثر زمان رفت‌وآمد")
+    available_days = models.JSONField(default=list, help_text="چندانتخابی — لیستی از Weekday", verbose_name="روزهای در دسترس")
+    available_shifts = models.JSONField(default=list, help_text="چندانتخابی — لیستی از Shift؛ نکته تودرتو در کلاس Shift", verbose_name="شیفت‌های در دسترس")
+    commute_methods = models.JSONField(default=list, blank=True, help_text="چندانتخابی — لیستی از CommuteMethod", verbose_name="روش‌های مسافرت")
+    smoking_status = models.CharField(max_length=20, choices=SmokingStatus.choices, blank=True, verbose_name="وضعیت استعمال دخانیات")
+    pets_ok = models.BooleanField(null=True, blank=True, verbose_name="پذیرش حیوان خانگی")
+    holiday_work_ok = models.BooleanField(null=True, blank=True, verbose_name="پذیرش کار در روزهای تعطیل")
+    overnight_stay_ok = models.BooleanField(null=True, blank=True, verbose_name="پذیرش اقامت شبانه روزی")
 
     # چهار چک‌باکس تأییدیه فرم ۲ — به یک فیلد جمع شده چون هر چهار مورد
     # با هم باید تأیید شوند تا فرم قابل ثبت باشد (اعتبارسنجی در serializer)
-    terms_accepted = models.BooleanField(default=False)
-    terms_accepted_at = models.DateTimeField(null=True, blank=True)
+    terms_accepted = models.BooleanField(default=False, verbose_name="تأییدیه‌ها")
+    terms_accepted_at = models.DateTimeField(null=True, blank=True, verbose_name="تاریخ و زمان تأییدیه‌ها")
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "شرایط همکاری مراقب"
+        verbose_name_plural = "شرایط همکاری مراقبان"
 
     def __str__(self):
         return f"CaregiverWorkPreferences(profile_id={self.profile_id})"
@@ -204,13 +212,15 @@ class CaregiverServiceArea(models.Model):
     separate districts is a clean multi-row relation, not an
     ever-deeper nested structure to parse.
     """
-    profile = models.ForeignKey(CaregiverProfile, on_delete=models.CASCADE, related_name="service_areas")
-    province = models.CharField(max_length=100)
-    city = models.CharField(max_length=100, blank=True)
-    district = models.CharField(max_length=100, blank=True)
+    profile = models.ForeignKey(CaregiverProfile, on_delete=models.CASCADE, related_name="service_areas", verbose_name="پروفایل مراقب")
+    province = models.CharField(max_length=100, verbose_name="استان")
+    city = models.CharField(max_length=100, blank=True, verbose_name="شهر")
+    district = models.CharField(max_length=100, blank=True, verbose_name="منطقه")
 
     class Meta:
         unique_together = ("profile", "province", "city", "district")
+        verbose_name = "منطقه خدماتی مراقب"
+        verbose_name_plural = "مناطق خدماتی مراقبان"
 
     def __str__(self):
         return f"{self.province}/{self.city}/{self.district}"
@@ -271,22 +281,26 @@ class SpecialConditionExperience(models.TextChoices):
 
 
 class CaregiverExperience(models.Model):
-    profile = models.OneToOneField(CaregiverProfile, on_delete=models.CASCADE, related_name="experience")
+    profile = models.OneToOneField(CaregiverProfile, on_delete=models.CASCADE, related_name="experience", verbose_name="پروفایل مراقب")
 
-    elderly_care_experience = models.CharField(max_length=20, choices=ExperienceRange.choices)
-    other_services_experience = models.CharField(max_length=20, choices=ExperienceRange.choices, blank=True)
-    previous_workplaces = models.JSONField(default=list, blank=True, help_text="چندانتخابی")
-    patients_cared_for_count = models.CharField(max_length=20, choices=PatientsCaredForCount.choices, blank=True)
-    special_conditions_experience = models.JSONField(default=list, blank=True, help_text="چندانتخابی")
-    live_in_experience = models.BooleanField(null=True, blank=True)
-    couple_care_experience = models.BooleanField(null=True, blank=True)
-    solo_elderly_care_experience = models.BooleanField(null=True, blank=True)
-    driving_for_patient_experience = models.BooleanField(null=True, blank=True)
-    last_workplace = models.CharField(max_length=200, blank=True)
-    additional_notes = models.TextField(blank=True, max_length=500)
+    elderly_care_experience = models.CharField(max_length=20, choices=ExperienceRange.choices, verbose_name="تجربه مراقبت از سالمندان")
+    other_services_experience = models.CharField(max_length=20, choices=ExperienceRange.choices, blank=True, verbose_name="تجربه خدمات دیگر")
+    previous_workplaces = models.JSONField(default=list, blank=True, help_text="چندانتخابی", verbose_name="محلهای پیشین کار")
+    patients_cared_for_count = models.CharField(max_length=20, choices=PatientsCaredForCount.choices, blank=True, verbose_name="تعداد بیماران مراقبت شده")
+    special_conditions_experience = models.JSONField(default=list, blank=True, help_text="چندانتخابی", verbose_name="تجربه شرایط ویژه")
+    live_in_experience = models.BooleanField(null=True, blank=True, verbose_name="تجربه مراقبت در محل")
+    couple_care_experience = models.BooleanField(null=True, blank=True, verbose_name="تجربه مراقبت از زوج")
+    solo_elderly_care_experience = models.BooleanField(null=True, blank=True, verbose_name="تجربه مراقبت تنها از سالمند")
+    driving_for_patient_experience = models.BooleanField(null=True, blank=True, verbose_name="تجربه رانندگی برای بیمار")
+    last_workplace = models.CharField(max_length=200, blank=True, verbose_name="آخرین محل کار")
+    additional_notes = models.TextField(blank=True, max_length=500, verbose_name="یادداشت‌های اضافی")
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "سوابق کاری مراقب"
+        verbose_name_plural = "سوابق کاری مراقبان"
 
     def __str__(self):
         return f"CaregiverExperience(profile_id={self.profile_id})"
@@ -402,30 +416,34 @@ class MessagingApp(models.TextChoices):
 
 
 class CaregiverSkills(models.Model):
-    profile = models.OneToOneField(CaregiverProfile, on_delete=models.CASCADE, related_name="skills")
+    profile = models.OneToOneField(CaregiverProfile, on_delete=models.CASCADE, related_name="skills", verbose_name="پروفایل مراقب")
 
-    education_level = models.CharField(max_length=20, choices=EducationLevel.choices)
-    field_of_study = models.CharField(max_length=150, blank=True)
-    training_courses = models.JSONField(default=list, blank=True, help_text="چندانتخابی")
-    communication_skills = models.JSONField(default=list, blank=True, help_text="چندانتخابی")
-    caregiving_skills = models.JSONField(default=list, blank=True, help_text="چندانتخابی")
-    physical_ability = models.CharField(max_length=20, choices=PhysicalAbility.choices, blank=True)
-    mobility_assistance_ability = models.JSONField(default=list, blank=True, help_text="چندانتخابی")
-    household_skills = models.JSONField(default=list, blank=True, help_text="چندانتخابی")
-    foreign_languages = models.JSONField(default=list, blank=True, help_text="چندانتخابی")
-    local_languages = models.JSONField(default=list, blank=True, help_text="چندانتخابی")
-    has_driving_license = models.BooleanField(null=True, blank=True)
-    has_personal_car = models.BooleanField(null=True, blank=True)
+    education_level = models.CharField(max_length=20, choices=EducationLevel.choices, verbose_name="سطح تحصیلات")
+    field_of_study = models.CharField(max_length=150, blank=True, verbose_name="رشته تحصیلی")
+    training_courses = models.JSONField(default=list, blank=True, help_text="چندانتخابی", verbose_name="دوره‌های آموزشی")
+    communication_skills = models.JSONField(default=list, blank=True, help_text="چندانتخابی", verbose_name="مهارت‌های ارتباطی")
+    caregiving_skills = models.JSONField(default=list, blank=True, help_text="چندانتخابی", verbose_name="مهارت‌های مراقبتی")
+    physical_ability = models.CharField(max_length=20, choices=PhysicalAbility.choices, blank=True, verbose_name="توانایی فیزیکی")
+    mobility_assistance_ability = models.JSONField(default=list, blank=True, help_text="چندانتخابی", verbose_name="توانایی کمک به حرکت")
+    household_skills = models.JSONField(default=list, blank=True, help_text="چندانتخابی", verbose_name="مهارت‌های خانگی")
+    foreign_languages = models.JSONField(default=list, blank=True, help_text="چندانتخابی", verbose_name="زبان‌های خارجی")
+    local_languages = models.JSONField(default=list, blank=True, help_text="چندانتخابی", verbose_name="زبان‌های محلی")
+    has_driving_license = models.BooleanField(null=True, blank=True, verbose_name="دارا بودن گواهینامه رانندگی")
+    has_personal_car = models.BooleanField(null=True, blank=True, verbose_name="دارا بودن ماشین شخصی")
 
     # سؤال منبع فقط دو گزینه «بلدم / بلد نیستم» داشت (نه مقیاس چهارتایی) —
     # بولین ساده، دقیقاً منطبق با سؤال، نه یک مقیاس فرضی.
-    can_use_smartphone = models.BooleanField(null=True, blank=True)
+    can_use_smartphone = models.BooleanField(null=True, blank=True, verbose_name="توانایی استفاده از گوشی هوشمند")
 
-    preferred_messaging_apps = models.JSONField(default=list, blank=True, help_text="چندانتخابی")
-    additional_notes = models.TextField(blank=True, max_length=500)
+    preferred_messaging_apps = models.JSONField(default=list, blank=True, help_text="چندانتخابی", verbose_name="اپلیکیشن‌های پیام رسانی")
+    additional_notes = models.TextField(blank=True, max_length=500, verbose_name="یادداشت‌های اضافی")
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "مهارت‌های مراقب"
+        verbose_name_plural = "مهارت‌های مراقبان"
 
     def __str__(self):
         return f"CaregiverSkills(profile_id={self.profile_id})"
@@ -463,14 +481,19 @@ class CaregiverReference(models.Model):
     per-profile minimum."""
     profile = models.ForeignKey(CaregiverProfile, on_delete=models.CASCADE, related_name="references")
 
-    full_name = models.CharField(max_length=150)
-    occupation = models.CharField(max_length=150)
-    relation_type = models.CharField(max_length=30, choices=ReferenceRelationType.choices)
-    acquaintance_duration = models.CharField(max_length=20, choices=AcquaintanceDuration.choices, blank=True)
-    phone_number = models.CharField(max_length=15)
-    callable_for_inquiry = models.BooleanField(default=True)
+    full_name = models.CharField(max_length=150, verbose_name="نام کامل")
+    occupation = models.CharField(max_length=150, verbose_name="شغل")
+    relation_type = models.CharField(max_length=30, choices=ReferenceRelationType.choices, verbose_name="نوع رابطه")
+    acquaintance_duration = models.CharField(max_length=20, choices=AcquaintanceDuration.choices, blank=True, verbose_name="مدت آشنایی")
+    phone_number = models.CharField(max_length=15, verbose_name="شماره تلفن")
+    callable_for_inquiry = models.BooleanField(default=True, verbose_name="امکان تماس جهت استعلام")
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "معرف مراقب"
+        verbose_name_plural = "معرف‌های مراقب"
 
     def __str__(self):
         return f"CaregiverReference({self.full_name})"
