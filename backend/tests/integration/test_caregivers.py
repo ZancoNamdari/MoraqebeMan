@@ -215,7 +215,7 @@ class FullProfileAndApprovalTests(TestCase):
 
     def test_approval_succeeds_when_all_four_forms_complete(self):
         self._complete_all_forms_except_identity()
-        self.client.put("/api/auth/me/identity-profile/", VALID_IDENTITY, format="json")
+        self.client.put("/api/caregivers/me/identity/", VALID_IDENTITY, format="json")
 
         _, su_token = make_authenticated_user("su_approve2", role=UserRole.SUPERUSER)
         approver = APIClient()
@@ -223,11 +223,11 @@ class FullProfileAndApprovalTests(TestCase):
 
         response = approver.post(f"/api/caregivers/{self.caregiver_user.id}/approve/")
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.data["is_approved"])
+        self.assertEqual(response.data["status"], "approved")
 
     def test_non_admin_cannot_approve(self):
         self._complete_all_forms_except_identity()
-        self.client.put("/api/auth/me/identity-profile/", VALID_IDENTITY, format="json")
+        self.client.put("/api/caregivers/me/identity/", VALID_IDENTITY, format="json")
         # caregiver trying to approve themself
         response = self.client.post(f"/api/caregivers/{self.caregiver_user.id}/approve/")
         self.assertEqual(response.status_code, 403)

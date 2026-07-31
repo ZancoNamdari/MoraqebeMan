@@ -1,24 +1,21 @@
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 
 from apps.accounts.forms import JSONCheckboxMultipleChoiceField
 
-from .models import (
+from .choices import (
     AcceptedAgeRange,
     AcceptedPhysicalCondition,
-    CaregiverExperience,
-    CaregiverProfile,
-    CaregiverReference,
-    CaregiverServiceArea,
-    CaregiverSkills,
-    CaregiverWorkPreferences,
     CaregivingSkill,
+    ChronicDiseaseType,
     CollaborationType,
     CommunicationSkill,
     CommuteMethod,
+    Ethnicity,
     ForeignLanguage,
     HouseholdSkill,
     LocalLanguage,
+    MedicationType,
     MessagingApp,
     MobilityAssistanceAbility,
     OfferedService,
@@ -29,16 +26,129 @@ from .models import (
     TrainingCourse,
     Weekday,
 )
+from .models import (
+    CaregiverApprovalLog,
+    CaregiverExperience,
+    CaregiverProfile,
+    CaregiverReference,
+    CaregiverServiceArea,
+    CaregiverSkills,
+    CaregiverWorkPreferences,
+    IdentityProfile,
+)
 
+
+# ============================================================
+# Form 1 — Identity
+# ============================================================
+
+class IdentityProfileAdminForm(forms.ModelForm):
+    """JSONField's default admin widget is a hand-typed JSON textbox —
+    unusable for a real multi-select question like "قومیت/زبان مادری".
+    JSONCheckboxMultipleChoiceField renders real checkboxes instead;
+    MultipleChoiceField's cleaned value is already a plain list of
+    strings, exactly what the JSONField column needs."""
+    ethnicities = JSONCheckboxMultipleChoiceField(choices=Ethnicity.choices, label="قومیت / زبان مادری")
+    chronic_disease_types = JSONCheckboxMultipleChoiceField(choices=ChronicDiseaseType.choices, label="انواع بیماری‌های مزمن")
+    medication_types = JSONCheckboxMultipleChoiceField(choices=MedicationType.choices, label="انواع داروها")
+
+    class Meta:
+        model = IdentityProfile
+        fields = "__all__"
+
+
+@admin.register(IdentityProfile)
+class IdentityProfileAdmin(admin.ModelAdmin):
+    form = IdentityProfileAdminForm
+    list_display = ["user", "father_name", "gender", "marital_status", "province", "city"]
+    search_fields = ["user__username", "user__national_id", "father_name"]
+    list_filter = ["gender", "marital_status", "province"]
+    autocomplete_fields = ["user"]
+
+
+# ============================================================
+# Caregiver Profile — hub, with approve/reject bulk actions
+# ============================================================
+
+class CaregiverApprovalLogInline(admin.TabularInline):
+    model = CaregiverApprovalLog
+    extra = 0
+    readonly_fields = ["old_status", "new_status", "performed_by", "note", "created_at"]
+    can_delete = False
+    ordering = ["-created_at"]
+
+    def has_add_permission(self, request, obj=None):
+        # Log entries are only ever written by CaregiverProfile.approve()/
+        # reject() — never created by hand in the admin.
+        return False
+
+
+@admin.register(CaregiverProfile)
+class CaregiverProfileAdmin(admin.ModelAdmin):
+    list_display = ["user", "status", "approved_by", "approved_at", "form_completion"]
+    list_filter = ["status"]
+    search_fields = ["user__username", "user__phone_number"]
+    autocomplete_fields = ["user", "approved_by"]
+    readonly_fields = ["approved_by", "approved_at", "created_at", "updated_at"]
+    inlines = [CaregiverApprovalLogInline]
+    actions = ["approve_selected", "reject_selected"]
+
+    @admin.display(description="تکمیل فرم‌ها")
+    def form_completion(self, obj):
+        parts = [
+            hasattr(obj, "work_preferences"),
+            hasattr(obj, "experience"),
+            hasattr(obj, "skills"),
+            obj.references.count() >= 2,
+        ]
+        done = sum(parts)
+        return f"{done}/4"
+
+    @admin.action(description="تأیید مراقبان انتخاب‌شده (فقط پروفایل‌های کامل)")
+    def approve_selected(self, request, queryset):
+        approved, skipped = 0, 0
+        for profile in queryset:
+            complete = (
+                hasattr(profile, "work_preferences")
+                and hasattr(profile, "experience")
+                and hasattr(profile, "skills")
+                and profile.references.count() >= 2
+                and IdentityProfile.objects.filter(user_id=profile.user_id).exists()
+            )
+            if complete:
+                profile.approve(request.user)
+                approved += 1
+            else:
+                skipped += 1
+        if approved:
+            self.message_user(request, f"{approved} مراقب تأیید شد.", level=messages.SUCCESS)
+        if skipped:
+            self.message_user(request, f"{skipped} پروفایل ناقص بود و رد شد (تأیید نشد).", level=messages.WARNING)
+
+    @admin.action(description="رد کردن مراقبان انتخاب‌شده")
+    def reject_selected(self, request, queryset):
+        count = 0
+        for profile in queryset:
+            profile.reject(request.user, reason="رد شده از طریق پنل مدیریت (بدون دلیل مشخص)")
+            count += 1
+        self.message_user(request, f"{count} مراقب رد شد.", level=messages.WARNING)
+
+
+@admin.register(CaregiverApprovalLog)
+class CaregiverApprovalLogAdmin(admin.ModelAdmin):
+    list_display = ["caregiver", "old_status", "new_status", "performed_by", "created_at"]
+    list_filter = ["new_status"]
+    readonly_fields = ["caregiver", "old_status", "new_status", "performed_by", "note", "created_at"]
+
+    def has_add_permission(self, request):
+        return False
+
+
+# ============================================================
+# Form 2 — Work preferences (the most checkbox-heavy form by far)
+# ============================================================
 
 class CaregiverWorkPreferencesAdminForm(forms.ModelForm):
-    """
-    Same reasoning as apps/accounts/admin.py's IdentityProfileAdminForm —
-    JSONField's default admin widget is a hand-typed JSON text box,
-    unusable for real multi-select questions. This app has by far the
-    most JSON multi-select fields of the three, since Form 2 alone has
-    eight of them.
-    """
     collaboration_types = JSONCheckboxMultipleChoiceField(choices=CollaborationType.choices, label="نوع همکاری")
     accepted_age_ranges = JSONCheckboxMultipleChoiceField(choices=AcceptedAgeRange.choices, label="بازه سنی پذیرفته")
     offered_services = JSONCheckboxMultipleChoiceField(choices=OfferedService.choices, label="خدمات قابل ارائه")
@@ -52,13 +162,38 @@ class CaregiverWorkPreferencesAdminForm(forms.ModelForm):
         model = CaregiverWorkPreferences
         fields = "__all__"
 
+    def clean(self):
+        # Same nested rule the API serializer enforces — the admin
+        # shouldn't be a backdoor around it.
+        cleaned = super().clean()
+        shifts = cleaned.get("available_shifts") or []
+        if "24h" in shifts and len(shifts) > 1:
+            raise forms.ValidationError(
+                'شیفت «شبانه‌روزی» با سایر شیفت‌ها هم‌زمان قابل انتخاب نیست.'
+            )
+        return cleaned
+
 
 @admin.register(CaregiverWorkPreferences)
 class CaregiverWorkPreferencesAdmin(admin.ModelAdmin):
     form = CaregiverWorkPreferencesAdminForm
     list_display = ["profile", "work_status", "lifting_capacity", "terms_accepted"]
-    list_filter = ["work_status", "lifting_capacity", "smoking_status"]
+    list_filter = ["work_status", "lifting_capacity", "smoking_status", "terms_accepted"]
+    search_fields = ["profile__user__username"]
+    autocomplete_fields = ["profile"]
 
+
+@admin.register(CaregiverServiceArea)
+class CaregiverServiceAreaAdmin(admin.ModelAdmin):
+    list_display = ["profile", "province", "city", "district"]
+    list_filter = ["province"]
+    search_fields = ["profile__user__username", "province", "city", "district"]
+    autocomplete_fields = ["profile"]
+
+
+# ============================================================
+# Form 3 — Experience & skills
+# ============================================================
 
 class CaregiverExperienceAdminForm(forms.ModelForm):
     previous_workplaces = JSONCheckboxMultipleChoiceField(choices=PreviousWorkplace.choices, label="محل‌های سابق فعالیت", required=False)
@@ -74,6 +209,8 @@ class CaregiverExperienceAdmin(admin.ModelAdmin):
     form = CaregiverExperienceAdminForm
     list_display = ["profile", "elderly_care_experience", "patients_cared_for_count"]
     list_filter = ["elderly_care_experience", "patients_cared_for_count"]
+    search_fields = ["profile__user__username"]
+    autocomplete_fields = ["profile"]
 
 
 class CaregiverSkillsAdminForm(forms.ModelForm):
@@ -96,22 +233,27 @@ class CaregiverSkillsAdmin(admin.ModelAdmin):
     form = CaregiverSkillsAdminForm
     list_display = ["profile", "education_level", "physical_ability"]
     list_filter = ["education_level", "physical_ability"]
+    search_fields = ["profile__user__username"]
+    autocomplete_fields = ["profile"]
 
 
-@admin.register(CaregiverProfile)
-class CaregiverProfileAdmin(admin.ModelAdmin):
-    list_display = ["user_id", "is_approved", "approved_at"]
-    list_filter = ["is_approved"]
-    search_fields = ["user_id"]
-
-
-@admin.register(CaregiverServiceArea)
-class CaregiverServiceAreaAdmin(admin.ModelAdmin):
-    list_display = ["profile", "province", "city", "district"]
-    list_filter = ["province"]
-
+# ============================================================
+# Form 4 — References, with a verify action
+# ============================================================
 
 @admin.register(CaregiverReference)
 class CaregiverReferenceAdmin(admin.ModelAdmin):
-    list_display = ["profile", "full_name", "relation_type", "callable_for_inquiry"]
-    list_filter = ["relation_type", "callable_for_inquiry"]
+    list_display = ["full_name", "profile", "relation_type", "phone_number", "callable_for_inquiry", "is_verified"]
+    list_filter = ["relation_type", "callable_for_inquiry", "is_verified"]
+    search_fields = ["full_name", "phone_number", "profile__user__username"]
+    autocomplete_fields = ["profile", "verified_by"]
+    readonly_fields = ["verified_by", "verified_at"]
+    actions = ["verify_selected"]
+
+    @admin.action(description="تأیید معرف‌های انتخاب‌شده")
+    def verify_selected(self, request, queryset):
+        count = 0
+        for reference in queryset.filter(is_verified=False):
+            reference.verify(request.user, note="تأیید گروهی از پنل مدیریت")
+            count += 1
+        self.message_user(request, f"{count} معرف تأیید شد.", level=messages.SUCCESS)

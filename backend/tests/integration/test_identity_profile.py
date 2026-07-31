@@ -34,53 +34,53 @@ class IdentityProfileTests(BaseAPITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['tokens']['access']}")
 
     def test_get_before_creation_returns_404(self):
-        response = self.client.get("/api/auth/me/identity-profile/")
+        response = self.client.get("/api/caregivers/me/identity/")
         self.assertEqual(response.status_code, 404)
 
     def test_put_valid_data_creates_profile(self):
-        response = self.client.put("/api/auth/me/identity-profile/", VALID_PAYLOAD, format="json")
+        response = self.client.put("/api/caregivers/me/identity/", VALID_PAYLOAD, format="json")
         self.assertEqual(response.status_code, 201)
 
-        response = self.client.get("/api/auth/me/identity-profile/")
+        response = self.client.get("/api/caregivers/me/identity/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["father_name"], "رضا")
 
     def test_put_again_updates_instead_of_creating_duplicate(self):
-        self.client.put("/api/auth/me/identity-profile/", VALID_PAYLOAD, format="json")
+        self.client.put("/api/caregivers/me/identity/", VALID_PAYLOAD, format="json")
         updated = dict(VALID_PAYLOAD, father_name="محمد")
-        response = self.client.put("/api/auth/me/identity-profile/", updated, format="json")
+        response = self.client.put("/api/caregivers/me/identity/", updated, format="json")
         self.assertEqual(response.status_code, 200)  # 200, not 201 — this was an update
         self.assertEqual(response.data["father_name"], "محمد")
 
     def test_military_status_rejected_for_female(self):
         payload = dict(VALID_PAYLOAD, gender="female", military_status="completed")
-        response = self.client.put("/api/auth/me/identity-profile/", payload, format="json")
+        response = self.client.put("/api/caregivers/me/identity/", payload, format="json")
         self.assertEqual(response.status_code, 400)
         self.assertIn("military_status", response.data)
 
     def test_female_without_military_status_is_valid(self):
         payload = dict(VALID_PAYLOAD, gender="female", military_status=None)
-        response = self.client.put("/api/auth/me/identity-profile/", payload, format="json")
+        response = self.client.put("/api/caregivers/me/identity/", payload, format="json")
         self.assertEqual(response.status_code, 201)
 
     def test_chronic_disease_true_requires_disease_types(self):
         payload = dict(VALID_PAYLOAD, has_chronic_disease=True, chronic_disease_types=[])
-        response = self.client.put("/api/auth/me/identity-profile/", payload, format="json")
+        response = self.client.put("/api/caregivers/me/identity/", payload, format="json")
         self.assertEqual(response.status_code, 400)
         self.assertIn("chronic_disease_types", response.data)
 
     def test_chronic_disease_true_with_types_is_valid(self):
         payload = dict(VALID_PAYLOAD, has_chronic_disease=True, chronic_disease_types=["diabetes"])
-        response = self.client.put("/api/auth/me/identity-profile/", payload, format="json")
+        response = self.client.put("/api/caregivers/me/identity/", payload, format="json")
         self.assertEqual(response.status_code, 201)
 
     def test_medication_true_requires_medication_types(self):
         payload = dict(VALID_PAYLOAD, takes_permanent_medication=True, medication_types=[])
-        response = self.client.put("/api/auth/me/identity-profile/", payload, format="json")
+        response = self.client.put("/api/caregivers/me/identity/", payload, format="json")
         self.assertEqual(response.status_code, 400)
         self.assertIn("medication_types", response.data)
 
     def test_identity_profile_requires_authentication(self):
         client = APIClient()
-        response = client.get("/api/auth/me/identity-profile/")
+        response = client.get("/api/caregivers/me/identity/")
         self.assertEqual(response.status_code, 401)
