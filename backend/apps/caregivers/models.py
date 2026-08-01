@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django_jalali.db import models as jmodels
 
 from .choices import (
     AcceptedAgeRange,
@@ -64,10 +65,19 @@ class IdentityProfile(models.Model):
         verbose_name="کاربر",
     )
 
+    # Form 1's own first two questions ("نام"، "نام خانوادگی") were
+    # never actually captured anywhere — not in registration, not here.
+    # AbstractUser.first_name/last_name exist on User but registration
+    # never asks for them, so they've always been silently empty.
+    # Storing them here instead, alongside every other Form 1 field,
+    # rather than depending on a User field nothing ever populates.
+    first_name = models.CharField(max_length=150, verbose_name="نام")
+    last_name = models.CharField(max_length=150, verbose_name="نام خانوادگی")
+
     father_name = models.CharField(max_length=150, verbose_name="نام پدر")
     birth_certificate_number = models.CharField(max_length=30, verbose_name="شماره شناسنامه")
     birth_certificate_issue_place = models.CharField(max_length=150, verbose_name="محل صدور شناسنامه")
-    birth_date = models.DateField(verbose_name="تاریخ تولد")
+    birth_date = jmodels.jDateField(verbose_name="تاریخ تولد")
     gender = models.CharField(max_length=10, choices=Gender.choices, verbose_name="جنسیت")
     marital_status = models.CharField(max_length=20, choices=MaritalStatus.choices, verbose_name="وضعیت تأهل")
     children_count = models.CharField(max_length=20, choices=ChildrenCount.choices, verbose_name="تعداد فرزندان")
@@ -97,15 +107,19 @@ class IdentityProfile(models.Model):
     postal_code = models.CharField(max_length=10, verbose_name="کد پستی")
     full_address = models.TextField(verbose_name="آدرس کامل")
 
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
 
     class Meta:
         verbose_name = "پروفایل هویتی"
         verbose_name_plural = "پروفایل‌های هویتی"
 
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
     def __str__(self):
-        return f"IdentityProfile(user_id={self.user_id})"
+        return self.full_name or f"IdentityProfile(user_id={self.user_id})"
 
 
 # ============================================================
@@ -132,11 +146,11 @@ class CaregiverProfile(models.Model):
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="approved_caregivers", verbose_name="تأییدشده توسط",
     )
-    approved_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان تأیید")
+    approved_at = jmodels.jDateTimeField(null=True, blank=True, verbose_name="زمان تأیید")
     rejection_reason = models.TextField(blank=True, verbose_name="دلیل رد شدن")
 
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
 
     class Meta:
         verbose_name = "پروفایل مراقب"
@@ -166,8 +180,22 @@ class CaregiverProfile(models.Model):
             performed_by=admin_user, note=reason,
         )
 
+    @property
+    def display_name(self) -> str:
+        """
+        The name to actually show a human — falls back gracefully
+        through what's available: Form 1's name (once filled in), then
+        the account username, since Form 1 is often not complete yet
+        when this profile row already exists (it's created on first
+        form submission, which might be Form 2, not Form 1).
+        """
+        identity = getattr(self.user, "caregiver_identity_profile", None)
+        if identity and identity.full_name:
+            return identity.full_name
+        return self.user.username
+
     def __str__(self):
-        return f"CaregiverProfile(user_id={self.user_id})"
+        return self.display_name
 
 
 class CaregiverApprovalLog(models.Model):
@@ -179,7 +207,7 @@ class CaregiverApprovalLog(models.Model):
     new_status = models.CharField(max_length=20, verbose_name="وضعیت جدید")
     performed_by = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, verbose_name="انجام‌دهنده")
     note = models.TextField(blank=True, verbose_name="یادداشت")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ")
 
     class Meta:
         verbose_name = "لاگ بررسی مراقب"
@@ -187,7 +215,7 @@ class CaregiverApprovalLog(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.old_status} -> {self.new_status}"
+        return f"{self.caregiver.display_name}: {self.old_status} -> {self.new_status}"
 
 
 # ============================================================
@@ -216,17 +244,17 @@ class CaregiverWorkPreferences(models.Model):
     holiday_work_ok = models.BooleanField(null=True, blank=True, verbose_name="کار در تعطیلات")
     overnight_stay_ok = models.BooleanField(null=True, blank=True, verbose_name="اقامت شبانه")
     terms_accepted = models.BooleanField(default=False, verbose_name="پذیرش قوانین")
-    terms_accepted_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان پذیرش قوانین")
+    terms_accepted_at = jmodels.jDateTimeField(null=True, blank=True, verbose_name="زمان پذیرش قوانین")
 
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
 
     class Meta:
         verbose_name = "شرایط همکاری مراقب"
         verbose_name_plural = "شرایط همکاری مراقبان"
 
     def __str__(self):
-        return f"CaregiverWorkPreferences(profile_id={self.profile_id})"
+        return f"شرایط همکاری — {self.profile.display_name}"
 
 
 class CaregiverServiceArea(models.Model):
@@ -264,15 +292,15 @@ class CaregiverExperience(models.Model):
     last_workplace = models.CharField(max_length=200, blank=True, verbose_name="آخرین محل فعالیت")
     additional_notes = models.TextField(blank=True, max_length=500, verbose_name="توضیحات تکمیلی")
 
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
 
     class Meta:
         verbose_name = "سوابق کاری مراقب"
         verbose_name_plural = "سوابق کاری مراقبان"
 
     def __str__(self):
-        return f"CaregiverExperience(profile_id={self.profile_id})"
+        return f"سوابق کاری — {self.profile.display_name}"
 
 
 # ============================================================
@@ -299,15 +327,15 @@ class CaregiverSkills(models.Model):
     preferred_messaging_apps = models.JSONField(default=list, blank=True, verbose_name="پیام‌رسان‌های مورد استفاده")
     additional_notes = models.TextField(blank=True, max_length=500, verbose_name="توضیحات تکمیلی")
 
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
 
     class Meta:
         verbose_name = "مهارت‌های مراقب"
         verbose_name_plural = "مهارت‌های مراقبان"
 
     def __str__(self):
-        return f"CaregiverSkills(profile_id={self.profile_id})"
+        return f"مهارت‌ها — {self.profile.display_name}"
 
 
 # ============================================================
@@ -334,10 +362,10 @@ class CaregiverReference(models.Model):
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="verified_caregiver_references", verbose_name="بررسی‌شده توسط",
     )
-    verified_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان بررسی")
+    verified_at = jmodels.jDateTimeField(null=True, blank=True, verbose_name="زمان بررسی")
 
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
 
     class Meta:
         verbose_name = "معرف مراقب"

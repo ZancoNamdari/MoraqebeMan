@@ -2,6 +2,7 @@ from django import forms
 from django.contrib import admin, messages
 
 from apps.accounts.forms import JSONCheckboxMultipleChoiceField
+from apps.accounts.persian_digits import to_persian_digits
 
 from .choices import (
     AcceptedAgeRange,
@@ -60,10 +61,18 @@ class IdentityProfileAdminForm(forms.ModelForm):
 @admin.register(IdentityProfile)
 class IdentityProfileAdmin(admin.ModelAdmin):
     form = IdentityProfileAdminForm
-    list_display = ["user", "father_name", "gender", "marital_status", "province", "city"]
-    search_fields = ["user__username", "user__national_id", "father_name"]
+    list_display = ["full_name_display", "user", "gender", "marital_status", "province", "city", "birth_date_display"]
+    search_fields = ["user__username", "user__national_id", "first_name", "last_name", "father_name"]
     list_filter = ["gender", "marital_status", "province"]
     autocomplete_fields = ["user"]
+
+    @admin.display(description="نام کامل")
+    def full_name_display(self, obj):
+        return obj.full_name
+
+    @admin.display(description="تاریخ تولد")
+    def birth_date_display(self, obj):
+        return to_persian_digits(obj.birth_date) if obj.birth_date else "—"
 
 
 # ============================================================
@@ -85,13 +94,17 @@ class CaregiverApprovalLogInline(admin.TabularInline):
 
 @admin.register(CaregiverProfile)
 class CaregiverProfileAdmin(admin.ModelAdmin):
-    list_display = ["user", "status", "approved_by", "approved_at", "form_completion"]
+    list_display = ["user", "status", "approved_by", "approved_at_display", "form_completion"]
     list_filter = ["status"]
-    search_fields = ["user__username", "user__phone_number"]
+    search_fields = ["user__username", "user__phone_number", "user__caregiver_identity_profile__first_name", "user__caregiver_identity_profile__last_name"]
     autocomplete_fields = ["user", "approved_by"]
     readonly_fields = ["approved_by", "approved_at", "created_at", "updated_at"]
     inlines = [CaregiverApprovalLogInline]
     actions = ["approve_selected", "reject_selected"]
+
+    @admin.display(description="زمان تأیید")
+    def approved_at_display(self, obj):
+        return to_persian_digits(obj.approved_at) if obj.approved_at else "—"
 
     @admin.display(description="تکمیل فرم‌ها")
     def form_completion(self, obj):
@@ -102,7 +115,7 @@ class CaregiverProfileAdmin(admin.ModelAdmin):
             obj.references.count() >= 2,
         ]
         done = sum(parts)
-        return f"{done}/4"
+        return to_persian_digits(f"{done}/4")
 
     @admin.action(description="تأیید مراقبان انتخاب‌شده (فقط پروفایل‌های کامل)")
     def approve_selected(self, request, queryset):
@@ -121,9 +134,9 @@ class CaregiverProfileAdmin(admin.ModelAdmin):
             else:
                 skipped += 1
         if approved:
-            self.message_user(request, f"{approved} مراقب تأیید شد.", level=messages.SUCCESS)
+            self.message_user(request, f"{to_persian_digits(approved)} مراقب تأیید شد.", level=messages.SUCCESS)
         if skipped:
-            self.message_user(request, f"{skipped} پروفایل ناقص بود و رد شد (تأیید نشد).", level=messages.WARNING)
+            self.message_user(request, f"{to_persian_digits(skipped)} پروفایل ناقص بود و رد شد (تأیید نشد).", level=messages.WARNING)
 
     @admin.action(description="رد کردن مراقبان انتخاب‌شده")
     def reject_selected(self, request, queryset):
@@ -131,14 +144,18 @@ class CaregiverProfileAdmin(admin.ModelAdmin):
         for profile in queryset:
             profile.reject(request.user, reason="رد شده از طریق پنل مدیریت (بدون دلیل مشخص)")
             count += 1
-        self.message_user(request, f"{count} مراقب رد شد.", level=messages.WARNING)
+        self.message_user(request, f"{to_persian_digits(count)} مراقب رد شد.", level=messages.WARNING)
 
 
 @admin.register(CaregiverApprovalLog)
 class CaregiverApprovalLogAdmin(admin.ModelAdmin):
-    list_display = ["caregiver", "old_status", "new_status", "performed_by", "created_at"]
+    list_display = ["caregiver", "old_status", "new_status", "performed_by", "created_at_display"]
     list_filter = ["new_status"]
     readonly_fields = ["caregiver", "old_status", "new_status", "performed_by", "note", "created_at"]
+
+    @admin.display(description="تاریخ")
+    def created_at_display(self, obj):
+        return to_persian_digits(obj.created_at)
 
     def has_add_permission(self, request):
         return False
@@ -243,12 +260,16 @@ class CaregiverSkillsAdmin(admin.ModelAdmin):
 
 @admin.register(CaregiverReference)
 class CaregiverReferenceAdmin(admin.ModelAdmin):
-    list_display = ["full_name", "profile", "relation_type", "phone_number", "callable_for_inquiry", "is_verified"]
+    list_display = ["full_name", "profile", "relation_type", "phone_number_display", "callable_for_inquiry", "is_verified"]
     list_filter = ["relation_type", "callable_for_inquiry", "is_verified"]
     search_fields = ["full_name", "phone_number", "profile__user__username"]
     autocomplete_fields = ["profile", "verified_by"]
     readonly_fields = ["verified_by", "verified_at"]
     actions = ["verify_selected"]
+
+    @admin.display(description="شماره تلفن")
+    def phone_number_display(self, obj):
+        return to_persian_digits(obj.phone_number)
 
     @admin.action(description="تأیید معرف‌های انتخاب‌شده")
     def verify_selected(self, request, queryset):
@@ -256,4 +277,4 @@ class CaregiverReferenceAdmin(admin.ModelAdmin):
         for reference in queryset.filter(is_verified=False):
             reference.verify(request.user, note="تأیید گروهی از پنل مدیریت")
             count += 1
-        self.message_user(request, f"{count} معرف تأیید شد.", level=messages.SUCCESS)
+        self.message_user(request, f"{to_persian_digits(count)} معرف تأیید شد.", level=messages.SUCCESS)

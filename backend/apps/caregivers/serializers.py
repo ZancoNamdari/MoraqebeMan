@@ -1,4 +1,7 @@
 from rest_framework import serializers
+
+from apps.accounts.jalali_fields import JalaliDateField
+
 from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, AcceptedGender, CollaborationType,
                       OfferedService, ServiceLocation, Shift, Weekday, CommuteMethod,
                       CommunicationSkill, CaregivingSkill, MobilityAssistanceAbility,
@@ -15,10 +18,12 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
     docstring for why identity data is now caregiver-scoped rather than
     shared via apps.accounts.
     """
+    birth_date = JalaliDateField()
 
     class Meta:
         model = IdentityProfile
         fields = [
+            "first_name", "last_name",
             "father_name", "birth_certificate_number", "birth_certificate_issue_place",
             "birth_date", "gender", "marital_status", "children_count", "military_status",
             "height_range", "weight_range", "ethnicities",

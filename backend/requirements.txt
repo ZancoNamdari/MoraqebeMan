@@ -15,11 +15,13 @@ colorama==0.4.6
 django-cors-headers==4.7.0
 django-environ==0.14.0
 django-filter==26.1
+django-jalali==7.4.0
 djangorestframework-simplejwt==5.5.0
 djangorestframework==3.17.1
 drf-spectacular==0.30.0
 gunicorn==26.0.0
 inflection==0.5.1
+jdatetime==6.0.1
 jsonschema-specifications==2025.9.1
 jsonschema==4.26.0
 kombu==5.6.2

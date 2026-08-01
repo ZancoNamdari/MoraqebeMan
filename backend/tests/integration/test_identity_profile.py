@@ -4,10 +4,12 @@ from rest_framework.test import APIClient
 from tests.factories.user_factory import make_user
 
 VALID_PAYLOAD = {
+    "first_name": "سارا",
+    "last_name": "محمدی",
     "father_name": "رضا",
     "birth_certificate_number": "12345",
     "birth_certificate_issue_place": "تهران",
-    "birth_date": "1990-05-01",
+    "birth_date": "1369-02-11",
     "gender": "male",
     "marital_status": "single",
     "children_count": "none",

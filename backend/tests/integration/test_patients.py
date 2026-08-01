@@ -8,7 +8,7 @@ from tests.factories.auth_helpers import make_authenticated_user
 VALID_PATIENT = {
     "full_name": "رضا احمدی",
     "father_name": "حسن",
-    "birth_date": "1945-03-10",
+    "birth_date": "1323-12-19",
     "national_id": "0012345678",
     "birth_certificate_number": "55",
     "birth_certificate_issue_place": "تهران",

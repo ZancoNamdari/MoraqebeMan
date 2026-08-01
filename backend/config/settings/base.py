@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "corsheaders",
+    "django_jalali",
     # local — five apps merged from the two previously-independent
     # services (identity_service -> accounts/authentication/
     # authorization/audit, family_service -> families). Each keeps its

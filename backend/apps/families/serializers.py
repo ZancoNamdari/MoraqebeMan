@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.accounts.jalali_fields import JalaliDateField
+
 from .models import (
     FamilyProfile,
     GuardianshipStatus,
@@ -16,6 +18,8 @@ class FamilyProfileSerializer(serializers.ModelSerializer):
 
 
 class PatientProfileSerializer(serializers.ModelSerializer):
+    birth_date = JalaliDateField(required=False, allow_null=True)
+
     class Meta:
         model = PatientProfile
         fields = [

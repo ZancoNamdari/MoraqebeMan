@@ -1,4 +1,5 @@
 from django.db import models
+from django_jalali.db import models as jmodels
 
 
 class FamilyProfile(models.Model):
@@ -9,8 +10,8 @@ class FamilyProfile(models.Model):
     display_name = models.CharField(max_length=150, help_text="نام نمایشی")
     city = models.CharField(max_length=100, blank=True, help_text="شهر")
     address = models.TextField(blank=True, help_text="نشانی")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
 
     class Meta:
         verbose_name = "پروفایل خانواده"
@@ -40,7 +41,7 @@ class PatientProfile(models.Model):
 
     full_name = models.CharField(max_length=150, help_text="نام و نام خانوادگی سالمند")
     father_name = models.CharField(max_length=150, blank=True, help_text="نام پدر")
-    birth_date = models.DateField(null=True, blank=True, help_text="تاریخ تولد")
+    birth_date = jmodels.jDateField(null=True, blank=True, help_text="تاریخ تولد")
     national_id = models.CharField(max_length=10, blank=True, help_text="شماره ملی")
     birth_certificate_number = models.CharField(max_length=30, blank=True, help_text="شماره شناسنامه")
     birth_certificate_issue_place = models.CharField(max_length=150, blank=True, help_text="محل صدور شناسنامه")
@@ -65,8 +66,8 @@ class PatientProfile(models.Model):
         blank=True, help_text="اطلاعات پزشکی پایه — بیماری‌های مهم و نیازهای ویژه"
     )
 
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
 
     class Meta:
         verbose_name = "پروفایل بیمار"
@@ -84,8 +85,8 @@ class FamilyPatientLink(models.Model):
     patient = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name="family_links", verbose_name="سالمند")
     relation = models.CharField(max_length=50, help_text="نسبت، مثلاً فرزند/همسر/سرپرست")
     is_primary_contact = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
 
     class Meta:
         unique_together = ("family", "patient")
@@ -193,12 +194,12 @@ class PatientCompatibilityQuestionnaire(models.Model):
         verbose_name="آمادگی برای بیان نظر"
     )
 
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
+    updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
 
     class Meta:
         verbose_name = "پرسشنامه سازگاری بیمار"
         verbose_name_plural = "پرسشنامه‌های سازگاری بیمار"
 
     def __str__(self):
-        return f"PatientCompatibilityQuestionnaire(patient_id={self.patient_id})"
+        return f"پرسشنامه سازگاری — {self.patient.full_name}"
