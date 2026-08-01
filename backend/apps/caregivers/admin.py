@@ -17,7 +17,6 @@ from .choices import (
     HouseholdSkill,
     LocalLanguage,
     MedicationType,
-    MessagingApp,
     MobilityAssistanceAbility,
     OfferedService,
     PreviousWorkplace,
@@ -238,7 +237,6 @@ class CaregiverSkillsAdminForm(forms.ModelForm):
     household_skills = JSONCheckboxMultipleChoiceField(choices=HouseholdSkill.choices, label="مهارت‌های خانگی", required=False)
     foreign_languages = JSONCheckboxMultipleChoiceField(choices=ForeignLanguage.choices, label="زبان‌های خارجی", required=False)
     local_languages = JSONCheckboxMultipleChoiceField(choices=LocalLanguage.choices, label="زبان‌های محلی", required=False)
-    preferred_messaging_apps = JSONCheckboxMultipleChoiceField(choices=MessagingApp.choices, label="پیام‌رسان‌های مورد استفاده", required=False)
 
     class Meta:
         model = CaregiverSkills

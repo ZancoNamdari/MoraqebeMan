@@ -33,7 +33,10 @@ class Command(BaseCommand):
 
         user, created = User.objects.get_or_create(
             username=username,
-            defaults={"email": email, "phone_number": phone, "role": UserRole.SUPERUSER},
+            defaults={
+                "email": email, "phone_number": phone, "role": UserRole.SUPERUSER,
+                "first_name": "مدیر", "last_name": "سیستم",
+            },
         )
 
         # If a different (non-superuser) account already owns this phone

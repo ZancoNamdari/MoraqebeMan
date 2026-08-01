@@ -19,7 +19,11 @@ class UserRepositoryInterface(ABC):
         ...
 
     @abstractmethod
-    def exists_with_username_or_phone(self, username: str, phone_number: str) -> bool:
+    def exists_with_username(self, username: str) -> bool:
+        ...
+
+    @abstractmethod
+    def exists_with_phone(self, phone_number: str) -> bool:
         ...
 
     @abstractmethod
@@ -34,10 +38,11 @@ class DjangoUserRepository(UserRepositoryInterface):
     def get_by_phone(self, phone_number: str) -> Optional[User]:
         return User.objects.filter(phone_number=phone_number).first()
 
-    def exists_with_username_or_phone(self, username: str, phone_number: str) -> bool:
-        return User.objects.filter(username=username).exists() or User.objects.filter(
-            phone_number=phone_number
-        ).exists()
+    def exists_with_username(self, username: str) -> bool:
+        return User.objects.filter(username=username).exists()
+
+    def exists_with_phone(self, phone_number: str) -> bool:
+        return User.objects.filter(phone_number=phone_number).exists()
 
     def create_user(self, **kwargs) -> User:
         password = kwargs.pop("password")

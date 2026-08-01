@@ -15,7 +15,8 @@ from apps.authentication.services import SimpleJWTTokenIssuer
 
 def make_authenticated_user(username, role=UserRole.FAMILY, phone_number=None, password="StrongPass123"):
     phone_number = phone_number or f"0912{User.objects.count():07d}"
-    user = User(username=username, phone_number=phone_number, email=f"{username}@example.com", role=role)
+    user = User(username=username, phone_number=phone_number, email=f"{username}@example.com", role=role,
+                first_name="تست", last_name="کاربر")
     user.set_password(password)
     user.save()
     tokens = SimpleJWTTokenIssuer().issue(user)

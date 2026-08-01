@@ -4,7 +4,13 @@ from apps.accounts.models import UserRole
 
 
 class RegisterSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=150)
+    first_name = serializers.CharField(max_length=50)
+    last_name = serializers.CharField(max_length=50)
+    # Optional override — most people won't send this at all, and
+    # User.generate_username() builds one from first_name/last_name
+    # automatically. Kept available for anyone who wants to pick their
+    # own (e.g. an agency onboarding staff members in bulk).
+    username = serializers.CharField(max_length=150, required=False, allow_blank=True)
     password = serializers.CharField(write_only=True, min_length=8)
     phone_number = serializers.RegexField(
         regex=r"^09\d{9}$",

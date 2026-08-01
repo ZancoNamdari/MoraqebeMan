@@ -8,6 +8,7 @@ including the audit logger and lockout guard, both optional so existing
 callers/tests that don't care about them keep working unchanged.
 """
 import logging
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional
@@ -62,10 +63,12 @@ class PasswordResetError(Exception):
 
 @dataclass
 class RegisterUserRequest:
-    username: str
+    first_name: str
+    last_name: str
     password: str
     phone_number: str
     email: str
+    username: str = ""
     role: str = UserRole.FAMILY
 
 
@@ -83,17 +86,21 @@ class AuthService:
         self._guard = login_guard
 
     def register(self, request: RegisterUserRequest) -> tuple[User, dict]:
-        if self._users.exists_with_username_or_phone(request.username, request.phone_number):
-            raise RegistrationError("این نام کاربری یا شماره تلفن قبلاً ثبت شده است.")
+        if self._users.exists_with_phone(request.phone_number):
+            raise RegistrationError("این شماره تلفن قبلاً ثبت شده است.")
+        if request.username and self._users.exists_with_username(request.username):
+            raise RegistrationError("این نام کاربری قبلاً ثبت شده است.")
 
         user = self._users.create_user(
             username=request.username,
+            first_name=request.first_name,
+            last_name=request.last_name,
             password=request.password,
             phone_number=request.phone_number,
             email=request.email,
             role=request.role,
         )
-        logger.info("New user registered: id=%s role=%s", user.id, user.role)
+        logger.info("New user registered: id=%s role=%s username=%s", user.id, user.role, user.username)
         if self._audit:
             self._audit.log_event("user_registered", actor_user_id=user.id, target_user_id=user.id)
 
@@ -109,7 +116,18 @@ class AuthService:
                 "به دلیل تلاش‌های ناموفق متعدد، این حساب موقتاً قفل شده است. لطفاً چند دقیقه دیگر تلاش کنید."
             )
 
-        user: Optional[User] = self._users.get_by_username(username)
+        # Accept a phone number in the same field — usernames are
+        # auto-generated from a Persian name via transliteration
+        # (User.generate_username()), which produces something
+        # readable-ish at best. Nobody should have to remember a string
+        # like "mhmdrd_hsyny" to log in; their own phone number is the
+        # thing they actually know by heart.
+        user: Optional[User] = None
+        if re.fullmatch(r"09\d{9}", username):
+            user = self._users.get_by_phone(username)
+        if user is None:
+            user = self._users.get_by_username(username)
+
         if user is None or not user.check_password(password):
             logger.warning("Failed login attempt for username=%s", username)
             if self._guard:

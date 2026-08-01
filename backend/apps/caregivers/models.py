@@ -1,46 +1,28 @@
 from django.db import models
 from django.utils import timezone
 from django_jalali.db import models as jmodels
+from django.utils.text import slugify
+from django.utils.crypto import get_random_string
 
 from .choices import (
-    AcceptedAgeRange,
+
     AcceptedGender,
-    AcceptedPhysicalCondition,
     AcquaintanceDuration,
-    CaregivingSkill,
-    ChronicDiseaseType,
-    CollaborationType,
-    CommunicationSkill,
-    CommuteMethod,
     EducationLevel,
     EmergencyContactRelation,
-    Ethnicity,
     ExperienceRange,
     FamilyPresencePreference,
-    ForeignLanguage,
     Gender,
     HeightRange,
-    HouseholdSkill,
     LiftingCapacity,
-    LocalLanguage,
     MaritalStatus,
     MaxCommuteTime,
-    MedicationType,
-    MessagingApp,
     MilitaryStatus,
-    MobilityAssistanceAbility,
-    OfferedService,
     PatientsCaredForCount,
     PhysicalAbility,
-    PreviousWorkplace,
     ReferenceRelationType,
-    ServiceLocation,
-    Shift,
     SmokingStatus,
-    SpecialConditionExperience,
-    TrainingCourse,
     WeightRange,
-    Weekday,
     WorkStatus,
     ChildrenCount,
 )
@@ -64,17 +46,8 @@ class IdentityProfile(models.Model):
         "accounts.User", on_delete=models.CASCADE, related_name="caregiver_identity_profile",
         verbose_name="کاربر",
     )
-
-    # Form 1's own first two questions ("نام"، "نام خانوادگی") were
-    # never actually captured anywhere — not in registration, not here.
-    # AbstractUser.first_name/last_name exist on User but registration
-    # never asks for them, so they've always been silently empty.
-    # Storing them here instead, alongside every other Form 1 field,
-    # rather than depending on a User field nothing ever populates.
-    first_name = models.CharField(max_length=150, verbose_name="نام")
-    last_name = models.CharField(max_length=150, verbose_name="نام خانوادگی")
-
-    father_name = models.CharField(max_length=150, verbose_name="نام پدر")
+    
+    father_name = models.CharField(max_length=150, verbose_name="نام پدر",)
     birth_certificate_number = models.CharField(max_length=30, verbose_name="شماره شناسنامه")
     birth_certificate_issue_place = models.CharField(max_length=150, verbose_name="محل صدور شناسنامه")
     birth_date = jmodels.jDateField(verbose_name="تاریخ تولد")
@@ -85,28 +58,22 @@ class IdentityProfile(models.Model):
         max_length=30, choices=MilitaryStatus.choices, null=True, blank=True,
         verbose_name="وضعیت نظام وظیفه", help_text="فقط برای جنسیت مرد",
     )
-
     height_range = models.CharField(max_length=20, choices=HeightRange.choices, blank=True, verbose_name="قد")
     weight_range = models.CharField(max_length=20, choices=WeightRange.choices, blank=True, verbose_name="وزن")
     ethnicities = models.JSONField(default=list, blank=True, verbose_name="قومیت / زبان مادری")
-
-    has_chronic_disease = models.BooleanField(default=False, verbose_name="بیماری مزمن دارد")
-    chronic_disease_types = models.JSONField(default=list, blank=True, verbose_name="انواع بیماری‌های مزمن")
-    takes_permanent_medication = models.BooleanField(default=False, verbose_name="مصرف داروی دائمی")
-    medication_types = models.JSONField(default=list, blank=True, verbose_name="انواع داروها")
-
+    has_chronic_disease = models.BooleanField(null=True, blank=True, default=False, verbose_name="آیا بیماری مزمن دارد؟")
+    chronic_disease_types = models.JSONField(default=list, blank=True, verbose_name="نوع بیماری‌های مزمن؟")
+    takes_permanent_medication = models.BooleanField(null=True, blank=True, default=False, verbose_name="آیا دارویی به صورت دائمی مصرف می‌کند؟")
+    medication_types = models.JSONField(default=list, blank=True, verbose_name="نوع داروها؟")
     emergency_contact_phone = models.CharField(max_length=15, verbose_name="شماره تماس اضطراری")
     emergency_contact_relation = models.CharField(
-        max_length=20, choices=EmergencyContactRelation.choices, verbose_name="نسبت تماس اضطراری"
-    )
+        max_length=20, choices=EmergencyContactRelation.choices, verbose_name="نسبت با تماس اضطراری")
     landline_phone = models.CharField(max_length=15, blank=True, verbose_name="تلفن ثابت")
-
     province = models.CharField(max_length=100, verbose_name="استان")
     city = models.CharField(max_length=100, verbose_name="شهر")
     district = models.CharField(max_length=100, verbose_name="منطقه")
     postal_code = models.CharField(max_length=10, verbose_name="کد پستی")
     full_address = models.TextField(verbose_name="آدرس کامل")
-
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
 
@@ -115,12 +82,13 @@ class IdentityProfile(models.Model):
         verbose_name_plural = "پروفایل‌های هویتی"
 
     @property
-    def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}".strip()
+    def full_name(self):
+        return (
+        self.user.get_full_name().strip()
+        or self.user.username )
 
     def __str__(self):
-        return self.full_name or f"IdentityProfile(user_id={self.user_id})"
-
+        return self.full_name
 
 # ============================================================
 # Caregiver Profile - hub model with a real approval workflow
@@ -137,15 +105,13 @@ class CaregiverStatus(models.TextChoices):
 
 class CaregiverProfile(models.Model):
     user = models.OneToOneField(
-        "accounts.User", on_delete=models.CASCADE, related_name="caregiver_profile", verbose_name="کاربر"
-    )
+        "accounts.User", on_delete=models.CASCADE, related_name="caregiver_profile", verbose_name="کاربر")
+    slug = models.SlugField(max_length=220, blank=True,null=True,db_index=True, verbose_name="شناسه یکتا")
     status = models.CharField(
-        max_length=20, choices=CaregiverStatus.choices, default=CaregiverStatus.DRAFT, verbose_name="وضعیت"
-    )
+        max_length=20, choices=CaregiverStatus.choices, default=CaregiverStatus.DRAFT, verbose_name="وضعیت ثبت‌ نام")
     approved_by = models.ForeignKey(
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="approved_caregivers", verbose_name="تأییدشده توسط",
-    )
+        related_name="approved_caregivers", verbose_name="تأییدشده توسط")
     approved_at = jmodels.jDateTimeField(null=True, blank=True, verbose_name="زمان تأیید")
     rejection_reason = models.TextField(blank=True, verbose_name="دلیل رد شدن")
 
@@ -156,13 +122,41 @@ class CaregiverProfile(models.Model):
         verbose_name = "پروفایل مراقب"
         verbose_name_plural = "پروفایل‌های مراقب"
 
+    def generate_slug(self):
+        base = slugify(
+            self.user.get_full_name(),
+            allow_unicode=True,
+        )
+
+        if not base:
+            base = "caregiver"
+
+        slug = base
+
+        while CaregiverProfile.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            slug = f"{base}-{get_random_string(6).lower()}"
+
+        return slug
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and not self.slug:
+            self.slug = self.generate_slug()
+
+        super().save(*args, **kwargs)
+
+
     def approve(self, admin_user):
         old_status = self.status
         self.status = CaregiverStatus.APPROVED
         self.approved_by = admin_user
         self.approved_at = timezone.now()
         self.rejection_reason = ""
-        self.save()
+        self.save(update_fields=[
+            "status",
+            "approved_by",
+            "approved_at",
+            "rejection_reason",
+        ])
         CaregiverApprovalLog.objects.create(
             caregiver=self, old_status=old_status, new_status=CaregiverStatus.APPROVED,
             performed_by=admin_user,
@@ -174,28 +168,29 @@ class CaregiverProfile(models.Model):
         self.approved_by = None
         self.approved_at = None
         self.rejection_reason = reason
-        self.save()
+        self.save(update_fields=[
+            "status",
+            "approved_by",
+            "approved_at",
+            "rejection_reason",
+        ])
         CaregiverApprovalLog.objects.create(
             caregiver=self, old_status=old_status, new_status=CaregiverStatus.REJECTED,
             performed_by=admin_user, note=reason,
         )
 
     @property
-    def display_name(self) -> str:
-        """
-        The name to actually show a human — falls back gracefully
-        through what's available: Form 1's name (once filled in), then
-        the account username, since Form 1 is often not complete yet
-        when this profile row already exists (it's created on first
-        form submission, which might be Form 2, not Form 1).
-        """
-        identity = getattr(self.user, "caregiver_identity_profile", None)
-        if identity and identity.full_name:
-            return identity.full_name
-        return self.user.username
+    def display_name(self):
+        identity = getattr(
+            self.user,
+            "caregiver_identity_profile",
+            None,
+        )
 
-    def __str__(self):
-        return self.display_name
+        if identity:
+            return identity.full_name
+
+        return self.user.get_full_name() or self.user.username
 
 
 class CaregiverApprovalLog(models.Model):
@@ -225,7 +220,6 @@ class CaregiverApprovalLog(models.Model):
 
 class CaregiverWorkPreferences(models.Model):
     profile = models.OneToOneField(CaregiverProfile, on_delete=models.CASCADE, related_name="work_preferences", verbose_name="پروفایل مراقب")
-
     collaboration_types = models.JSONField(default=list, verbose_name="نوع همکاری")
     work_status = models.CharField(max_length=20, choices=WorkStatus.choices, verbose_name="وضعیت کاری")
     family_presence_preference = models.CharField(max_length=20, choices=FamilyPresencePreference.choices, verbose_name="حضور خانواده سالمند")
@@ -240,11 +234,11 @@ class CaregiverWorkPreferences(models.Model):
     available_shifts = models.JSONField(default=list, verbose_name="شیفت‌های کاری")
     commute_methods = models.JSONField(default=list, blank=True, verbose_name="روش رفت‌وآمد")
     smoking_status = models.CharField(max_length=20, choices=SmokingStatus.choices, blank=True, verbose_name="وضعیت استعمال دخانیات")
-    pets_ok = models.BooleanField(null=True, blank=True, verbose_name="پذیرش حیوان خانگی")
-    holiday_work_ok = models.BooleanField(null=True, blank=True, verbose_name="کار در تعطیلات")
-    overnight_stay_ok = models.BooleanField(null=True, blank=True, verbose_name="اقامت شبانه")
-    terms_accepted = models.BooleanField(default=False, verbose_name="پذیرش قوانین")
-    terms_accepted_at = jmodels.jDateTimeField(null=True, blank=True, verbose_name="زمان پذیرش قوانین")
+    pets_ok = models.BooleanField(null=True, blank=True,default=False, verbose_name="پذیرش حیوان خانگی")
+    holiday_work_ok = models.BooleanField(null=True, blank=True,default=True, verbose_name="کار در تعطیلات")
+    overnight_stay_ok = models.BooleanField(null=True, blank=True,default=False, verbose_name="اقامت شبانه")
+    terms_accepted = models.BooleanField(default=False,verbose_name="پذیرش قوانین")
+    terms_accepted_at = jmodels.jDateTimeField(null=True,blank=True,verbose_name="زمان پذیرش قوانین")
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
@@ -285,10 +279,10 @@ class CaregiverExperience(models.Model):
     previous_workplaces = models.JSONField(default=list, blank=True, verbose_name="محل‌های سابق فعالیت")
     patients_cared_for_count = models.CharField(max_length=20, choices=PatientsCaredForCount.choices, blank=True, verbose_name="تعداد بیماران مراقبت‌شده")
     special_conditions_experience = models.JSONField(default=list, blank=True, verbose_name="تجربه شرایط خاص")
-    live_in_experience = models.BooleanField(null=True, blank=True, verbose_name="تجربه مراقبت مقیم")
-    couple_care_experience = models.BooleanField(null=True, blank=True, verbose_name="تجربه مراقبت زوج")
-    solo_elderly_care_experience = models.BooleanField(null=True, blank=True, verbose_name="مراقبت تنها از سالمند")
-    driving_for_patient_experience = models.BooleanField(null=True, blank=True, verbose_name="رانندگی برای بیمار")
+    live_in_experience = models.BooleanField(null=True, blank=True,default=False, verbose_name="تجربه مراقبت مقیم")
+    couple_care_experience = models.BooleanField(null=True, blank=True,default=False, verbose_name="تجربه مراقبت از زوج")
+    solo_elderly_care_experience = models.BooleanField(null=True, blank=True,default=False, verbose_name="مراقبت تنها از سالمند")
+    driving_for_patient_experience = models.BooleanField(null=True, blank=True,default=False, verbose_name="رانندگی برای بیمار")
     last_workplace = models.CharField(max_length=200, blank=True, verbose_name="آخرین محل فعالیت")
     additional_notes = models.TextField(blank=True, max_length=500, verbose_name="توضیحات تکمیلی")
 
@@ -321,10 +315,8 @@ class CaregiverSkills(models.Model):
     household_skills = models.JSONField(default=list, blank=True, verbose_name="مهارت‌های خانگی")
     foreign_languages = models.JSONField(default=list, blank=True, verbose_name="زبان‌های خارجی")
     local_languages = models.JSONField(default=list, blank=True, verbose_name="زبان‌های محلی")
-    has_driving_license = models.BooleanField(null=True, blank=True, verbose_name="گواهینامه رانندگی")
-    has_personal_car = models.BooleanField(null=True, blank=True, verbose_name="خودروی شخصی")
-    can_use_smartphone = models.BooleanField(null=True, blank=True, verbose_name="توانایی استفاده از تلفن هوشمند")
-    preferred_messaging_apps = models.JSONField(default=list, blank=True, verbose_name="پیام‌رسان‌های مورد استفاده")
+    has_driving_license = models.BooleanField(null=True, blank=True, default=False, verbose_name="گواهینامه رانندگی")
+    can_use_smartphone = models.BooleanField(null=True, blank=True, default=False, verbose_name="توانایی استفاده از تلفن هوشمند")
     additional_notes = models.TextField(blank=True, max_length=500, verbose_name="توضیحات تکمیلی")
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")

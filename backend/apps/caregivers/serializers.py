@@ -2,28 +2,27 @@ from rest_framework import serializers
 
 from apps.accounts.jalali_fields import JalaliDateField
 
-from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, AcceptedGender, CollaborationType,
+from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, CollaborationType,
                       OfferedService, ServiceLocation, Shift, Weekday, CommuteMethod,
                       CommunicationSkill, CaregivingSkill, MobilityAssistanceAbility,
-                      HouseholdSkill, ForeignLanguage, LocalLanguage, MessagingApp,
-                      PreviousWorkplace, SpecialConditionExperience, TrainingCourse,
-                      Ethnicity, ChronicDiseaseType, MedicationType, Gender)    
+                      HouseholdSkill, ForeignLanguage, LocalLanguage,
+                      PreviousWorkplace, SpecialConditionExperience, TrainingCourse, Gender)    
 from .models import (CaregiverWorkPreferences, CaregiverServiceArea, CaregiverExperience,
                      CaregiverSkills, CaregiverReference, IdentityProfile)
 
 
 class IdentityProfileSerializer(serializers.ModelSerializer):
-    """
-    Form 1. Moved here alongside the model — see models.py's module
-    docstring for why identity data is now caregiver-scoped rather than
-    shared via apps.accounts.
-    """
     birth_date = JalaliDateField()
+    # first_name/last_name live on User now (needed there for username
+    # generation at registration time, before Form 1 is ever filled
+    # in) — IdentityProfile.full_name is a read-only property deriving
+    # from the user, not a separately-editable pair of fields here.
+    full_name = serializers.CharField(read_only=True)
 
     class Meta:
         model = IdentityProfile
         fields = [
-            "first_name", "last_name",
+            "full_name",
             "father_name", "birth_certificate_number", "birth_certificate_issue_place",
             "birth_date", "gender", "marital_status", "children_count", "military_status",
             "height_range", "weight_range", "ethnicities",
@@ -159,7 +158,6 @@ class CaregiverSkillsSerializer(serializers.ModelSerializer):
     household_skills = _choice_list_field(HouseholdSkill, required=False)
     foreign_languages = _choice_list_field(ForeignLanguage, required=False)
     local_languages = _choice_list_field(LocalLanguage, required=False)
-    preferred_messaging_apps = _choice_list_field(MessagingApp, required=False)
 
     class Meta:
         model = CaregiverSkills
@@ -168,8 +166,8 @@ class CaregiverSkillsSerializer(serializers.ModelSerializer):
             "communication_skills", "caregiving_skills", "physical_ability",
             "mobility_assistance_ability", "household_skills",
             "foreign_languages", "local_languages",
-            "has_driving_license", "has_personal_car", "can_use_smartphone",
-            "preferred_messaging_apps", "additional_notes",
+            "has_driving_license", "can_use_smartphone",
+            "additional_notes",
             "created_at", "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]

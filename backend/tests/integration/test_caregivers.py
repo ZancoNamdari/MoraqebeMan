@@ -43,13 +43,10 @@ VALID_SKILLS = {
     "foreign_languages": ["english"],
     "local_languages": ["azeri"],
     "has_driving_license": True,
-    "has_personal_car": False,
     "can_use_smartphone": True,
-    "preferred_messaging_apps": ["whatsapp"],
 }
 
 VALID_IDENTITY = {
-    "first_name": "زهرا", "last_name": "احمدی",
     "father_name": "رضا", "birth_certificate_number": "123", "birth_certificate_issue_place": "تهران",
     "birth_date": "1363-10-11", "gender": "female", "marital_status": "single", "children_count": "none",
     "has_chronic_disease": False, "takes_permanent_medication": False,

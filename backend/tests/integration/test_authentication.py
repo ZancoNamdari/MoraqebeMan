@@ -12,6 +12,7 @@ class RegisterViewTests(BaseAPITestCase):
 
     def test_register_success_returns_tokens(self):
         response = self.client.post("/api/auth/register/", {
+            "first_name": "سارا", "last_name": "خانوادگی",
             "username": "sara_family",
             "password": "StrongPass123",
             "phone_number": "09121234567",
@@ -23,9 +24,23 @@ class RegisterViewTests(BaseAPITestCase):
         self.assertIn("refresh", response.data["tokens"])
         self.assertEqual(response.data["user"]["role"], "family")
 
+    def test_register_without_username_auto_generates_one(self):
+        # The whole point of User.generate_username(): a caregiver
+        # shouldn't have to invent a username at all.
+        response = self.client.post("/api/auth/register/", {
+            "first_name": "علی", "last_name": "محمدی",
+            "password": "StrongPass123",
+            "phone_number": "09121234599",
+            "email": "ali@example.com",
+            "role": "caregiver",
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.data["user"]["username"])  # something was generated, non-empty
+
     def test_register_duplicate_phone_number_rejected(self):
         make_user(phone_number="09121234567")
         response = self.client.post("/api/auth/register/", {
+            "first_name": "کسی", "last_name": "دیگر",
             "username": "someone_else",
             "password": "StrongPass123",
             "phone_number": "09121234567",  # duplicate
@@ -36,6 +51,7 @@ class RegisterViewTests(BaseAPITestCase):
 
     def test_register_cannot_self_assign_superuser_role(self):
         response = self.client.post("/api/auth/register/", {
+            "first_name": "کاربر", "last_name": "مخرب",
             "username": "sneaky",
             "password": "StrongPass123",
             "phone_number": "09121110000",
@@ -59,6 +75,16 @@ class LoginViewTests(BaseAPITestCase):
     def test_login_success(self):
         response = self.client.post("/api/auth/login/", {
             "username": "sara", "password": "StrongPass123",
+        }, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access", response.data["tokens"])
+
+    def test_login_with_phone_number_instead_of_username(self):
+        # make_user's default phone_number is 09120000001 — login with
+        # that in the "username" field should work exactly like logging
+        # in with the actual username.
+        response = self.client.post("/api/auth/login/", {
+            "username": "09120000001", "password": "StrongPass123",
         }, format="json")
         self.assertEqual(response.status_code, 200)
         self.assertIn("access", response.data["tokens"])
