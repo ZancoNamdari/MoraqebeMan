@@ -1,7 +1,9 @@
 from django import forms
 from django.contrib import admin, messages
+from django.contrib.auth.admin import UserAdmin
 
 from apps.accounts.forms import JSONCheckboxMultipleChoiceField
+from apps.accounts.models import User
 from apps.accounts.persian_digits import to_persian_digits
 
 from .choices import (
@@ -39,7 +41,30 @@ from .models import (
 
 
 # ============================================================
-# Form 1 — Identity
+# Supervisor "temp dashboard" — the point of everything below
+#
+# Before this: adding one caregiver meant seven separate admin
+# "Add" screens (User, IdentityProfile, CaregiverProfile,
+# WorkPreferences, Experience, Skills, References — twice, since two
+# references are required), manually copy-pasting the right user/
+# profile into each one via autocomplete. That's exactly the
+# "complicated procedure" this was built to avoid.
+#
+# Now it's two screens:
+#   1. Users → Add user (role=caregiver) — با فرم اطلاعات هویتی همان‌جا
+#   2. Caregiver profiles → Add — با فرم شرایط همکاری، سوابق، مهارت‌ها،
+#      مناطق خدماتی و معرف‌ها همه در یک صفحه
+#
+# Both are plain Django admin StackedInline/TabularInline — no custom
+# views, no new URLs, nothing bespoke to maintain. That's deliberate:
+# this is explicitly a temporary dashboard, not a piece of permanent
+# product UI, so it should cost as little to build and as little to
+# throw away later as possible.
+# ============================================================
+
+
+# ============================================================
+# Form 1 — Identity, inlined onto the User admin page
 # ============================================================
 
 class IdentityProfileAdminForm(forms.ModelForm):
@@ -55,13 +80,17 @@ class IdentityProfileAdminForm(forms.ModelForm):
     class Meta:
         model = IdentityProfile
         fields = "__all__"
+        exclude = ["user"]  # set automatically by the inline, not picked from a dropdown
 
 
 @admin.register(IdentityProfile)
 class IdentityProfileAdmin(admin.ModelAdmin):
+    """Kept as its own standalone admin page too (for search/browse/
+    bulk review) — the inline below is the fast path for data entry,
+    this is for everything else."""
     form = IdentityProfileAdminForm
     list_display = ["full_name_display", "user", "gender", "marital_status", "province", "city", "birth_date_display"]
-    search_fields = ["user__username", "user__national_id", "first_name", "last_name", "father_name"]
+    search_fields = ["user__username", "user__national_id", "user__first_name", "user__last_name", "father_name"]
     list_filter = ["gender", "marital_status", "province"]
     autocomplete_fields = ["user"]
 
@@ -74,8 +103,55 @@ class IdentityProfileAdmin(admin.ModelAdmin):
         return to_persian_digits(obj.birth_date) if obj.birth_date else "—"
 
 
+class IdentityProfileInline(admin.StackedInline):
+    model = IdentityProfile
+    form = IdentityProfileAdminForm
+    can_delete = False
+    max_num = 1
+    verbose_name_plural = "اطلاعات هویتی (فرم ۱)"
+
+
+class CaregiverSupervisorUserAdmin(UserAdmin):
+    """
+    Re-registration of the User admin, done here (not in
+    apps/accounts/admin.py) specifically to avoid apps.accounts
+    importing from apps.caregivers — that exact backward dependency
+    was a real bug fixed twice already this session. apps.caregivers
+    already depends on apps.accounts everywhere else, so wiring the
+    inline from this side keeps the dependency direction correct.
+    """
+    list_display = ["username", "email", "phone_number_display", "role", "is_phone_verified"]
+    fieldsets = UserAdmin.fieldsets + (
+        ("اطلاعات تکمیلی", {"fields": ("phone_number", "role", "is_phone_verified", "national_id")}),
+    )
+
+    @admin.display(description="شماره موبایل")
+    def phone_number_display(self, obj):
+        from apps.accounts.persian_digits import to_persian_digits as _tpd
+        return _tpd(obj.phone_number)
+
+    def get_inline_instances(self, request, obj=None):
+        # Deliberately NOT gated on obj.role == "caregiver": a newly
+        # added user's role is still the model default ("family") on
+        # the very first view of the change page, since Django's
+        # UserAdmin.add_view only takes username+password up front and
+        # redirects to change_view for everything else — a role check
+        # here would mean the inline only appears after save-reload-
+        # save, exactly the "complicated procedure" this exists to
+        # avoid. An empty inline form is simply ignored by Django's
+        # formset validation if left blank, so showing it unconditionally
+        # costs family/agency/patient users nothing.
+        if obj is None:
+            return []
+        return [IdentityProfileInline(self.model, self.admin_site)]
+
+
+admin.site.unregister(User)
+admin.site.register(User, CaregiverSupervisorUserAdmin)
+
+
 # ============================================================
-# Caregiver Profile — hub, with approve/reject bulk actions
+# Caregiver Profile — hub, now with everything else inlined too
 # ============================================================
 
 class CaregiverApprovalLogInline(admin.TabularInline):
@@ -91,14 +167,110 @@ class CaregiverApprovalLogInline(admin.TabularInline):
         return False
 
 
+class CaregiverWorkPreferencesAdminForm(forms.ModelForm):
+    collaboration_types = JSONCheckboxMultipleChoiceField(choices=CollaborationType.choices, label="نوع همکاری")
+    accepted_age_ranges = JSONCheckboxMultipleChoiceField(choices=AcceptedAgeRange.choices, label="بازه سنی پذیرفته")
+    offered_services = JSONCheckboxMultipleChoiceField(choices=OfferedService.choices, label="خدمات قابل ارائه")
+    accepted_physical_conditions = JSONCheckboxMultipleChoiceField(choices=AcceptedPhysicalCondition.choices, label="شرایط جسمانی پذیرفته")
+    service_locations = JSONCheckboxMultipleChoiceField(choices=ServiceLocation.choices, label="محل ارائه خدمات")
+    available_days = JSONCheckboxMultipleChoiceField(choices=Weekday.choices, label="روزهای قابل همکاری")
+    available_shifts = JSONCheckboxMultipleChoiceField(choices=Shift.choices, label="شیفت‌های قابل همکاری")
+    commute_methods = JSONCheckboxMultipleChoiceField(choices=CommuteMethod.choices, label="وسیله رفت‌وآمد", required=False)
+
+    class Meta:
+        model = CaregiverWorkPreferences
+        fields = "__all__"
+        exclude = ["profile"]
+
+    def clean(self):
+        # Same nested rule the API serializer enforces — the admin
+        # shouldn't be a backdoor around it.
+        cleaned = super().clean()
+        shifts = cleaned.get("available_shifts") or []
+        if "24h" in shifts and len(shifts) > 1:
+            raise forms.ValidationError(
+                'شیفت «شبانه‌روزی» با سایر شیفت‌ها هم‌زمان قابل انتخاب نیست.'
+            )
+        return cleaned
+
+
+class CaregiverWorkPreferencesInline(admin.StackedInline):
+    model = CaregiverWorkPreferences
+    form = CaregiverWorkPreferencesAdminForm
+    can_delete = False
+    max_num = 1
+    verbose_name_plural = "شرایط همکاری (فرم ۲)"
+
+
+class CaregiverExperienceAdminForm(forms.ModelForm):
+    previous_workplaces = JSONCheckboxMultipleChoiceField(choices=PreviousWorkplace.choices, label="محل‌های سابق فعالیت", required=False)
+    special_conditions_experience = JSONCheckboxMultipleChoiceField(choices=SpecialConditionExperience.choices, label="تجربه شرایط خاص", required=False)
+
+    class Meta:
+        model = CaregiverExperience
+        fields = "__all__"
+        exclude = ["profile"]
+
+
+class CaregiverExperienceInline(admin.StackedInline):
+    model = CaregiverExperience
+    form = CaregiverExperienceAdminForm
+    can_delete = False
+    max_num = 1
+    verbose_name_plural = "سوابق کاری (فرم ۳ - بخش اول)"
+
+
+class CaregiverSkillsAdminForm(forms.ModelForm):
+    training_courses = JSONCheckboxMultipleChoiceField(choices=TrainingCourse.choices, label="دوره‌های آموزشی", required=False)
+    communication_skills = JSONCheckboxMultipleChoiceField(choices=CommunicationSkill.choices, label="مهارت‌های ارتباطی", required=False)
+    caregiving_skills = JSONCheckboxMultipleChoiceField(choices=CaregivingSkill.choices, label="مهارت‌های مراقبتی", required=False)
+    mobility_assistance_ability = JSONCheckboxMultipleChoiceField(choices=MobilityAssistanceAbility.choices, label="توانایی کمک به جابجایی", required=False)
+    household_skills = JSONCheckboxMultipleChoiceField(choices=HouseholdSkill.choices, label="مهارت‌های خانگی", required=False)
+    foreign_languages = JSONCheckboxMultipleChoiceField(choices=ForeignLanguage.choices, label="زبان‌های خارجی", required=False)
+    local_languages = JSONCheckboxMultipleChoiceField(choices=LocalLanguage.choices, label="زبان‌های محلی", required=False)
+
+    class Meta:
+        model = CaregiverSkills
+        fields = "__all__"
+        exclude = ["profile"]
+
+
+class CaregiverSkillsInline(admin.StackedInline):
+    model = CaregiverSkills
+    form = CaregiverSkillsAdminForm
+    can_delete = False
+    max_num = 1
+    verbose_name_plural = "مهارت‌ها (فرم ۳ - بخش دوم)"
+
+
+class CaregiverServiceAreaInline(admin.TabularInline):
+    model = CaregiverServiceArea
+    extra = 1
+    verbose_name_plural = "مناطق خدماتی (بخشی از فرم ۲)"
+
+
+class CaregiverReferenceInline(admin.TabularInline):
+    model = CaregiverReference
+    extra = 2  # at least two required — start with two empty rows, not one
+    fields = ["full_name", "occupation", "relation_type", "acquaintance_duration", "phone_number", "callable_for_inquiry"]
+    verbose_name_plural = "معرف‌ها (فرم ۴ — حداقل دو مورد)"
+
+
 @admin.register(CaregiverProfile)
 class CaregiverProfileAdmin(admin.ModelAdmin):
     list_display = ["user", "status", "approved_by", "approved_at_display", "form_completion"]
     list_filter = ["status"]
-    search_fields = ["user__username", "user__phone_number", "user__caregiver_identity_profile__first_name", "user__caregiver_identity_profile__last_name"]
+    search_fields = ["user__username", "user__phone_number", "user__first_name", "user__last_name"]
     autocomplete_fields = ["user", "approved_by"]
     readonly_fields = ["approved_by", "approved_at", "created_at", "updated_at"]
-    inlines = [CaregiverApprovalLogInline]
+    inlines = [
+        CaregiverWorkPreferencesInline,
+        CaregiverServiceAreaInline,
+        CaregiverExperienceInline,
+        CaregiverSkillsInline,
+        CaregiverReferenceInline,
+        CaregiverApprovalLogInline,
+    ]
     actions = ["approve_selected", "reject_selected"]
 
     @admin.display(description="زمان تأیید")
@@ -161,34 +333,11 @@ class CaregiverApprovalLogAdmin(admin.ModelAdmin):
 
 
 # ============================================================
-# Form 2 — Work preferences (the most checkbox-heavy form by far)
+# Standalone admin pages, kept for search/browse/bulk review —
+# now that everything is inlined above for data entry, these matter
+# less for the "add a caregiver" flow but are still useful for
+# find-and-fix-one-thing edits without opening the whole profile.
 # ============================================================
-
-class CaregiverWorkPreferencesAdminForm(forms.ModelForm):
-    collaboration_types = JSONCheckboxMultipleChoiceField(choices=CollaborationType.choices, label="نوع همکاری")
-    accepted_age_ranges = JSONCheckboxMultipleChoiceField(choices=AcceptedAgeRange.choices, label="بازه سنی پذیرفته")
-    offered_services = JSONCheckboxMultipleChoiceField(choices=OfferedService.choices, label="خدمات قابل ارائه")
-    accepted_physical_conditions = JSONCheckboxMultipleChoiceField(choices=AcceptedPhysicalCondition.choices, label="شرایط جسمانی پذیرفته")
-    service_locations = JSONCheckboxMultipleChoiceField(choices=ServiceLocation.choices, label="محل ارائه خدمات")
-    available_days = JSONCheckboxMultipleChoiceField(choices=Weekday.choices, label="روزهای قابل همکاری")
-    available_shifts = JSONCheckboxMultipleChoiceField(choices=Shift.choices, label="شیفت‌های قابل همکاری")
-    commute_methods = JSONCheckboxMultipleChoiceField(choices=CommuteMethod.choices, label="وسیله رفت‌وآمد", required=False)
-
-    class Meta:
-        model = CaregiverWorkPreferences
-        fields = "__all__"
-
-    def clean(self):
-        # Same nested rule the API serializer enforces — the admin
-        # shouldn't be a backdoor around it.
-        cleaned = super().clean()
-        shifts = cleaned.get("available_shifts") or []
-        if "24h" in shifts and len(shifts) > 1:
-            raise forms.ValidationError(
-                'شیفت «شبانه‌روزی» با سایر شیفت‌ها هم‌زمان قابل انتخاب نیست.'
-            )
-        return cleaned
-
 
 @admin.register(CaregiverWorkPreferences)
 class CaregiverWorkPreferencesAdmin(admin.ModelAdmin):
@@ -207,19 +356,6 @@ class CaregiverServiceAreaAdmin(admin.ModelAdmin):
     autocomplete_fields = ["profile"]
 
 
-# ============================================================
-# Form 3 — Experience & skills
-# ============================================================
-
-class CaregiverExperienceAdminForm(forms.ModelForm):
-    previous_workplaces = JSONCheckboxMultipleChoiceField(choices=PreviousWorkplace.choices, label="محل‌های سابق فعالیت", required=False)
-    special_conditions_experience = JSONCheckboxMultipleChoiceField(choices=SpecialConditionExperience.choices, label="تجربه شرایط خاص", required=False)
-
-    class Meta:
-        model = CaregiverExperience
-        fields = "__all__"
-
-
 @admin.register(CaregiverExperience)
 class CaregiverExperienceAdmin(admin.ModelAdmin):
     form = CaregiverExperienceAdminForm
@@ -227,20 +363,6 @@ class CaregiverExperienceAdmin(admin.ModelAdmin):
     list_filter = ["elderly_care_experience", "patients_cared_for_count"]
     search_fields = ["profile__user__username"]
     autocomplete_fields = ["profile"]
-
-
-class CaregiverSkillsAdminForm(forms.ModelForm):
-    training_courses = JSONCheckboxMultipleChoiceField(choices=TrainingCourse.choices, label="دوره‌های آموزشی", required=False)
-    communication_skills = JSONCheckboxMultipleChoiceField(choices=CommunicationSkill.choices, label="مهارت‌های ارتباطی", required=False)
-    caregiving_skills = JSONCheckboxMultipleChoiceField(choices=CaregivingSkill.choices, label="مهارت‌های مراقبتی", required=False)
-    mobility_assistance_ability = JSONCheckboxMultipleChoiceField(choices=MobilityAssistanceAbility.choices, label="توانایی کمک به جابجایی", required=False)
-    household_skills = JSONCheckboxMultipleChoiceField(choices=HouseholdSkill.choices, label="مهارت‌های خانگی", required=False)
-    foreign_languages = JSONCheckboxMultipleChoiceField(choices=ForeignLanguage.choices, label="زبان‌های خارجی", required=False)
-    local_languages = JSONCheckboxMultipleChoiceField(choices=LocalLanguage.choices, label="زبان‌های محلی", required=False)
-
-    class Meta:
-        model = CaregiverSkills
-        fields = "__all__"
 
 
 @admin.register(CaregiverSkills)
@@ -251,10 +373,6 @@ class CaregiverSkillsAdmin(admin.ModelAdmin):
     search_fields = ["profile__user__username"]
     autocomplete_fields = ["profile"]
 
-
-# ============================================================
-# Form 4 — References, with a verify action
-# ============================================================
 
 @admin.register(CaregiverReference)
 class CaregiverReferenceAdmin(admin.ModelAdmin):
