@@ -17,6 +17,7 @@ urlpatterns = [
     path("api/auth/", include("apps.authorization.urls")),
     path("api/", include("apps.families.urls")),
     path("api/", include("apps.caregivers.urls")),
+    path("api/", include("apps.locations.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),

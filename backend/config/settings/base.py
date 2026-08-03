@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "apps.audit",
     "apps.families",
     "apps.caregivers",
+    "apps.locations",
 ]
 
 MIDDLEWARE = [

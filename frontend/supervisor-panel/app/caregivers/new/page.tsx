@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/forms/fields"
+import { LocationPicker } from "@/components/forms/location-picker"
+import { ErrorSummary } from "@/components/forms/error-summary"
+import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
 import { useAuth } from "@/hooks/useauth"
 import { caregiverService } from "@/services/caregiver.service"
 import { ROUTES } from "@/lib/routes"
@@ -74,7 +77,7 @@ function NewCaregiverWizardInner() {
   const [caregiverId, setCaregiverId] = useState<number | null>(existingId ? Number(existingId) : null)
   const [caregiverName, setCaregiverName] = useState("")
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState<ApiFieldError[]>([])
   const [done, setDone] = useState(false)
 
   // Step 0 fields
@@ -106,15 +109,22 @@ function NewCaregiverWizardInner() {
 
   if (authLoading) return null
 
+  function showErrors(err: any, fallback: string) {
+    const data = err?.response?.data
+    const parsed = parseApiErrors(data)
+    setError(parsed.length > 0 ? parsed : [{ field: "detail", messages: [fallback] }])
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
   async function handleStep0() {
-    setError(""); setSaving(true)
+    setError([]); setSaving(true)
     try {
       const result = await caregiverService.create({ first_name: firstName, last_name: lastName, phone_number: phone })
       setCaregiverId(result.user_id)
       setCaregiverName(result.full_name)
       setStep(1)
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "خطا در ایجاد حساب مراقب.")
+      showErrors(err, "خطا در ایجاد حساب مراقب.")
     } finally {
       setSaving(false)
     }
@@ -122,12 +132,12 @@ function NewCaregiverWizardInner() {
 
   async function handleStep1() {
     if (!caregiverId) return
-    setError(""); setSaving(true)
+    setError([]); setSaving(true)
     try {
       await caregiverService.saveIdentity(caregiverId, identity)
       setStep(2)
     } catch (err: any) {
-      setError(firstApiError(err) || "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
+      showErrors(err, "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
     } finally {
       setSaving(false)
     }
@@ -142,12 +152,12 @@ function NewCaregiverWizardInner() {
 
   async function handleStep2() {
     if (!caregiverId) return
-    setError(""); setSaving(true)
+    setError([]); setSaving(true)
     try {
       await caregiverService.saveWorkPreferences(caregiverId, workPrefs)
       setStep(3)
     } catch (err: any) {
-      setError(firstApiError(err) || "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
+      showErrors(err, "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
     } finally {
       setSaving(false)
     }
@@ -155,13 +165,13 @@ function NewCaregiverWizardInner() {
 
   async function handleStep3() {
     if (!caregiverId) return
-    setError(""); setSaving(true)
+    setError([]); setSaving(true)
     try {
       await caregiverService.saveExperience(caregiverId, experience)
       await caregiverService.saveSkills(caregiverId, skills)
       setStep(4)
     } catch (err: any) {
-      setError(firstApiError(err) || "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
+      showErrors(err, "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
     } finally {
       setSaving(false)
     }
@@ -169,19 +179,19 @@ function NewCaregiverWizardInner() {
 
   async function handleStep4() {
     if (!caregiverId) return
-    setError(""); setSaving(true)
+    setError([]); setSaving(true)
     try {
       await caregiverService.saveReferences(caregiverId, references)
       setDone(true)
     } catch (err: any) {
-      setError(firstApiError(err) || "حداقل دو معرف با اطلاعات کامل لازم است.")
+      showErrors(err, "حداقل دو معرف با اطلاعات کامل لازم است.")
     } finally {
       setSaving(false)
     }
   }
 
   function startNext() {
-    setStep(0); setCaregiverId(null); setCaregiverName(""); setDone(false); setError("")
+    setStep(0); setCaregiverId(null); setCaregiverName(""); setDone(false); setError([])
     setFirstName(""); setLastName(""); setPhone("")
     setIdentity(EMPTY_IDENTITY); setWorkPrefs(EMPTY_WORK_PREFS); setAreas([])
     setExperience(EMPTY_EXPERIENCE); setSkills(EMPTY_SKILLS)
@@ -221,7 +231,7 @@ function NewCaregiverWizardInner() {
       </header>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
-        {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        <ErrorSummary errors={error} />
 
         {step === 0 && (
           <Card>
@@ -273,9 +283,13 @@ function NewCaregiverWizardInner() {
               <Field label="نسبت فرد اضطراری" required><ChoiceSelect choices={C.EMERGENCY_CONTACT_RELATION} value={identity.emergency_contact_relation} onChange={(v) => setIdentity({ ...identity, emergency_contact_relation: v })} /></Field>
               <Field label="تلفن ثابت"><Input value={identity.landline_phone} onChange={(e) => setIdentity({ ...identity, landline_phone: e.target.value })} dir="ltr" /></Field>
 
-              <Field label="استان" required><Input value={identity.province} onChange={(e) => setIdentity({ ...identity, province: e.target.value })} /></Field>
-              <Field label="شهر" required><Input value={identity.city} onChange={(e) => setIdentity({ ...identity, city: e.target.value })} /></Field>
-              <Field label="منطقه" required><Input value={identity.district} onChange={(e) => setIdentity({ ...identity, district: e.target.value })} /></Field>
+              <LocationPicker
+                province={identity.province}
+                city={identity.city}
+                district={identity.district}
+                districtRequired
+                onChange={(v) => setIdentity({ ...identity, ...v })}
+              />
               <Field label="کد پستی" required><Input value={identity.postal_code} onChange={(e) => setIdentity({ ...identity, postal_code: e.target.value })} dir="ltr" /></Field>
               <Field label="نشانی کامل" required><Textarea value={identity.full_address} onChange={(e) => setIdentity({ ...identity, full_address: e.target.value })} /></Field>
 
@@ -311,19 +325,36 @@ function NewCaregiverWizardInner() {
 
               <div className="rounded-md border p-3">
                 <p className="mb-2 text-sm font-medium">مناطق خدماتی</p>
-                <div className="mb-2 space-y-2">
+                <div className="mb-3 space-y-2">
                   {areas.map((a, i) => (
                     <div key={a.id ?? i} className="flex items-center justify-between rounded bg-muted p-2 text-sm">
                       <span>{a.province} / {a.city} / {a.district}</span>
+                      {a.id && (
+                        <button
+                          type="button"
+                          className="text-xs text-destructive underline"
+                          onClick={async () => {
+                            if (!caregiverId) return
+                            await caregiverService.deleteServiceArea(caregiverId, a.id!)
+                            setAreas(areas.filter((x) => x.id !== a.id))
+                          }}
+                        >
+                          حذف
+                        </button>
+                      )}
                     </div>
                   ))}
+                  {areas.length === 0 && <p className="text-xs text-muted-foreground">هنوز منطقه‌ای اضافه نشده.</p>}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Input placeholder="استان" className="w-28" value={newArea.province} onChange={(e) => setNewArea({ ...newArea, province: e.target.value })} />
-                  <Input placeholder="شهر" className="w-28" value={newArea.city} onChange={(e) => setNewArea({ ...newArea, city: e.target.value })} />
-                  <Input placeholder="منطقه" className="w-28" value={newArea.district} onChange={(e) => setNewArea({ ...newArea, district: e.target.value })} />
-                  <Button type="button" variant="outline" onClick={handleAddArea}>+ افزودن</Button>
-                </div>
+                <LocationPicker
+                  province={newArea.province}
+                  city={newArea.city}
+                  district={newArea.district}
+                  onChange={setNewArea}
+                />
+                <Button type="button" variant="outline" className="mt-2" onClick={handleAddArea} disabled={!newArea.province || !newArea.city}>
+                  + افزودن این منطقه
+                </Button>
               </div>
 
               <Field label="پذیرش قوانین و مسئولیت اطلاعات" required>
@@ -432,14 +463,4 @@ function NewCaregiverWizardInner() {
   }
 }
 
-function firstApiError(err: any): string | null {
-  const data = err?.response?.data
-  if (!data) return null
-  if (typeof data.detail === "string") return data.detail
-  const firstKey = Object.keys(data)[0]
-  if (firstKey) {
-    const val = data[firstKey]
-    return Array.isArray(val) ? `${firstKey}: ${val[0]}` : String(val)
-  }
-  return null
-}
+
