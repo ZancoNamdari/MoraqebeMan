@@ -192,6 +192,9 @@ class CaregiverProfile(models.Model):
 
         return self.user.get_full_name() or self.user.username
 
+    def __str__(self):
+        return self.display_name
+
 
 class CaregiverApprovalLog(models.Model):
     """Audit trail of every status change - who did it, when, and why.
