@@ -212,3 +212,42 @@ class CaregiverFullProfileSerializer(serializers.Serializer):
     experience = CaregiverExperienceSerializer(allow_null=True)
     skills = CaregiverSkillsSerializer(allow_null=True)
     references = CaregiverReferenceSerializer(many=True)
+
+
+# ============================================================
+# Supervisor-facing — for the temp bulk-data-entry dashboard, where a
+# supervisor enters data on behalf of 40-50 caregivers rather than each
+# caregiver filling in their own. Everything above this point still
+# needs the caregiver themselves logged in (the /me/ endpoints act on
+# request.user); the two serializers below back a separate set of
+# views keyed by an explicit user_id instead.
+# ============================================================
+
+class CreateCaregiverSerializer(serializers.Serializer):
+    """
+    Step 0 of the supervisor wizard: just enough to create the account.
+    No password field on purpose — a supervisor entering someone else's
+    data shouldn't be inventing that person's login credentials; a
+    random one is generated server-side, and the caregiver resets it
+    later via the existing phone-based password-reset flow whenever
+    they first want to log in themselves.
+    """
+    first_name = serializers.CharField(max_length=50)
+    last_name = serializers.CharField(max_length=50)
+    phone_number = serializers.RegexField(
+        regex=r"^09\d{9}$",
+        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
+    )
+    email = serializers.EmailField(required=False, allow_blank=True)
+
+
+class CaregiverListItemSerializer(serializers.Serializer):
+    """One row in the supervisor's caregiver list — enough to show
+    progress at a glance across 40-50 in-progress entries without
+    opening each one."""
+    user_id = serializers.IntegerField()
+    full_name = serializers.CharField()
+    phone_number = serializers.CharField()
+    status = serializers.CharField()
+    forms_completed = serializers.IntegerField()
+    forms_total = serializers.IntegerField(default=4)

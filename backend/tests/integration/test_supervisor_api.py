@@ -1,0 +1,165 @@
+from django.contrib.auth.models import Group
+from django.test import TestCase
+from rest_framework.test import APIClient
+
+from apps.accounts.models import User, UserRole
+from apps.authentication.services import SimpleJWTTokenIssuer
+from apps.caregivers.models import CaregiverProfile, IdentityProfile
+
+VALID_IDENTITY = {
+    "father_name": "رضا", "birth_certificate_number": "123", "birth_certificate_issue_place": "تهران",
+    "birth_date": "1360-01-01", "gender": "male", "marital_status": "single", "children_count": "none",
+    "has_chronic_disease": False, "takes_permanent_medication": False,
+    "emergency_contact_phone": "09121110000", "emergency_contact_relation": "father",
+    "province": "تهران", "city": "تهران", "district": "ونک", "postal_code": "1234567890",
+    "full_address": "خیابان ولیعصر",
+}
+
+VALID_WORK_PREFS = {
+    "collaboration_types": ["daily"], "work_status": "full_time", "family_presence_preference": "no_preference",
+    "accepted_gender": "no_preference", "accepted_age_ranges": ["60_70"], "offered_services": ["companionship"],
+    "accepted_physical_conditions": ["independent"], "lifting_capacity": "up_to_50kg",
+    "service_locations": ["patient_home"], "available_days": ["saturday"], "available_shifts": ["morning"],
+    "terms_accepted": True,
+}
+
+TWO_REFERENCES = {"references": [
+    {"full_name": "علی", "occupation": "پزشک", "relation_type": "family", "phone_number": "09120000001"},
+    {"full_name": "زهرا", "occupation": "پرستار", "relation_type": "friends", "phone_number": "09120000002"},
+]}
+
+
+def _make_supervisor(username="supervisor1"):
+    user = User.objects.create(
+        username=username, phone_number=f"0910000{User.objects.count():04d}", email=f"{username}@a.com",
+        role=UserRole.ADMIN, first_name="ناظر", last_name="یک",
+    )
+    user.set_password("pass12345")
+    user.save()
+    user.groups.add(Group.objects.get(name="ناظران مراقب"))
+    return user
+
+
+class SupervisorCreateCaregiverTests(TestCase):
+    def setUp(self):
+        self.supervisor = _make_supervisor()
+        self.client = APIClient()
+        token = SimpleJWTTokenIssuer().issue(self.supervisor)["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    def test_create_caregiver_success(self):
+        response = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "علی", "last_name": "محمدی", "phone_number": "09121234567",
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertIn("user_id", response.data)
+        self.assertTrue(response.data["username"])  # auto-generated, non-empty
+
+        user = User.objects.get(id=response.data["user_id"])
+        self.assertEqual(user.role, "caregiver")
+        self.assertTrue(CaregiverProfile.objects.filter(user=user).exists())
+
+    def test_duplicate_phone_rejected(self):
+        self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "علی", "last_name": "محمدی", "phone_number": "09121234567",
+        }, format="json")
+        response = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "کسی", "last_name": "دیگر", "phone_number": "09121234567",
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_list_shows_progress(self):
+        create = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "علی", "last_name": "محمدی", "phone_number": "09121234567",
+        }, format="json")
+        cg_id = create.data["user_id"]
+
+        response = self.client.get("/api/supervisor/caregivers/")
+        self.assertEqual(response.status_code, 200)
+        row = next(r for r in response.data if r["user_id"] == cg_id)
+        self.assertEqual(row["forms_completed"], 0)
+
+        self.client.put(f"/api/supervisor/caregivers/{cg_id}/identity/", VALID_IDENTITY, format="json")
+        response = self.client.get("/api/supervisor/caregivers/")
+        row = next(r for r in response.data if r["user_id"] == cg_id)
+        self.assertEqual(row["forms_completed"], 1)
+
+    def test_non_supervisor_gets_403(self):
+        caregiver = User.objects.create(username="cg1", phone_number="09129990000", email="c@a.com", role=UserRole.CAREGIVER)
+        caregiver.set_password("x")
+        caregiver.save()
+        token = SimpleJWTTokenIssuer().issue(caregiver)["access"]
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = client.get("/api/supervisor/caregivers/")
+        self.assertEqual(response.status_code, 403)
+
+    def test_unauthenticated_rejected(self):
+        client = APIClient()
+        response = client.get("/api/supervisor/caregivers/")
+        self.assertEqual(response.status_code, 401)
+
+
+class SupervisorFullWizardFlowTests(TestCase):
+    """The complete Step 0 -> Step 4 flow in one continuous pass,
+    mirroring exactly what the frontend wizard will do."""
+    def setUp(self):
+        self.supervisor = _make_supervisor()
+        self.client = APIClient()
+        token = SimpleJWTTokenIssuer().issue(self.supervisor)["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+        create = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "علی", "last_name": "محمدی", "phone_number": "09121234567",
+        }, format="json")
+        self.cg_id = create.data["user_id"]
+
+    def test_full_flow_completes_all_four_forms(self):
+        r1 = self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/identity/", VALID_IDENTITY, format="json")
+        self.assertEqual(r1.status_code, 201)
+
+        r2 = self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/work-preferences/", VALID_WORK_PREFS, format="json")
+        self.assertEqual(r2.status_code, 201)
+
+        r3 = self.client.post(f"/api/supervisor/caregivers/{self.cg_id}/service-areas/", {
+            "province": "تهران", "city": "تهران", "district": "ونک",
+        }, format="json")
+        self.assertEqual(r3.status_code, 201)
+
+        r4 = self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/experience/", {
+            "elderly_care_experience": "1_to_5_years",
+        }, format="json")
+        self.assertEqual(r4.status_code, 201)
+
+        r5 = self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/skills/", {
+            "education_level": "diploma",
+        }, format="json")
+        self.assertEqual(r5.status_code, 201)
+
+        r6 = self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/references/", TWO_REFERENCES, format="json")
+        self.assertEqual(r6.status_code, 201)
+
+        progress = self.client.get(f"/api/supervisor/caregivers/{self.cg_id}/progress/")
+        self.assertEqual(progress.status_code, 200)
+        self.assertEqual(progress.data["missing"], [])
+        for field in ["identity_done", "work_preferences_done", "experience_done", "skills_done", "references_done"]:
+            self.assertTrue(progress.data[field], field)
+
+    def test_progress_shows_specific_missing_forms(self):
+        self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/identity/", VALID_IDENTITY, format="json")
+        response = self.client.get(f"/api/supervisor/caregivers/{self.cg_id}/progress/")
+        self.assertTrue(response.data["identity_done"])
+        self.assertFalse(response.data["work_preferences_done"])
+        self.assertGreater(len(response.data["missing"]), 0)
+
+    def test_editing_an_already_filled_form_updates_not_duplicates(self):
+        self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/identity/", VALID_IDENTITY, format="json")
+        updated = dict(VALID_IDENTITY, father_name="محمد")
+        response = self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/identity/", updated, format="json")
+        self.assertEqual(response.status_code, 200)  # 200, not 201 — update
+        self.assertEqual(IdentityProfile.objects.filter(user_id=self.cg_id).count(), 1)
+        self.assertEqual(response.data["father_name"], "محمد")
+
+    def test_nonexistent_caregiver_returns_404(self):
+        response = self.client.get("/api/supervisor/caregivers/999999/progress/")
+        self.assertEqual(response.status_code, 404)
