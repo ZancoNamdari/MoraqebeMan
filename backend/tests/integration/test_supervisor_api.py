@@ -163,3 +163,16 @@ class SupervisorFullWizardFlowTests(TestCase):
     def test_nonexistent_caregiver_returns_404(self):
         response = self.client.get("/api/supervisor/caregivers/999999/progress/")
         self.assertEqual(response.status_code, 404)
+
+    def test_empty_string_birth_date_treated_as_no_value_not_format_error(self):
+        # Regression test: the frontend's three-dropdown Jalali picker
+        # reports "" until day/month/year are all selected — that used
+        # to be misread as a badly-formatted date instead of "no date
+        # given yet", which is what it actually means for an optional
+        # field.
+        response = self.client.put(
+            f"/api/supervisor/caregivers/{self.cg_id}/identity/",
+            {**VALID_IDENTITY, "birth_date": ""}, format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertIsNone(response.data["birth_date"])

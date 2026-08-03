@@ -31,6 +31,17 @@ class JalaliDateField(serializers.Field):
         return jdatetime.date.fromgregorian(date=value).strftime("%Y-%m-%d")
 
     def to_internal_value(self, data):
+        # An empty string means "no date picked" (e.g. the frontend's
+        # three-dropdown Jalali picker reports "" until all of day/
+        # month/year are selected) — not a badly-formatted date. DRF
+        # only auto-skips validation for None when allow_null=True, not
+        # for "", so this needs handling explicitly or every optional
+        # date field throws a false "wrong format" error the instant a
+        # supervisor leaves it blank.
+        if data in (None, ""):
+            if not self.allow_null:
+                self.fail("null")
+            return None
         try:
             return jdatetime.date.fromisoformat(str(data))
         except (ValueError, TypeError):
@@ -48,6 +59,10 @@ class JalaliDateTimeField(serializers.Field):
         return jdatetime.datetime.fromgregorian(datetime=value).strftime("%Y-%m-%d %H:%M:%S")
 
     def to_internal_value(self, data):
+        if data in (None, ""):
+            if not self.allow_null:
+                self.fail("null")
+            return None
         try:
             return jdatetime.datetime.strptime(str(data), "%Y-%m-%d %H:%M:%S")
         except (ValueError, TypeError):
