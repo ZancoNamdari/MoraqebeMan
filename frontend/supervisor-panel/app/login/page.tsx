@@ -31,8 +31,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-muted/40 to-muted/10 p-4">
+      <Card className="w-full max-w-sm shadow-lg">
         <CardHeader>
           <CardTitle className="text-xl">ورود ناظر</CardTitle>
           <CardDescription>پنل موقت ورود اطلاعات مراقبان — مراقب من</CardDescription>

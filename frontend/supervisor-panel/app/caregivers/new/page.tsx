@@ -9,10 +9,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/forms/fields"
 import { LocationPicker } from "@/components/forms/location-picker"
+import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { StepIndicator } from "@/components/forms/step-indicator"
 import { Separator } from "@/components/ui/separator"
-import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
+import { parseApiErrors, errorsByField, referenceFieldError, type ApiFieldError } from "@/lib/field-labels"
 import { useAuth } from "@/hooks/useauth"
 import { caregiverService } from "@/services/caregiver.service"
 import { ROUTES } from "@/lib/routes"
@@ -90,6 +91,7 @@ function NewCaregiverWizardInner() {
   const [caregiverName, setCaregiverName] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<ApiFieldError[]>([])
+  const fieldErrors = errorsByField(error)
   const [done, setDone] = useState(false)
 
   // Step 0 fields
@@ -261,15 +263,15 @@ function NewCaregiverWizardInner() {
           <Card>
             <CardHeader><CardTitle>فرم ۱ — اطلاعات هویتی</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <Field label="نام پدر" required><Input value={identity.father_name} onChange={(e) => setIdentity({ ...identity, father_name: e.target.value })} /></Field>
-              <Field label="شماره شناسنامه" required><Input value={identity.birth_certificate_number} onChange={(e) => setIdentity({ ...identity, birth_certificate_number: e.target.value })} /></Field>
-              <Field label="محل صدور شناسنامه" required><Input value={identity.birth_certificate_issue_place} onChange={(e) => setIdentity({ ...identity, birth_certificate_issue_place: e.target.value })} /></Field>
-              <Field label="تاریخ تولد (شمسی، مثلاً ۱۳۶۰-۰۱-۰۱)" required>
-                <Input value={identity.birth_date} onChange={(e) => setIdentity({ ...identity, birth_date: e.target.value })} placeholder="1360-01-01" dir="ltr" />
+              <Field label="نام پدر"><Input value={identity.father_name} onChange={(e) => setIdentity({ ...identity, father_name: e.target.value })} /></Field>
+              <Field label="شماره شناسنامه"><Input value={identity.birth_certificate_number} onChange={(e) => setIdentity({ ...identity, birth_certificate_number: e.target.value })} /></Field>
+              <Field label="محل صدور شناسنامه"><Input value={identity.birth_certificate_issue_place} onChange={(e) => setIdentity({ ...identity, birth_certificate_issue_place: e.target.value })} /></Field>
+              <Field label="تاریخ تولد">
+                <JalaliDatePicker value={identity.birth_date} onChange={(v) => setIdentity({ ...identity, birth_date: v })} />
               </Field>
-              <Field label="جنسیت" required><ChoiceSelect choices={C.GENDER} value={identity.gender} onChange={(v) => setIdentity({ ...identity, gender: v })} /></Field>
-              <Field label="وضعیت تأهل" required><ChoiceSelect choices={C.MARITAL_STATUS} value={identity.marital_status} onChange={(v) => setIdentity({ ...identity, marital_status: v })} /></Field>
-              <Field label="تعداد فرزندان" required><ChoiceSelect choices={C.CHILDREN_COUNT} value={identity.children_count} onChange={(v) => setIdentity({ ...identity, children_count: v })} /></Field>
+              <Field label="جنسیت"><ChoiceSelect choices={C.GENDER} value={identity.gender} onChange={(v) => setIdentity({ ...identity, gender: v })} /></Field>
+              <Field label="وضعیت تأهل"><ChoiceSelect choices={C.MARITAL_STATUS} value={identity.marital_status} onChange={(v) => setIdentity({ ...identity, marital_status: v })} /></Field>
+              <Field label="تعداد فرزندان"><ChoiceSelect choices={C.CHILDREN_COUNT} value={identity.children_count} onChange={(v) => setIdentity({ ...identity, children_count: v })} /></Field>
               {identity.gender === "male" && (
                 <Field label="وضعیت نظام وظیفه"><ChoiceSelect choices={C.MILITARY_STATUS} value={identity.military_status || ""} onChange={(v) => setIdentity({ ...identity, military_status: v })} /></Field>
               )}
@@ -294,8 +296,8 @@ function NewCaregiverWizardInner() {
               )}
 
               <SectionHeading>اطلاعات تماس</SectionHeading>
-              <Field label="شماره تماس اضطراری" required><Input value={identity.emergency_contact_phone} onChange={(e) => setIdentity({ ...identity, emergency_contact_phone: e.target.value })} dir="ltr" /></Field>
-              <Field label="نسبت فرد اضطراری" required><ChoiceSelect choices={C.EMERGENCY_CONTACT_RELATION} value={identity.emergency_contact_relation} onChange={(v) => setIdentity({ ...identity, emergency_contact_relation: v })} /></Field>
+              <Field label="شماره تماس اضطراری"><Input value={identity.emergency_contact_phone} onChange={(e) => setIdentity({ ...identity, emergency_contact_phone: e.target.value })} dir="ltr" /></Field>
+              <Field label="نسبت فرد اضطراری"><ChoiceSelect choices={C.EMERGENCY_CONTACT_RELATION} value={identity.emergency_contact_relation} onChange={(v) => setIdentity({ ...identity, emergency_contact_relation: v })} /></Field>
               <Field label="تلفن ثابت"><Input value={identity.landline_phone} onChange={(e) => setIdentity({ ...identity, landline_phone: e.target.value })} dir="ltr" /></Field>
 
               <SectionHeading>محل سکونت</SectionHeading>
@@ -303,11 +305,10 @@ function NewCaregiverWizardInner() {
                 province={identity.province}
                 city={identity.city}
                 district={identity.district}
-                districtRequired
                 onChange={(v) => setIdentity({ ...identity, ...v })}
               />
-              <Field label="کد پستی" required><Input value={identity.postal_code} onChange={(e) => setIdentity({ ...identity, postal_code: e.target.value })} dir="ltr" /></Field>
-              <Field label="نشانی کامل" required><Textarea value={identity.full_address} onChange={(e) => setIdentity({ ...identity, full_address: e.target.value })} /></Field>
+              <Field label="کد پستی"><Input value={identity.postal_code} onChange={(e) => setIdentity({ ...identity, postal_code: e.target.value })} dir="ltr" /></Field>
+              <Field label="نشانی کامل"><Textarea value={identity.full_address} onChange={(e) => setIdentity({ ...identity, full_address: e.target.value })} /></Field>
             </CardContent>
           </Card>
         )}
@@ -316,18 +317,18 @@ function NewCaregiverWizardInner() {
           <Card>
             <CardHeader><CardTitle>فرم ۲ — شرایط همکاری</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <Field label="نوع همکاری" required><CheckboxGroup choices={C.COLLABORATION_TYPE} value={workPrefs.collaboration_types} onChange={(v) => setWorkPrefs({ ...workPrefs, collaboration_types: v })} /></Field>
-              <Field label="وضعیت کاری" required><ChoiceSelect choices={C.WORK_STATUS} value={workPrefs.work_status} onChange={(v) => setWorkPrefs({ ...workPrefs, work_status: v })} /></Field>
-              <Field label="حضور خانواده سالمند" required><ChoiceSelect choices={C.FAMILY_PRESENCE_PREFERENCE} value={workPrefs.family_presence_preference} onChange={(v) => setWorkPrefs({ ...workPrefs, family_presence_preference: v })} /></Field>
-              <Field label="جنسیت سالمند قابل قبول" required><ChoiceSelect choices={C.ACCEPTED_GENDER} value={workPrefs.accepted_gender} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_gender: v })} /></Field>
-              <Field label="بازه سنی سالمند" required><CheckboxGroup choices={C.ACCEPTED_AGE_RANGE} value={workPrefs.accepted_age_ranges} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_age_ranges: v })} /></Field>
-              <Field label="خدمات قابل ارائه" required><CheckboxGroup choices={C.OFFERED_SERVICE} value={workPrefs.offered_services} onChange={(v) => setWorkPrefs({ ...workPrefs, offered_services: v })} /></Field>
-              <Field label="شرایط جسمانی سالمند قابل پذیرش" required><CheckboxGroup choices={C.ACCEPTED_PHYSICAL_CONDITION} value={workPrefs.accepted_physical_conditions} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_physical_conditions: v })} /></Field>
-              <Field label="توانایی جابجایی" required><ChoiceSelect choices={C.LIFTING_CAPACITY} value={workPrefs.lifting_capacity} onChange={(v) => setWorkPrefs({ ...workPrefs, lifting_capacity: v })} /></Field>
-              <Field label="محل ارائه خدمت" required><CheckboxGroup choices={C.SERVICE_LOCATION} value={workPrefs.service_locations} onChange={(v) => setWorkPrefs({ ...workPrefs, service_locations: v })} /></Field>
+              <Field label="نوع همکاری"><CheckboxGroup choices={C.COLLABORATION_TYPE} value={workPrefs.collaboration_types} onChange={(v) => setWorkPrefs({ ...workPrefs, collaboration_types: v })} /></Field>
+              <Field label="وضعیت کاری"><ChoiceSelect choices={C.WORK_STATUS} value={workPrefs.work_status} onChange={(v) => setWorkPrefs({ ...workPrefs, work_status: v })} /></Field>
+              <Field label="حضور خانواده سالمند"><ChoiceSelect choices={C.FAMILY_PRESENCE_PREFERENCE} value={workPrefs.family_presence_preference} onChange={(v) => setWorkPrefs({ ...workPrefs, family_presence_preference: v })} /></Field>
+              <Field label="جنسیت سالمند قابل قبول"><ChoiceSelect choices={C.ACCEPTED_GENDER} value={workPrefs.accepted_gender} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_gender: v })} /></Field>
+              <Field label="بازه سنی سالمند"><CheckboxGroup choices={C.ACCEPTED_AGE_RANGE} value={workPrefs.accepted_age_ranges} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_age_ranges: v })} /></Field>
+              <Field label="خدمات قابل ارائه"><CheckboxGroup choices={C.OFFERED_SERVICE} value={workPrefs.offered_services} onChange={(v) => setWorkPrefs({ ...workPrefs, offered_services: v })} /></Field>
+              <Field label="شرایط جسمانی سالمند قابل پذیرش"><CheckboxGroup choices={C.ACCEPTED_PHYSICAL_CONDITION} value={workPrefs.accepted_physical_conditions} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_physical_conditions: v })} /></Field>
+              <Field label="توانایی جابجایی"><ChoiceSelect choices={C.LIFTING_CAPACITY} value={workPrefs.lifting_capacity} onChange={(v) => setWorkPrefs({ ...workPrefs, lifting_capacity: v })} /></Field>
+              <Field label="محل ارائه خدمت"><CheckboxGroup choices={C.SERVICE_LOCATION} value={workPrefs.service_locations} onChange={(v) => setWorkPrefs({ ...workPrefs, service_locations: v })} /></Field>
               <Field label="حداکثر زمان رفت‌وآمد"><ChoiceSelect choices={C.MAX_COMMUTE_TIME} value={workPrefs.max_commute_time} onChange={(v) => setWorkPrefs({ ...workPrefs, max_commute_time: v })} /></Field>
-              <Field label="روزهای کاری" required><CheckboxGroup choices={C.WEEKDAY} value={workPrefs.available_days} onChange={(v) => setWorkPrefs({ ...workPrefs, available_days: v })} /></Field>
-              <Field label="شیفت‌های کاری (شبانه‌روزی با بقیه هم‌زمان انتخاب نشود)" required><CheckboxGroup choices={C.SHIFT} value={workPrefs.available_shifts} onChange={(v) => setWorkPrefs({ ...workPrefs, available_shifts: v })} /></Field>
+              <Field label="روزهای کاری"><CheckboxGroup choices={C.WEEKDAY} value={workPrefs.available_days} onChange={(v) => setWorkPrefs({ ...workPrefs, available_days: v })} /></Field>
+              <Field label="شیفت‌های کاری (شبانه‌روزی با بقیه هم‌زمان انتخاب نشود)" error={fieldErrors.available_shifts}><CheckboxGroup choices={C.SHIFT} value={workPrefs.available_shifts} onChange={(v) => setWorkPrefs({ ...workPrefs, available_shifts: v })} /></Field>
               <Field label="روش رفت‌وآمد"><CheckboxGroup choices={C.COMMUTE_METHOD} value={workPrefs.commute_methods} onChange={(v) => setWorkPrefs({ ...workPrefs, commute_methods: v })} /></Field>
               <Field label="وضعیت استعمال دخانیات"><ChoiceSelect choices={C.SMOKING_STATUS} value={workPrefs.smoking_status} onChange={(v) => setWorkPrefs({ ...workPrefs, smoking_status: v })} /></Field>
               <Field label="پذیرش حیوان خانگی در محل کار"><YesNo value={workPrefs.pets_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, pets_ok: v })} /></Field>
@@ -368,7 +369,7 @@ function NewCaregiverWizardInner() {
                 </Button>
               </div>
 
-              <Field label="پذیرش قوانین و مسئولیت اطلاعات" required>
+              <Field label="پذیرش قوانین و مسئولیت اطلاعات" required error={fieldErrors.terms_accepted}>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={workPrefs.terms_accepted} onChange={(e) => setWorkPrefs({ ...workPrefs, terms_accepted: e.target.checked })} className="accent-primary" />
                   اطلاعات فوق تأیید و مسئولیت صحت آن پذیرفته می‌شود.
@@ -383,7 +384,7 @@ function NewCaregiverWizardInner() {
             <CardHeader><CardTitle>فرم ۳ — سوابق کاری و مهارت‌ها</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <SectionHeading>سوابق کاری</SectionHeading>
-              <Field label="سابقه مراقبت از سالمند" required><ChoiceSelect choices={C.EXPERIENCE_RANGE} value={experience.elderly_care_experience} onChange={(v) => setExperience({ ...experience, elderly_care_experience: v })} /></Field>
+              <Field label="سابقه مراقبت از سالمند"><ChoiceSelect choices={C.EXPERIENCE_RANGE} value={experience.elderly_care_experience} onChange={(v) => setExperience({ ...experience, elderly_care_experience: v })} /></Field>
               <Field label="سابقه سایر مشاغل خدماتی"><ChoiceSelect choices={C.EXPERIENCE_RANGE} value={experience.other_services_experience} onChange={(v) => setExperience({ ...experience, other_services_experience: v })} /></Field>
               <Field label="محل‌های سابق فعالیت"><CheckboxGroup choices={C.PREVIOUS_WORKPLACE} value={experience.previous_workplaces} onChange={(v) => setExperience({ ...experience, previous_workplaces: v })} /></Field>
               <Field label="تعداد سالمندان تحت مراقبت تاکنون"><ChoiceSelect choices={C.PATIENTS_CARED_FOR_COUNT} value={experience.patients_cared_for_count} onChange={(v) => setExperience({ ...experience, patients_cared_for_count: v })} /></Field>
@@ -396,7 +397,7 @@ function NewCaregiverWizardInner() {
               <Field label="توضیحات تکمیلی سوابق"><Textarea value={experience.additional_notes} onChange={(e) => setExperience({ ...experience, additional_notes: e.target.value })} /></Field>
 
               <SectionHeading>مهارت‌ها و آموزش‌ها</SectionHeading>
-              <Field label="سطح تحصیلات" required><ChoiceSelect choices={C.EDUCATION_LEVEL} value={skills.education_level} onChange={(v) => setSkills({ ...skills, education_level: v })} /></Field>
+              <Field label="سطح تحصیلات"><ChoiceSelect choices={C.EDUCATION_LEVEL} value={skills.education_level} onChange={(v) => setSkills({ ...skills, education_level: v })} /></Field>
               <Field label="رشته تحصیلی"><Input value={skills.field_of_study} onChange={(e) => setSkills({ ...skills, field_of_study: e.target.value })} /></Field>
               <Field label="دوره‌های آموزشی گذرانده‌شده"><CheckboxGroup choices={C.TRAINING_COURSE} value={skills.training_courses} onChange={(v) => setSkills({ ...skills, training_courses: v })} /></Field>
               <Field label="مهارت‌های ارتباطی"><CheckboxGroup choices={C.COMMUNICATION_SKILL} value={skills.communication_skills} onChange={(v) => setSkills({ ...skills, communication_skills: v })} /></Field>
@@ -420,19 +421,19 @@ function NewCaregiverWizardInner() {
               {references.map((ref, i) => (
                 <div key={i} className="space-y-3 rounded-md border p-3">
                   <p className="text-sm font-semibold">معرف {i + 1}</p>
-                  <Field label="نام و نام خانوادگی" required>
+                  <Field label="نام و نام خانوادگی" required error={referenceFieldError(error, i, "full_name")}>
                     <Input value={ref.full_name} onChange={(e) => updateReference(i, { full_name: e.target.value })} />
                   </Field>
-                  <Field label="شغل معرف" required>
+                  <Field label="شغل معرف">
                     <Input value={ref.occupation} onChange={(e) => updateReference(i, { occupation: e.target.value })} />
                   </Field>
-                  <Field label="نوع ارتباط" required>
+                  <Field label="نوع ارتباط">
                     <ChoiceSelect choices={C.REFERENCE_RELATION_TYPE} value={ref.relation_type} onChange={(v) => updateReference(i, { relation_type: v })} />
                   </Field>
                   <Field label="مدت آشنایی">
                     <ChoiceSelect choices={C.ACQUAINTANCE_DURATION} value={ref.acquaintance_duration} onChange={(v) => updateReference(i, { acquaintance_duration: v })} />
                   </Field>
-                  <Field label="شماره تماس" required>
+                  <Field label="شماره تماس" required error={referenceFieldError(error, i, "phone_number")}>
                     <Input value={ref.phone_number} onChange={(e) => updateReference(i, { phone_number: e.target.value })} dir="ltr" />
                   </Field>
                   <label className="flex items-center gap-2 text-sm">

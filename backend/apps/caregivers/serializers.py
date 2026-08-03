@@ -12,7 +12,7 @@ from .models import (CaregiverWorkPreferences, CaregiverServiceArea, CaregiverEx
 
 
 class IdentityProfileSerializer(serializers.ModelSerializer):
-    birth_date = JalaliDateField()
+    birth_date = JalaliDateField(required=False, allow_null=True)
     # first_name/last_name live on User now (needed there for username
     # generation at registration time, before Form 1 is ever filled
     # in) — IdentityProfile.full_name is a read-only property deriving
@@ -80,13 +80,13 @@ def _choice_list_field(choices_class, **kwargs):
 
 
 class CaregiverWorkPreferencesSerializer(serializers.ModelSerializer):
-    collaboration_types = _choice_list_field(CollaborationType)
-    accepted_age_ranges = _choice_list_field(AcceptedAgeRange)
-    offered_services = _choice_list_field(OfferedService)
-    accepted_physical_conditions = _choice_list_field(AcceptedPhysicalCondition)
-    service_locations = _choice_list_field(ServiceLocation)
-    available_days = _choice_list_field(Weekday)
-    available_shifts = _choice_list_field(Shift)
+    collaboration_types = _choice_list_field(CollaborationType, required=False)
+    accepted_age_ranges = _choice_list_field(AcceptedAgeRange, required=False)
+    offered_services = _choice_list_field(OfferedService, required=False)
+    accepted_physical_conditions = _choice_list_field(AcceptedPhysicalCondition, required=False)
+    service_locations = _choice_list_field(ServiceLocation, required=False)
+    available_days = _choice_list_field(Weekday, required=False)
+    available_shifts = _choice_list_field(Shift, required=False)
     commute_methods = _choice_list_field(CommuteMethod, required=False)
 
     class Meta:

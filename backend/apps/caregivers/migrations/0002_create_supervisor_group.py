@@ -14,10 +14,7 @@ record; that stays a superuser-only action.
 
 A superuser adds ADMIN-role staff to this group the normal Django way
 (Users → select user → Groups), the same one-time step as any other
-Django permission setup — not automated further than this, since
-auto-assigning group membership from inside User.save() would be one
-more thing layered onto a method that has already been a repeated
-source of bugs this session every time it grew a new responsibility.
+Django permission setup.
 """
 from django.apps import apps as global_apps
 from django.contrib.auth.management import create_permissions
@@ -41,16 +38,13 @@ def create_supervisor_group(apps, schema_editor):
     Permission = apps.get_model("auth", "Permission")
     ContentType = apps.get_model("contenttypes", "ContentType")
 
-    # Both ContentType and Permission rows are normally created by
-    # separate post_migrate signal handlers (contenttypes' own, and
-    # auth's create_permissions) that only fire once, after the ENTIRE
-    # migrate run finishes. On a fresh database this data migration
-    # runs before either has fired, so both have to be created
-    # explicitly here — first found the ContentType half of this via a
-    # live migrate run failing outright, then found Permission was
-    # ALSO empty the same way (verified via a direct query after the
-    # first fix, not assumed fixed just because the migration stopped
-    # erroring).
+    # ContentType and Permission rows are normally created by separate
+    # post_migrate signal handlers that only fire once, after the
+    # ENTIRE migrate run finishes. On a fresh database this data
+    # migration runs before either has fired, so both have to be
+    # created explicitly here, using the real (non-historical) app
+    # configs since the signal handlers themselves need real model
+    # classes, not migration state.
     accounts_config = global_apps.get_app_config("accounts")
     caregivers_config = global_apps.get_app_config("caregivers")
     create_contenttypes(accounts_config, verbosity=0)
@@ -62,7 +56,6 @@ def create_supervisor_group(apps, schema_editor):
 
     permissions = []
 
-    # User: add/change/view only (never delete an account from here)
     user_ct = ContentType.objects.get(app_label="accounts", model="user")
     permissions += list(Permission.objects.filter(
         content_type=user_ct, codename__in=["add_user", "change_user", "view_user"]

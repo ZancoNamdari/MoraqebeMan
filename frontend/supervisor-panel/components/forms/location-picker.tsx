@@ -60,7 +60,7 @@ export function LocationPicker({ province, city, district, onChange, districtReq
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <Field label="استان" required>
+      <Field label="استان">
         <Select
           value={province}
           onChange={(e) => onChange({ province: e.target.value, city: "", district: "" })}
@@ -72,7 +72,7 @@ export function LocationPicker({ province, city, district, onChange, districtReq
         </Select>
       </Field>
 
-      <Field label="شهر" required>
+      <Field label="شهر">
         <Select
           value={city}
           disabled={!province}

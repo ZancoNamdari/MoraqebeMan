@@ -47,13 +47,13 @@ class IdentityProfile(models.Model):
         verbose_name="کاربر",
     )
     
-    father_name = models.CharField(max_length=150, verbose_name="نام پدر",)
-    birth_certificate_number = models.CharField(max_length=30, verbose_name="شماره شناسنامه")
-    birth_certificate_issue_place = models.CharField(max_length=150, verbose_name="محل صدور شناسنامه")
-    birth_date = jmodels.jDateField(verbose_name="تاریخ تولد")
-    gender = models.CharField(max_length=10, choices=Gender.choices, verbose_name="جنسیت")
-    marital_status = models.CharField(max_length=20, choices=MaritalStatus.choices, verbose_name="وضعیت تأهل")
-    children_count = models.CharField(max_length=20, choices=ChildrenCount.choices, verbose_name="تعداد فرزندان")
+    father_name = models.CharField(max_length=150, blank=True, verbose_name="نام پدر")
+    birth_certificate_number = models.CharField(max_length=30, blank=True, verbose_name="شماره شناسنامه")
+    birth_certificate_issue_place = models.CharField(max_length=150, blank=True, verbose_name="محل صدور شناسنامه")
+    birth_date = jmodels.jDateField(null=True, blank=True, verbose_name="تاریخ تولد")
+    gender = models.CharField(max_length=10, choices=Gender.choices, blank=True, verbose_name="جنسیت")
+    marital_status = models.CharField(max_length=20, choices=MaritalStatus.choices, blank=True, verbose_name="وضعیت تأهل")
+    children_count = models.CharField(max_length=20, choices=ChildrenCount.choices, blank=True, verbose_name="تعداد فرزندان")
     military_status = models.CharField(
         max_length=30, choices=MilitaryStatus.choices, null=True, blank=True,
         verbose_name="وضعیت نظام وظیفه", help_text="فقط برای جنسیت مرد",
@@ -65,15 +65,15 @@ class IdentityProfile(models.Model):
     chronic_disease_types = models.JSONField(default=list, blank=True, verbose_name="نوع بیماری‌های مزمن؟")
     takes_permanent_medication = models.BooleanField(null=True, blank=True, default=False, verbose_name="آیا دارویی به صورت دائمی مصرف می‌کند؟")
     medication_types = models.JSONField(default=list, blank=True, verbose_name="نوع داروها؟")
-    emergency_contact_phone = models.CharField(max_length=15, verbose_name="شماره تماس اضطراری")
+    emergency_contact_phone = models.CharField(max_length=15, blank=True, verbose_name="شماره تماس اضطراری")
     emergency_contact_relation = models.CharField(
-        max_length=20, choices=EmergencyContactRelation.choices, verbose_name="نسبت با تماس اضطراری")
+        max_length=20, choices=EmergencyContactRelation.choices, blank=True, verbose_name="نسبت با تماس اضطراری")
     landline_phone = models.CharField(max_length=15, blank=True, verbose_name="تلفن ثابت")
-    province = models.CharField(max_length=100, verbose_name="استان")
-    city = models.CharField(max_length=100, verbose_name="شهر")
-    district = models.CharField(max_length=100, verbose_name="منطقه")
-    postal_code = models.CharField(max_length=10, verbose_name="کد پستی")
-    full_address = models.TextField(verbose_name="آدرس کامل")
+    province = models.CharField(max_length=100, blank=True, verbose_name="استان")
+    city = models.CharField(max_length=100, blank=True, verbose_name="شهر")
+    district = models.CharField(max_length=100, blank=True, verbose_name="منطقه")
+    postal_code = models.CharField(max_length=10, blank=True, verbose_name="کد پستی")
+    full_address = models.TextField(blank=True, verbose_name="آدرس کامل")
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
 
@@ -221,13 +221,13 @@ class CaregiverApprovalLog(models.Model):
 class CaregiverWorkPreferences(models.Model):
     profile = models.OneToOneField(CaregiverProfile, on_delete=models.CASCADE, related_name="work_preferences", verbose_name="پروفایل مراقب")
     collaboration_types = models.JSONField(default=list, verbose_name="نوع همکاری")
-    work_status = models.CharField(max_length=20, choices=WorkStatus.choices, verbose_name="وضعیت کاری")
-    family_presence_preference = models.CharField(max_length=20, choices=FamilyPresencePreference.choices, verbose_name="حضور خانواده سالمند")
-    accepted_gender = models.CharField(max_length=20, choices=AcceptedGender.choices, verbose_name="جنسیت قابل قبول")
+    work_status = models.CharField(max_length=20, choices=WorkStatus.choices, blank=True, verbose_name="وضعیت کاری")
+    family_presence_preference = models.CharField(max_length=20, choices=FamilyPresencePreference.choices, blank=True, verbose_name="حضور خانواده سالمند")
+    accepted_gender = models.CharField(max_length=20, choices=AcceptedGender.choices, blank=True, verbose_name="جنسیت قابل قبول")
     accepted_age_ranges = models.JSONField(default=list, verbose_name="محدوده سنی")
     offered_services = models.JSONField(default=list, verbose_name="خدمات قابل ارائه")
     accepted_physical_conditions = models.JSONField(default=list, verbose_name="شرایط جسمانی پذیرفته")
-    lifting_capacity = models.CharField(max_length=20, choices=LiftingCapacity.choices, verbose_name="توانایی جابجایی")
+    lifting_capacity = models.CharField(max_length=20, choices=LiftingCapacity.choices, blank=True, verbose_name="توانایی جابجایی")
     service_locations = models.JSONField(default=list, verbose_name="محل ارائه خدمت")
     max_commute_time = models.CharField(max_length=20, choices=MaxCommuteTime.choices, blank=True, verbose_name="حداکثر زمان رفت‌وآمد")
     available_days = models.JSONField(default=list, verbose_name="روزهای کاری")
@@ -253,7 +253,7 @@ class CaregiverWorkPreferences(models.Model):
 
 class CaregiverServiceArea(models.Model):
     profile = models.ForeignKey(CaregiverProfile, on_delete=models.CASCADE, related_name="service_areas", verbose_name="مراقب")
-    province = models.CharField(max_length=100, verbose_name="استان")
+    province = models.CharField(max_length=100, blank=True, verbose_name="استان")
     city = models.CharField(max_length=100, blank=True, verbose_name="شهر")
     district = models.CharField(max_length=100, blank=True, verbose_name="منطقه")
 
@@ -274,7 +274,7 @@ class CaregiverServiceArea(models.Model):
 class CaregiverExperience(models.Model):
     profile = models.OneToOneField(CaregiverProfile, on_delete=models.CASCADE, related_name="experience", verbose_name="پروفایل مراقب")
 
-    elderly_care_experience = models.CharField(max_length=20, choices=ExperienceRange.choices, verbose_name="تجربه مراقبت سالمند")
+    elderly_care_experience = models.CharField(max_length=20, choices=ExperienceRange.choices, blank=True, verbose_name="تجربه مراقبت سالمند")
     other_services_experience = models.CharField(max_length=20, choices=ExperienceRange.choices, blank=True, verbose_name="تجربه خدمات دیگر")
     previous_workplaces = models.JSONField(default=list, blank=True, verbose_name="محل‌های سابق فعالیت")
     patients_cared_for_count = models.CharField(max_length=20, choices=PatientsCaredForCount.choices, blank=True, verbose_name="تعداد بیماران مراقبت‌شده")
@@ -305,7 +305,7 @@ class CaregiverExperience(models.Model):
 class CaregiverSkills(models.Model):
     profile = models.OneToOneField(CaregiverProfile, on_delete=models.CASCADE, related_name="skills", verbose_name="پروفایل مراقب")
 
-    education_level = models.CharField(max_length=20, choices=EducationLevel.choices, verbose_name="سطح تحصیلات")
+    education_level = models.CharField(max_length=20, choices=EducationLevel.choices, blank=True, verbose_name="سطح تحصیلات")
     field_of_study = models.CharField(max_length=150, blank=True, verbose_name="رشته تحصیلی")
     training_courses = models.JSONField(default=list, blank=True, verbose_name="دوره‌های آموزشی")
     communication_skills = models.JSONField(default=list, blank=True, verbose_name="مهارت‌های ارتباطی")
@@ -342,8 +342,8 @@ class CaregiverReference(models.Model):
     profile = models.ForeignKey(CaregiverProfile, on_delete=models.CASCADE, related_name="references", verbose_name="پروفایل مراقب")
 
     full_name = models.CharField(max_length=150, verbose_name="نام کامل معرف")
-    occupation = models.CharField(max_length=150, verbose_name="شغل معرف")
-    relation_type = models.CharField(max_length=30, choices=ReferenceRelationType.choices, verbose_name="نسبت با معرف")
+    occupation = models.CharField(max_length=150, blank=True, verbose_name="شغل معرف")
+    relation_type = models.CharField(max_length=30, choices=ReferenceRelationType.choices, blank=True, verbose_name="نسبت با معرف")
     acquaintance_duration = models.CharField(max_length=20, choices=AcquaintanceDuration.choices, blank=True, verbose_name="مدت آشنایی")
     phone_number = models.CharField(max_length=15, verbose_name="شماره تلفن")
     callable_for_inquiry = models.BooleanField(default=True, verbose_name="امکان تماس جهت استعلام")

@@ -3,15 +3,17 @@
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils"
 import type { Choice } from "@/lib/constants"
 
-export function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+export function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
+    <div className={cn("space-y-1.5 rounded-md", error && "ring-1 ring-destructive/50 bg-destructive/5 p-2")}>
       <Label>
         {label} {required && <span className="text-destructive">*</span>}
       </Label>
       {children}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   )
 }

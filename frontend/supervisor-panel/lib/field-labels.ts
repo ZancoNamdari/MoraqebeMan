@@ -35,6 +35,35 @@ export function labelFor(field: string): string {
   return FIELD_LABELS[field] || field
 }
 
+/**
+ * A flat lookup for simple top-level field errors — e.g.
+ * errorsByField(errors)["terms_accepted"] -> "این مقدار باید true باشد."
+ */
+export function errorsByField(errors: ApiFieldError[]): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const e of errors) {
+    if (e.field !== "references") out[e.field] = e.messages.join(" — ")
+  }
+  return out
+}
+
+/**
+ * References come back as a nested per-item shape:
+ * {"references": [{"full_name": ["..."]}, {"phone_number": ["..."]}]}
+ * — this pulls out the error for one specific reference's field.
+ */
+export function referenceFieldError(errors: ApiFieldError[], index: number, field: string): string | undefined {
+  const refsError = errors.find((e) => e.field === "references")
+  if (!refsError || refsError.messages.length === 0) return undefined
+  try {
+    const parsed = JSON.parse(refsError.messages[0])
+    const itemErrors = parsed?.[index]?.[field]
+    return Array.isArray(itemErrors) ? itemErrors.join(" — ") : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export interface ApiFieldError {
   field: string
   messages: string[]
