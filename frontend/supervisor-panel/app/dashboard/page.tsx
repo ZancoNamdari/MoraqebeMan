@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { Skeleton } from "@/components/ui/skeleton"
 import { caregiverService } from "@/services/caregiver.service"
 import type { CaregiverListItem } from "@/types/caregiver"
 import { ROUTES } from "@/lib/routes"
@@ -63,7 +64,19 @@ export default function DashboardPage() {
         </div>
 
         {loading ? (
-          <p className="text-muted-foreground">در حال بارگذاری...</p>
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardContent className="flex items-center justify-between gap-4 p-4">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+                  <Skeleton className="h-8 w-40" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ) : caregivers.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">

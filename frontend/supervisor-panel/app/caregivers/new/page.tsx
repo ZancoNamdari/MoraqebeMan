@@ -10,6 +10,8 @@ import { Progress } from "@/components/ui/progress"
 import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/forms/fields"
 import { LocationPicker } from "@/components/forms/location-picker"
 import { ErrorSummary } from "@/components/forms/error-summary"
+import { StepIndicator } from "@/components/forms/step-indicator"
+import { Separator } from "@/components/ui/separator"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
 import { useAuth } from "@/hooks/useauth"
 import { caregiverService } from "@/services/caregiver.service"
@@ -21,6 +23,16 @@ import type {
 } from "@/types/caregiver"
 
 const STEPS = ["اطلاعات پایه", "فرم ۱ — هویتی", "فرم ۲ — شرایط همکاری", "فرم ۳ — سوابق و مهارت", "فرم ۴ — معرف‌ها"]
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 pt-2">
+      <Separator className="flex-1" />
+      <span className="shrink-0 text-xs font-semibold text-muted-foreground">{children}</span>
+      <Separator className="flex-1" />
+    </div>
+  )
+}
 
 const EMPTY_IDENTITY: IdentityFormData = {
   father_name: "", birth_certificate_number: "", birth_certificate_issue_place: "",
@@ -216,21 +228,19 @@ function NewCaregiverWizardInner() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-24">
+    <div className="min-h-screen bg-muted/20">
       <header className="sticky top-0 z-10 border-b bg-background">
         <div className="mx-auto max-w-2xl p-4">
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between">
             <h1 className="font-bold">{caregiverName || "مراقب جدید"}</h1>
-            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به لیست</Button>
           </div>
-          <Progress value={(step / (STEPS.length - 1)) * 100} />
-          <p className="mt-1 text-sm text-muted-foreground">
-            مرحله {step + 1} از {STEPS.length} — {STEPS[step]}
-          </p>
+          <StepIndicator steps={STEPS} current={step} />
+          <p className="mt-2 text-center text-sm font-medium text-muted-foreground">{STEPS[step]}</p>
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl space-y-4 p-4">
+      <main className="mx-auto max-w-2xl space-y-4 p-4 pb-28">
         <ErrorSummary errors={error} />
 
         {step === 0 && (
@@ -243,9 +253,6 @@ function NewCaregiverWizardInner() {
                 <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" />
               </Field>
               <p className="text-xs text-muted-foreground">نام کاربری و رمز عبور به‌صورت خودکار ساخته می‌شود.</p>
-              <Button className="w-full" size="lg" onClick={handleStep0} disabled={saving || !firstName || !lastName || !phone}>
-                {saving ? "در حال ایجاد..." : "ایجاد و ادامه"}
-              </Button>
             </CardContent>
           </Card>
         )}
@@ -266,23 +273,32 @@ function NewCaregiverWizardInner() {
               {identity.gender === "male" && (
                 <Field label="وضعیت نظام وظیفه"><ChoiceSelect choices={C.MILITARY_STATUS} value={identity.military_status || ""} onChange={(v) => setIdentity({ ...identity, military_status: v })} /></Field>
               )}
+
+              <SectionHeading>اطلاعات فردی</SectionHeading>
               <Field label="قد"><ChoiceSelect choices={C.HEIGHT_RANGE} value={identity.height_range} onChange={(v) => setIdentity({ ...identity, height_range: v })} /></Field>
               <Field label="وزن"><ChoiceSelect choices={C.WEIGHT_RANGE} value={identity.weight_range} onChange={(v) => setIdentity({ ...identity, weight_range: v })} /></Field>
               <Field label="قومیت / زبان مادری"><CheckboxGroup choices={C.ETHNICITY} value={identity.ethnicities} onChange={(v) => setIdentity({ ...identity, ethnicities: v })} /></Field>
 
+              <SectionHeading>وضعیت سلامت</SectionHeading>
               <Field label="آیا بیماری زمینه‌ای دارد؟" required><YesNo value={identity.has_chronic_disease} onChange={(v) => setIdentity({ ...identity, has_chronic_disease: !!v })} /></Field>
               {identity.has_chronic_disease && (
-                <Field label="نوع بیماری" required><CheckboxGroup choices={C.CHRONIC_DISEASE_TYPE} value={identity.chronic_disease_types} onChange={(v) => setIdentity({ ...identity, chronic_disease_types: v })} /></Field>
+                <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
+                  <Field label="نوع بیماری" required><CheckboxGroup choices={C.CHRONIC_DISEASE_TYPE} value={identity.chronic_disease_types} onChange={(v) => setIdentity({ ...identity, chronic_disease_types: v })} /></Field>
+                </div>
               )}
               <Field label="آیا داروی دائمی مصرف می‌کند؟"><YesNo value={identity.takes_permanent_medication} onChange={(v) => setIdentity({ ...identity, takes_permanent_medication: !!v })} /></Field>
               {identity.takes_permanent_medication && (
-                <Field label="نوع دارو" required><CheckboxGroup choices={C.MEDICATION_TYPE} value={identity.medication_types} onChange={(v) => setIdentity({ ...identity, medication_types: v })} /></Field>
+                <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
+                  <Field label="نوع دارو" required><CheckboxGroup choices={C.MEDICATION_TYPE} value={identity.medication_types} onChange={(v) => setIdentity({ ...identity, medication_types: v })} /></Field>
+                </div>
               )}
 
+              <SectionHeading>اطلاعات تماس</SectionHeading>
               <Field label="شماره تماس اضطراری" required><Input value={identity.emergency_contact_phone} onChange={(e) => setIdentity({ ...identity, emergency_contact_phone: e.target.value })} dir="ltr" /></Field>
               <Field label="نسبت فرد اضطراری" required><ChoiceSelect choices={C.EMERGENCY_CONTACT_RELATION} value={identity.emergency_contact_relation} onChange={(v) => setIdentity({ ...identity, emergency_contact_relation: v })} /></Field>
               <Field label="تلفن ثابت"><Input value={identity.landline_phone} onChange={(e) => setIdentity({ ...identity, landline_phone: e.target.value })} dir="ltr" /></Field>
 
+              <SectionHeading>محل سکونت</SectionHeading>
               <LocationPicker
                 province={identity.province}
                 city={identity.city}
@@ -292,11 +308,6 @@ function NewCaregiverWizardInner() {
               />
               <Field label="کد پستی" required><Input value={identity.postal_code} onChange={(e) => setIdentity({ ...identity, postal_code: e.target.value })} dir="ltr" /></Field>
               <Field label="نشانی کامل" required><Textarea value={identity.full_address} onChange={(e) => setIdentity({ ...identity, full_address: e.target.value })} /></Field>
-
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" onClick={() => setStep(0)}>قبلی</Button>
-                <Button className="flex-1" onClick={handleStep1} disabled={saving}>{saving ? "در حال ذخیره..." : "ذخیره و ادامه"}</Button>
-              </div>
             </CardContent>
           </Card>
         )}
@@ -363,11 +374,6 @@ function NewCaregiverWizardInner() {
                   اطلاعات فوق تأیید و مسئولیت صحت آن پذیرفته می‌شود.
                 </label>
               </Field>
-
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" onClick={() => setStep(1)}>قبلی</Button>
-                <Button className="flex-1" onClick={handleStep2} disabled={saving}>{saving ? "در حال ذخیره..." : "ذخیره و ادامه"}</Button>
-              </div>
             </CardContent>
           </Card>
         )}
@@ -376,7 +382,7 @@ function NewCaregiverWizardInner() {
           <Card>
             <CardHeader><CardTitle>فرم ۳ — سوابق کاری و مهارت‌ها</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm font-semibold text-muted-foreground">سوابق کاری</p>
+              <SectionHeading>سوابق کاری</SectionHeading>
               <Field label="سابقه مراقبت از سالمند" required><ChoiceSelect choices={C.EXPERIENCE_RANGE} value={experience.elderly_care_experience} onChange={(v) => setExperience({ ...experience, elderly_care_experience: v })} /></Field>
               <Field label="سابقه سایر مشاغل خدماتی"><ChoiceSelect choices={C.EXPERIENCE_RANGE} value={experience.other_services_experience} onChange={(v) => setExperience({ ...experience, other_services_experience: v })} /></Field>
               <Field label="محل‌های سابق فعالیت"><CheckboxGroup choices={C.PREVIOUS_WORKPLACE} value={experience.previous_workplaces} onChange={(v) => setExperience({ ...experience, previous_workplaces: v })} /></Field>
@@ -389,7 +395,7 @@ function NewCaregiverWizardInner() {
               <Field label="آخرین محل فعالیت"><Input value={experience.last_workplace} onChange={(e) => setExperience({ ...experience, last_workplace: e.target.value })} /></Field>
               <Field label="توضیحات تکمیلی سوابق"><Textarea value={experience.additional_notes} onChange={(e) => setExperience({ ...experience, additional_notes: e.target.value })} /></Field>
 
-              <p className="pt-2 text-sm font-semibold text-muted-foreground">مهارت‌ها و آموزش‌ها</p>
+              <SectionHeading>مهارت‌ها و آموزش‌ها</SectionHeading>
               <Field label="سطح تحصیلات" required><ChoiceSelect choices={C.EDUCATION_LEVEL} value={skills.education_level} onChange={(v) => setSkills({ ...skills, education_level: v })} /></Field>
               <Field label="رشته تحصیلی"><Input value={skills.field_of_study} onChange={(e) => setSkills({ ...skills, field_of_study: e.target.value })} /></Field>
               <Field label="دوره‌های آموزشی گذرانده‌شده"><CheckboxGroup choices={C.TRAINING_COURSE} value={skills.training_courses} onChange={(v) => setSkills({ ...skills, training_courses: v })} /></Field>
@@ -403,11 +409,6 @@ function NewCaregiverWizardInner() {
               <Field label="گواهینامه رانندگی"><YesNo value={skills.has_driving_license} onChange={(v) => setSkills({ ...skills, has_driving_license: v })} /></Field>
               <Field label="مهارت کار با تلفن هوشمند"><YesNo value={skills.can_use_smartphone} onChange={(v) => setSkills({ ...skills, can_use_smartphone: v })} /></Field>
               <Field label="توضیحات تکمیلی مهارت‌ها"><Textarea value={skills.additional_notes} onChange={(e) => setSkills({ ...skills, additional_notes: e.target.value })} /></Field>
-
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" onClick={() => setStep(2)}>قبلی</Button>
-                <Button className="flex-1" onClick={handleStep3} disabled={saving}>{saving ? "در حال ذخیره..." : "ذخیره و ادامه"}</Button>
-              </div>
             </CardContent>
           </Card>
         )}
@@ -446,15 +447,45 @@ function NewCaregiverWizardInner() {
               <Button type="button" variant="outline" onClick={() => setReferences([...references, { ...EMPTY_REFERENCE }])}>
                 + افزودن معرف بیشتر
               </Button>
-
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" onClick={() => setStep(3)}>قبلی</Button>
-                <Button className="flex-1" onClick={handleStep4} disabled={saving}>{saving ? "در حال ذخیره..." : "ذخیره نهایی"}</Button>
-              </div>
             </CardContent>
           </Card>
         )}
       </main>
+
+      <footer className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl gap-2 p-3">
+          {step > 0 && (
+            <Button variant="outline" size="lg" onClick={() => setStep(step - 1)} disabled={saving}>
+              مرحله قبل
+            </Button>
+          )}
+          {step === 0 && (
+            <Button className="flex-1" size="lg" onClick={handleStep0} disabled={saving || !firstName || !lastName || !phone}>
+              {saving ? "در حال ایجاد..." : "ایجاد و ادامه"}
+            </Button>
+          )}
+          {step === 1 && (
+            <Button className="flex-1" size="lg" onClick={handleStep1} disabled={saving}>
+              {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
+            </Button>
+          )}
+          {step === 2 && (
+            <Button className="flex-1" size="lg" onClick={handleStep2} disabled={saving}>
+              {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
+            </Button>
+          )}
+          {step === 3 && (
+            <Button className="flex-1" size="lg" onClick={handleStep3} disabled={saving}>
+              {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
+            </Button>
+          )}
+          {step === 4 && (
+            <Button className="flex-1" size="lg" onClick={handleStep4} disabled={saving}>
+              {saving ? "در حال ذخیره..." : "ذخیره نهایی"}
+            </Button>
+          )}
+        </div>
+      </footer>
     </div>
   )
 
