@@ -42,7 +42,7 @@ const EMPTY_IDENTITY: IdentityFormData = {
   has_chronic_disease: false, chronic_disease_types: [],
   takes_permanent_medication: false, medication_types: [],
   emergency_contact_phone: "", emergency_contact_relation: "", landline_phone: "",
-  province: "", city: "", district: "", postal_code: "", full_address: "",
+  province: null, city: null, district: null, postal_code: "", full_address: "",
 }
 
 const EMPTY_WORK_PREFS: WorkPreferencesFormData = {
@@ -102,7 +102,7 @@ function NewCaregiverWizardInner() {
   const [identity, setIdentity] = useState<IdentityFormData>(EMPTY_IDENTITY)
   const [workPrefs, setWorkPrefs] = useState<WorkPreferencesFormData>(EMPTY_WORK_PREFS)
   const [areas, setAreas] = useState<ServiceArea[]>([])
-  const [newArea, setNewArea] = useState<ServiceArea>({ province: "", city: "", district: "" })
+  const [newArea, setNewArea] = useState<ServiceArea>({ province: null, city: null, district: null })
   const [experience, setExperience] = useState<ExperienceFormData>(EMPTY_EXPERIENCE)
   const [skills, setSkills] = useState<SkillsFormData>(EMPTY_SKILLS)
   const [references, setReferences] = useState<ReferenceFormData[]>([{ ...EMPTY_REFERENCE }, { ...EMPTY_REFERENCE }])
@@ -161,7 +161,7 @@ function NewCaregiverWizardInner() {
     if (!caregiverId || !newArea.province) return
     const created = await caregiverService.addServiceArea(caregiverId, newArea)
     setAreas([...areas, created])
-    setNewArea({ province: "", city: "", district: "" })
+    setNewArea({ province: null, city: null, district: null })
   }
 
   async function handleStep2() {
@@ -340,7 +340,7 @@ function NewCaregiverWizardInner() {
                 <div className="mb-3 space-y-2">
                   {areas.map((a, i) => (
                     <div key={a.id ?? i} className="flex items-center justify-between rounded bg-muted p-2 text-sm">
-                      <span>{a.province} / {a.city} / {a.district}</span>
+                      <span>{[a.province_name, a.city_name, a.district_name].filter(Boolean).join(" / ") || "(بدون منطقه انتخابی)"}</span>
                       {a.id && (
                         <button
                           type="button"

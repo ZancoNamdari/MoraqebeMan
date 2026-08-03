@@ -69,9 +69,9 @@ class IdentityProfile(models.Model):
     emergency_contact_relation = models.CharField(
         max_length=20, choices=EmergencyContactRelation.choices, blank=True, verbose_name="نسبت با تماس اضطراری")
     landline_phone = models.CharField(max_length=15, blank=True, verbose_name="تلفن ثابت")
-    province = models.CharField(max_length=100, blank=True, verbose_name="استان")
-    city = models.CharField(max_length=100, blank=True, verbose_name="شهر")
-    district = models.CharField(max_length=100, blank=True, verbose_name="منطقه")
+    province = models.ForeignKey("locations.Province", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="استان")
+    city = models.ForeignKey("locations.City", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="شهر")
+    district = models.ForeignKey("locations.District", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="منطقه")
     postal_code = models.CharField(max_length=10, blank=True, verbose_name="کد پستی")
     full_address = models.TextField(blank=True, verbose_name="آدرس کامل")
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
@@ -253,9 +253,9 @@ class CaregiverWorkPreferences(models.Model):
 
 class CaregiverServiceArea(models.Model):
     profile = models.ForeignKey(CaregiverProfile, on_delete=models.CASCADE, related_name="service_areas", verbose_name="مراقب")
-    province = models.CharField(max_length=100, blank=True, verbose_name="استان")
-    city = models.CharField(max_length=100, blank=True, verbose_name="شهر")
-    district = models.CharField(max_length=100, blank=True, verbose_name="منطقه")
+    province = models.ForeignKey("locations.Province", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="استان")
+    city = models.ForeignKey("locations.City", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="شهر")
+    district = models.ForeignKey("locations.District", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="منطقه")
 
     class Meta:
         unique_together = ("profile", "province", "city", "district")
@@ -263,7 +263,8 @@ class CaregiverServiceArea(models.Model):
         verbose_name_plural = "مناطق خدماتی مراقبان"
 
     def __str__(self):
-        return f"{self.province}/{self.city}/{self.district}"
+        parts = [str(p) for p in (self.province, self.city, self.district) if p]
+        return "/".join(parts) if parts else f"منطقه خدماتی #{self.pk}"
 
 
 # ============================================================

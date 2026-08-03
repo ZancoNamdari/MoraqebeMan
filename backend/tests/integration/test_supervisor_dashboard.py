@@ -21,8 +21,7 @@ IDENTITY_INLINE_PAYLOAD = {
     "caregiver_identity_profile-0-children_count": "none",
     "caregiver_identity_profile-0-emergency_contact_phone": "09121110000",
     "caregiver_identity_profile-0-emergency_contact_relation": "father",
-    "caregiver_identity_profile-0-province": "تهران", "caregiver_identity_profile-0-city": "تهران",
-    "caregiver_identity_profile-0-district": "ونک", "caregiver_identity_profile-0-postal_code": "1234567890",
+    "caregiver_identity_profile-0-postal_code": "1234567890",
     "caregiver_identity_profile-0-full_address": "خیابان ولیعصر",
 }
 

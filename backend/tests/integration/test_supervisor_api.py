@@ -11,7 +11,7 @@ VALID_IDENTITY = {
     "birth_date": "1360-01-01", "gender": "male", "marital_status": "single", "children_count": "none",
     "has_chronic_disease": False, "takes_permanent_medication": False,
     "emergency_contact_phone": "09121110000", "emergency_contact_relation": "father",
-    "province": "تهران", "city": "تهران", "district": "ونک", "postal_code": "1234567890",
+    "postal_code": "1234567890",
     "full_address": "خیابان ولیعصر",
 }
 
@@ -114,6 +114,11 @@ class SupervisorFullWizardFlowTests(TestCase):
         }, format="json")
         self.cg_id = create.data["user_id"]
 
+        from apps.locations.models import Province
+        tehran = Province.objects.get(name="تهران")
+        self.tehran_city = tehran.cities.get(name="تهران")
+        self.tehran_district = self.tehran_city.districts.first()
+
     def test_full_flow_completes_all_four_forms(self):
         r1 = self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/identity/", VALID_IDENTITY, format="json")
         self.assertEqual(r1.status_code, 201)
@@ -122,7 +127,7 @@ class SupervisorFullWizardFlowTests(TestCase):
         self.assertEqual(r2.status_code, 201)
 
         r3 = self.client.post(f"/api/supervisor/caregivers/{self.cg_id}/service-areas/", {
-            "province": "تهران", "city": "تهران", "district": "ونک",
+            "province": self.tehran_city.province_id, "city": self.tehran_city.id, "district": self.tehran_district.id,
         }, format="json")
         self.assertEqual(r3.status_code, 201)
 

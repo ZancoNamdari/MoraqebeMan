@@ -51,7 +51,7 @@ VALID_IDENTITY = {
     "birth_date": "1363-10-11", "gender": "female", "marital_status": "single", "children_count": "none",
     "has_chronic_disease": False, "takes_permanent_medication": False,
     "emergency_contact_phone": "09121110000", "emergency_contact_relation": "father",
-    "province": "تهران", "city": "تهران", "district": "ونک", "postal_code": "1234567890",
+    "postal_code": "1234567890",
     "full_address": "خیابان ولیعصر",
 }
 
@@ -114,14 +114,31 @@ class ServiceAreaTests(TestCase):
         _, token = make_authenticated_user("cg_areas", role=UserRole.CAREGIVER)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
+        # province/city/district are real FKs into apps.locations —
+        # use the actual seeded data rather than guessing names, since
+        # not every plausible-looking Persian district name is
+        # actually in the seed data (Tehran has 128 real entries, but
+        # "ونک" specifically isn't one of them).
+        from apps.locations.models import District, Province
+        tehran = Province.objects.get(name="تهران")
+        self.tehran_city = tehran.cities.get(name="تهران")
+        districts = list(District.objects.filter(city=self.tehran_city)[:2])
+        self.district_a, self.district_b = districts[0], districts[1]
+
     def test_add_multiple_areas(self):
-        self.client.post("/api/caregivers/me/service-areas/", {"province": "تهران", "city": "تهران", "district": "ونک"}, format="json")
-        self.client.post("/api/caregivers/me/service-areas/", {"province": "تهران", "city": "تهران", "district": "نیاوران"}, format="json")
+        self.client.post("/api/caregivers/me/service-areas/", {
+            "province": self.tehran_city.province_id, "city": self.tehran_city.id, "district": self.district_a.id,
+        }, format="json")
+        self.client.post("/api/caregivers/me/service-areas/", {
+            "province": self.tehran_city.province_id, "city": self.tehran_city.id, "district": self.district_b.id,
+        }, format="json")
         response = self.client.get("/api/caregivers/me/service-areas/")
         self.assertEqual(len(response.data), 2)
 
     def test_delete_area(self):
-        create = self.client.post("/api/caregivers/me/service-areas/", {"province": "تهران", "city": "تهران", "district": "ونک"}, format="json")
+        create = self.client.post("/api/caregivers/me/service-areas/", {
+            "province": self.tehran_city.province_id, "city": self.tehran_city.id, "district": self.district_a.id,
+        }, format="json")
         area_id = create.data["id"]
         response = self.client.delete(f"/api/caregivers/me/service-areas/{area_id}/")
         self.assertEqual(response.status_code, 204)
@@ -169,7 +186,7 @@ class FullProfileAndApprovalTests(TestCase):
 
     def _complete_all_forms_except_identity(self):
         self.client.put("/api/caregivers/me/work-preferences/", VALID_WORK_PREFS, format="json")
-        self.client.post("/api/caregivers/me/service-areas/", {"province": "تهران", "city": "تهران", "district": "ونک"}, format="json")
+        self.client.post("/api/caregivers/me/service-areas/", {}, format="json")
         self.client.put("/api/caregivers/me/experience/", VALID_EXPERIENCE, format="json")
         self.client.put("/api/caregivers/me/skills/", VALID_SKILLS, format="json")
         self.client.put("/api/caregivers/me/references/", TWO_REFERENCES, format="json")

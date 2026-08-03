@@ -128,9 +128,18 @@ class CaregiverWorkPreferencesSerializer(serializers.ModelSerializer):
 
 
 class CaregiverServiceAreaSerializer(serializers.ModelSerializer):
+    # province/city/district are real FKs now (write: send the id).
+    # These *_name fields are read-only conveniences so a list of
+    # service areas can be displayed without the frontend having to
+    # separately fetch and cross-reference the full province/city
+    # lists just to show what was already selected.
+    province_name = serializers.CharField(source="province.name", read_only=True, default=None)
+    city_name = serializers.CharField(source="city.name", read_only=True, default=None)
+    district_name = serializers.CharField(source="district.name", read_only=True, default=None)
+
     class Meta:
         model = CaregiverServiceArea
-        fields = ["id", "province", "city", "district"]
+        fields = ["id", "province", "city", "district", "province_name", "city_name", "district_name"]
         read_only_fields = ["id"]
 
 

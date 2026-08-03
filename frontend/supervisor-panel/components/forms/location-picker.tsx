@@ -2,33 +2,34 @@
 
 import { useEffect, useState } from "react"
 import { Select } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
 import { Field } from "@/components/forms/fields"
 import { locationService } from "@/services/location.service"
 import type { City, District, Province } from "@/types/location"
 
-interface Props {
-  province: string
-  city: string
-  district: string
-  onChange: (values: { province: string; city: string; district: string }) => void
+export interface LocationValue {
+  province: number | null
+  city: number | null
+  district: number | null
+}
+
+interface Props extends LocationValue {
+  onChange: (values: LocationValue) => void
   districtRequired?: boolean
 }
 
 /**
- * Cascading province -> city -> district selects, backed by the real
- * apps.locations data (31 provinces, 234 cities) — replaces free-text
- * typing for the fields supervisors fill in most often. The backend
- * stores these as plain name strings (not foreign keys), so this
- * component looks up IDs purely to drive the cascading fetches and
- * always reports back the selected NAME.
+ * Cascading province -> city -> district selects. Backend fields are
+ * real ForeignKeys (apps.locations.Province/City/District) — this
+ * component works with ids throughout, not name strings, matching
+ * what the API actually stores and expects now.
  *
  * Only Tehran currently has seeded district/neighborhood data (128
- * entries) — every other city has zero. A dropdown with no options
- * would make it impossible to enter anything for those, so district
- * falls back to free text whenever the selected city has no matching
- * options, rather than silently blocking data entry for 233 of 234
- * cities.
+ * entries) — every other city has zero. Since district is a real FK
+ * now, there's no way to "just type a name" for the other 233 cities
+ * the way there was when this field was plain text — so this shows an
+ * honest disabled state ("no district data for this city yet")
+ * instead of a free-text input that would fail validation on submit.
+ * The field stays optional either way.
  */
 export function LocationPicker({ province, city, district, onChange, districtRequired }: Props) {
   const [provinces, setProvinces] = useState<Province[]>([])
@@ -39,68 +40,62 @@ export function LocationPicker({ province, city, district, onChange, districtReq
     locationService.provinces().then(setProvinces).catch(() => {})
   }, [])
 
-  const selectedProvince = provinces.find((p) => p.name === province)
-  const selectedCity = cities.find((c) => c.name === city)
-
   useEffect(() => {
-    if (!selectedProvince) {
+    if (!province) {
       setCities([])
       return
     }
-    locationService.cities(selectedProvince.id).then(setCities).catch(() => {})
-  }, [selectedProvince?.id])
+    locationService.cities(province).then(setCities).catch(() => {})
+  }, [province])
 
   useEffect(() => {
-    if (!selectedCity) {
+    if (!city) {
       setDistricts([])
       return
     }
-    locationService.districts(selectedCity.id).then(setDistricts).catch(() => {})
-  }, [selectedCity?.id])
+    locationService.districts(city).then(setDistricts).catch(() => {})
+  }, [city])
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <Field label="استان">
         <Select
-          value={province}
-          onChange={(e) => onChange({ province: e.target.value, city: "", district: "" })}
+          value={province ?? ""}
+          onChange={(e) => onChange({ province: e.target.value ? Number(e.target.value) : null, city: null, district: null })}
         >
           <option value="">انتخاب استان...</option>
           {provinces.map((p) => (
-            <option key={p.id} value={p.name}>{p.name}</option>
+            <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </Select>
       </Field>
 
       <Field label="شهر">
         <Select
-          value={city}
+          value={city ?? ""}
           disabled={!province}
-          onChange={(e) => onChange({ province, city: e.target.value, district: "" })}
+          onChange={(e) => onChange({ province, city: e.target.value ? Number(e.target.value) : null, district: null })}
         >
           <option value="">{province ? "انتخاب شهر..." : "ابتدا استان را انتخاب کنید"}</option>
           {cities.map((c) => (
-            <option key={c.id} value={c.name}>{c.name}</option>
+            <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </Select>
       </Field>
 
       <Field label="منطقه / محله" required={districtRequired}>
-        {districts.length > 0 ? (
-          <Select value={district} onChange={(e) => onChange({ province, city, district: e.target.value })}>
-            <option value="">انتخاب منطقه...</option>
-            {districts.map((d) => (
-              <option key={d.id} value={d.name}>{d.name}</option>
-            ))}
-          </Select>
-        ) : (
-          <Input
-            value={district}
-            disabled={!city}
-            placeholder={city ? "نام منطقه یا محله را بنویسید" : "ابتدا شهر را انتخاب کنید"}
-            onChange={(e) => onChange({ province, city, district: e.target.value })}
-          />
-        )}
+        <Select
+          value={district ?? ""}
+          disabled={!city || districts.length === 0}
+          onChange={(e) => onChange({ province, city, district: e.target.value ? Number(e.target.value) : null })}
+        >
+          <option value="">
+            {!city ? "ابتدا شهر را انتخاب کنید" : districts.length === 0 ? "منطقه‌ای برای این شهر ثبت نشده" : "انتخاب منطقه..."}
+          </option>
+          {districts.map((d) => (
+            <option key={d.id} value={d.id}>{d.name}</option>
+          ))}
+        </Select>
       </Field>
     </div>
   )

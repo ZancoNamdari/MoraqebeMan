@@ -37,9 +37,9 @@ export interface IdentityFormData {
   emergency_contact_phone: string
   emergency_contact_relation: string
   landline_phone: string
-  province: string
-  city: string
-  district: string
+  province: number | null
+  city: number | null
+  district: number | null
   postal_code: string
   full_address: string
 }
@@ -67,9 +67,12 @@ export interface WorkPreferencesFormData {
 
 export interface ServiceArea {
   id?: number
-  province: string
-  city: string
-  district: string
+  province: number | null
+  city: number | null
+  district: number | null
+  province_name?: string | null
+  city_name?: string | null
+  district_name?: string | null
 }
 
 export interface ExperienceFormData {

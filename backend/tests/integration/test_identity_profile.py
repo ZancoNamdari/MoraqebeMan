@@ -16,9 +16,6 @@ VALID_PAYLOAD = {
     "takes_permanent_medication": False,
     "emergency_contact_phone": "09121110000",
     "emergency_contact_relation": "father",
-    "province": "تهران",
-    "city": "تهران",
-    "district": "ونک",
     "postal_code": "1234567890",
     "full_address": "خیابان ولیعصر",
 }

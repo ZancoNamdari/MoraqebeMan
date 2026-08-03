@@ -92,7 +92,7 @@ class IdentityProfileAdmin(admin.ModelAdmin):
     list_display = ["full_name_display", "user", "gender", "marital_status", "province", "city", "birth_date_display"]
     search_fields = ["user__username", "user__national_id", "user__first_name", "user__last_name", "father_name"]
     list_filter = ["gender", "marital_status", "province"]
-    autocomplete_fields = ["user"]
+    autocomplete_fields = ["user", "province", "city", "district"]
 
     @admin.display(description="نام کامل")
     def full_name_display(self, obj):
@@ -352,8 +352,8 @@ class CaregiverWorkPreferencesAdmin(admin.ModelAdmin):
 class CaregiverServiceAreaAdmin(admin.ModelAdmin):
     list_display = ["profile", "province", "city", "district"]
     list_filter = ["province"]
-    search_fields = ["profile__user__username", "province", "city", "district"]
-    autocomplete_fields = ["profile"]
+    search_fields = ["profile__user__username", "province__name", "city__name", "district__name"]
+    autocomplete_fields = ["profile", "province", "city", "district"]
 
 
 @admin.register(CaregiverExperience)
