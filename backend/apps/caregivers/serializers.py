@@ -192,17 +192,14 @@ class CaregiverReferenceSerializer(serializers.ModelSerializer):
 
 class CaregiverReferenceListSerializer(serializers.Serializer):
     """
-    Wraps a list of references for the submit-all-at-once endpoint,
-    enforcing the form's "at least two referees required" rule — a
-    constraint on the collection as a whole, which is why it can't live
-    on CaregiverReferenceSerializer itself.
+    Wraps a list of references for the submit-all-at-once endpoint.
+    No longer enforces a minimum count — matching the rest of this
+    platform's "optional unless genuinely necessary" approach for the
+    supervisor's rushed bulk-entry flow. A caregiver's references can
+    be filled in later; not having them yet shouldn't block saving
+    everything else that's already been entered.
     """
-    references = CaregiverReferenceSerializer(many=True)
-
-    def validate_references(self, value):
-        if len(value) < 2:
-            raise serializers.ValidationError("حداقل دو معرف الزامی است.")
-        return value
+    references = CaregiverReferenceSerializer(many=True, required=False)
 
 
 class CaregiverFullProfileSerializer(serializers.Serializer):

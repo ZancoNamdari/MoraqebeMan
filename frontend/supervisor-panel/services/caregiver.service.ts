@@ -23,6 +23,10 @@ export const caregiverService = {
     return data as { user_id: number; username: string; full_name: string }
   },
 
+  async remove(userId: number) {
+    await api.delete(`${base}/${userId}/`)
+  },
+
   async progress(userId: number): Promise<CaregiverProgress> {
     const { data } = await api.get(`${base}/${userId}/progress/`)
     return data

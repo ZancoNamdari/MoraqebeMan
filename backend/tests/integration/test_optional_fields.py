@@ -71,3 +71,21 @@ class OptionalFieldsTests(TestCase):
             ]}, format="json",
         )
         self.assertEqual(response.status_code, 201)
+
+    def test_zero_references_now_accepted(self):
+        # References are no longer required at all — a supervisor
+        # rushing through data entry shouldn't be blocked on this.
+        response = self.client.put(
+            f"/api/supervisor/caregivers/{self.caregiver_id}/references/",
+            {"references": []}, format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data, [])
+
+    def test_one_reference_also_accepted(self):
+        response = self.client.put(
+            f"/api/supervisor/caregivers/{self.caregiver_id}/references/",
+            {"references": [{"full_name": "علی", "phone_number": "09120000001"}]}, format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(response.data), 1)

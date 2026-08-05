@@ -152,13 +152,26 @@ class ReferencesTests(TestCase):
         _, token = make_authenticated_user("cg_refs", role=UserRole.CAREGIVER)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
-    def test_single_reference_rejected(self):
+    def test_single_reference_now_accepted(self):
+        # References are no longer required to come in pairs — a
+        # supervisor rushing through data entry shouldn't be blocked
+        # on this. (Previously this asserted a single reference was
+        # rejected; that rule was intentionally removed.)
         response = self.client.put(
             "/api/caregivers/me/references/",
             {"references": TWO_REFERENCES["references"][:1]},
             format="json",
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(response.data), 1)
+
+    def test_zero_references_now_accepted(self):
+        response = self.client.put(
+            "/api/caregivers/me/references/",
+            {"references": []},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
 
     def test_two_references_accepted(self):
         response = self.client.put("/api/caregivers/me/references/", TWO_REFERENCES, format="json")

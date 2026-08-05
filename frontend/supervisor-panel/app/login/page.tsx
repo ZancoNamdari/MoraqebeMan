@@ -31,9 +31,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-muted/40 to-muted/10 p-4">
-      <Card className="w-full max-w-sm shadow-lg">
-        <CardHeader>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-500 to-violet-600 p-4">
+      {/* Soft decorative blobs — purely visual, no content */}
+      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-fuchsia-400/20 blur-3xl" />
+
+      <Card className="relative w-full max-w-sm border-0 shadow-2xl">
+        <CardHeader className="items-center text-center">
+          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-2xl shadow-lg shadow-indigo-500/30">
+            🤝
+          </div>
           <CardTitle className="text-xl">ورود ناظر</CardTitle>
           <CardDescription>پنل موقت ورود اطلاعات مراقبان — مراقب من</CardDescription>
         </CardHeader>
@@ -59,8 +66,17 @@ export default function LoginPage() {
                 required
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
+            {error && (
+              <div className="rounded-md border border-rose-200 bg-rose-50 p-2.5 text-sm text-rose-700">
+                {error}
+              </div>
+            )}
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-l from-indigo-600 to-violet-600 text-base font-medium shadow-md shadow-indigo-500/30 hover:from-indigo-700 hover:to-violet-700"
+              size="lg"
+              disabled={loading}
+            >
               {loading ? "در حال ورود..." : "ورود"}
             </Button>
           </form>

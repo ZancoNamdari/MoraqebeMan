@@ -151,7 +151,7 @@ class MyReferencesView(APIView):
     """
     GET /api/caregivers/me/references/ - list
     PUT /api/caregivers/me/references/ - replace the full set at once
-    (at least two required - see CaregiverReferenceListSerializer)
+    (references are optional - see CaregiverReferenceListSerializer)
     """
     permission_classes = [IsCaregiver]
 
@@ -206,8 +206,8 @@ def _missing_forms(profile: CaregiverProfile, user_id: int) -> list[str]:
         missing.append("سوابق کاری (فرم ۳)")
     if not hasattr(profile, "skills"):
         missing.append("مهارت‌ها (فرم ۳)")
-    if profile.references.count() < 2:
-        missing.append("معرف‌ها - حداقل دو مورد (فرم ۴)")
+    if profile.references.count() < 1:
+        missing.append("معرف‌ها (فرم ۴)")
     return missing
 
 

@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Select } from "@/components/ui/select"
 import { Field } from "@/components/forms/fields"
+import { Combobox } from "@/components/forms/combobox"
 import { locationService } from "@/services/location.service"
 import type { City, District, Province } from "@/types/location"
 
@@ -18,15 +18,16 @@ interface Props extends LocationValue {
 }
 
 /**
- * Cascading province -> city -> district selects. Backend fields are
- * real ForeignKeys (apps.locations.Province/City/District) — this
- * component works with ids throughout, not name strings, matching
- * what the API actually stores and expects now.
+ * Cascading province -> city -> district — each one a searchable
+ * combobox (type to filter by "starts with", click to select), not a
+ * long scrolling dropdown. Backend fields are real ForeignKeys
+ * (apps.locations.Province/City/District), so this works with ids
+ * throughout, not name strings.
  *
  * Only Tehran currently has seeded district/neighborhood data (128
- * entries) — every other city has zero. Since district is a real FK
- * now, there's no way to "just type a name" for the other 233 cities
- * the way there was when this field was plain text — so this shows an
+ * entries) — every other city has zero. Since district is a real FK,
+ * there's no way to "just type a name" for the other 233 cities the
+ * way there was when this field was plain text — so this shows an
  * honest disabled state ("no district data for this city yet")
  * instead of a free-text input that would fail validation on submit.
  * The field stays optional either way.
@@ -59,43 +60,44 @@ export function LocationPicker({ province, city, district, onChange, districtReq
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <Field label="استان">
-        <Select
-          value={province ?? ""}
-          onChange={(e) => onChange({ province: e.target.value ? Number(e.target.value) : null, city: null, district: null })}
-        >
-          <option value="">انتخاب استان...</option>
-          {provinces.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </Select>
+        <Combobox
+          options={provinces}
+          value={province}
+          onChange={(id) => onChange({ province: id, city: null, district: null })}
+          placeholder="جستجوی استان..."
+        />
       </Field>
 
       <Field label="شهر">
-        <Select
-          value={city ?? ""}
+        <Combobox
+          options={cities}
+          value={city}
           disabled={!province}
-          onChange={(e) => onChange({ province, city: e.target.value ? Number(e.target.value) : null, district: null })}
-        >
-          <option value="">{province ? "انتخاب شهر..." : "ابتدا استان را انتخاب کنید"}</option>
-          {cities.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </Select>
+          disabledPlaceholder="ابتدا استان را انتخاب کنید"
+          onChange={(id) => onChange({ province, city: id, district: null })}
+          placeholder="جستجوی شهر..."
+        />
       </Field>
 
       <Field label="منطقه / محله" required={districtRequired}>
-        <Select
-          value={district ?? ""}
-          disabled={!city || districts.length === 0}
-          onChange={(e) => onChange({ province, city, district: e.target.value ? Number(e.target.value) : null })}
-        >
-          <option value="">
-            {!city ? "ابتدا شهر را انتخاب کنید" : districts.length === 0 ? "منطقه‌ای برای این شهر ثبت نشده" : "انتخاب منطقه..."}
-          </option>
-          {districts.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </Select>
+        {districts.length > 0 ? (
+          <Combobox
+            options={districts}
+            value={district}
+            disabled={!city}
+            onChange={(id) => onChange({ province, city, district: id })}
+            placeholder="جستجوی منطقه..."
+          />
+        ) : (
+          <Combobox
+            options={[]}
+            value={null}
+            disabled
+            disabledPlaceholder={city ? "منطقه‌ای برای این شهر ثبت نشده" : "ابتدا شهر را انتخاب کنید"}
+            onChange={() => {}}
+            placeholder=""
+          />
+        )}
       </Field>
     </div>
   )

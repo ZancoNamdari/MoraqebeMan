@@ -3,10 +3,10 @@
 import { cn } from "@/lib/utils"
 
 /**
- * Numbered step dots instead of a plain progress bar — makes "which
- * step am I on, how many are left" immediately readable at a glance,
- * which matters more here than usual since each step in this wizard
- * is a genuinely long form.
+ * Numbered step dots with a colored gradient fill for completed steps
+ * — makes "which step am I on, how many are left" readable at a
+ * glance, which matters more here than usual since each step in this
+ * wizard is a genuinely long form.
  */
 export function StepIndicator({ steps, current }: { steps: string[]; current: number }) {
   return (
@@ -15,9 +15,9 @@ export function StepIndicator({ steps, current }: { steps: string[]; current: nu
         <div key={i} className="flex flex-1 items-center gap-1">
           <div
             className={cn(
-              "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
-              i < current && "bg-primary text-primary-foreground",
-              i === current && "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2",
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-sm transition-all",
+              i < current && "bg-gradient-to-br from-indigo-500 to-violet-600 text-white",
+              i === current && "bg-gradient-to-br from-indigo-500 to-violet-600 text-white ring-4 ring-indigo-200 scale-110",
               i > current && "bg-muted text-muted-foreground"
             )}
             title={label}
@@ -25,7 +25,12 @@ export function StepIndicator({ steps, current }: { steps: string[]; current: nu
             {i < current ? "✓" : i + 1}
           </div>
           {i < steps.length - 1 && (
-            <div className={cn("h-0.5 flex-1 rounded transition-colors", i < current ? "bg-primary" : "bg-muted")} />
+            <div
+              className={cn(
+                "h-1 flex-1 rounded-full transition-colors",
+                i < current ? "bg-gradient-to-l from-indigo-500 to-violet-500" : "bg-muted"
+              )}
+            />
           )}
         </div>
       ))}

@@ -47,6 +47,27 @@ def _get_target_user(user_id: int) -> User | None:
     return User.objects.filter(id=user_id, role=UserRole.CAREGIVER).first()
 
 
+class SupervisorCaregiverDetailView(APIView):
+    """
+    DELETE /api/supervisor/caregivers/<user_id>/ — removes the
+    caregiver's account entirely. Deleting the User cascades through
+    CaregiverProfile (OneToOne, CASCADE) to every sub-form
+    (WorkPreferences, ServiceAreas, Experience, Skills, References,
+    IdentityProfile) — deleting the account is genuinely deleting all
+    of it, not a soft-delete. Used for a supervisor correcting a
+    mis-entered caregiver during the bulk import, not meant as a
+    routine "remove someone from the platform" action.
+    """
+    permission_classes = [IsAdminOrSuperuser]
+
+    def delete(self, request, user_id):
+        user = _get_target_user(user_id)
+        if user is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class SupervisorCaregiverListView(APIView):
     """
     GET  /api/supervisor/caregivers/ — every caregiver, with progress,
@@ -70,7 +91,7 @@ class SupervisorCaregiverListView(APIView):
                     done += 1
                 if hasattr(profile, "experience") and hasattr(profile, "skills"):
                     done += 1
-                if profile.references.count() >= 2:
+                if profile.references.count() >= 1:
                     done += 1
             rows.append({
                 "user_id": user.id,
@@ -288,6 +309,6 @@ class SupervisorCaregiverProgressView(APIView):
             "work_preferences_done": hasattr(profile, "work_preferences"),
             "experience_done": hasattr(profile, "experience"),
             "skills_done": hasattr(profile, "skills"),
-            "references_done": profile.references.count() >= 2,
+            "references_done": profile.references.count() >= 1,
             "missing": _missing_forms(profile, user.id),
         })

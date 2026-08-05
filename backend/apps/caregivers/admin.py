@@ -251,9 +251,9 @@ class CaregiverServiceAreaInline(admin.TabularInline):
 
 class CaregiverReferenceInline(admin.TabularInline):
     model = CaregiverReference
-    extra = 2  # at least two required — start with two empty rows, not one
+    extra = 2  # a reasonable starting point, not a requirement — references are optional
     fields = ["full_name", "occupation", "relation_type", "acquaintance_duration", "phone_number", "callable_for_inquiry"]
-    verbose_name_plural = "معرف‌ها (فرم ۴ — حداقل دو مورد)"
+    verbose_name_plural = "معرف‌ها (فرم ۴)"
 
 
 @admin.register(CaregiverProfile)
@@ -283,7 +283,7 @@ class CaregiverProfileAdmin(admin.ModelAdmin):
             hasattr(obj, "work_preferences"),
             hasattr(obj, "experience"),
             hasattr(obj, "skills"),
-            obj.references.count() >= 2,
+            obj.references.count() >= 1,
         ]
         done = sum(parts)
         return to_persian_digits(f"{done}/4")
@@ -296,7 +296,7 @@ class CaregiverProfileAdmin(admin.ModelAdmin):
                 hasattr(profile, "work_preferences")
                 and hasattr(profile, "experience")
                 and hasattr(profile, "skills")
-                and profile.references.count() >= 2
+                and profile.references.count() >= 1
                 and IdentityProfile.objects.filter(user_id=profile.user_id).exists()
             )
             if complete:

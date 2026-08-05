@@ -99,6 +99,27 @@ class SupervisorCreateCaregiverTests(TestCase):
         response = client.get("/api/supervisor/caregivers/")
         self.assertEqual(response.status_code, 401)
 
+    def test_delete_caregiver(self):
+        create = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "حذف", "last_name": "شونده", "phone_number": "09121230009",
+        }, format="json")
+        cg_id = create.data["user_id"]
+
+        response = self.client.delete(f"/api/supervisor/caregivers/{cg_id}/")
+        self.assertEqual(response.status_code, 204)
+
+        # gone from the list
+        listing = self.client.get("/api/supervisor/caregivers/")
+        self.assertFalse(any(row["user_id"] == cg_id for row in listing.data))
+
+        # deleting again is a 404, not a crash
+        response2 = self.client.delete(f"/api/supervisor/caregivers/{cg_id}/")
+        self.assertEqual(response2.status_code, 404)
+
+    def test_delete_nonexistent_caregiver_returns_404(self):
+        response = self.client.delete("/api/supervisor/caregivers/999999/")
+        self.assertEqual(response.status_code, 404)
+
 
 class SupervisorFullWizardFlowTests(TestCase):
     """The complete Step 0 -> Step 4 flow in one continuous pass,

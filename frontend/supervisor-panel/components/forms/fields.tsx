@@ -6,14 +6,21 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import type { Choice } from "@/lib/constants"
 
-export function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
+export function Field({
+  label, required, error, children,
+}: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
   return (
-    <div className={cn("space-y-1.5 rounded-md", error && "ring-1 ring-destructive/50 bg-destructive/5 p-2")}>
-      <Label>
-        {label} {required && <span className="text-destructive">*</span>}
+    <div className={cn("space-y-1.5 rounded-lg", error && "ring-1 ring-rose-400/60 bg-rose-50/60 p-2.5")}>
+      <Label className="flex items-center gap-1.5">
+        <span className={cn(required && "font-bold text-indigo-950")}>{label}</span>
+        {required && (
+          <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">
+            الزامی
+          </span>
+        )}
       </Label>
       {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-xs font-medium text-rose-600">{error}</p>}
     </div>
   )
 }
@@ -42,13 +49,24 @@ export function CheckboxGroup({
     onChange(value.includes(val) ? value.filter((v) => v !== val) : [...value, val])
   }
   return (
-    <div className="grid grid-cols-1 gap-2 rounded-md border p-3 sm:grid-cols-2">
-      {choices.map(([val, label]) => (
-        <label key={val} className="flex cursor-pointer items-center gap-2 text-sm">
-          <Checkbox checked={value.includes(val)} onChange={() => toggle(val)} />
-          {label}
-        </label>
-      ))}
+    <div className="grid grid-cols-1 gap-2 rounded-lg border bg-muted/20 p-3 sm:grid-cols-2">
+      {choices.map(([val, label]) => {
+        const checked = value.includes(val)
+        return (
+          <label
+            key={val}
+            className={cn(
+              "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm transition-colors",
+              checked
+                ? "border-indigo-300 bg-indigo-50 text-indigo-900"
+                : "border-transparent hover:bg-accent"
+            )}
+          >
+            <Checkbox checked={checked} onChange={() => toggle(val)} />
+            {label}
+          </label>
+        )
+      })}
     </div>
   )
 }
@@ -59,15 +77,31 @@ export function YesNo({
   value: boolean | null; onChange: (v: boolean | null) => void
 }) {
   return (
-    <div className="flex gap-4">
-      <label className="flex items-center gap-2 text-sm">
-        <input type="radio" checked={value === true} onChange={() => onChange(true)} className="accent-primary" />
-        بله
-      </label>
-      <label className="flex items-center gap-2 text-sm">
-        <input type="radio" checked={value === false} onChange={() => onChange(false)} className="accent-primary" />
-        خیر
-      </label>
+    <div className="flex gap-2">
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        className={cn(
+          "flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+          value === true
+            ? "border-emerald-400 bg-emerald-50 text-emerald-800"
+            : "border-input text-muted-foreground hover:bg-accent"
+        )}
+      >
+        ✓ بله
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        className={cn(
+          "flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+          value === false
+            ? "border-rose-400 bg-rose-50 text-rose-800"
+            : "border-input text-muted-foreground hover:bg-accent"
+        )}
+      >
+        ✕ خیر
+      </button>
     </div>
   )
 }
