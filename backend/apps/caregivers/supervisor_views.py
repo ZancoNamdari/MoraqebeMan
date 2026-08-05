@@ -30,6 +30,7 @@ from .models import (
 )
 from .permissions import IsAdminOrSuperuser
 from .serializers import (
+    CaregiverBasicInfoSerializer,
     CaregiverExperienceSerializer,
     CaregiverListItemSerializer,
     CaregiverReferenceListSerializer,
@@ -49,16 +50,57 @@ def _get_target_user(user_id: int) -> User | None:
 
 class SupervisorCaregiverDetailView(APIView):
     """
+    GET    /api/supervisor/caregivers/<user_id>/ — basic account info
+           (first/last name, phone, email) for pre-filling the wizard's
+           first step when resuming an in-progress or already-complete
+           caregiver — e.g. correcting a typo in the name after the
+           fact.
+    PATCH  /api/supervisor/caregivers/<user_id>/ — update that same
+           basic info.
     DELETE /api/supervisor/caregivers/<user_id>/ — removes the
-    caregiver's account entirely. Deleting the User cascades through
-    CaregiverProfile (OneToOne, CASCADE) to every sub-form
-    (WorkPreferences, ServiceAreas, Experience, Skills, References,
-    IdentityProfile) — deleting the account is genuinely deleting all
-    of it, not a soft-delete. Used for a supervisor correcting a
-    mis-entered caregiver during the bulk import, not meant as a
-    routine "remove someone from the platform" action.
+           caregiver's account entirely. Deleting the User cascades
+           through CaregiverProfile (OneToOne, CASCADE) to every sub-
+           form (WorkPreferences, ServiceAreas, Experience, Skills,
+           References, IdentityProfile) — deleting the account is
+           genuinely deleting all of it, not a soft-delete. Used for a
+           supervisor correcting a mis-entered caregiver during the
+           bulk import, not meant as a routine "remove someone from
+           the platform" action.
     """
     permission_classes = [IsAdminOrSuperuser]
+
+    def get(self, request, user_id):
+        user = _get_target_user(user_id)
+        if user is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        return Response({
+            "user_id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "phone_number": user.phone_number,
+            "email": user.email,
+        })
+
+    def patch(self, request, user_id):
+        user = _get_target_user(user_id)
+        if user is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CaregiverBasicInfoSerializer(data=request.data, context={"user_id": user_id})
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        user.first_name = data["first_name"]
+        user.last_name = data["last_name"]
+        user.phone_number = data["phone_number"]
+        if "email" in data:
+            user.email = data["email"]
+        user.save(update_fields=["first_name", "last_name", "phone_number", "email"])
+        return Response({
+            "user_id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "phone_number": user.phone_number,
+            "email": user.email,
+        })
 
     def delete(self, request, user_id):
         user = _get_target_user(user_id)

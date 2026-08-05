@@ -105,11 +105,19 @@ function NewCaregiverWizardInner() {
   const [newArea, setNewArea] = useState<ServiceArea>({ province: null, city: null, district: null })
   const [experience, setExperience] = useState<ExperienceFormData>(EMPTY_EXPERIENCE)
   const [skills, setSkills] = useState<SkillsFormData>(EMPTY_SKILLS)
-  const [references, setReferences] = useState<ReferenceFormData[]>([{ ...EMPTY_REFERENCE }, { ...EMPTY_REFERENCE }])
+  const [references, setReferences] = useState<ReferenceFormData[]>([{ ...EMPTY_REFERENCE }])
 
-  // Resume an in-progress caregiver: load whatever's already saved for each step.
+  // Resume an in-progress (or already-complete) caregiver: load
+  // whatever's already saved for each step, including the basic
+  // account info (name/phone) so Step 0 can be used to fix a typo
+  // instead of only ever being a one-time "create" screen.
   useEffect(() => {
     if (!caregiverId) return
+    caregiverService.getBasicInfo(caregiverId).then((info) => {
+      setFirstName(info.first_name)
+      setLastName(info.last_name)
+      setPhone(info.phone_number)
+    }).catch(() => {})
     caregiverService.progress(caregiverId).then((p) => setCaregiverName(p.full_name))
     caregiverService.getIdentity(caregiverId).then(setIdentity).catch(() => {})
     caregiverService.getWorkPreferences(caregiverId).then(setWorkPrefs).catch(() => {})
@@ -117,8 +125,12 @@ function NewCaregiverWizardInner() {
     caregiverService.getExperience(caregiverId).then(setExperience).catch(() => {})
     caregiverService.getSkills(caregiverId).then(setSkills).catch(() => {})
     caregiverService.getReferences(caregiverId).then((refs) => {
-      if (refs.length >= 2) setReferences(refs)
+      if (refs.length > 0) setReferences(refs)
     }).catch(() => {})
+    // Land straight on Form 1 rather than the "create account" screen
+    // — the account already exists. Every step (including this one)
+    // stays reachable via the now-clickable step indicator.
+    setStep(1)
   }, [caregiverId])
 
   if (authLoading) return null
@@ -133,12 +145,19 @@ function NewCaregiverWizardInner() {
   async function handleStep0() {
     setError([]); setSaving(true)
     try {
-      const result = await caregiverService.create({ first_name: firstName, last_name: lastName, phone_number: phone })
-      setCaregiverId(result.user_id)
-      setCaregiverName(result.full_name)
+      if (caregiverId) {
+        // Editing an existing caregiver's basic info — e.g. fixing a
+        // typo in the name.
+        const result = await caregiverService.updateBasicInfo(caregiverId, { first_name: firstName, last_name: lastName, phone_number: phone })
+        setCaregiverName(`${result.first_name} ${result.last_name}`.trim())
+      } else {
+        const result = await caregiverService.create({ first_name: firstName, last_name: lastName, phone_number: phone })
+        setCaregiverId(result.user_id)
+        setCaregiverName(result.full_name)
+      }
       setStep(1)
     } catch (err: any) {
-      showErrors(err, "خطا در ایجاد حساب مراقب.")
+      showErrors(err, caregiverId ? "خطا در ذخیره اطلاعات." : "خطا در ایجاد حساب مراقب.")
     } finally {
       setSaving(false)
     }
@@ -209,7 +228,7 @@ function NewCaregiverWizardInner() {
     setFirstName(""); setLastName(""); setPhone("")
     setIdentity(EMPTY_IDENTITY); setWorkPrefs(EMPTY_WORK_PREFS); setAreas([])
     setExperience(EMPTY_EXPERIENCE); setSkills(EMPTY_SKILLS)
-    setReferences([{ ...EMPTY_REFERENCE }, { ...EMPTY_REFERENCE }])
+    setReferences([{ ...EMPTY_REFERENCE }])
   }
 
   if (done) {
@@ -241,7 +260,7 @@ function NewCaregiverWizardInner() {
             <h1 className="font-bold">{caregiverName || "مراقب جدید"}</h1>
             <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به لیست</Button>
           </div>
-          <StepIndicator steps={STEPS} current={step} />
+          <StepIndicator steps={STEPS} current={step} onNavigate={setStep} canNavigate={!!caregiverId} />
           <p className="mt-2 text-center text-sm font-medium text-muted-foreground">{STEPS[step]}</p>
         </div>
       </header>
@@ -251,14 +270,14 @@ function NewCaregiverWizardInner() {
 
         {step === 0 && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-indigo-900"><span className="text-xl">👤</span> اطلاعات پایه حساب</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-indigo-900"><span className="text-xl">👤</span> {caregiverId ? "ویرایش اطلاعات پایه" : "اطلاعات پایه حساب"}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="نام" required><Input value={firstName} onChange={(e) => setFirstName(e.target.value)} /></Field>
               <Field label="نام خانوادگی" required><Input value={lastName} onChange={(e) => setLastName(e.target.value)} /></Field>
               <Field label="شماره موبایل" required>
                 <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" />
               </Field>
-              <p className="text-xs text-muted-foreground">نام کاربری و رمز عبور به‌صورت خودکار ساخته می‌شود.</p>
+              {!caregiverId && <p className="text-xs text-muted-foreground">نام کاربری و رمز عبور به‌صورت خودکار ساخته می‌شود.</p>}
             </CardContent>
           </Card>
         )}
@@ -444,13 +463,18 @@ function NewCaregiverWizardInner() {
                     <input type="checkbox" checked={ref.callable_for_inquiry} onChange={(e) => updateReference(i, { callable_for_inquiry: e.target.checked })} className="accent-primary" />
                     امکان تماس جهت استعلام
                   </label>
-                  {references.length > 2 && (
-                    <Button variant="ghost" size="sm" onClick={() => setReferences(references.filter((_, idx) => idx !== i))}>حذف این معرف</Button>
+                  {references.length > 0 && (
+                    <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50" onClick={() => setReferences(references.filter((_, idx) => idx !== i))}>حذف این معرف</Button>
                   )}
                 </div>
               ))}
+              {references.length === 0 && (
+                <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+                  هنوز معرفی اضافه نشده — افزودن معرف اختیاری است.
+                </p>
+              )}
               <Button type="button" variant="outline" onClick={() => setReferences([...references, { ...EMPTY_REFERENCE }])}>
-                + افزودن معرف بیشتر
+                + افزودن معرف
               </Button>
             </CardContent>
           </Card>
@@ -466,7 +490,7 @@ function NewCaregiverWizardInner() {
           )}
           {step === 0 && (
             <Button className="flex-1 bg-gradient-to-l from-indigo-600 to-violet-600 shadow-md shadow-indigo-500/20 hover:from-indigo-700 hover:to-violet-700" size="lg" onClick={handleStep0} disabled={saving || !firstName || !lastName || !phone}>
-              {saving ? "در حال ایجاد..." : "ایجاد و ادامه"}
+              {saving ? "در حال ذخیره..." : caregiverId ? "ذخیره تغییرات" : "ایجاد و ادامه"}
             </Button>
           )}
           {step === 1 && (

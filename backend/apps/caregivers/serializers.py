@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.accounts.models import User
 from apps.accounts.jalali_fields import JalaliDateField
 
 from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, CollaborationType,
@@ -245,6 +246,30 @@ class CreateCaregiverSerializer(serializers.Serializer):
         error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
     )
     email = serializers.EmailField(required=False, allow_blank=True)
+
+
+class CaregiverBasicInfoSerializer(serializers.Serializer):
+    """
+    Editing an existing caregiver's name/phone — e.g. fixing a typo
+    caught after the fact. Same shape as CreateCaregiverSerializer
+    minus the "this creates a new account" framing; phone uniqueness
+    is checked excluding the caregiver's own current row, since
+    otherwise saving without changing the phone at all would always
+    fail (it would collide with... itself).
+    """
+    first_name = serializers.CharField(max_length=50)
+    last_name = serializers.CharField(max_length=50)
+    phone_number = serializers.RegexField(
+        regex=r"^09\d{9}$",
+        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
+    )
+    email = serializers.EmailField(required=False, allow_blank=True)
+
+    def validate_phone_number(self, value):
+        user_id = self.context.get("user_id")
+        if User.objects.filter(phone_number=value).exclude(id=user_id).exists():
+            raise serializers.ValidationError("این شماره تلفن قبلاً برای حساب دیگری ثبت شده است.")
+        return value
 
 
 class CaregiverListItemSerializer(serializers.Serializer):

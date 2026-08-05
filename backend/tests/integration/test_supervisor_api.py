@@ -120,6 +120,61 @@ class SupervisorCreateCaregiverTests(TestCase):
         response = self.client.delete("/api/supervisor/caregivers/999999/")
         self.assertEqual(response.status_code, 404)
 
+    def test_get_basic_info(self):
+        create = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "علی", "last_name": "محمدی", "phone_number": "09121230010",
+        }, format="json")
+        cg_id = create.data["user_id"]
+
+        response = self.client.get(f"/api/supervisor/caregivers/{cg_id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["first_name"], "علی")
+        self.assertEqual(response.data["phone_number"], "09121230010")
+
+    def test_patch_fixes_a_typo_in_the_name(self):
+        # The exact reported scenario: create with a typo, fix it after.
+        create = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "علei", "last_name": "محمدی", "phone_number": "09121230011",
+        }, format="json")
+        cg_id = create.data["user_id"]
+
+        response = self.client.patch(f"/api/supervisor/caregivers/{cg_id}/", {
+            "first_name": "علی", "last_name": "محمدی", "phone_number": "09121230011",
+        }, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["first_name"], "علی")
+
+        confirm = self.client.get(f"/api/supervisor/caregivers/{cg_id}/")
+        self.assertEqual(confirm.data["first_name"], "علی")
+
+    def test_patch_to_a_phone_already_used_by_someone_else_rejected(self):
+        self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "اول", "last_name": "نفر", "phone_number": "09121230012",
+        }, format="json")
+        create2 = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "دوم", "last_name": "نفر", "phone_number": "09121230013",
+        }, format="json")
+        cg2_id = create2.data["user_id"]
+
+        response = self.client.patch(f"/api/supervisor/caregivers/{cg2_id}/", {
+            "first_name": "دوم", "last_name": "نفر", "phone_number": "09121230012",
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_patch_keeping_the_same_phone_number_is_fine(self):
+        # Regression check for the exclude-self logic in the
+        # uniqueness validator — saving without changing the phone at
+        # all shouldn't collide with the caregiver's own existing row.
+        create = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "قدیمی", "last_name": "نام", "phone_number": "09121230014",
+        }, format="json")
+        cg_id = create.data["user_id"]
+
+        response = self.client.patch(f"/api/supervisor/caregivers/{cg_id}/", {
+            "first_name": "جدید", "last_name": "نام", "phone_number": "09121230014",
+        }, format="json")
+        self.assertEqual(response.status_code, 200)
+
 
 class SupervisorFullWizardFlowTests(TestCase):
     """The complete Step 0 -> Step 4 flow in one continuous pass,

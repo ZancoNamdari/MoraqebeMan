@@ -27,6 +27,16 @@ export const caregiverService = {
     await api.delete(`${base}/${userId}/`)
   },
 
+  async getBasicInfo(userId: number) {
+    const { data } = await api.get(`${base}/${userId}/`)
+    return data as { user_id: number; first_name: string; last_name: string; phone_number: string; email: string }
+  },
+
+  async updateBasicInfo(userId: number, input: { first_name: string; last_name: string; phone_number: string; email?: string }) {
+    const { data } = await api.patch(`${base}/${userId}/`, input)
+    return data
+  },
+
   async progress(userId: number): Promise<CaregiverProgress> {
     const { data } = await api.get(`${base}/${userId}/progress/`)
     return data

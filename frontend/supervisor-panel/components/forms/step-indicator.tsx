@@ -3,37 +3,52 @@
 import { cn } from "@/lib/utils"
 
 /**
- * Numbered step dots with a colored gradient fill for completed steps
- * — makes "which step am I on, how many are left" readable at a
- * glance, which matters more here than usual since each step in this
- * wizard is a genuinely long form.
+ * Numbered step dots with a colored gradient fill for completed
+ * steps. Clickable when `canNavigate` is true — once the caregiver's
+ * account exists (either just created, or already existed and is
+ * being edited), every step's data can be reached directly instead of
+ * forcing linear next/next/next, which matters most when correcting
+ * something specific in an existing caregiver rather than filling in
+ * a blank one from scratch.
  */
-export function StepIndicator({ steps, current }: { steps: string[]; current: number }) {
+export function StepIndicator({
+  steps, current, onNavigate, canNavigate,
+}: {
+  steps: string[]; current: number; onNavigate?: (i: number) => void; canNavigate?: boolean
+}) {
   return (
     <div className="flex items-center gap-1">
-      {steps.map((label, i) => (
-        <div key={i} className="flex flex-1 items-center gap-1">
-          <div
-            className={cn(
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-sm transition-all",
-              i < current && "bg-gradient-to-br from-indigo-500 to-violet-600 text-white",
-              i === current && "bg-gradient-to-br from-indigo-500 to-violet-600 text-white ring-4 ring-indigo-200 scale-110",
-              i > current && "bg-muted text-muted-foreground"
-            )}
-            title={label}
-          >
-            {i < current ? "✓" : i + 1}
-          </div>
-          {i < steps.length - 1 && (
-            <div
+      {steps.map((label, i) => {
+        const clickable = canNavigate && onNavigate && i !== current
+        return (
+          <div key={i} className="flex flex-1 items-center gap-1">
+            <button
+              type="button"
+              disabled={!clickable}
+              onClick={() => clickable && onNavigate(i)}
               className={cn(
-                "h-1 flex-1 rounded-full transition-colors",
-                i < current ? "bg-gradient-to-l from-indigo-500 to-violet-500" : "bg-muted"
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-sm transition-all",
+                i < current && "bg-gradient-to-br from-indigo-500 to-violet-600 text-white",
+                i === current && "bg-gradient-to-br from-indigo-500 to-violet-600 text-white ring-4 ring-indigo-200 scale-110",
+                i > current && "bg-muted text-muted-foreground",
+                clickable && "cursor-pointer hover:ring-2 hover:ring-indigo-300",
+                !clickable && "cursor-default"
               )}
-            />
-          )}
-        </div>
-      ))}
+              title={label}
+            >
+              {i < current ? "✓" : i + 1}
+            </button>
+            {i < steps.length - 1 && (
+              <div
+                className={cn(
+                  "h-1 flex-1 rounded-full transition-colors",
+                  i < current ? "bg-gradient-to-l from-indigo-500 to-violet-500" : "bg-muted"
+                )}
+              />
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
