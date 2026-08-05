@@ -11,6 +11,12 @@ from .models import (
 
 
 class FamilyProfileSerializer(serializers.ModelSerializer):
+    # The model field is `user` (a real FK) now, not `user_id` — this
+    # keeps the API's JSON shape exactly as it was (a plain integer
+    # under "user_id"), not a nested user object, so nothing consuming
+    # this endpoint needs to change alongside the model.
+    user_id = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = FamilyProfile
         fields = ["id", "user_id", "display_name", "city", "address", "created_at"]
@@ -19,6 +25,9 @@ class FamilyProfileSerializer(serializers.ModelSerializer):
 
 class PatientProfileSerializer(serializers.ModelSerializer):
     birth_date = JalaliDateField(required=False, allow_null=True)
+    # Same reasoning as FamilyProfileSerializer.user_id — keep the JSON
+    # shape stable as a plain (possibly null) integer.
+    user_id = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         model = PatientProfile

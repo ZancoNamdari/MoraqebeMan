@@ -3,10 +3,15 @@ from django_jalali.db import models as jmodels
 
 
 class FamilyProfile(models.Model):
-    """One row per FAMILY-role user. user_id references identity_service's
-    User.id — no real FK across services, just an integer kept consistent
-    via the JWT claim on every authenticated request."""
-    user_id = models.PositiveIntegerField(unique=True, db_index=True, help_text="شناسه کاربری در سرویس هویت")
+    """One row per FAMILY-role user. Was a plain integer user_id (no real
+    FK) from when this app was designed as a separate family_service with
+    no direct DB access to identity_service's User table — modernized to
+    a real ForeignKey now that this has been a single monolith with one
+    shared User table for a long time; apps.caregivers made this same
+    change earlier, this app just hadn't caught up yet."""
+    user = models.OneToOneField(
+        "accounts.User", on_delete=models.CASCADE, related_name="family_profile", verbose_name="کاربر"
+    )
     display_name = models.CharField(max_length=150, help_text="نام نمایشی")
     city = models.CharField(max_length=100, blank=True, help_text="شهر")
     address = models.TextField(blank=True, help_text="نشانی")
@@ -18,7 +23,7 @@ class FamilyProfile(models.Model):
         verbose_name_plural = "پروفایل‌های خانواده"
 
     def __str__(self):
-        return f"FamilyProfile(user_id={self.user_id}, {self.display_name})"
+        return self.display_name or self.user.username
 
 
 class GuardianshipStatus(models.TextChoices):
@@ -29,15 +34,19 @@ class GuardianshipStatus(models.TextChoices):
 
 class PatientProfile(models.Model):
     """
-    Tab 1 of the patient onboarding form (اطلاعات هویتی). user_id is
+    Tab 1 of the patient onboarding form (اطلاعات هویتی). `user` is
     deliberately nullable — per the platform's role model, a PATIENT is
     frequently a *dependent* profile managed entirely by a FAMILY account
     with no login of their own (unlike CAREGIVER, which always requires
-    its own account). This is why these fields live here in
-    family_service rather than as a User-linked profile in
-    identity_service the way the caregiver's IdentityProfile does.
+    its own account). That's why this lives in apps.families rather than
+    as a User-linked identity profile the way the caregiver's
+    IdentityProfile does — not a leftover service boundary, an actual
+    reflection of "this record may have no account behind it at all."
     """
-    user_id = models.PositiveIntegerField(unique=True, null=True, blank=True, db_index=True)
+    user = models.OneToOneField(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="patient_profile", verbose_name="کاربر",
+    )
 
     full_name = models.CharField(max_length=150, help_text="نام و نام خانوادگی سالمند")
     father_name = models.CharField(max_length=150, blank=True, help_text="نام پدر")
