@@ -13,8 +13,9 @@ export function Field({
     <div className={cn("space-y-1.5 rounded-lg", error && "ring-1 ring-rose-400/60 bg-rose-50/60 p-2.5")}>
       <Label className="flex items-center gap-1.5">
         <span className={cn(required && "font-bold text-indigo-950")}>{label}</span>
+        {" "}
         {required && (
-          <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">
+          <span className="mr-1.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">
             الزامی
           </span>
         )}
