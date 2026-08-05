@@ -38,13 +38,6 @@ def create_supervisor_group(apps, schema_editor):
     Permission = apps.get_model("auth", "Permission")
     ContentType = apps.get_model("contenttypes", "ContentType")
 
-    # ContentType and Permission rows are normally created by separate
-    # post_migrate signal handlers that only fire once, after the
-    # ENTIRE migrate run finishes. On a fresh database this data
-    # migration runs before either has fired, so both have to be
-    # created explicitly here, using the real (non-historical) app
-    # configs since the signal handlers themselves need real model
-    # classes, not migration state.
     accounts_config = global_apps.get_app_config("accounts")
     caregivers_config = global_apps.get_app_config("caregivers")
     create_contenttypes(accounts_config, verbosity=0)

@@ -258,11 +258,11 @@ class CaregiverReferenceInline(admin.TabularInline):
 
 @admin.register(CaregiverProfile)
 class CaregiverProfileAdmin(admin.ModelAdmin):
-    list_display = ["user", "status", "approved_by", "approved_at_display", "form_completion"]
+    list_display = ["user", "status", "created_by", "approved_by", "approved_at_display", "form_completion"]
     list_filter = ["status"]
     search_fields = ["user__username", "user__phone_number", "user__first_name", "user__last_name"]
-    autocomplete_fields = ["user", "approved_by"]
-    readonly_fields = ["approved_by", "approved_at", "created_at", "updated_at"]
+    autocomplete_fields = ["user", "created_by", "approved_by"]
+    readonly_fields = ["created_by", "approved_by", "approved_at", "created_at", "updated_at"]
     inlines = [
         CaregiverWorkPreferencesInline,
         CaregiverServiceAreaInline,

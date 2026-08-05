@@ -291,3 +291,4 @@ class CaregiverListItemSerializer(serializers.Serializer):
     status = serializers.CharField()
     forms_completed = serializers.IntegerField()
     forms_total = serializers.IntegerField(default=4)
+    created_by = serializers.CharField(allow_null=True)

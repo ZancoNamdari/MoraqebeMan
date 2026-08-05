@@ -10,6 +10,13 @@ Views — those stay exactly as they are (a caregiver's own /me/ flow is
 a different, permanent feature; this is explicitly temporary bulk
 tooling, per the request), so nothing about how a caregiver manages
 their own profile changes because this exists alongside it.
+
+Every mutation (create, each form's save, delete) writes a real
+AuditLog entry via apps.audit.services.AuditService — "who did what to
+which caregiver, when" needs to be genuinely queryable later, not just
+inferable from CaregiverProfile.created_by (which only ever holds the
+LATEST value; the log is the actual history across edits by more than
+one supervisor over time).
 """
 from django.contrib.auth.hashers import make_password
 from django.utils.crypto import get_random_string
@@ -18,6 +25,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User, UserRole
+from apps.audit.services import AuditService
 
 from .models import (
     CaregiverExperience,
@@ -44,9 +52,19 @@ from .serializers import (
 )
 from .views import _get_identity_dict, _missing_forms
 
+audit = AuditService()
+
 
 def _get_target_user(user_id: int) -> User | None:
     return User.objects.filter(id=user_id, role=UserRole.CAREGIVER).first()
+
+
+def _get_target_profile(user_id: int) -> CaregiverProfile | None:
+    user = _get_target_user(user_id)
+    if user is None:
+        return None
+    profile, _ = CaregiverProfile.objects.get_or_create(user=user)
+    return profile
 
 
 class SupervisorCaregiverDetailView(APIView):
@@ -95,6 +113,7 @@ class SupervisorCaregiverDetailView(APIView):
         if "email" in data:
             user.email = data["email"]
         user.save(update_fields=["first_name", "last_name", "phone_number", "email"])
+        audit.caregiver_updated(request.user.id, user_id, section="basic_info")
         return Response({
             "user_id": user.id,
             "first_name": user.first_name,
@@ -107,6 +126,10 @@ class SupervisorCaregiverDetailView(APIView):
         user = _get_target_user(user_id)
         if user is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        # Logged before the delete, not after — user_id would still be
+        # a valid value to log afterward too, but there's no reason to
+        # risk the log write racing the cascade delete.
+        audit.caregiver_deleted(request.user.id, user_id)
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -167,12 +190,14 @@ class SupervisorCaregiverListView(APIView):
                     done += 1
                 if profile.references.count() >= 1:
                     done += 1
+            created_by_user = profile.created_by if profile else None
             rows.append({
                 "user_id": user.id,
                 "full_name": user.get_full_name() or user.username,
                 "phone_number": user.phone_number,
                 "status": profile.status if profile else "draft",
                 "forms_completed": done,
+                "created_by": (created_by_user.get_full_name() or created_by_user.username) if created_by_user else None,
             })
         return Response(CaregiverListItemSerializer(rows, many=True).data)
 
@@ -200,7 +225,8 @@ class SupervisorCaregiverListView(APIView):
         user.set_password(get_random_string(32))
         user.save()
 
-        CaregiverProfile.objects.get_or_create(user=user)
+        CaregiverProfile.objects.get_or_create(user=user, defaults={"created_by": request.user})
+        audit.caregiver_created(request.user.id, user.id)
 
         return Response({
             "user_id": user.id,
@@ -229,15 +255,8 @@ class SupervisorIdentityView(APIView):
         serializer = IdentityProfileSerializer(instance=existing, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=user)
+        audit.caregiver_updated(request.user.id, user_id, section="identity")
         return Response(serializer.data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
-
-
-def _get_target_profile(user_id: int) -> CaregiverProfile | None:
-    user = _get_target_user(user_id)
-    if user is None:
-        return None
-    profile, _ = CaregiverProfile.objects.get_or_create(user=user)
-    return profile
 
 
 class SupervisorWorkPreferencesView(APIView):
@@ -260,6 +279,7 @@ class SupervisorWorkPreferencesView(APIView):
         serializer = CaregiverWorkPreferencesSerializer(instance=existing, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(profile=profile)
+        audit.caregiver_updated(request.user.id, user_id, section="work_preferences")
         return Response(serializer.data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
 
 
@@ -279,6 +299,7 @@ class SupervisorServiceAreasView(APIView):
         serializer = CaregiverServiceAreaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(profile=profile)
+        audit.caregiver_updated(request.user.id, user_id, section="service_areas")
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -292,6 +313,7 @@ class SupervisorServiceAreaDetailView(APIView):
         deleted, _ = CaregiverServiceArea.objects.filter(id=area_id, profile=profile).delete()
         if not deleted:
             return Response({"detail": "یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        audit.caregiver_updated(request.user.id, user_id, section="service_areas")
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -315,6 +337,7 @@ class SupervisorExperienceView(APIView):
         serializer = CaregiverExperienceSerializer(instance=existing, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(profile=profile)
+        audit.caregiver_updated(request.user.id, user_id, section="experience")
         return Response(serializer.data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
 
 
@@ -338,6 +361,7 @@ class SupervisorSkillsView(APIView):
         serializer = CaregiverSkillsSerializer(instance=existing, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(profile=profile)
+        audit.caregiver_updated(request.user.id, user_id, section="skills")
         return Response(serializer.data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
 
 
@@ -362,6 +386,7 @@ class SupervisorReferencesView(APIView):
             CaregiverReference.objects.create(profile=profile, **ref)
             for ref in serializer.validated_data["references"]
         ]
+        audit.caregiver_updated(request.user.id, user_id, section="references")
         return Response(CaregiverReferenceSerializer(created, many=True).data, status=status.HTTP_201_CREATED)
 
 

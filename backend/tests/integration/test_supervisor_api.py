@@ -120,6 +120,62 @@ class SupervisorCreateCaregiverTests(TestCase):
         response = self.client.delete("/api/supervisor/caregivers/999999/")
         self.assertEqual(response.status_code, 404)
 
+    def test_list_shows_who_created_each_caregiver(self):
+        create = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "ت", "last_name": "خ", "phone_number": "09121230020",
+        }, format="json")
+        cg_id = create.data["user_id"]
+
+        response = self.client.get("/api/supervisor/caregivers/")
+        row = next(r for r in response.data if r["user_id"] == cg_id)
+        self.assertEqual(row["created_by"], self.supervisor.get_full_name())
+
+    def test_create_writes_an_audit_log_entry(self):
+        from apps.audit.models import AuditEventType, AuditLog
+
+        create = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "ت", "last_name": "خ", "phone_number": "09121230021",
+        }, format="json")
+        cg_id = create.data["user_id"]
+
+        entry = AuditLog.objects.filter(
+            event_type=AuditEventType.CAREGIVER_CREATED, target_user_id=cg_id
+        ).first()
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.actor_user_id, self.supervisor.id)
+
+    def test_editing_a_form_writes_an_audit_log_entry_naming_the_section(self):
+        from apps.audit.models import AuditEventType, AuditLog
+
+        create = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "ت", "last_name": "خ", "phone_number": "09121230022",
+        }, format="json")
+        cg_id = create.data["user_id"]
+
+        self.client.put(f"/api/supervisor/caregivers/{cg_id}/work-preferences/", {"terms_accepted": True}, format="json")
+
+        entry = AuditLog.objects.filter(
+            event_type=AuditEventType.CAREGIVER_UPDATED, target_user_id=cg_id
+        ).first()
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.metadata.get("section"), "work_preferences")
+
+    def test_delete_writes_an_audit_log_entry_before_the_record_is_gone(self):
+        from apps.audit.models import AuditEventType, AuditLog
+
+        create = self.client.post("/api/supervisor/caregivers/", {
+            "first_name": "ت", "last_name": "خ", "phone_number": "09121230023",
+        }, format="json")
+        cg_id = create.data["user_id"]
+
+        self.client.delete(f"/api/supervisor/caregivers/{cg_id}/")
+
+        entry = AuditLog.objects.filter(
+            event_type=AuditEventType.CAREGIVER_DELETED, target_user_id=cg_id
+        ).first()
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.actor_user_id, self.supervisor.id)
+
     def test_get_basic_info(self):
         create = self.client.post("/api/supervisor/caregivers/", {
             "first_name": "علی", "last_name": "محمدی", "phone_number": "09121230010",

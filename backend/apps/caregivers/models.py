@@ -109,6 +109,11 @@ class CaregiverProfile(models.Model):
     slug = models.SlugField(max_length=220, blank=True,null=True,db_index=True, verbose_name="شناسه یکتا")
     status = models.CharField(
         max_length=20, choices=CaregiverStatus.choices, default=CaregiverStatus.DRAFT, verbose_name="وضعیت ثبت‌ نام")
+    created_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="created_caregivers", verbose_name="ثبت‌شده توسط",
+        help_text="ناظری که این مراقب را وارد سیستم کرده — خالی یعنی خود مراقب یا مسیر دیگری بوده.",
+    )
     approved_by = models.ForeignKey(
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="approved_caregivers", verbose_name="تأییدشده توسط")

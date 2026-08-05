@@ -5,6 +5,7 @@ export interface CaregiverListItem {
   status: string
   forms_completed: number
   forms_total: number
+  created_by: string | null
 }
 
 export interface CaregiverProgress {

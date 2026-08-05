@@ -50,3 +50,16 @@ class AuditService:
 
     def login_locked(self, username, ip_address=None):
         return self.log_event(AuditEventType.LOGIN_LOCKED, None, None, ip_address, username=username)
+
+    # Supervisor caregiver-data-entry actions — "who added/edited/
+    # deleted this caregiver record" needs to be genuinely queryable,
+    # not just inferred from a single created_by field that only ever
+    # holds the LATEST value; this is the actual history.
+    def caregiver_created(self, actor_id, caregiver_user_id):
+        return self.log_event(AuditEventType.CAREGIVER_CREATED, actor_id, caregiver_user_id)
+
+    def caregiver_updated(self, actor_id, caregiver_user_id, section):
+        return self.log_event(AuditEventType.CAREGIVER_UPDATED, actor_id, caregiver_user_id, section=section)
+
+    def caregiver_deleted(self, actor_id, caregiver_user_id):
+        return self.log_event(AuditEventType.CAREGIVER_DELETED, actor_id, caregiver_user_id)

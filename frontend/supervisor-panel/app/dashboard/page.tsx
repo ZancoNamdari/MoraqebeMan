@@ -130,6 +130,7 @@ export default function DashboardPage() {
                   <th className="px-4 py-3">وضعیت</th>
                   <th className="px-4 py-3">پیشرفت فرم‌ها</th>
                   <th className="px-4 py-3">عملیات</th>
+                  <th className="px-4 py-3">افزوده‌شده توسط</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -179,6 +180,9 @@ export default function DashboardPage() {
                           {deletingId === c.user_id ? "..." : "حذف"}
                         </button>
                       </div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-500">
+                      {c.created_by || "—"}
                     </td>
                   </tr>
                 ))}

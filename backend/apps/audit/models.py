@@ -13,6 +13,9 @@ class AuditEventType(models.TextChoices):
     OTP_FAILED = "otp_failed", "تلاش ناموفق تأیید کد"
     PASSWORD_RESET_REQUESTED = "password_reset_requested", "درخواست بازیابی رمز عبور"
     PASSWORD_RESET_COMPLETED = "password_reset_completed", "تکمیل بازیابی رمز عبور"
+    CAREGIVER_CREATED = "caregiver_created", "ثبت مراقب توسط ناظر"
+    CAREGIVER_UPDATED = "caregiver_updated", "ویرایش اطلاعات مراقب توسط ناظر"
+    CAREGIVER_DELETED = "caregiver_deleted", "حذف مراقب توسط ناظر"
 
 
 class AuditLog(models.Model):
