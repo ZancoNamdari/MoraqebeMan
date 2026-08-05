@@ -4,13 +4,11 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { caregiverService } from "@/services/caregiver.service"
 import type { CaregiverListItem } from "@/types/caregiver"
 import { ROUTES } from "@/lib/routes"
+import { cn } from "@/lib/utils"
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "پیش‌نویس",
@@ -20,15 +18,20 @@ const STATUS_LABEL: Record<string, string> = {
   suspended: "تعلیق شده",
 }
 
-// Distinct colors per status — the point is being able to tell a
-// caregiver's state apart at a glance while scanning 40-50 rows, not
-// just reading small text.
-const STATUS_CLASS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700 border-slate-200",
-  pending: "bg-amber-100 text-amber-800 border-amber-200",
-  approved: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  rejected: "bg-rose-100 text-rose-800 border-rose-200",
-  suspended: "bg-orange-100 text-orange-800 border-orange-200",
+const STATUS_DOT: Record<string, string> = {
+  draft: "bg-slate-400",
+  pending: "bg-amber-500",
+  approved: "bg-emerald-500",
+  rejected: "bg-rose-500",
+  suspended: "bg-orange-500",
+}
+
+const STATUS_TEXT: Record<string, string> = {
+  draft: "text-slate-600",
+  pending: "text-amber-700",
+  approved: "text-emerald-700",
+  rejected: "text-rose-700",
+  suspended: "text-orange-700",
 }
 
 export default function DashboardPage() {
@@ -37,6 +40,7 @@ export default function DashboardPage() {
   const [caregivers, setCaregivers] = useState<CaregiverListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [search, setSearch] = useState("")
 
   useEffect(() => {
     if (!user) return
@@ -49,6 +53,11 @@ export default function DashboardPage() {
   if (authLoading) return null
 
   const doneCount = caregivers.filter((c) => c.forms_completed === c.forms_total).length
+  const filtered = caregivers.filter((c) => {
+    const q = search.trim()
+    if (!q) return true
+    return c.full_name.includes(q) || c.phone_number.includes(q)
+  })
 
   async function handleDelete(c: CaregiverListItem) {
     const confirmed = window.confirm(`آیا از حذف «${c.full_name || c.phone_number}» مطمئن هستید؟ این کار قابل بازگشت نیست.`)
@@ -65,97 +74,122 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-background to-background">
-      <header className="border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between p-4">
-          <div>
-            <h1 className="text-lg font-bold text-indigo-900">پنل ناظر — مراقب من</h1>
-            {user && <p className="text-sm text-muted-foreground">خوش آمدید، {user.username}</p>}
+    <div className="min-h-screen bg-slate-50">
+      {/* Top admin bar — solid color band, standard admin-panel pattern */}
+      <header className="bg-gradient-to-l from-indigo-700 to-indigo-600 text-white shadow-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🤝</span>
+            <h1 className="text-base font-bold">پنل ناظر — مراقب من</h1>
           </div>
-          <Button variant="outline" onClick={logout}>خروج</Button>
+          <div className="flex items-center gap-3">
+            {user && <span className="text-sm text-indigo-100">{user.username}</span>}
+            <Button size="sm" variant="secondary" onClick={logout}>خروج</Button>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl space-y-4 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">لیست مراقبان</h2>
-            <p className="text-sm text-muted-foreground">
-              {caregivers.length} مراقب ثبت‌شده — {doneCount} مورد کامل
-            </p>
-          </div>
-          <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700" onClick={() => router.push(ROUTES.newCaregiver)}>
+      <main className="mx-auto max-w-6xl space-y-4 p-4">
+        {/* Summary strip — quick counts, admin-dashboard style */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <SummaryCard label="کل مراقبان" value={caregivers.length} color="bg-indigo-50 text-indigo-700 border-indigo-100" />
+          <SummaryCard label="تکمیل‌شده" value={doneCount} color="bg-emerald-50 text-emerald-700 border-emerald-100" />
+          <SummaryCard label="در حال تکمیل" value={caregivers.length - doneCount} color="bg-amber-50 text-amber-700 border-amber-100" />
+          <SummaryCard label="تأییدشده" value={caregivers.filter((c) => c.status === "approved").length} color="bg-violet-50 text-violet-700 border-violet-100" />
+        </div>
+
+        {/* Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-white p-3 shadow-sm">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="جستجو بر اساس نام یا شماره موبایل..."
+            className="h-9 w-full max-w-xs rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+          <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => router.push(ROUTES.newCaregiver)}>
             + افزودن مراقب جدید
           </Button>
         </div>
 
-        {loading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <Card key={i}>
-                <CardContent className="flex items-center justify-between gap-4 p-4">
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <Skeleton className="h-4 w-40" />
-                    <Skeleton className="h-3 w-28" />
-                  </div>
-                  <Skeleton className="h-8 w-40" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : caregivers.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              هنوز هیچ مراقبی ثبت نشده. با دکمه بالا شروع کنید.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {caregivers.map((c) => (
-              <Card key={c.user_id} className="transition hover:shadow-md">
-                <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-medium">{c.full_name || "(بدون نام)"}</p>
-                      <Badge className={STATUS_CLASS[c.status] || ""} variant="outline">
+        {/* Main table — Django-admin-changelist style */}
+        <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
+          {loading ? (
+            <div className="space-y-3 p-4">
+              {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="p-10 text-center text-muted-foreground">
+              {caregivers.length === 0 ? "هنوز هیچ مراقبی ثبت نشده. با دکمه بالا شروع کنید." : "موردی با این جستجو یافت نشد."}
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-slate-50 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-4 py-3">نام</th>
+                  <th className="px-4 py-3">شماره موبایل</th>
+                  <th className="px-4 py-3">وضعیت</th>
+                  <th className="px-4 py-3">پیشرفت فرم‌ها</th>
+                  <th className="px-4 py-3">عملیات</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {filtered.map((c, i) => (
+                  <tr key={c.user_id} className={cn("transition-colors hover:bg-indigo-50/40", i % 2 === 1 && "bg-slate-50/50")}>
+                    <td className="px-4 py-3 font-medium text-slate-800">{c.full_name || "(بدون نام)"}</td>
+                    <td className="px-4 py-3 text-slate-600" dir="ltr">{c.phone_number}</td>
+                    <td className="px-4 py-3">
+                      <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium", STATUS_TEXT[c.status])}>
+                        <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[c.status])} />
                         {STATUS_LABEL[c.status] || c.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground" dir="ltr">{c.phone_number}</p>
-                  </div>
-
-                  <div className="w-40 shrink-0">
-                    <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                      <span>{c.forms_completed} از {c.forms_total} فرم</span>
-                    </div>
-                    <Progress value={(c.forms_completed / c.forms_total) * 100} />
-                  </div>
-
-                  <div className="flex shrink-0 gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-                      onClick={() => router.push(`${ROUTES.newCaregiver}?id=${c.user_id}`)}
-                    >
-                      ویرایش
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-rose-200 text-rose-700 hover:bg-rose-50"
-                      disabled={deletingId === c.user_id}
-                      onClick={() => handleDelete(c)}
-                    >
-                      {deletingId === c.user_id ? "در حال حذف..." : "حذف"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className={cn(
+                              "h-full rounded-full",
+                              c.forms_completed === c.forms_total ? "bg-emerald-500" : "bg-indigo-500"
+                            )}
+                            style={{ width: `${(c.forms_completed / c.forms_total) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-slate-500">{c.forms_completed}/{c.forms_total}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          className="rounded-md border border-indigo-200 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
+                          onClick={() => router.push(`${ROUTES.newCaregiver}?id=${c.user_id}`)}
+                        >
+                          ویرایش
+                        </button>
+                        <button
+                          className="rounded-md border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                          disabled={deletingId === c.user_id}
+                          onClick={() => handleDelete(c)}
+                        >
+                          {deletingId === c.user_id ? "..." : "حذف"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </main>
+    </div>
+  )
+}
+
+function SummaryCard({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className={cn("rounded-lg border p-3", color)}>
+      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-xs font-medium opacity-80">{label}</p>
     </div>
   )
 }
