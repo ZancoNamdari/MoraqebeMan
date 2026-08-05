@@ -2,6 +2,7 @@ from django.urls import path
 
 from .supervisor_views import (
     SupervisorCaregiverDetailView,
+    SupervisorCaregiverFullProfileView,
     SupervisorCaregiverListView,
     SupervisorCaregiverProgressView,
     SupervisorExperienceView,
@@ -42,6 +43,7 @@ urlpatterns = [
     path("supervisor/caregivers/", SupervisorCaregiverListView.as_view(), name="supervisor-caregiver-list"),
     path("supervisor/caregivers/<int:user_id>/", SupervisorCaregiverDetailView.as_view(), name="supervisor-caregiver-detail"),
     path("supervisor/caregivers/<int:user_id>/progress/", SupervisorCaregiverProgressView.as_view(), name="supervisor-caregiver-progress"),
+    path("supervisor/caregivers/<int:user_id>/full/", SupervisorCaregiverFullProfileView.as_view(), name="supervisor-caregiver-full"),
     path("supervisor/caregivers/<int:user_id>/identity/", SupervisorIdentityView.as_view(), name="supervisor-identity"),
     path("supervisor/caregivers/<int:user_id>/work-preferences/", SupervisorWorkPreferencesView.as_view(), name="supervisor-work-preferences"),
     path("supervisor/caregivers/<int:user_id>/service-areas/", SupervisorServiceAreasView.as_view(), name="supervisor-service-areas"),

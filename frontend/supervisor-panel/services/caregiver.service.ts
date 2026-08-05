@@ -3,6 +3,7 @@ import type {
   CaregiverListItem,
   CaregiverProgress,
   ExperienceFormData,
+  FullCaregiverProfile,
   IdentityFormData,
   ReferenceFormData,
   ServiceArea,
@@ -34,6 +35,21 @@ export const caregiverService = {
 
   async updateBasicInfo(userId: number, input: { first_name: string; last_name: string; phone_number: string; email?: string }) {
     const { data } = await api.patch(`${base}/${userId}/`, input)
+    return data
+  },
+
+  async fullProfile(userId: number) {
+    const { data } = await api.get(`${base}/${userId}/full/`)
+    return data as FullCaregiverProfile
+  },
+
+  async approve(userId: number) {
+    const { data } = await api.post(`/api/caregivers/${userId}/approve/`)
+    return data
+  },
+
+  async reject(userId: number, reason: string) {
+    const { data } = await api.post(`/api/caregivers/${userId}/reject/`, { reason })
     return data
   },
 

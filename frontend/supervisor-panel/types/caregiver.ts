@@ -113,3 +113,15 @@ export interface ReferenceFormData {
   phone_number: string
   callable_for_inquiry: boolean
 }
+
+export interface FullCaregiverProfile {
+  is_approved: boolean
+  status: string
+  rejection_reason: string
+  identity: (IdentityFormData & { full_name?: string }) | null
+  work_preferences: WorkPreferencesFormData | null
+  service_areas: ServiceArea[]
+  experience: ExperienceFormData | null
+  skills: SkillsFormData | null
+  references: ReferenceFormData[]
+}

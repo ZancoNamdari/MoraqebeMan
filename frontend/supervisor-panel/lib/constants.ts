@@ -341,3 +341,22 @@ export const ACQUAINTANCE_DURATION: Choice[] = [
   ["1_to_5_years", "بین ۱ تا ۵ سال"],
   ["over_5_years", "بیش از ۵ سال (مدت زمان زیادی)"],
 ]
+
+// Looks up the Persian label for a stored choice value (or values, for
+// multi-select JSON fields) — the review screen shows "زن" not
+// "female", "بله" not "true".
+export function labelForValue(choices: Choice[], value: string | null | undefined): string {
+  if (!value) return "—"
+  return choices.find(([v]) => v === value)?.[1] || value
+}
+
+export function labelsForValues(choices: Choice[], values: string[] | null | undefined): string {
+  if (!values || values.length === 0) return "—"
+  return values.map((v) => labelForValue(choices, v)).join("، ")
+}
+
+export function yesNoLabel(value: boolean | null | undefined): string {
+  if (value === true) return "بله"
+  if (value === false) return "خیر"
+  return "—"
+}

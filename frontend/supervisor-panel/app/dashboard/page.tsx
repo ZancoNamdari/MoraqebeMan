@@ -160,6 +160,12 @@ export default function DashboardPage() {
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         <button
+                          className="rounded-md border border-emerald-200 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50"
+                          onClick={() => router.push(`${ROUTES.review}?id=${c.user_id}`)}
+                        >
+                          بررسی
+                        </button>
+                        <button
                           className="rounded-md border border-indigo-200 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
                           onClick={() => router.push(`${ROUTES.newCaregiver}?id=${c.user_id}`)}
                         >

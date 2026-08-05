@@ -296,7 +296,6 @@ class CaregiverProfileAdmin(admin.ModelAdmin):
                 hasattr(profile, "work_preferences")
                 and hasattr(profile, "experience")
                 and hasattr(profile, "skills")
-                and profile.references.count() >= 1
                 and IdentityProfile.objects.filter(user_id=profile.user_id).exists()
             )
             if complete:

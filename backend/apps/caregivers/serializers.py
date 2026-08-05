@@ -221,6 +221,15 @@ class CaregiverFullProfileSerializer(serializers.Serializer):
     references = CaregiverReferenceSerializer(many=True)
 
 
+class SupervisorCaregiverFullProfileSerializer(CaregiverFullProfileSerializer):
+    """Same nested shape as the caregiver's own /me/full/ view, plus
+    the fields a reviewer actually needs that a caregiver looking at
+    their own profile doesn't: the current status and, if rejected,
+    why."""
+    status = serializers.CharField()
+    rejection_reason = serializers.CharField(allow_blank=True)
+
+
 # ============================================================
 # Supervisor-facing — for the temp bulk-data-entry dashboard, where a
 # supervisor enters data on behalf of 40-50 caregivers rather than each

@@ -206,8 +206,8 @@ def _missing_forms(profile: CaregiverProfile, user_id: int) -> list[str]:
         missing.append("سوابق کاری (فرم ۳)")
     if not hasattr(profile, "skills"):
         missing.append("مهارت‌ها (فرم ۳)")
-    if profile.references.count() < 1:
-        missing.append("معرف‌ها (فرم ۴)")
+    # References are explicitly not required, at any stage including
+    # approval — deliberately not part of this checklist.
     return missing
 
 

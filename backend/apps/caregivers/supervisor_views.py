@@ -40,8 +40,9 @@ from .serializers import (
     CaregiverWorkPreferencesSerializer,
     CreateCaregiverSerializer,
     IdentityProfileSerializer,
+    SupervisorCaregiverFullProfileSerializer,
 )
-from .views import _missing_forms
+from .views import _get_identity_dict, _missing_forms
 
 
 def _get_target_user(user_id: int) -> User | None:
@@ -108,6 +109,37 @@ class SupervisorCaregiverDetailView(APIView):
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SupervisorCaregiverFullProfileView(APIView):
+    """
+    GET /api/supervisor/caregivers/<user_id>/full/
+    Everything about one caregiver in one nested response — the
+    reviewer needs to actually see the data before approving or
+    rejecting, not just a completion checklist. Mirrors
+    MyFullProfileView (the caregiver's own /me/full/ equivalent),
+    scoped by an explicit user_id and gated to IsAdminOrSuperuser
+    instead of IsCaregiver, same pattern as every other view in this
+    file.
+    """
+    permission_classes = [IsAdminOrSuperuser]
+
+    def get(self, request, user_id):
+        profile = _get_target_profile(user_id)
+        if profile is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        data = {
+            "is_approved": profile.status == "approved",
+            "status": profile.status,
+            "rejection_reason": profile.rejection_reason,
+            "identity": _get_identity_dict(user_id),
+            "work_preferences": getattr(profile, "work_preferences", None),
+            "service_areas": profile.service_areas.all(),
+            "experience": getattr(profile, "experience", None),
+            "skills": getattr(profile, "skills", None),
+            "references": profile.references.all(),
+        }
+        return Response(SupervisorCaregiverFullProfileSerializer(data).data)
 
 
 class SupervisorCaregiverListView(APIView):
