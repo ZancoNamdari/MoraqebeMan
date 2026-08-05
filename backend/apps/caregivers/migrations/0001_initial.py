@@ -27,7 +27,6 @@ class Migration(migrations.Migration):
                 ('created_at', django_jalali.db.models.jDateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')),
                 ('updated_at', django_jalali.db.models.jDateTimeField(auto_now=True, verbose_name='تاریخ بروزرسانی')),
                 ('approved_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approved_caregivers', to=settings.AUTH_USER_MODEL, verbose_name='تأییدشده توسط')),
-                ('created_by', models.ForeignKey(blank=True, help_text='ناظری که این مراقب را وارد سیستم کرده — خالی یعنی خود مراقب یا مسیر دیگری بوده.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_caregivers', to=settings.AUTH_USER_MODEL, verbose_name='ثبت\u200cشده توسط')),
                 ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='caregiver_profile', to=settings.AUTH_USER_MODEL, verbose_name='کاربر')),
             ],
             options={

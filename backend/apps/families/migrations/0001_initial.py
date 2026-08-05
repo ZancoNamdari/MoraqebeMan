@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 ('address', models.TextField(blank=True, help_text='نشانی')),
                 ('created_at', django_jalali.db.models.jDateTimeField(auto_now_add=True, verbose_name='تاریخ و زمان ایجاد')),
                 ('updated_at', django_jalali.db.models.jDateTimeField(auto_now=True, verbose_name='تاریخ و زمان بروزرسانی')),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='family_profile', to=settings.AUTH_USER_MODEL, verbose_name='کاربر')),
+                ('user_id', models.PositiveIntegerField(db_index=True, help_text='شناسه کاربری در سرویس هویت', unique=True)),
             ],
             options={
                 'verbose_name': 'پروفایل خانواده',
@@ -50,7 +50,7 @@ class Migration(migrations.Migration):
                 ('basic_medical_info', models.TextField(blank=True, help_text='اطلاعات پزشکی پایه — بیماری\u200cهای مهم و نیازهای ویژه')),
                 ('created_at', django_jalali.db.models.jDateTimeField(auto_now_add=True, verbose_name='تاریخ و زمان ایجاد')),
                 ('updated_at', django_jalali.db.models.jDateTimeField(auto_now=True, verbose_name='تاریخ و زمان بروزرسانی')),
-                ('user', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='patient_profile', to=settings.AUTH_USER_MODEL, verbose_name='کاربر')),
+                ('user_id', models.PositiveIntegerField(blank=True, db_index=True, null=True, unique=True)),
             ],
             options={
                 'verbose_name': 'پروفایل بیمار',
