@@ -124,7 +124,7 @@ export default function DashboardPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-slate-50 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <tr className="border-b bg-slate-50 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <th className="px-4 py-3">نام</th>
                   <th className="px-4 py-3">شماره موبایل</th>
                   <th className="px-4 py-3">وضعیت</th>
@@ -136,16 +136,16 @@ export default function DashboardPage() {
               <tbody className="divide-y">
                 {filtered.map((c, i) => (
                   <tr key={c.user_id} className={cn("transition-colors hover:bg-indigo-50/40", i % 2 === 1 && "bg-slate-50/50")}>
-                    <td className="px-4 py-3 font-medium text-slate-800">{c.full_name || "(بدون نام)"}</td>
-                    <td className="px-4 py-3 text-slate-600" dir="ltr">{c.phone_number}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-center font-medium text-slate-800">{c.full_name || "(بدون نام)"}</td>
+                    <td className="px-4 py-3 text-center text-slate-600" dir="ltr">{c.phone_number}</td>
+                    <td className="px-4 py-3 text-center">
                       <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium", STATUS_TEXT[c.status])}>
                         <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[c.status])} />
                         {STATUS_LABEL[c.status] || c.status}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-200">
                           <div
                             className={cn(
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-2">
+                      <div className="flex justify-center gap-2">
                         <button
                           className="rounded-md border border-emerald-200 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50"
                           onClick={() => router.push(`${ROUTES.review}?id=${c.user_id}`)}
@@ -181,7 +181,7 @@ export default function DashboardPage() {
                         </button>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-500">
+                    <td className="px-4 py-3 text-center text-slate-500">
                       {c.created_by || "—"}
                     </td>
                   </tr>
@@ -197,7 +197,7 @@ export default function DashboardPage() {
 
 function SummaryCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className={cn("rounded-lg border p-3", color)}>
+    <div className={cn("rounded-lg border p-3 text-center", color)}>
       <p className="text-2xl font-bold">{value}</p>
       <p className="text-xs font-medium opacity-80">{label}</p>
     </div>
