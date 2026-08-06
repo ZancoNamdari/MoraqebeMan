@@ -128,7 +128,30 @@ class SupervisorCreateCaregiverTests(TestCase):
 
         response = self.client.get("/api/supervisor/caregivers/")
         row = next(r for r in response.data if r["user_id"] == cg_id)
-        self.assertEqual(row["created_by"], self.supervisor.get_full_name())
+        self.assertEqual(row["created_by"], f"{self.supervisor.username}({self.supervisor.role})")
+
+    def test_created_by_distinguishes_superuser_from_admin(self):
+        # The whole point of the username(role) format is telling
+        # different actors apart at a glance - confirm it actually
+        # differs for a SUPERUSER-created row, not just admin.
+        superuser = User.objects.create(
+            username="rootuser", phone_number="09100009998", email="root@a.com",
+            role=UserRole.SUPERUSER, first_name="ریشه", last_name="کاربر",
+        )
+        superuser.set_password("pass12345")
+        superuser.save()
+        token = SimpleJWTTokenIssuer().issue(superuser)["access"]
+        su_client = APIClient()
+        su_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+        create = su_client.post("/api/supervisor/caregivers/", {
+            "first_name": "س", "last_name": "س", "phone_number": "09121230021",
+        }, format="json")
+        cg_id = create.data["user_id"]
+
+        response = self.client.get("/api/supervisor/caregivers/")
+        row = next(r for r in response.data if r["user_id"] == cg_id)
+        self.assertEqual(row["created_by"], "rootuser(superuser)")
 
     def test_create_writes_an_audit_log_entry(self):
         from apps.audit.models import AuditEventType, AuditLog

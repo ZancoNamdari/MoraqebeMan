@@ -197,7 +197,7 @@ class SupervisorCaregiverListView(APIView):
                 "phone_number": user.phone_number,
                 "status": profile.status if profile else "draft",
                 "forms_completed": done,
-                "created_by": (created_by_user.get_full_name() or created_by_user.username) if created_by_user else None,
+                "created_by": f"{created_by_user.username}({created_by_user.role})" if created_by_user else None,
             })
         return Response(CaregiverListItemSerializer(rows, many=True).data)
 
