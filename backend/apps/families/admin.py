@@ -7,10 +7,10 @@ from .models import FamilyPatientLink, FamilyProfile, PatientCompatibilityQuesti
 
 @admin.register(FamilyProfile)
 class FamilyProfileAdmin(admin.ModelAdmin):
-    list_display = ["display_name", "user", "city", "created_at_display"]
-    search_fields = ["display_name", "city", "user__username", "user__phone_number"]
-    list_filter = ["city"]
-    autocomplete_fields = ["user"]
+    list_display = ["display_name", "user", "province", "city", "created_at_display"]
+    search_fields = ["display_name", "legacy_city_text", "city__name", "user__username", "user__phone_number"]
+    list_filter = ["province"]
+    autocomplete_fields = ["user", "province", "city"]
 
     @admin.display(description="تاریخ ایجاد")
     def created_at_display(self, obj):
@@ -19,10 +19,10 @@ class FamilyProfileAdmin(admin.ModelAdmin):
 
 @admin.register(PatientProfile)
 class PatientProfileAdmin(admin.ModelAdmin):
-    list_display = ["full_name", "user", "national_id_display", "birth_date_display", "guardianship_status"]
-    search_fields = ["full_name", "father_name", "national_id", "postal_code", "full_address", "user__username"]
-    list_filter = ["guardianship_status"]
-    autocomplete_fields = ["user"]
+    list_display = ["full_name", "user", "province", "city", "national_id_display", "birth_date_display", "guardianship_status"]
+    search_fields = ["full_name", "father_name", "national_id", "postal_code", "full_address", "city__name", "user__username"]
+    list_filter = ["guardianship_status", "province"]
+    autocomplete_fields = ["user", "province", "city", "district"]
 
     @admin.display(description="شماره ملی")
     def national_id_display(self, obj):

@@ -64,12 +64,37 @@ class FamilyProfileTests(TestCase):
 
     def test_create_and_retrieve_profile(self):
         self._auth()
-        response = self.client.post("/api/families/me/", {"display_name": "خانواده احمدی", "city": "تهران"}, format="json")
+        response = self.client.post("/api/families/me/", {"display_name": "خانواده احمدی"}, format="json")
         self.assertEqual(response.status_code, 201)
 
         response = self.client.get("/api/families/me/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["display_name"], "خانواده احمدی")
+
+    def test_real_province_and_city_ids_accepted_with_name_display(self):
+        from apps.locations.models import Province
+
+        self._auth()
+        tehran = Province.objects.get(name="تهران")
+        tehran_city = tehran.cities.get(name="تهران")
+
+        response = self.client.post("/api/families/me/", {
+            "display_name": "خانواده رضایی", "province": tehran.id, "city": tehran_city.id,
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["province_name"], "تهران")
+        self.assertEqual(response.data["city_name"], "تهران")
+
+    def test_string_city_value_rejected_like_caregivers(self):
+        # Same class of error this exact endpoint's caregiver
+        # counterpart hit in production — confirms this endpoint
+        # genuinely enforces the FK type now, not just in theory.
+        self._auth()
+        response = self.client.post("/api/families/me/", {
+            "display_name": "خانواده رضایی", "city": "تهران",
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("city", response.data)
 
 
 class PatientTests(TestCase):
@@ -83,6 +108,18 @@ class PatientTests(TestCase):
         response = self.client.post("/api/patients/", VALID_PATIENT, format="json")
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["full_name"], "رضا احمدی")
+
+    def test_add_patient_with_real_district_id(self):
+        from apps.locations.models import Province
+
+        tehran = Province.objects.get(name="تهران")
+        tehran_city = tehran.cities.get(name="تهران")
+        district = tehran_city.districts.first()
+
+        payload = dict(VALID_PATIENT, province=tehran.id, city=tehran_city.id, district=district.id)
+        response = self.client.post("/api/patients/", payload, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["district_name"], district.name)
 
     def test_guardianship_status_without_details_rejected(self):
         payload = dict(VALID_PATIENT, guardianship_status="legal_guardian", guardian_details="")

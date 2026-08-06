@@ -13,7 +13,14 @@ class FamilyProfile(models.Model):
         "accounts.User", on_delete=models.CASCADE, related_name="family_profile", verbose_name="کاربر"
     )
     display_name = models.CharField(max_length=150, help_text="نام نمایشی")
-    city = models.CharField(max_length=100, blank=True, help_text="شهر")
+    province = models.ForeignKey(
+        "locations.Province", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="استان")
+    city = models.ForeignKey(
+        "locations.City", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="شهر")
+    legacy_city_text = models.CharField(
+        max_length=100, blank=True, verbose_name="شهر (متن قدیمی)",
+        help_text="مقدار قبلی فیلد شهر پیش از تبدیل به فیلد ساختاریافته — برای مراجعه در صورت نیاز نگه داشته شده.",
+    )
     address = models.TextField(blank=True, help_text="نشانی")
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
@@ -56,6 +63,12 @@ class PatientProfile(models.Model):
     birth_certificate_issue_place = models.CharField(max_length=150, blank=True, help_text="محل صدور شناسنامه")
 
     full_address = models.TextField(blank=True, help_text="نشانی کامل محل سکونت (شهر، خیابان، پلاک، واحد)")
+    province = models.ForeignKey(
+        "locations.Province", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="استان")
+    city = models.ForeignKey(
+        "locations.City", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="شهر")
+    district = models.ForeignKey(
+        "locations.District", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="منطقه")
     postal_code = models.CharField(max_length=10, blank=True, help_text="کد پستی")
 
     emergency_contact_phone = models.CharField(
@@ -83,7 +96,7 @@ class PatientProfile(models.Model):
         verbose_name_plural = "پروفایل‌های بیمار"
 
     def __str__(self):
-        return f"PatientProfile({self.full_name})"
+        return self.full_name
 
 
 class FamilyPatientLink(models.Model):

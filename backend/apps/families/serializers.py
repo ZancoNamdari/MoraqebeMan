@@ -16,10 +16,16 @@ class FamilyProfileSerializer(serializers.ModelSerializer):
     # under "user_id"), not a nested user object, so nothing consuming
     # this endpoint needs to change alongside the model.
     user_id = serializers.IntegerField(read_only=True)
+    # province/city are real FKs now (write: send the id) — these two
+    # are read-only conveniences so a family's location can be
+    # displayed without a separate fetch, same pattern already
+    # established for apps.caregivers.CaregiverServiceAreaSerializer.
+    province_name = serializers.CharField(source="province.name", read_only=True, default=None)
+    city_name = serializers.CharField(source="city.name", read_only=True, default=None)
 
     class Meta:
         model = FamilyProfile
-        fields = ["id", "user_id", "display_name", "city", "address", "created_at"]
+        fields = ["id", "user_id", "display_name", "province", "city", "province_name", "city_name", "address", "created_at"]
         read_only_fields = ["id", "user_id", "created_at"]
 
 
@@ -28,13 +34,17 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     # Same reasoning as FamilyProfileSerializer.user_id — keep the JSON
     # shape stable as a plain (possibly null) integer.
     user_id = serializers.IntegerField(read_only=True, allow_null=True)
+    province_name = serializers.CharField(source="province.name", read_only=True, default=None)
+    city_name = serializers.CharField(source="city.name", read_only=True, default=None)
+    district_name = serializers.CharField(source="district.name", read_only=True, default=None)
 
     class Meta:
         model = PatientProfile
         fields = [
             "id", "user_id", "full_name", "father_name", "birth_date",
             "national_id", "birth_certificate_number", "birth_certificate_issue_place",
-            "full_address", "postal_code", "emergency_contact_phone",
+            "full_address", "province", "city", "district", "province_name", "city_name", "district_name",
+            "postal_code", "emergency_contact_phone",
             "guardianship_status", "guardian_details",
             "language_dialect", "basic_medical_info",
             "created_at", "updated_at",
