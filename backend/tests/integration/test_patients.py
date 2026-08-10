@@ -200,3 +200,92 @@ class QuestionnaireTests(TestCase):
     def test_questionnaire_for_nonexistent_patient_returns_404(self):
         response = self.client.get("/api/patients/999999/questionnaire/")
         self.assertEqual(response.status_code, 404)
+
+
+class FamilyLinkTests(TestCase):
+    """The actual missing piece: multiple family members (siblings)
+    sharing access to the same patient, not just whoever originally
+    registered them."""
+
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+        self.sibling1, self.token1 = make_authenticated_user("sibling1", role=UserRole.FAMILY, phone_number="09121110001")
+        self.sibling2, self.token2 = make_authenticated_user("sibling2", role=UserRole.FAMILY, phone_number="09121110002")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+
+        create = self.client.post("/api/patients/", VALID_PATIENT, format="json")
+        self.patient_id = create.data["id"]
+
+    def test_second_sibling_has_no_access_before_being_linked(self):
+        client2 = APIClient()
+        client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
+        response = client2.get(f"/api/patients/{self.patient_id}/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_linking_a_second_sibling_grants_full_access(self):
+        response = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "phone_number": "09121110002", "relation": "فرزند",
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
+
+        client2 = APIClient()
+        client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
+        detail = client2.get(f"/api/patients/{self.patient_id}/")
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.data["full_name"], VALID_PATIENT["full_name"])
+
+        listing = client2.get("/api/patients/")
+        self.assertEqual(len(listing.data), 1)
+
+    def test_family_links_list_shows_everyone_with_access(self):
+        self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "phone_number": "09121110002", "relation": "فرزند",
+        }, format="json")
+        response = self.client.get(f"/api/patients/{self.patient_id}/family-links/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+
+    def test_linking_nonexistent_phone_number_rejected(self):
+        response = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "phone_number": "09129999999", "relation": "فرزند",
+        }, format="json")
+        self.assertEqual(response.status_code, 404)
+
+    def test_linking_same_family_twice_rejected(self):
+        self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "phone_number": "09121110002", "relation": "فرزند",
+        }, format="json")
+        response = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "phone_number": "09121110002", "relation": "فرزند",
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_unlinked_family_cannot_add_others_to_a_patient_they_cant_see(self):
+        client2 = APIClient()
+        client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
+        response = client2.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "phone_number": "09121110001", "relation": "فرزند",
+        }, format="json")
+        self.assertEqual(response.status_code, 404)
+
+    def test_cannot_remove_the_last_remaining_link(self):
+        links = self.client.get(f"/api/patients/{self.patient_id}/family-links/").data
+        link_id = links[0]["id"]
+        response = self.client.delete(f"/api/patients/{self.patient_id}/family-links/{link_id}/")
+        self.assertEqual(response.status_code, 400)
+
+    def test_can_remove_a_link_when_another_remains(self):
+        self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "phone_number": "09121110002", "relation": "فرزند",
+        }, format="json")
+        links = self.client.get(f"/api/patients/{self.patient_id}/family-links/").data
+        second_link = next(l for l in links if l["family_phone_number"] == "09121110002")
+
+        response = self.client.delete(f"/api/patients/{self.patient_id}/family-links/{second_link['id']}/")
+        self.assertEqual(response.status_code, 204)
+
+        client2 = APIClient()
+        client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
+        confirm = client2.get(f"/api/patients/{self.patient_id}/")
+        self.assertEqual(confirm.status_code, 404)

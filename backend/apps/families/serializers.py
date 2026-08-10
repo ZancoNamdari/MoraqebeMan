@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.accounts.jalali_fields import JalaliDateField
 
 from .models import (
+    FamilyPatientLink,
     FamilyProfile,
     GuardianshipStatus,
     PatientCompatibilityQuestionnaire,
@@ -88,3 +89,38 @@ class PatientCompatibilityQuestionnaireSerializer(serializers.ModelSerializer):
             "created_at", "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
+
+
+class FamilyPatientLinkSerializer(serializers.ModelSerializer):
+    """
+    One row in a patient's "who else has access" list — the actual
+    missing piece behind "multiple children need to see the same
+    parent's record": FamilyPatientLink (family <-> patient,
+    many-to-many) already existed, but nothing besides
+    MyPatientsView.post() ever created one, and that path always
+    creates a brand-new patient alongside the link — there was no way
+    for a second family member to link themselves to a patient someone
+    else already registered.
+    """
+    family_display_name = serializers.CharField(source="family.display_name", read_only=True)
+    family_phone_number = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FamilyPatientLink
+        fields = ["id", "family", "family_display_name", "family_phone_number", "relation", "is_primary_contact", "created_at"]
+        read_only_fields = ["id", "family", "family_display_name", "family_phone_number", "created_at"]
+
+    def get_family_phone_number(self, obj):
+        return obj.family.user.phone_number if obj.family.user else None
+
+
+class AddFamilyLinkSerializer(serializers.Serializer):
+    """Adding an existing family-role user (identified by phone
+    number, not by guessing/creating an account on their behalf) to a
+    patient someone else already registered."""
+    phone_number = serializers.RegexField(
+        regex=r"^09\d{9}$",
+        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
+    )
+    relation = serializers.CharField(max_length=50)
+    is_primary_contact = serializers.BooleanField(required=False, default=False)
