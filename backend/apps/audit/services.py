@@ -63,3 +63,28 @@ class AuditService:
 
     def caregiver_deleted(self, actor_id, caregiver_user_id):
         return self.log_event(AuditEventType.CAREGIVER_DELETED, actor_id, caregiver_user_id)
+
+    # Family/patient actions — same "who did what, when" queryability
+    # as the caregiver events above. Patients are frequently
+    # dependents with no login of their own, so target_user_id (which
+    # always means a real accounts.User id) stays whatever the
+    # patient's own user link is (often None) — the patient's actual
+    # identity for querying is patient_id in the metadata instead.
+    def patient_created(self, actor_id, patient_id):
+        return self.log_event(AuditEventType.PATIENT_CREATED, actor_id, None, patient_id=patient_id)
+
+    def patient_updated(self, actor_id, patient_id, section):
+        return self.log_event(AuditEventType.PATIENT_UPDATED, actor_id, None, patient_id=patient_id, section=section)
+
+    def patient_deleted(self, actor_id, patient_id):
+        return self.log_event(AuditEventType.PATIENT_DELETED, actor_id, None, patient_id=patient_id)
+
+    def family_link_added(self, actor_id, patient_id, linked_family_user_id):
+        return self.log_event(
+            AuditEventType.FAMILY_LINK_ADDED, actor_id, linked_family_user_id, patient_id=patient_id,
+        )
+
+    def family_link_removed(self, actor_id, patient_id, unlinked_family_user_id):
+        return self.log_event(
+            AuditEventType.FAMILY_LINK_REMOVED, actor_id, unlinked_family_user_id, patient_id=patient_id,
+        )

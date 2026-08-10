@@ -124,3 +124,10 @@ class AddFamilyLinkSerializer(serializers.Serializer):
     )
     relation = serializers.CharField(max_length=50)
     is_primary_contact = serializers.BooleanField(required=False, default=False)
+
+
+class UpdateFamilyLinkSerializer(serializers.Serializer):
+    """PATCH payload for changing a family member's relation label
+    and/or handing off primary-contact status."""
+    relation = serializers.CharField(max_length=50, required=False)
+    is_primary_contact = serializers.BooleanField(required=False)

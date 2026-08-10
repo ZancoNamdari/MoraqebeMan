@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User, UserRole
+from apps.audit.services import AuditService
 
 from .models import FamilyPatientLink, FamilyProfile, PatientCompatibilityQuestionnaire, PatientProfile
 from .permissions import IsFamily
@@ -13,7 +14,10 @@ from .serializers import (
     FamilyProfileSerializer,
     PatientCompatibilityQuestionnaireSerializer,
     PatientProfileSerializer,
+    UpdateFamilyLinkSerializer,
 )
+
+audit = AuditService()
 
 
 class MyFamilyProfileView(APIView):
@@ -79,12 +83,24 @@ class MyPatientsView(APIView):
         family = _get_or_create_family(request.user)
         patient = PatientProfile.objects.create(user_id=patient_user_id, **data)
         FamilyPatientLink.objects.create(family=family, patient=patient, relation=relation)
+        audit.patient_created(request.user.id, patient.id)
 
         return Response(PatientProfileSerializer(patient).data, status=status.HTTP_201_CREATED)
 
 
 class PatientDetailView(APIView):
-    """GET/PUT /api/patients/<id>/ — only accessible to a family linked to this patient."""
+    """
+    GET    /api/patients/<id>/ — only accessible to a family linked to this patient.
+    PUT    /api/patients/<id>/ — update.
+    DELETE /api/patients/<id>/ — removes the patient record entirely
+           (e.g. after they pass away and the family wants the record
+           gone), cascading through their questionnaire and every
+           FamilyPatientLink. Any family member currently linked can
+           do this — same reasoning as apps.caregivers' delete: this
+           is a deliberate, occasional action, not something that
+           needs a stricter "only the primary contact" rule for a
+           first version of it.
+    """
     permission_classes = [IsFamily]
 
     def get(self, request, patient_id):
@@ -101,7 +117,20 @@ class PatientDetailView(APIView):
         serializer = PatientProfileSerializer(instance=patient, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        audit.patient_updated(request.user.id, patient.id, section="profile")
         return Response(serializer.data)
+
+    def delete(self, request, patient_id):
+        patient = _get_patient_for_family_request(request, patient_id)
+        if patient is None:
+            return Response({"detail": "بیمار یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Logged before the delete, not after — same reasoning as the
+        # caregiver delete endpoint: no reason to risk the log write
+        # racing the cascade delete.
+        audit.patient_deleted(request.user.id, patient.id)
+        patient.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class PatientQuestionnaireView(APIView):
@@ -131,6 +160,7 @@ class PatientQuestionnaireView(APIView):
         serializer = PatientCompatibilityQuestionnaireSerializer(instance=existing, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(patient=patient)
+        audit.patient_updated(request.user.id, patient.id, section="questionnaire")
         return Response(
             serializer.data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED
         )
@@ -143,12 +173,7 @@ class PatientFamilyLinksView(APIView):
          care info."
     POST /api/patients/<id>/family-links/ — link another existing
          FAMILY-role account (a sibling, most commonly) to this same
-         patient by phone number. The actual missing piece: before
-         this, the only way a FamilyPatientLink ever got created was
-         MyPatientsView.post(), which always creates a brand-new
-         patient alongside it — there was no way for a second family
-         member to attach themselves to a patient someone else already
-         registered.
+         patient by phone number.
     """
     permission_classes = [IsFamily]
 
@@ -183,17 +208,51 @@ class PatientFamilyLinksView(APIView):
             family=target_family, patient=patient,
             relation=data["relation"], is_primary_contact=data["is_primary_contact"],
         )
+        audit.family_link_added(request.user.id, patient.id, target_user.id)
         return Response(FamilyPatientLinkSerializer(link).data, status=status.HTTP_201_CREATED)
 
 
 class PatientFamilyLinkDetailView(APIView):
-    """DELETE /api/patients/<id>/family-links/<link_id>/ — revoke a
-    family member's access. Deliberately refuses to remove the last
-    remaining link, rather than let a patient end up with zero family
-    accounts able to see or manage their record — a supervisor/admin
-    can always resolve that manually via Django admin if it's ever
-    genuinely needed."""
+    """
+    PATCH  /api/patients/<id>/family-links/<link_id>/ — update relation
+           and/or hand off primary-contact status to a different family
+           member. Setting is_primary_contact=true here demotes every
+           other link for the same patient rather than allowing more
+           than one "primary" — the field is meant to answer "who do
+           we call first", which only makes sense as a single answer.
+    DELETE /api/patients/<id>/family-links/<link_id>/ — revoke a family
+           member's access. Deliberately refuses to remove the last
+           remaining link, rather than let a patient end up with zero
+           family accounts able to see or manage their record — a
+           supervisor/admin can always resolve that manually via
+           Django admin if it's ever genuinely needed.
+    """
     permission_classes = [IsFamily]
+
+    def patch(self, request, patient_id, link_id):
+        patient = _get_patient_for_family_request(request, patient_id)
+        if patient is None:
+            return Response({"detail": "بیمار یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        link = FamilyPatientLink.objects.filter(id=link_id, patient=patient).first()
+        if link is None:
+            return Response({"detail": "یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UpdateFamilyLinkSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        if "relation" in data:
+            link.relation = data["relation"]
+        if data.get("is_primary_contact") is True:
+            FamilyPatientLink.objects.filter(patient=patient).exclude(id=link.id).update(is_primary_contact=False)
+            link.is_primary_contact = True
+        elif "is_primary_contact" in data:
+            link.is_primary_contact = data["is_primary_contact"]
+        link.save()
+
+        audit.patient_updated(request.user.id, patient.id, section="family_link")
+        return Response(FamilyPatientLinkSerializer(link).data)
 
     def delete(self, request, patient_id, link_id):
         patient = _get_patient_for_family_request(request, patient_id)
@@ -210,5 +269,7 @@ class PatientFamilyLinkDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        unlinked_user_id = link.family.user_id
         link.delete()
+        audit.family_link_removed(request.user.id, patient.id, unlinked_user_id)
         return Response(status=status.HTTP_204_NO_CONTENT)

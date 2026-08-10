@@ -16,6 +16,11 @@ class AuditEventType(models.TextChoices):
     CAREGIVER_CREATED = "caregiver_created", "ثبت مراقب توسط ناظر"
     CAREGIVER_UPDATED = "caregiver_updated", "ویرایش اطلاعات مراقب توسط ناظر"
     CAREGIVER_DELETED = "caregiver_deleted", "حذف مراقب توسط ناظر"
+    PATIENT_CREATED = "patient_created", "ثبت بیمار"
+    PATIENT_UPDATED = "patient_updated", "ویرایش اطلاعات بیمار"
+    PATIENT_DELETED = "patient_deleted", "حذف بیمار"
+    FAMILY_LINK_ADDED = "family_link_added", "افزودن دسترسی خانواده به بیمار"
+    FAMILY_LINK_REMOVED = "family_link_removed", "حذف دسترسی خانواده از بیمار"
 
 
 class AuditLog(models.Model):

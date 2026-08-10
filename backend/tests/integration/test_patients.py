@@ -289,3 +289,65 @@ class FamilyLinkTests(TestCase):
         client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
         confirm = client2.get(f"/api/patients/{self.patient_id}/")
         self.assertEqual(confirm.status_code, 404)
+
+    def test_patch_hands_off_primary_contact(self):
+        add = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "phone_number": "09121110002", "relation": "فرزند",
+        }, format="json")
+        link2_id = add.data["id"]
+
+        response = self.client.patch(f"/api/patients/{self.patient_id}/family-links/{link2_id}/", {
+            "is_primary_contact": True,
+        }, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["is_primary_contact"])
+
+        links = self.client.get(f"/api/patients/{self.patient_id}/family-links/").data
+        link1 = next(l for l in links if l["family_phone_number"] == "09121110001")
+        self.assertFalse(link1["is_primary_contact"])
+
+    def test_patch_can_update_relation_without_touching_primary_contact(self):
+        links = self.client.get(f"/api/patients/{self.patient_id}/family-links/").data
+        link_id = links[0]["id"]
+        response = self.client.patch(f"/api/patients/{self.patient_id}/family-links/{link_id}/", {
+            "relation": "همسر",
+        }, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["relation"], "همسر")
+
+    def test_any_linked_family_member_can_delete_the_patient(self):
+        self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "phone_number": "09121110002", "relation": "فرزند",
+        }, format="json")
+
+        client2 = APIClient()
+        client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
+        response = client2.delete(f"/api/patients/{self.patient_id}/")
+        self.assertEqual(response.status_code, 204)
+
+        # gone for both, not just the one who deleted it
+        self.assertEqual(len(self.client.get("/api/patients/").data), 0)
+        self.assertEqual(len(client2.get("/api/patients/").data), 0)
+
+    def test_deleting_patient_writes_audit_entry(self):
+        from apps.audit.models import AuditEventType, AuditLog
+
+        self.client.delete(f"/api/patients/{self.patient_id}/")
+        entry = AuditLog.objects.filter(event_type=AuditEventType.PATIENT_DELETED, metadata__patient_id=self.patient_id).first()
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.actor_user_id, self.sibling1.id)
+
+    def test_creating_patient_writes_audit_entry(self):
+        from apps.audit.models import AuditEventType, AuditLog
+
+        entry = AuditLog.objects.filter(event_type=AuditEventType.PATIENT_CREATED, metadata__patient_id=self.patient_id).first()
+        self.assertIsNotNone(entry)
+
+    def test_adding_family_link_writes_audit_entry(self):
+        from apps.audit.models import AuditEventType, AuditLog
+
+        self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "phone_number": "09121110002", "relation": "فرزند",
+        }, format="json")
+        entry = AuditLog.objects.filter(event_type=AuditEventType.FAMILY_LINK_ADDED, target_user_id=self.sibling2.id).first()
+        self.assertIsNotNone(entry)
