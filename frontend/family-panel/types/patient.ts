@@ -1,6 +1,7 @@
 export interface PatientListItem {
   id: number
   user_id: number | null
+  access_code: string
   full_name: string
   father_name: string
   birth_date: string | null
@@ -43,13 +44,20 @@ export interface PatientFormData {
   basic_medical_info: string
 }
 
+export type AccessLevel = "full_access" | "view_only"
+
 export interface FamilyLink {
   id: number
   family: number
   family_display_name: string | null
   family_phone_number: string | null
+  patient: number
+  patient_full_name: string
   relation: string
   is_primary_contact: boolean
+  status: "pending" | "approved" | "rejected"
+  access_level: AccessLevel
+  approved_at: string | null
   created_at: string
 }
 

@@ -1,5 +1,18 @@
 from django.db import models
+from django.utils.crypto import get_random_string
 from django_jalali.db import models as jmodels
+
+# Excludes visually-ambiguous characters (0/O, 1/I/L) — these codes are
+# meant to be read aloud or typed by hand between family members, not
+# copy-pasted.
+_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+
+def _generate_unique_code(model, prefix: str) -> str:
+    while True:
+        candidate = f"{prefix}-{get_random_string(6, _CODE_ALPHABET)}"
+        if not model.objects.filter(access_code=candidate).exists():
+            return candidate
 
 
 class FamilyProfile(models.Model):
@@ -11,6 +24,10 @@ class FamilyProfile(models.Model):
     change earlier, this app just hadn't caught up yet."""
     user = models.OneToOneField(
         "accounts.User", on_delete=models.CASCADE, related_name="family_profile", verbose_name="کاربر"
+    )
+    access_code = models.CharField(
+        max_length=20, unique=True, editable=False, verbose_name="کد عضو خانواده",
+        help_text="کد یکتا برای دعوت این عضو خانواده توسط یک بیمار — مثلاً FAM-92K7XQ",
     )
     display_name = models.CharField(max_length=150, help_text="نام نمایشی")
     province = models.ForeignKey(
@@ -28,6 +45,11 @@ class FamilyProfile(models.Model):
     class Meta:
         verbose_name = "پروفایل خانواده"
         verbose_name_plural = "پروفایل‌های خانواده"
+
+    def save(self, *args, **kwargs):
+        if not self.access_code:
+            self.access_code = _generate_unique_code(FamilyProfile, "FAM")
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.display_name or self.user.username
@@ -53,6 +75,10 @@ class PatientProfile(models.Model):
     user = models.OneToOneField(
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="patient_profile", verbose_name="کاربر",
+    )
+    access_code = models.CharField(
+        max_length=20, unique=True, editable=False, verbose_name="کد بیمار",
+        help_text="کد یکتا برای دعوت اعضای خانواده توسط این بیمار — مثلاً ELD-7K4P9X",
     )
 
     full_name = models.CharField(max_length=150, help_text="نام و نام خانوادگی سالمند")
@@ -95,18 +121,53 @@ class PatientProfile(models.Model):
         verbose_name = "پروفایل بیمار"
         verbose_name_plural = "پروفایل‌های بیمار"
 
+    def save(self, *args, **kwargs):
+        if not self.access_code:
+            self.access_code = _generate_unique_code(PatientProfile, "ELD")
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.full_name
 
 
+class LinkStatus(models.TextChoices):
+    PENDING = "pending", "در انتظار تأیید"
+    APPROVED = "approved", "تأییدشده"
+    REJECTED = "rejected", "رد شده"
+
+
+class AccessLevel(models.TextChoices):
+    FULL = "full_access", "دسترسی کامل"
+    VIEW_ONLY = "view_only", "فقط مشاهده"
+
+
 class FamilyPatientLink(models.Model):
-    """Many-to-many: a patient can be overseen by more than one family
+    """
+    Many-to-many: a patient can be overseen by more than one family
     account (siblings coordinating care), and a family can manage more
-    than one patient (father, mother, grandmother simultaneously)."""
+    than one patient (father, mother, grandmother simultaneously).
+
+    Two ways this gets created, matching the two real-world directions
+    of the relationship: a family member requests access using the
+    patient's access_code (status starts PENDING, needs the patient or
+    an already-approved family member to approve it — they're asking
+    someone else's permission), or the patient (or an already-approved
+    family member acting on their behalf) invites a family member
+    using that family member's access_code (status is APPROVED
+    immediately — the patient side already has the authority to grant
+    it, no second approval needed).
+    """
     family = models.ForeignKey(FamilyProfile, on_delete=models.CASCADE, related_name="patient_links", verbose_name="خانواده")
     patient = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name="family_links", verbose_name="سالمند")
     relation = models.CharField(max_length=50, help_text="نسبت، مثلاً فرزند/همسر/سرپرست")
     is_primary_contact = models.BooleanField(default=True)
+    status = models.CharField(max_length=20, choices=LinkStatus.choices, default=LinkStatus.APPROVED, verbose_name="وضعیت")
+    access_level = models.CharField(max_length=20, choices=AccessLevel.choices, default=AccessLevel.FULL, verbose_name="سطح دسترسی")
+    approved_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="approved_family_links", verbose_name="تأییدشده توسط",
+    )
+    approved_at = jmodels.jDateTimeField(null=True, blank=True, verbose_name="زمان تأیید")
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
 

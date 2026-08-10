@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.accounts.jalali_fields import JalaliDateField
 
 from .models import (
+    AccessLevel,
     FamilyPatientLink,
     FamilyProfile,
     GuardianshipStatus,
@@ -17,17 +18,14 @@ class FamilyProfileSerializer(serializers.ModelSerializer):
     # under "user_id"), not a nested user object, so nothing consuming
     # this endpoint needs to change alongside the model.
     user_id = serializers.IntegerField(read_only=True)
-    # province/city are real FKs now (write: send the id) — these two
-    # are read-only conveniences so a family's location can be
-    # displayed without a separate fetch, same pattern already
-    # established for apps.caregivers.CaregiverServiceAreaSerializer.
+    access_code = serializers.CharField(read_only=True)
     province_name = serializers.CharField(source="province.name", read_only=True, default=None)
     city_name = serializers.CharField(source="city.name", read_only=True, default=None)
 
     class Meta:
         model = FamilyProfile
-        fields = ["id", "user_id", "display_name", "province", "city", "province_name", "city_name", "address", "created_at"]
-        read_only_fields = ["id", "user_id", "created_at"]
+        fields = ["id", "user_id", "access_code", "display_name", "province", "city", "province_name", "city_name", "address", "created_at"]
+        read_only_fields = ["id", "user_id", "access_code", "created_at"]
 
 
 class PatientProfileSerializer(serializers.ModelSerializer):
@@ -35,6 +33,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     # Same reasoning as FamilyProfileSerializer.user_id — keep the JSON
     # shape stable as a plain (possibly null) integer.
     user_id = serializers.IntegerField(read_only=True, allow_null=True)
+    access_code = serializers.CharField(read_only=True)
     province_name = serializers.CharField(source="province.name", read_only=True, default=None)
     city_name = serializers.CharField(source="city.name", read_only=True, default=None)
     district_name = serializers.CharField(source="district.name", read_only=True, default=None)
@@ -42,7 +41,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientProfile
         fields = [
-            "id", "user_id", "full_name", "father_name", "birth_date",
+            "id", "user_id", "access_code", "full_name", "father_name", "birth_date",
             "national_id", "birth_certificate_number", "birth_certificate_issue_place",
             "full_address", "province", "city", "district", "province_name", "city_name", "district_name",
             "postal_code", "emergency_contact_phone",
@@ -50,7 +49,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
             "language_dialect", "basic_medical_info",
             "created_at", "updated_at",
         ]
-        read_only_fields = ["id", "user_id", "created_at", "updated_at"]
+        read_only_fields = ["id", "user_id", "access_code", "created_at", "updated_at"]
 
     def validate(self, attrs):
         # "آیا وصی یا قیم قانونی دارد؟" — if the answer is yes, the form
@@ -67,12 +66,14 @@ class PatientProfileSerializer(serializers.ModelSerializer):
 
 class AddPatientSerializer(PatientProfileSerializer):
     """Same shape as PatientProfileSerializer, used for the creation
-    endpoint where relation/patient_user_id are also accepted."""
+    endpoint where relation is also accepted — the creating family
+    account is automatically linked as an APPROVED family member (they
+    just did the work of registering this patient; no reason to make
+    them separately request access to a record they created)."""
     relation = serializers.CharField(max_length=50)
-    patient_user_id = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta(PatientProfileSerializer.Meta):
-        fields = PatientProfileSerializer.Meta.fields + ["relation", "patient_user_id"]
+        fields = PatientProfileSerializer.Meta.fields + ["relation"]
 
 
 class PatientCompatibilityQuestionnaireSerializer(serializers.ModelSerializer):
@@ -92,42 +93,60 @@ class PatientCompatibilityQuestionnaireSerializer(serializers.ModelSerializer):
 
 
 class FamilyPatientLinkSerializer(serializers.ModelSerializer):
-    """
-    One row in a patient's "who else has access" list — the actual
-    missing piece behind "multiple children need to see the same
-    parent's record": FamilyPatientLink (family <-> patient,
-    many-to-many) already existed, but nothing besides
-    MyPatientsView.post() ever created one, and that path always
-    creates a brand-new patient alongside the link — there was no way
-    for a second family member to link themselves to a patient someone
-    else already registered.
-    """
+    """One row in a patient's "who has access" list, or in a pending
+    "who's asking for access" list — status distinguishes the two."""
     family_display_name = serializers.CharField(source="family.display_name", read_only=True)
     family_phone_number = serializers.SerializerMethodField()
+    patient_full_name = serializers.CharField(source="patient.full_name", read_only=True)
 
     class Meta:
         model = FamilyPatientLink
-        fields = ["id", "family", "family_display_name", "family_phone_number", "relation", "is_primary_contact", "created_at"]
-        read_only_fields = ["id", "family", "family_display_name", "family_phone_number", "created_at"]
+        fields = [
+            "id", "family", "family_display_name", "family_phone_number", "patient", "patient_full_name",
+            "relation", "is_primary_contact", "status", "access_level", "approved_at", "created_at",
+        ]
+        read_only_fields = [
+            "id", "family", "family_display_name", "family_phone_number", "patient", "patient_full_name",
+            "status", "approved_at", "created_at",
+        ]
 
     def get_family_phone_number(self, obj):
         return obj.family.user.phone_number if obj.family.user else None
 
 
-class AddFamilyLinkSerializer(serializers.Serializer):
-    """Adding an existing family-role user (identified by phone
-    number, not by guessing/creating an account on their behalf) to a
-    patient someone else already registered."""
-    phone_number = serializers.RegexField(
-        regex=r"^09\d{9}$",
-        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
-    )
+class RequestPatientAccessSerializer(serializers.Serializer):
+    """A family member requesting access to a patient using the
+    patient's access code — creates a PENDING link, needs approval
+    from the patient (if they have their own account) or an already-
+    approved family member."""
+    patient_code = serializers.CharField(max_length=20)
     relation = serializers.CharField(max_length=50)
-    is_primary_contact = serializers.BooleanField(required=False, default=False)
+
+    def validate_patient_code(self, value):
+        if not PatientProfile.objects.filter(access_code=value.strip().upper()).exists():
+            raise serializers.ValidationError("کد بیمار معتبر نیست.")
+        return value.strip().upper()
+
+
+class InviteFamilyByCodeSerializer(serializers.Serializer):
+    """The patient side inviting a family member using THAT family
+    member's access code — approved immediately, since whoever holds
+    the patient's own authority (the patient, or an already-approved
+    family member) already has standing to grant it, without a second
+    round of approval."""
+    family_code = serializers.CharField(max_length=20)
+    relation = serializers.CharField(max_length=50)
+    access_level = serializers.ChoiceField(choices=AccessLevel.choices, required=False, default=AccessLevel.FULL)
+
+    def validate_family_code(self, value):
+        if not FamilyProfile.objects.filter(access_code=value.strip().upper()).exists():
+            raise serializers.ValidationError("کد عضو خانواده معتبر نیست.")
+        return value.strip().upper()
 
 
 class UpdateFamilyLinkSerializer(serializers.Serializer):
-    """PATCH payload for changing a family member's relation label
-    and/or handing off primary-contact status."""
+    """PATCH payload for changing a family member's relation label,
+    access level, and/or handing off primary-contact status."""
     relation = serializers.CharField(max_length=50, required=False)
     is_primary_contact = serializers.BooleanField(required=False)
+    access_level = serializers.ChoiceField(choices=AccessLevel.choices, required=False)

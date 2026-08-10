@@ -203,9 +203,10 @@ class QuestionnaireTests(TestCase):
 
 
 class FamilyLinkTests(TestCase):
-    """The actual missing piece: multiple family members (siblings)
-    sharing access to the same patient, not just whoever originally
-    registered them."""
+    """Multiple family members (siblings) sharing access to the same
+    patient — via access codes, matching the platform's actual
+    intended connection model (not phone-number lookup, which this
+    replaced)."""
 
     def setUp(self):
         cache.clear()
@@ -217,55 +218,58 @@ class FamilyLinkTests(TestCase):
         create = self.client.post("/api/patients/", VALID_PATIENT, format="json")
         self.patient_id = create.data["id"]
 
+        # sibling2's FamilyProfile (and its access_code) only exists
+        # once they've done SOMETHING as a family account — same as
+        # in the real app, hitting their own /families/me/ creates it.
+        self.client2 = APIClient()
+        self.client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
+        self.client2.post("/api/families/me/", {"display_name": "خواهر"}, format="json")
+        self.sibling2_code = self.client2.get("/api/families/me/").data["access_code"]
+
     def test_second_sibling_has_no_access_before_being_linked(self):
-        client2 = APIClient()
-        client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
-        response = client2.get(f"/api/patients/{self.patient_id}/")
+        response = self.client2.get(f"/api/patients/{self.patient_id}/")
         self.assertEqual(response.status_code, 404)
 
-    def test_linking_a_second_sibling_grants_full_access(self):
+    def test_inviting_by_code_grants_immediate_full_access(self):
         response = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "phone_number": "09121110002", "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "فرزند",
         }, format="json")
         self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], "approved")
 
-        client2 = APIClient()
-        client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
-        detail = client2.get(f"/api/patients/{self.patient_id}/")
+        detail = self.client2.get(f"/api/patients/{self.patient_id}/")
         self.assertEqual(detail.status_code, 200)
         self.assertEqual(detail.data["full_name"], VALID_PATIENT["full_name"])
 
-        listing = client2.get("/api/patients/")
+        listing = self.client2.get("/api/patients/")
         self.assertEqual(len(listing.data), 1)
 
     def test_family_links_list_shows_everyone_with_access(self):
         self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "phone_number": "09121110002", "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "فرزند",
         }, format="json")
         response = self.client.get(f"/api/patients/{self.patient_id}/family-links/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
-    def test_linking_nonexistent_phone_number_rejected(self):
+    def test_inviting_nonexistent_code_rejected(self):
         response = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "phone_number": "09129999999", "relation": "فرزند",
+            "family_code": "FAM-ZZZZZZ", "relation": "فرزند",
         }, format="json")
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
 
-    def test_linking_same_family_twice_rejected(self):
+    def test_inviting_same_family_twice_rejected(self):
         self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "phone_number": "09121110002", "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "فرزند",
         }, format="json")
         response = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "phone_number": "09121110002", "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "فرزند",
         }, format="json")
         self.assertEqual(response.status_code, 400)
 
     def test_unlinked_family_cannot_add_others_to_a_patient_they_cant_see(self):
-        client2 = APIClient()
-        client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
-        response = client2.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "phone_number": "09121110001", "relation": "فرزند",
+        response = self.client2.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "family_code": self.sibling2_code, "relation": "فرزند",
         }, format="json")
         self.assertEqual(response.status_code, 404)
 
@@ -277,22 +281,20 @@ class FamilyLinkTests(TestCase):
 
     def test_can_remove_a_link_when_another_remains(self):
         self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "phone_number": "09121110002", "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "فرزند",
         }, format="json")
         links = self.client.get(f"/api/patients/{self.patient_id}/family-links/").data
-        second_link = next(l for l in links if l["family_phone_number"] == "09121110002")
+        second_link = next(l for l in links if l["family_display_name"] == "خواهر")
 
         response = self.client.delete(f"/api/patients/{self.patient_id}/family-links/{second_link['id']}/")
         self.assertEqual(response.status_code, 204)
 
-        client2 = APIClient()
-        client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
-        confirm = client2.get(f"/api/patients/{self.patient_id}/")
+        confirm = self.client2.get(f"/api/patients/{self.patient_id}/")
         self.assertEqual(confirm.status_code, 404)
 
     def test_patch_hands_off_primary_contact(self):
         add = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "phone_number": "09121110002", "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "فرزند",
         }, format="json")
         link2_id = add.data["id"]
 
@@ -303,35 +305,30 @@ class FamilyLinkTests(TestCase):
         self.assertTrue(response.data["is_primary_contact"])
 
         links = self.client.get(f"/api/patients/{self.patient_id}/family-links/").data
-        link1 = next(l for l in links if l["family_phone_number"] == "09121110001")
+        link1 = next(l for l in links if l["family_display_name"] != "خواهر")
         self.assertFalse(link1["is_primary_contact"])
 
-    def test_patch_can_update_relation_without_touching_primary_contact(self):
+    def test_patch_can_update_relation_and_access_level(self):
         links = self.client.get(f"/api/patients/{self.patient_id}/family-links/").data
         link_id = links[0]["id"]
         response = self.client.patch(f"/api/patients/{self.patient_id}/family-links/{link_id}/", {
-            "relation": "همسر",
+            "relation": "همسر", "access_level": "view_only",
         }, format="json")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["relation"], "همسر")
+        self.assertEqual(response.data["access_level"], "view_only")
 
     def test_any_linked_family_member_can_delete_the_patient(self):
         self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "phone_number": "09121110002", "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "فرزند",
         }, format="json")
-
-        client2 = APIClient()
-        client2.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token2}")
-        response = client2.delete(f"/api/patients/{self.patient_id}/")
+        response = self.client2.delete(f"/api/patients/{self.patient_id}/")
         self.assertEqual(response.status_code, 204)
-
-        # gone for both, not just the one who deleted it
         self.assertEqual(len(self.client.get("/api/patients/").data), 0)
-        self.assertEqual(len(client2.get("/api/patients/").data), 0)
+        self.assertEqual(len(self.client2.get("/api/patients/").data), 0)
 
     def test_deleting_patient_writes_audit_entry(self):
         from apps.audit.models import AuditEventType, AuditLog
-
         self.client.delete(f"/api/patients/{self.patient_id}/")
         entry = AuditLog.objects.filter(event_type=AuditEventType.PATIENT_DELETED, metadata__patient_id=self.patient_id).first()
         self.assertIsNotNone(entry)
@@ -339,15 +336,184 @@ class FamilyLinkTests(TestCase):
 
     def test_creating_patient_writes_audit_entry(self):
         from apps.audit.models import AuditEventType, AuditLog
-
         entry = AuditLog.objects.filter(event_type=AuditEventType.PATIENT_CREATED, metadata__patient_id=self.patient_id).first()
         self.assertIsNotNone(entry)
 
     def test_adding_family_link_writes_audit_entry(self):
         from apps.audit.models import AuditEventType, AuditLog
-
         self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "phone_number": "09121110002", "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "فرزند",
         }, format="json")
         entry = AuditLog.objects.filter(event_type=AuditEventType.FAMILY_LINK_ADDED, target_user_id=self.sibling2.id).first()
         self.assertIsNotNone(entry)
+
+
+class ConnectionRequestTests(TestCase):
+    """The other direction: a family member requesting access to a
+    patient using the PATIENT's code, needing approval before access
+    is actually granted — matching the exact two-direction model
+    described (patient invites vs. family requests)."""
+
+    def setUp(self):
+        cache.clear()
+        self.owner_client = APIClient()
+        self.owner, self.owner_token = make_authenticated_user("owner", role=UserRole.FAMILY, phone_number="09121110010")
+        self.owner_client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.owner_token}")
+        create = self.owner_client.post("/api/patients/", VALID_PATIENT, format="json")
+        self.patient_id = create.data["id"]
+        self.patient_code = create.data["access_code"]
+
+        self.requester_client = APIClient()
+        self.requester, self.requester_token = make_authenticated_user("requester", role=UserRole.FAMILY, phone_number="09121110011")
+        self.requester_client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.requester_token}")
+
+    def test_requesting_access_creates_a_pending_link_not_immediate_access(self):
+        response = self.requester_client.post("/api/patients/connect/", {
+            "patient_code": self.patient_code, "relation": "فرزند",
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
+
+        # still no access yet — pending, not approved
+        detail = self.requester_client.get(f"/api/patients/{self.patient_id}/")
+        self.assertEqual(detail.status_code, 404)
+
+    def test_owner_sees_the_pending_request(self):
+        self.requester_client.post("/api/patients/connect/", {
+            "patient_code": self.patient_code, "relation": "فرزند",
+        }, format="json")
+        response = self.owner_client.get(f"/api/patients/{self.patient_id}/access-requests/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["status"], "pending")
+
+    def test_approving_grants_real_access(self):
+        req = self.requester_client.post("/api/patients/connect/", {
+            "patient_code": self.patient_code, "relation": "فرزند",
+        }, format="json")
+        link_id = req.data["link_id"]
+
+        approve = self.owner_client.post(f"/api/patients/{self.patient_id}/access-requests/{link_id}/approve/")
+        self.assertEqual(approve.status_code, 200)
+        self.assertEqual(approve.data["status"], "approved")
+
+        detail = self.requester_client.get(f"/api/patients/{self.patient_id}/")
+        self.assertEqual(detail.status_code, 200)
+
+    def test_rejecting_does_not_grant_access(self):
+        req = self.requester_client.post("/api/patients/connect/", {
+            "patient_code": self.patient_code, "relation": "فرزند",
+        }, format="json")
+        link_id = req.data["link_id"]
+
+        reject = self.owner_client.post(f"/api/patients/{self.patient_id}/access-requests/{link_id}/reject/")
+        self.assertEqual(reject.status_code, 200)
+        self.assertEqual(reject.data["status"], "rejected")
+
+        detail = self.requester_client.get(f"/api/patients/{self.patient_id}/")
+        self.assertEqual(detail.status_code, 404)
+
+    def test_requesting_with_invalid_code_rejected(self):
+        response = self.requester_client.post("/api/patients/connect/", {
+            "patient_code": "ELD-ZZZZZZ", "relation": "فرزند",
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_requesting_twice_rejected(self):
+        self.requester_client.post("/api/patients/connect/", {
+            "patient_code": self.patient_code, "relation": "فرزند",
+        }, format="json")
+        response = self.requester_client.post("/api/patients/connect/", {
+            "patient_code": self.patient_code, "relation": "فرزند",
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_stranger_cannot_approve_a_request_they_have_no_standing_on(self):
+        req = self.requester_client.post("/api/patients/connect/", {
+            "patient_code": self.patient_code, "relation": "فرزند",
+        }, format="json")
+        link_id = req.data["link_id"]
+
+        stranger_client = APIClient()
+        _, stranger_token = make_authenticated_user("stranger", role=UserRole.FAMILY, phone_number="09121110012")
+        stranger_client.credentials(HTTP_AUTHORIZATION=f"Bearer {stranger_token}")
+
+        response = stranger_client.post(f"/api/patients/{self.patient_id}/access-requests/{link_id}/approve/")
+        self.assertEqual(response.status_code, 404)
+
+
+class PatientOwnAccountTests(TestCase):
+    """A PATIENT-role user with their own account, managing their own
+    record directly — the actual point of "the elderly person has
+    their own account/profile"."""
+
+    def setUp(self):
+        cache.clear()
+        self.patient_user, self.patient_token = make_authenticated_user("patient1", role=UserRole.PATIENT, phone_number="09121110020")
+        self.patient_client = APIClient()
+        self.patient_client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.patient_token}")
+
+        # A patient's own profile still gets created the normal way
+        # (someone fills in the identity form) — here, directly, since
+        # this test is about the /me/ access layer, not the creation
+        # flow itself.
+        from apps.families.models import PatientProfile
+        self.patient = PatientProfile.objects.create(user_id=self.patient_user.id, full_name="بیمار خودحساب")
+
+    def test_get_my_own_profile(self):
+        response = self.patient_client.get("/api/patients/me/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["full_name"], "بیمار خودحساب")
+        self.assertTrue(response.data["access_code"].startswith("ELD-"))
+
+    def test_family_user_cannot_use_patient_me_endpoint(self):
+        _, family_token = make_authenticated_user("fam_x", role=UserRole.FAMILY, phone_number="09121110021")
+        family_client = APIClient()
+        family_client.credentials(HTTP_AUTHORIZATION=f"Bearer {family_token}")
+        response = family_client.get("/api/patients/me/")
+        self.assertEqual(response.status_code, 403)
+
+    def test_patient_invites_a_family_member_by_code_with_immediate_access(self):
+        family_client = APIClient()
+        family_user, family_token = make_authenticated_user("fam_y", role=UserRole.FAMILY, phone_number="09121110022")
+        family_client.credentials(HTTP_AUTHORIZATION=f"Bearer {family_token}")
+        family_client.post("/api/families/me/", {"display_name": "دختر"}, format="json")
+        family_code = family_client.get("/api/families/me/").data["access_code"]
+
+        response = self.patient_client.post("/api/patients/me/invite-family/", {
+            "family_code": family_code, "relation": "فرزند",
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], "approved")
+
+        # the invited family member now genuinely has access
+        detail = family_client.get(f"/api/patients/{self.patient.id}/")
+        self.assertEqual(detail.status_code, 200)
+
+    def test_patient_sees_and_approves_pending_requests(self):
+        requester_client = APIClient()
+        _, requester_token = make_authenticated_user("req_z", role=UserRole.FAMILY, phone_number="09121110023")
+        requester_client.credentials(HTTP_AUTHORIZATION=f"Bearer {requester_token}")
+        req = requester_client.post("/api/patients/connect/", {
+            "patient_code": self.patient.access_code, "relation": "همسر",
+        }, format="json")
+
+        pending = self.patient_client.get("/api/patients/me/access-requests/")
+        self.assertEqual(pending.status_code, 200)
+        self.assertEqual(len(pending.data), 1)
+
+        approve = self.patient_client.post(f"/api/patients/me/access-requests/{req.data['link_id']}/approve/")
+        self.assertEqual(approve.status_code, 200)
+        self.assertEqual(approve.data["status"], "approved")
+
+    def test_patient_sees_who_has_access_to_them(self):
+        family_client = APIClient()
+        _, family_token = make_authenticated_user("fam_w", role=UserRole.FAMILY, phone_number="09121110024")
+        family_client.credentials(HTTP_AUTHORIZATION=f"Bearer {family_token}")
+        family_client.post("/api/families/me/", {"display_name": "پسر"}, format="json")
+        family_code = family_client.get("/api/families/me/").data["access_code"]
+        self.patient_client.post("/api/patients/me/invite-family/", {"family_code": family_code, "relation": "فرزند"}, format="json")
+
+        response = self.patient_client.get("/api/patients/me/family-links/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["family_display_name"], "پسر")

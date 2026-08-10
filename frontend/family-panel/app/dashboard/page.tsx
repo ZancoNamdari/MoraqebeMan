@@ -5,23 +5,49 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { patientService } from "@/services/patient.service"
+import { familyService } from "@/services/family.service"
 import type { PatientListItem } from "@/types/patient"
+import type { FamilyProfile } from "@/types/family"
 import { ROUTES } from "@/lib/routes"
 
 export default function DashboardPage() {
   const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
   const [patients, setPatients] = useState<PatientListItem[]>([])
+  const [family, setFamily] = useState<FamilyProfile | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const [showConnect, setShowConnect] = useState(false)
+  const [patientCode, setPatientCode] = useState("")
+  const [relation, setRelation] = useState("")
+  const [connecting, setConnecting] = useState(false)
+  const [connectMessage, setConnectMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
     if (!user) return
-    patientService.list().then(setPatients).finally(() => setLoading(false))
+    Promise.all([
+      patientService.list(),
+      familyService.me().catch(() => familyService.update({ display_name: user.username })),
+    ]).then(([p, f]) => { setPatients(p); setFamily(f) }).finally(() => setLoading(false))
   }, [user])
 
   if (authLoading) return null
+
+  async function handleConnect() {
+    setConnecting(true); setConnectMessage(null)
+    try {
+      const result = await patientService.connect(patientCode.trim().toUpperCase(), relation)
+      setConnectMessage({ kind: "success", text: result.detail })
+      setPatientCode(""); setRelation("")
+    } catch (err: any) {
+      setConnectMessage({ kind: "error", text: err?.response?.data?.detail || "کد بیمار معتبر نیست." })
+    } finally {
+      setConnecting(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50/60 via-background to-background">
@@ -41,6 +67,41 @@ export default function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-3xl space-y-5 p-4">
+        {family && (
+          <Card className="border-pink-100 bg-gradient-to-l from-pink-50 to-rose-50">
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+              <div>
+                <p className="text-xs text-muted-foreground">کد عضویت شما — برای دریافت دعوت از یک بیمار</p>
+                <p dir="ltr" className="text-left text-lg font-bold tracking-wider text-rose-700">{family.access_code}</p>
+              </div>
+              <Button
+                size="sm" variant="outline"
+                className="border-pink-200 text-rose-700 hover:bg-pink-50"
+                onClick={() => setShowConnect((v) => !v)}
+              >
+                {showConnect ? "بستن" : "دسترسی به بیمار با کد"}
+              </Button>
+            </CardContent>
+            {showConnect && (
+              <CardContent className="border-t border-pink-100 pt-4">
+                <p className="mb-2 text-xs text-muted-foreground">کد بیماری که می‌خواهید به او دسترسی داشته باشید را وارد کنید — پس از تأیید ایشان، دسترسی شما فعال می‌شود.</p>
+                {connectMessage && (
+                  <div className={`mb-2 rounded-md p-2 text-xs ${connectMessage.kind === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>
+                    {connectMessage.text}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <Input placeholder="کد بیمار (مثلاً ELD-7K4P9X)" className="w-48" value={patientCode} onChange={(e) => setPatientCode(e.target.value)} dir="ltr" />
+                  <Input placeholder="نسبت شما" className="w-28" value={relation} onChange={(e) => setRelation(e.target.value)} />
+                  <Button size="sm" disabled={connecting || !patientCode || !relation} onClick={handleConnect}>
+                    ارسال درخواست
+                  </Button>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-rose-900">سالمندان شما</h2>
@@ -62,7 +123,7 @@ export default function DashboardPage() {
           <Card className="border-pink-100">
             <CardContent className="flex flex-col items-center gap-2 p-10 text-center">
               <span className="text-3xl">🌷</span>
-              <p className="text-muted-foreground">هنوز سالمندی ثبت نشده. با دکمه بالا شروع کنید.</p>
+              <p className="text-muted-foreground">هنوز سالمندی ثبت نشده. با دکمه بالا شروع کنید یا با کد یک بیمار درخواست دسترسی دهید.</p>
             </CardContent>
           </Card>
         ) : (
