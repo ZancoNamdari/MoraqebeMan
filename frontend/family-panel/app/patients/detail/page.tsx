@@ -13,13 +13,15 @@ import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
-import { GUARDIANSHIP_STATUS, QUESTIONNAIRE_FIELDS, labelForValue } from "@/lib/constants"
+import { GUARDIANSHIP_STATUS, QUESTIONNAIRE_FIELDS, CARE_LOG_CATEGORY_LABEL, CARE_LOG_CATEGORY_ICON, labelForValue } from "@/lib/constants"
 import { patientService } from "@/services/patient.service"
+import { careService } from "@/services/care.service"
 import { ROUTES } from "@/lib/routes"
 import type { AccessLevel, FamilyLink, PatientListItem, Questionnaire } from "@/types/patient"
+import type { CaregiverAssignment, CareLogEntry } from "@/types/care"
 import { cn } from "@/lib/utils"
 
-type Tab = "info" | "questionnaire" | "access"
+type Tab = "info" | "questionnaire" | "access" | "care"
 
 export default function PatientDetailPage() {
   return (
@@ -87,7 +89,7 @@ function PatientDetailInner() {
             <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
           </div>
           <div className="flex gap-1 rounded-full bg-pink-50 p-1">
-            {([["info", "اطلاعات"], ["questionnaire", "پرسشنامه سازگاری"], ["access", "دسترسی خانواده"]] as [Tab, string][]).map(([key, label]) => (
+            {([["info", "اطلاعات"], ["questionnaire", "پرسشنامه سازگاری"], ["care", "تیم مراقبت"], ["access", "دسترسی خانواده"]] as [Tab, string][]).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
@@ -115,6 +117,7 @@ function PatientDetailInner() {
               <InfoTab patient={patient} setPatient={setPatient} onSave={handleSaveInfo} onDelete={handleDelete} saving={saving} />
             )}
             {tab === "questionnaire" && <QuestionnaireTab patientId={id} />}
+            {tab === "care" && <CareTab patientId={id} />}
             {tab === "access" && <AccessTab patientId={id} patientCode={patient.access_code} />}
           </>
         )}
@@ -379,6 +382,70 @@ function AccessTab({ patientId, patientCode }: { patientId: number; patientCode:
               </Button>
             </div>
           </div>
+        </CardContent>
+      </Card>
+    </>
+  )
+}
+
+function CareTab({ patientId }: { patientId: number }) {
+  const [team, setTeam] = useState<CaregiverAssignment[]>([])
+  const [timeline, setTimeline] = useState<CareLogEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([careService.team(patientId), careService.timeline(patientId)])
+      .then(([t, tl]) => { setTeam(t); setTimeline(tl) })
+      .finally(() => setLoading(false))
+  }, [patientId])
+
+  if (loading) return <Skeleton className="h-64 w-full rounded-2xl" />
+
+  return (
+    <>
+      <Card className="border-pink-100">
+        <CardHeader><CardTitle className="text-rose-900">تیم مراقبت فعلی</CardTitle></CardHeader>
+        <CardContent>
+          {team.length === 0 ? (
+            <p className="text-sm text-muted-foreground">هنوز مراقبی برای این سالمند تخصیص داده نشده است.</p>
+          ) : (
+            <div className="space-y-2">
+              {team.map((a) => (
+                <div key={a.id} className="flex items-center gap-3 rounded-lg border border-pink-100 bg-pink-50/50 p-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-sm">👩‍⚕️</div>
+                  <div>
+                    <p className="text-sm font-medium">{a.caregiver_name}</p>
+                    <p className="text-xs text-muted-foreground">از تاریخ {a.assigned_at.slice(0, 10)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-pink-100">
+        <CardHeader><CardTitle className="text-rose-900">جدول زمانی مراقبت</CardTitle></CardHeader>
+        <CardContent>
+          {timeline.length === 0 ? (
+            <p className="text-sm text-muted-foreground">هنوز گزارشی ثبت نشده است.</p>
+          ) : (
+            <div className="space-y-3">
+              {timeline.map((entry) => (
+                <div key={entry.id} className="flex gap-3 border-r-2 border-pink-200 pr-3">
+                  <span className="text-lg leading-none">{CARE_LOG_CATEGORY_ICON[entry.category] || "📝"}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-rose-700">{CARE_LOG_CATEGORY_LABEL[entry.category] || entry.category}</p>
+                      <p className="text-xs text-muted-foreground">{entry.created_at.slice(0, 16).replace("T", " — ")}</p>
+                    </div>
+                    <p className="text-sm">{entry.note}</p>
+                    <p className="text-xs text-muted-foreground">توسط {entry.caregiver_name}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </>

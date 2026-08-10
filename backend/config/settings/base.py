@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.families",
     "apps.caregivers",
     "apps.locations",
+    "apps.care",
 ]
 
 MIDDLEWARE = [

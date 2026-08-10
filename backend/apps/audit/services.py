@@ -88,3 +88,12 @@ class AuditService:
         return self.log_event(
             AuditEventType.FAMILY_LINK_REMOVED, actor_id, unlinked_family_user_id, patient_id=patient_id,
         )
+
+    def caregiver_assigned(self, actor_id, caregiver_user_id, patient_id):
+        return self.log_event(AuditEventType.CAREGIVER_ASSIGNED, actor_id, caregiver_user_id, patient_id=patient_id)
+
+    def caregiver_assignment_ended(self, actor_id, caregiver_user_id, patient_id):
+        return self.log_event(AuditEventType.CAREGIVER_ASSIGNMENT_ENDED, actor_id, caregiver_user_id, patient_id=patient_id)
+
+    def care_log_entry_created(self, actor_id, patient_id, category):
+        return self.log_event(AuditEventType.CARE_LOG_ENTRY_CREATED, actor_id, None, patient_id=patient_id, category=category)

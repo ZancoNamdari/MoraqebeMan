@@ -63,3 +63,12 @@ export function labelForValue(choices: Choice[], value: string | null | undefine
   if (!value) return "—"
   return choices.find(([v]) => v === value)?.[1] || value
 }
+
+export const CARE_LOG_CATEGORY_LABEL: Record<string, string> = {
+  general: "یادداشت عمومی", medication: "دارو", meal: "تغذیه",
+  mobility: "تحرک و جابجایی", vitals: "علائم حیاتی", incident: "حادثه یا نگرانی",
+}
+
+export const CARE_LOG_CATEGORY_ICON: Record<string, string> = {
+  general: "📝", medication: "💊", meal: "🍽️", mobility: "🚶", vitals: "❤️", incident: "⚠️",
+}
