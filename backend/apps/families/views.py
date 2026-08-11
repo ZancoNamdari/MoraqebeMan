@@ -359,13 +359,12 @@ class MyPatientProfileView(APIView):
 
     def put(self, request):
         patient = _patient_for_user(request.user)
-        if patient is None:
-            return Response({"detail": "پروفایل بیمار برای این حساب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         serializer = PatientProfileSerializer(instance=patient, data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        audit.patient_updated(request.user.id, patient.id, section="profile")
-        return Response(serializer.data)
+        created = patient is None
+        serializer.save(user=request.user) if created else serializer.save()
+        audit.patient_updated(request.user.id, serializer.instance.id, section="profile")
+        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
 class MyPatientFamilyLinksView(APIView):

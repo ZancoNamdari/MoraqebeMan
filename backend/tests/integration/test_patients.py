@@ -555,3 +555,40 @@ class PatientOwnAccountTests(TestCase):
         response = family_client.get(f"/api/patients/{self.patient.id}/questionnaire/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["religious_beliefs_priority"], "strongly_agree")
+
+
+class PatientSelfServiceCreationTests(TestCase):
+    """A freshly self-registered patient account with NO PatientProfile
+    yet — deliberately isolated from PatientOwnAccountTests, whose
+    setUp() creates the profile directly via the ORM and so never
+    actually exercises the create-on-first-save path. Caught live (not
+    by an existing test) that PUT /api/patients/me/ 404'd for a new
+    account with no way to ever create one — this class exists so that
+    specific bug can't come back silently."""
+
+    def setUp(self):
+        cache.clear()
+        self.patient_user, self.patient_token = make_authenticated_user("newpatient", role=UserRole.PATIENT, phone_number="09121110030")
+        self.patient_client = APIClient()
+        self.patient_client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.patient_token}")
+
+    def test_get_before_any_profile_exists_returns_404(self):
+        response = self.patient_client.get("/api/patients/me/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_put_creates_the_profile_on_first_save(self):
+        response = self.patient_client.put("/api/patients/me/", {"full_name": "بیمار جدید"}, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.data["access_code"].startswith("ELD-"))
+
+        confirm = self.patient_client.get("/api/patients/me/")
+        self.assertEqual(confirm.status_code, 200)
+        self.assertEqual(confirm.data["full_name"], "بیمار جدید")
+
+    def test_second_put_updates_rather_than_creating_a_duplicate(self):
+        from apps.families.models import PatientProfile
+
+        self.patient_client.put("/api/patients/me/", {"full_name": "نسخه اول"}, format="json")
+        response = self.patient_client.put("/api/patients/me/", {"full_name": "نسخه دوم"}, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(PatientProfile.objects.filter(user_id=self.patient_user.id).count(), 1)
