@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ChoiceSelect } from "@/components/forms/fields"
+import { RELATION_TYPE } from "@/lib/constants"
 import { patientService } from "@/services/patient.service"
 import { familyService } from "@/services/family.service"
 import type { PatientListItem } from "@/types/patient"
@@ -84,17 +86,17 @@ export default function DashboardPage() {
             </CardContent>
             {showConnect && (
               <CardContent className="border-t border-pink-100 pt-4">
-                <p className="mb-2 text-xs text-muted-foreground">کد بیماری که می‌خواهید به او دسترسی داشته باشید را وارد کنید — پس از تأیید ایشان، دسترسی شما فعال می‌شود.</p>
+                <p className="mb-2 text-xs text-muted-foreground">کد بیماری که می‌خواهید وضعیت و مراقبت او را ببینید وارد کنید — دسترسی شما بلافاصله فعال می‌شود.</p>
                 {connectMessage && (
                   <div className={`mb-2 rounded-md p-2 text-xs ${connectMessage.kind === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>
                     {connectMessage.text}
                   </div>
                 )}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Input placeholder="کد بیمار (مثلاً ELD-7K4P9X)" className="w-48" value={patientCode} onChange={(e) => setPatientCode(e.target.value)} dir="ltr" />
-                  <Input placeholder="نسبت شما" className="w-28" value={relation} onChange={(e) => setRelation(e.target.value)} />
+                  <div className="w-32"><ChoiceSelect choices={RELATION_TYPE} value={relation} onChange={setRelation} placeholder="نسبت شما" /></div>
                   <Button size="sm" disabled={connecting || !patientCode || !relation} onClick={handleConnect}>
-                    ارسال درخواست
+                    اتصال
                   </Button>
                 </div>
               </CardContent>

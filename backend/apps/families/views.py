@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import User, UserRole
 from apps.audit.services import AuditService
 
-from .models import FamilyPatientLink, FamilyProfile, LinkStatus, PatientCompatibilityQuestionnaire, PatientProfile
+from .models import AccessLevel, FamilyPatientLink, FamilyProfile, LinkStatus, PatientCompatibilityQuestionnaire, PatientProfile
 from .permissions import IsFamily, IsPatient
 from .serializers import (
     AddPatientSerializer,
@@ -34,8 +34,13 @@ class MyFamilyProfileView(APIView):
     def post(self, request):
         serializer = FamilyProfileSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = dict(serializer.validated_data)
+        if not data.get("display_name"):
+            # No need to make someone type their own name twice —
+            # fall back to what's already on their account.
+            data["display_name"] = request.user.get_full_name() or request.user.phone_number
         family, created = FamilyProfile.objects.update_or_create(
-            user_id=request.user.id, defaults=serializer.validated_data
+            user_id=request.user.id, defaults=data
         )
         return Response(
             FamilyProfileSerializer(family).data,
@@ -114,11 +119,26 @@ class MyPatientsView(APIView):
 
 class ConnectToPatientView(APIView):
     """
-    POST /api/patients/connect/ — a family member requests access to a
-    patient using the patient's access code. Creates a PENDING link;
-    does NOT grant access to the patient's data until someone with
-    standing (the patient themselves, or an already-approved family
-    member) approves it via /access-requests/.
+    POST /api/patients/connect/ — a family member joins using the
+    patient's own access code.
+
+    Grants immediate VIEW_ONLY access, not a pending request. The
+    patient's code is itself the authorization here — it's something
+    only their actual family circle would have, the same way a shared
+    door code works. Requiring ANOTHER family member to separately
+    approve every sibling who already holds that code created a real
+    bottleneck: one sibling forgetting, refusing, or just being
+    unavailable to click "approve" meant everyone else stayed locked
+    out of even seeing basic status and timeline info. Every family
+    member holding the same patient code now gets equal, immediate
+    view access — solving that specific problem directly.
+
+    Deliberately still VIEW_ONLY, not FULL — seeing status/timeline is
+    safe to grant automatically; editing medical/identity info or
+    managing who else has access stays a deliberate action via the
+    invite-by-family-code flow (PatientFamilyLinksView.post /
+    MyPatientInviteFamilyView.post), which still requires someone
+    already inside the circle to actively grant it.
     """
     permission_classes = [IsFamily]
 
@@ -131,14 +151,15 @@ class ConnectToPatientView(APIView):
         family = _get_or_create_family(request.user)
 
         if FamilyPatientLink.objects.filter(family=family, patient=patient).exists():
-            return Response({"detail": "شما قبلاً به این بیمار درخواست دسترسی داده‌اید یا به آن دسترسی دارید."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "شما قبلاً با این بیمار ارتباط دارید."}, status=status.HTTP_400_BAD_REQUEST)
 
         link = FamilyPatientLink.objects.create(
             family=family, patient=patient, relation=data["relation"],
-            status=LinkStatus.PENDING, is_primary_contact=False,
+            status=LinkStatus.APPROVED, access_level=AccessLevel.VIEW_ONLY,
+            approved_by=request.user, approved_at=timezone.now(), is_primary_contact=False,
         )
         return Response(
-            {"detail": "درخواست شما ثبت شد و در انتظار تأیید بیمار یا یکی از اعضای خانواده است.", "link_id": link.id},
+            {"detail": "با موفقیت متصل شدید — اکنون می‌توانید وضعیت و جدول زمانی مراقبت را مشاهده کنید.", "link_id": link.id},
             status=status.HTTP_201_CREATED,
         )
 

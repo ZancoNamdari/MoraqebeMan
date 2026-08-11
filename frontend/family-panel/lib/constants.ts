@@ -72,3 +72,13 @@ export const CARE_LOG_CATEGORY_LABEL: Record<string, string> = {
 export const CARE_LOG_CATEGORY_ICON: Record<string, string> = {
   general: "📝", medication: "💊", meal: "🍽️", mobility: "🚶", vitals: "❤️", incident: "⚠️",
 }
+
+export const RELATION_TYPE: Choice[] = [
+  ["child", "فرزند"],
+  ["spouse", "همسر"],
+  ["father", "پدر"],
+  ["mother", "مادر"],
+  ["sibling", "خواهر / برادر"],
+  ["grandchild", "نوه"],
+  ["other", "سایر"],
+]

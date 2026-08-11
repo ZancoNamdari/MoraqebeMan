@@ -20,7 +20,6 @@ export default function LoginPage() {
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [phone, setPhone] = useState("")
-  const [email, setEmail] = useState("")
   const [regPassword, setRegPassword] = useState("")
 
   const [error, setError] = useState("")
@@ -45,7 +44,7 @@ export default function LoginPage() {
     try {
       const { data } = await api.post("/api/auth/register/", {
         first_name: firstName, last_name: lastName, phone_number: phone,
-        email, password: regPassword, role: "family",
+        password: regPassword, role: "family",
       })
       window.localStorage.setItem("access_token", data.tokens.access)
       window.localStorage.setItem("refresh_token", data.tokens.refresh)
@@ -105,10 +104,6 @@ export default function LoginPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="phone">شماره موبایل</Label>
                 <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" required />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="email">ایمیل</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} dir="ltr" required />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="regpw">رمز عبور (حداقل ۸ کاراکتر)</Label>

@@ -9,6 +9,7 @@ from .models import (
     GuardianshipStatus,
     PatientCompatibilityQuestionnaire,
     PatientProfile,
+    RelationType,
 )
 
 
@@ -70,7 +71,7 @@ class AddPatientSerializer(PatientProfileSerializer):
     account is automatically linked as an APPROVED family member (they
     just did the work of registering this patient; no reason to make
     them separately request access to a record they created)."""
-    relation = serializers.CharField(max_length=50)
+    relation = serializers.ChoiceField(choices=RelationType.choices)
 
     class Meta(PatientProfileSerializer.Meta):
         fields = PatientProfileSerializer.Meta.fields + ["relation"]
@@ -120,7 +121,7 @@ class RequestPatientAccessSerializer(serializers.Serializer):
     from the patient (if they have their own account) or an already-
     approved family member."""
     patient_code = serializers.CharField(max_length=20)
-    relation = serializers.CharField(max_length=50)
+    relation = serializers.ChoiceField(choices=RelationType.choices)
 
     def validate_patient_code(self, value):
         if not PatientProfile.objects.filter(access_code=value.strip().upper()).exists():
@@ -135,7 +136,7 @@ class InviteFamilyByCodeSerializer(serializers.Serializer):
     family member) already has standing to grant it, without a second
     round of approval."""
     family_code = serializers.CharField(max_length=20)
-    relation = serializers.CharField(max_length=50)
+    relation = serializers.ChoiceField(choices=RelationType.choices)
     access_level = serializers.ChoiceField(choices=AccessLevel.choices, required=False, default=AccessLevel.FULL)
 
     def validate_family_code(self, value):
@@ -147,6 +148,6 @@ class InviteFamilyByCodeSerializer(serializers.Serializer):
 class UpdateFamilyLinkSerializer(serializers.Serializer):
     """PATCH payload for changing a family member's relation label,
     access level, and/or handing off primary-contact status."""
-    relation = serializers.CharField(max_length=50, required=False)
+    relation = serializers.ChoiceField(choices=RelationType.choices, required=False)
     is_primary_contact = serializers.BooleanField(required=False)
     access_level = serializers.ChoiceField(choices=AccessLevel.choices, required=False)

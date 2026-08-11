@@ -13,7 +13,7 @@ import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
-import { GUARDIANSHIP_STATUS, QUESTIONNAIRE_FIELDS, CARE_LOG_CATEGORY_LABEL, CARE_LOG_CATEGORY_ICON, labelForValue } from "@/lib/constants"
+import { GUARDIANSHIP_STATUS, QUESTIONNAIRE_FIELDS, RELATION_TYPE, CARE_LOG_CATEGORY_LABEL, CARE_LOG_CATEGORY_ICON, labelForValue } from "@/lib/constants"
 import { patientService } from "@/services/patient.service"
 import { careService } from "@/services/care.service"
 import { ROUTES } from "@/lib/routes"
@@ -368,7 +368,7 @@ function AccessTab({ patientId, patientCode }: { patientId: number; patientCode:
             {error && <p className="text-xs text-rose-600">{error}</p>}
             <div className="flex flex-wrap gap-2">
               <Input placeholder="کد عضو (مثلاً FAM-92K7XQ)" className="w-44" value={familyCode} onChange={(e) => setFamilyCode(e.target.value)} dir="ltr" />
-              <Input placeholder="نسبت" className="w-24" value={relation} onChange={(e) => setRelation(e.target.value)} />
+              <div className="w-28"><ChoiceSelect choices={RELATION_TYPE} value={relation} onChange={setRelation} placeholder="نسبت" /></div>
               <select
                 className="h-10 rounded-md border border-input bg-background px-2 text-sm"
                 value={accessLevel}

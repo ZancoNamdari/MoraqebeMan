@@ -19,7 +19,7 @@ VALID_PATIENT = {
     "guardian_details": "",
     "language_dialect": "فارسی",
     "basic_medical_info": "فشار خون بالا",
-    "relation": "فرزند",
+    "relation": "child",
 }
 
 VALID_QUESTIONNAIRE = {
@@ -134,7 +134,7 @@ class PatientTests(TestCase):
 
     def test_family_can_have_multiple_patients(self):
         self.client.post("/api/patients/", VALID_PATIENT, format="json")
-        second = dict(VALID_PATIENT, full_name="زهرا احمدی", relation="مادر")
+        second = dict(VALID_PATIENT, full_name="زهرا احمدی", relation="mother")
         self.client.post("/api/patients/", second, format="json")
 
         response = self.client.get("/api/patients/")
@@ -232,7 +232,7 @@ class FamilyLinkTests(TestCase):
 
     def test_inviting_by_code_grants_immediate_full_access(self):
         response = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "family_code": self.sibling2_code, "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "child",
         }, format="json")
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["status"], "approved")
@@ -246,7 +246,7 @@ class FamilyLinkTests(TestCase):
 
     def test_family_links_list_shows_everyone_with_access(self):
         self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "family_code": self.sibling2_code, "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "child",
         }, format="json")
         response = self.client.get(f"/api/patients/{self.patient_id}/family-links/")
         self.assertEqual(response.status_code, 200)
@@ -254,22 +254,22 @@ class FamilyLinkTests(TestCase):
 
     def test_inviting_nonexistent_code_rejected(self):
         response = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "family_code": "FAM-ZZZZZZ", "relation": "فرزند",
+            "family_code": "FAM-ZZZZZZ", "relation": "child",
         }, format="json")
         self.assertEqual(response.status_code, 400)
 
     def test_inviting_same_family_twice_rejected(self):
         self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "family_code": self.sibling2_code, "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "child",
         }, format="json")
         response = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "family_code": self.sibling2_code, "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "child",
         }, format="json")
         self.assertEqual(response.status_code, 400)
 
     def test_unlinked_family_cannot_add_others_to_a_patient_they_cant_see(self):
         response = self.client2.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "family_code": self.sibling2_code, "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "child",
         }, format="json")
         self.assertEqual(response.status_code, 404)
 
@@ -281,7 +281,7 @@ class FamilyLinkTests(TestCase):
 
     def test_can_remove_a_link_when_another_remains(self):
         self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "family_code": self.sibling2_code, "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "child",
         }, format="json")
         links = self.client.get(f"/api/patients/{self.patient_id}/family-links/").data
         second_link = next(l for l in links if l["family_display_name"] == "خواهر")
@@ -294,7 +294,7 @@ class FamilyLinkTests(TestCase):
 
     def test_patch_hands_off_primary_contact(self):
         add = self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "family_code": self.sibling2_code, "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "child",
         }, format="json")
         link2_id = add.data["id"]
 
@@ -312,15 +312,15 @@ class FamilyLinkTests(TestCase):
         links = self.client.get(f"/api/patients/{self.patient_id}/family-links/").data
         link_id = links[0]["id"]
         response = self.client.patch(f"/api/patients/{self.patient_id}/family-links/{link_id}/", {
-            "relation": "همسر", "access_level": "view_only",
+            "relation": "spouse", "access_level": "view_only",
         }, format="json")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["relation"], "همسر")
+        self.assertEqual(response.data["relation"], "spouse")
         self.assertEqual(response.data["access_level"], "view_only")
 
     def test_any_linked_family_member_can_delete_the_patient(self):
         self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "family_code": self.sibling2_code, "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "child",
         }, format="json")
         response = self.client2.delete(f"/api/patients/{self.patient_id}/")
         self.assertEqual(response.status_code, 204)
@@ -342,17 +342,22 @@ class FamilyLinkTests(TestCase):
     def test_adding_family_link_writes_audit_entry(self):
         from apps.audit.models import AuditEventType, AuditLog
         self.client.post(f"/api/patients/{self.patient_id}/family-links/", {
-            "family_code": self.sibling2_code, "relation": "فرزند",
+            "family_code": self.sibling2_code, "relation": "child",
         }, format="json")
         entry = AuditLog.objects.filter(event_type=AuditEventType.FAMILY_LINK_ADDED, target_user_id=self.sibling2.id).first()
         self.assertIsNotNone(entry)
 
 
 class ConnectionRequestTests(TestCase):
-    """The other direction: a family member requesting access to a
-    patient using the PATIENT's code, needing approval before access
-    is actually granted — matching the exact two-direction model
-    described (patient invites vs. family requests)."""
+    """The other direction: a family member connecting to a patient
+    using the PATIENT's own code. This used to create a PENDING link
+    needing another family member's approval — changed to immediate
+    VIEW_ONLY access, since requiring a sibling to actively approve
+    every other sibling who already holds the same code created a
+    real bottleneck (one sibling forgetting, refusing, or being
+    unavailable locked everyone else out of even seeing status/
+    timeline). Every family member holding the same patient code now
+    gets equal, immediate access — this class tests exactly that."""
 
     def setUp(self):
         cache.clear()
@@ -367,78 +372,84 @@ class ConnectionRequestTests(TestCase):
         self.requester, self.requester_token = make_authenticated_user("requester", role=UserRole.FAMILY, phone_number="09121110011")
         self.requester_client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.requester_token}")
 
-    def test_requesting_access_creates_a_pending_link_not_immediate_access(self):
+    def test_connecting_with_patient_code_grants_immediate_access(self):
         response = self.requester_client.post("/api/patients/connect/", {
-            "patient_code": self.patient_code, "relation": "فرزند",
+            "patient_code": self.patient_code, "relation": "child",
         }, format="json")
         self.assertEqual(response.status_code, 201)
 
-        # still no access yet — pending, not approved
-        detail = self.requester_client.get(f"/api/patients/{self.patient_id}/")
-        self.assertEqual(detail.status_code, 404)
-
-    def test_owner_sees_the_pending_request(self):
-        self.requester_client.post("/api/patients/connect/", {
-            "patient_code": self.patient_code, "relation": "فرزند",
-        }, format="json")
-        response = self.owner_client.get(f"/api/patients/{self.patient_id}/access-requests/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["status"], "pending")
-
-    def test_approving_grants_real_access(self):
-        req = self.requester_client.post("/api/patients/connect/", {
-            "patient_code": self.patient_code, "relation": "فرزند",
-        }, format="json")
-        link_id = req.data["link_id"]
-
-        approve = self.owner_client.post(f"/api/patients/{self.patient_id}/access-requests/{link_id}/approve/")
-        self.assertEqual(approve.status_code, 200)
-        self.assertEqual(approve.data["status"], "approved")
-
+        # immediate access — no approval step, no waiting
         detail = self.requester_client.get(f"/api/patients/{self.patient_id}/")
         self.assertEqual(detail.status_code, 200)
 
-    def test_rejecting_does_not_grant_access(self):
-        req = self.requester_client.post("/api/patients/connect/", {
-            "patient_code": self.patient_code, "relation": "فرزند",
+    def test_access_granted_is_view_only_not_full(self):
+        # Immediate is safe specifically because it's limited — full
+        # editing/access-management rights still require a deliberate
+        # invite, not just holding the code. Uses a relation distinct
+        # from the owner's own ("child", from VALID_PATIENT's fixture
+        # relation) so the filter below unambiguously picks the
+        # requester's link, not the owner's.
+        self.requester_client.post("/api/patients/connect/", {
+            "patient_code": self.patient_code, "relation": "sibling",
         }, format="json")
-        link_id = req.data["link_id"]
+        links = self.owner_client.get(f"/api/patients/{self.patient_id}/family-links/").data
+        connected = next(l for l in links if l["relation"] == "sibling")
+        self.assertEqual(connected["access_level"], "view_only")
+        self.assertEqual(connected["status"], "approved")
 
-        reject = self.owner_client.post(f"/api/patients/{self.patient_id}/access-requests/{link_id}/reject/")
-        self.assertEqual(reject.status_code, 200)
-        self.assertEqual(reject.data["status"], "rejected")
+    def test_a_third_sibling_can_also_connect_independently_no_one_elses_approval_needed(self):
+        # The actual point: one sibling not adding another is no
+        # longer a blocker, because there's no "adding" step at all —
+        # anyone with the code connects on their own.
+        third_client = APIClient()
+        _, third_token = make_authenticated_user("third_sibling", role=UserRole.FAMILY, phone_number="09121110013")
+        third_client.credentials(HTTP_AUTHORIZATION=f"Bearer {third_token}")
 
-        detail = self.requester_client.get(f"/api/patients/{self.patient_id}/")
-        self.assertEqual(detail.status_code, 404)
+        self.requester_client.post("/api/patients/connect/", {"patient_code": self.patient_code, "relation": "child"}, format="json")
+        response = third_client.post("/api/patients/connect/", {"patient_code": self.patient_code, "relation": "sibling"}, format="json")
+        self.assertEqual(response.status_code, 201)
+
+        detail = third_client.get(f"/api/patients/{self.patient_id}/")
+        self.assertEqual(detail.status_code, 200)
+
+        links = self.owner_client.get(f"/api/patients/{self.patient_id}/family-links/").data
+        self.assertEqual(len(links), 3)  # owner + requester + third_sibling, all equal
 
     def test_requesting_with_invalid_code_rejected(self):
         response = self.requester_client.post("/api/patients/connect/", {
-            "patient_code": "ELD-ZZZZZZ", "relation": "فرزند",
+            "patient_code": "ELD-ZZZZZZ", "relation": "child",
         }, format="json")
         self.assertEqual(response.status_code, 400)
 
-    def test_requesting_twice_rejected(self):
+    def test_connecting_twice_rejected(self):
         self.requester_client.post("/api/patients/connect/", {
-            "patient_code": self.patient_code, "relation": "فرزند",
+            "patient_code": self.patient_code, "relation": "child",
         }, format="json")
         response = self.requester_client.post("/api/patients/connect/", {
-            "patient_code": self.patient_code, "relation": "فرزند",
+            "patient_code": self.patient_code, "relation": "child",
         }, format="json")
         self.assertEqual(response.status_code, 400)
 
-    def test_stranger_cannot_approve_a_request_they_have_no_standing_on(self):
-        req = self.requester_client.post("/api/patients/connect/", {
-            "patient_code": self.patient_code, "relation": "فرزند",
-        }, format="json")
-        link_id = req.data["link_id"]
+    def test_approve_reject_endpoints_still_function_for_a_pending_link_however_it_may_arise(self):
+        # Nothing currently creates a PENDING link (both connection
+        # paths are immediate now) — but the approve/reject mechanism
+        # itself stays in place as a real, working feature (e.g. for a
+        # future moderated flow), not dead code masquerading as
+        # working. Constructs a pending link directly to confirm the
+        # endpoints still behave correctly if one ever exists.
+        from apps.families.models import FamilyPatientLink, LinkStatus, FamilyProfile
 
-        stranger_client = APIClient()
-        _, stranger_token = make_authenticated_user("stranger", role=UserRole.FAMILY, phone_number="09121110012")
-        stranger_client.credentials(HTTP_AUTHORIZATION=f"Bearer {stranger_token}")
+        requester_family = FamilyProfile.objects.get(user_id=self.requester.id) if FamilyProfile.objects.filter(user_id=self.requester.id).exists() else FamilyProfile.objects.create(user_id=self.requester.id, display_name="درخواست‌دهنده")
+        from apps.families.models import PatientProfile
+        patient = PatientProfile.objects.get(id=self.patient_id)
+        link = FamilyPatientLink.objects.create(family=requester_family, patient=patient, relation="child", status=LinkStatus.PENDING, is_primary_contact=False)
 
-        response = stranger_client.post(f"/api/patients/{self.patient_id}/access-requests/{link_id}/approve/")
-        self.assertEqual(response.status_code, 404)
+        pending = self.owner_client.get(f"/api/patients/{self.patient_id}/access-requests/")
+        self.assertEqual(len(pending.data), 1)
+
+        approve = self.owner_client.post(f"/api/patients/{self.patient_id}/access-requests/{link.id}/approve/")
+        self.assertEqual(approve.status_code, 200)
+        self.assertEqual(approve.data["status"], "approved")
 
 
 class PatientOwnAccountTests(TestCase):
@@ -480,7 +491,7 @@ class PatientOwnAccountTests(TestCase):
         family_code = family_client.get("/api/families/me/").data["access_code"]
 
         response = self.patient_client.post("/api/patients/me/invite-family/", {
-            "family_code": family_code, "relation": "فرزند",
+            "family_code": family_code, "relation": "child",
         }, format="json")
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["status"], "approved")
@@ -489,21 +500,22 @@ class PatientOwnAccountTests(TestCase):
         detail = family_client.get(f"/api/patients/{self.patient.id}/")
         self.assertEqual(detail.status_code, 200)
 
-    def test_patient_sees_and_approves_pending_requests(self):
+    def test_family_connecting_via_patient_code_gets_immediate_access_no_patient_approval_needed(self):
         requester_client = APIClient()
         _, requester_token = make_authenticated_user("req_z", role=UserRole.FAMILY, phone_number="09121110023")
         requester_client.credentials(HTTP_AUTHORIZATION=f"Bearer {requester_token}")
-        req = requester_client.post("/api/patients/connect/", {
-            "patient_code": self.patient.access_code, "relation": "همسر",
+        connect = requester_client.post("/api/patients/connect/", {
+            "patient_code": self.patient.access_code, "relation": "spouse",
         }, format="json")
+        self.assertEqual(connect.status_code, 201)
 
+        # no pending state, nothing for the patient to approve
         pending = self.patient_client.get("/api/patients/me/access-requests/")
-        self.assertEqual(pending.status_code, 200)
-        self.assertEqual(len(pending.data), 1)
+        self.assertEqual(len(pending.data), 0)
 
-        approve = self.patient_client.post(f"/api/patients/me/access-requests/{req.data['link_id']}/approve/")
-        self.assertEqual(approve.status_code, 200)
-        self.assertEqual(approve.data["status"], "approved")
+        # yet the requester genuinely has access already
+        my_patients = requester_client.get("/api/patients/")
+        self.assertEqual(len(my_patients.data), 1)
 
     def test_patient_sees_who_has_access_to_them(self):
         family_client = APIClient()
@@ -511,7 +523,7 @@ class PatientOwnAccountTests(TestCase):
         family_client.credentials(HTTP_AUTHORIZATION=f"Bearer {family_token}")
         family_client.post("/api/families/me/", {"display_name": "پسر"}, format="json")
         family_code = family_client.get("/api/families/me/").data["access_code"]
-        self.patient_client.post("/api/patients/me/invite-family/", {"family_code": family_code, "relation": "فرزند"}, format="json")
+        self.patient_client.post("/api/patients/me/invite-family/", {"family_code": family_code, "relation": "child"}, format="json")
 
         response = self.patient_client.get("/api/patients/me/family-links/")
         self.assertEqual(response.status_code, 200)
@@ -550,7 +562,7 @@ class PatientOwnAccountTests(TestCase):
         family_client.credentials(HTTP_AUTHORIZATION=f"Bearer {family_token}")
         family_client.post("/api/families/me/", {"display_name": "دختر"}, format="json")
         family_code = family_client.get("/api/families/me/").data["access_code"]
-        self.patient_client.post("/api/patients/me/invite-family/", {"family_code": family_code, "relation": "فرزند"}, format="json")
+        self.patient_client.post("/api/patients/me/invite-family/", {"family_code": family_code, "relation": "child"}, format="json")
 
         response = family_client.get(f"/api/patients/{self.patient.id}/questionnaire/")
         self.assertEqual(response.status_code, 200)

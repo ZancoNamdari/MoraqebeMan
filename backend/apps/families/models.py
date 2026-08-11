@@ -29,7 +29,7 @@ class FamilyProfile(models.Model):
         max_length=20, unique=True, editable=False, verbose_name="کد عضو خانواده",
         help_text="کد یکتا برای دعوت این عضو خانواده توسط یک بیمار — مثلاً FAM-92K7XQ",
     )
-    display_name = models.CharField(max_length=150, help_text="نام نمایشی")
+    display_name = models.CharField(max_length=150, blank=True, help_text="نام نمایشی")
     province = models.ForeignKey(
         "locations.Province", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="استان")
     city = models.ForeignKey(
@@ -59,6 +59,22 @@ class GuardianshipStatus(models.TextChoices):
     NONE = "none", "ندارد"
     LEGAL_GUARDIAN = "legal_guardian", "قیم قانونی دارد"
     TRUSTEE = "trustee", "وصی دارد"
+
+
+class RelationType(models.TextChoices):
+    """Selectable, not free text — 'relation' showing up as an open
+    text box meant everyone typed something slightly different
+    ("فرزند" vs "دختر" vs "پسر" vs "Daughter"), which is bad both for
+    the person filling the form (more typing, more to get wrong) and
+    for anything downstream that might ever want to reason about
+    relation type consistently."""
+    CHILD = "child", "فرزند"
+    SPOUSE = "spouse", "همسر"
+    FATHER = "father", "پدر"
+    MOTHER = "mother", "مادر"
+    SIBLING = "sibling", "خواهر / برادر"
+    GRANDCHILD = "grandchild", "نوه"
+    OTHER = "other", "سایر"
 
 
 class PatientProfile(models.Model):
@@ -159,7 +175,7 @@ class FamilyPatientLink(models.Model):
     """
     family = models.ForeignKey(FamilyProfile, on_delete=models.CASCADE, related_name="patient_links", verbose_name="خانواده")
     patient = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name="family_links", verbose_name="سالمند")
-    relation = models.CharField(max_length=50, help_text="نسبت، مثلاً فرزند/همسر/سرپرست")
+    relation = models.CharField(max_length=50, choices=RelationType.choices, default=RelationType.OTHER, help_text="نسبت")
     is_primary_contact = models.BooleanField(default=True)
     status = models.CharField(max_length=20, choices=LinkStatus.choices, default=LinkStatus.APPROVED, verbose_name="وضعیت")
     access_level = models.CharField(max_length=20, choices=AccessLevel.choices, default=AccessLevel.FULL, verbose_name="سطح دسترسی")

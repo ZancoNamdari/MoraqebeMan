@@ -16,7 +16,7 @@ class RegisterSerializer(serializers.Serializer):
         regex=r"^09\d{9}$",
         error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
     )
-    email = serializers.EmailField()
+    email = serializers.EmailField(required=False, allow_blank=True, default="")
     # Public self-registration is limited to non-privileged roles.
     # SUPERUSER/ADMIN accounts are created via the admin panel or
     # createsuperuser, never through this open endpoint.

@@ -6,10 +6,11 @@ import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Field } from "@/components/forms/fields"
+import { Field, ChoiceSelect } from "@/components/forms/fields"
 import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
 import { ErrorSummary } from "@/components/forms/error-summary"
+import { RELATION_TYPE } from "@/lib/constants"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
 import { patientService } from "@/services/patient.service"
 import { ROUTES } from "@/lib/routes"
@@ -73,7 +74,7 @@ export default function NewPatientPage() {
               <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </Field>
             <Field label="نسبت شما با سالمند" required>
-              <Input value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="مثلاً فرزند، همسر" />
+              <ChoiceSelect choices={RELATION_TYPE} value={relation} onChange={setRelation} />
             </Field>
             <Field label="تاریخ تولد">
               <JalaliDatePicker value={birthDate} onChange={setBirthDate} />

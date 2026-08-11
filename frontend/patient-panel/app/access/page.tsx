@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { ChoiceSelect } from "@/components/forms/fields"
+import { RELATION_TYPE } from "@/lib/constants"
 import { Skeleton } from "@/components/ui/skeleton"
 import { myPatientService } from "@/services/patient.service"
 import { ROUTES } from "@/lib/routes"
@@ -115,7 +117,7 @@ export default function AccessPage() {
                   {error && <p className="text-xs text-rose-600">{error}</p>}
                   <div className="flex flex-wrap gap-2">
                     <Input placeholder="کد عضو (مثلاً FAM-92K7XQ)" className="w-44" value={familyCode} onChange={(e) => setFamilyCode(e.target.value)} dir="ltr" />
-                    <Input placeholder="نسبت" className="w-24" value={relation} onChange={(e) => setRelation(e.target.value)} />
+                    <div className="w-28"><ChoiceSelect choices={RELATION_TYPE} value={relation} onChange={setRelation} placeholder="نسبت" /></div>
                     <select
                       className="h-10 rounded-md border border-input bg-background px-2 text-sm"
                       value={accessLevel}
