@@ -604,3 +604,86 @@ class PatientSelfServiceCreationTests(TestCase):
         response = self.patient_client.put("/api/patients/me/", {"full_name": "نسخه دوم"}, format="json")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(PatientProfile.objects.filter(user_id=self.patient_user.id).count(), 1)
+
+
+class AccessLevelEnforcementTests(TestCase):
+    """access_level was being stored on every FamilyPatientLink but
+    never actually checked before allowing writes — a VIEW_ONLY family
+    member could edit the patient's profile and questionnaire exactly
+    the same as a FULL_ACCESS one. Reported directly, reproduced live
+    before writing these, confirmed fixed. Read access must remain
+    open to both levels; only writes are gated."""
+
+    def setUp(self):
+        cache.clear()
+        self.owner_client = APIClient()
+        self.owner, self.owner_token = make_authenticated_user("full_owner", role=UserRole.FAMILY, phone_number="09121110910")
+        self.owner_client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.owner_token}")
+        create = self.owner_client.post("/api/patients/", VALID_PATIENT, format="json")
+        self.patient_id = create.data["id"]
+        self.patient_code = create.data["access_code"]
+
+        self.viewer_client = APIClient()
+        self.viewer, self.viewer_token = make_authenticated_user("view_only_member", role=UserRole.FAMILY, phone_number="09121110911")
+        self.viewer_client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.viewer_token}")
+        self.viewer_client.post("/api/patients/connect/", {"patient_code": self.patient_code, "relation": "sibling"}, format="json")
+
+    def test_view_only_cannot_edit_patient_profile(self):
+        response = self.viewer_client.put(f"/api/patients/{self.patient_id}/", {"full_name": "دستکاری‌شده"}, format="json")
+        self.assertEqual(response.status_code, 403)
+
+        confirm = self.owner_client.get(f"/api/patients/{self.patient_id}/")
+        self.assertEqual(confirm.data["full_name"], VALID_PATIENT["full_name"])
+
+    def test_view_only_cannot_edit_questionnaire(self):
+        response = self.viewer_client.put(f"/api/patients/{self.patient_id}/questionnaire/", {
+            "religious_beliefs_priority": "strongly_agree",
+        }, format="json")
+        self.assertEqual(response.status_code, 403)
+
+    def test_view_only_cannot_delete_patient(self):
+        response = self.viewer_client.delete(f"/api/patients/{self.patient_id}/")
+        self.assertEqual(response.status_code, 403)
+
+    def test_view_only_cannot_invite_other_family_members(self):
+        third_client = APIClient()
+        _, third_token = make_authenticated_user("third", role=UserRole.FAMILY, phone_number="09121110912")
+        third_client.credentials(HTTP_AUTHORIZATION=f"Bearer {third_token}")
+        third_client.post("/api/families/me/", {"display_name": "سوم"}, format="json")
+        third_code = third_client.get("/api/families/me/").data["access_code"]
+
+        response = self.viewer_client.post(f"/api/patients/{self.patient_id}/family-links/", {
+            "family_code": third_code, "relation": "sibling",
+        }, format="json")
+        self.assertEqual(response.status_code, 403)
+
+    def test_view_only_cannot_remove_others_access(self):
+        links = self.owner_client.get(f"/api/patients/{self.patient_id}/family-links/").data
+        response = self.viewer_client.delete(f"/api/patients/{self.patient_id}/family-links/{links[0]['id']}/")
+        self.assertEqual(response.status_code, 403)
+
+    def test_view_only_can_still_read_profile_and_questionnaire(self):
+        self.assertEqual(self.viewer_client.get(f"/api/patients/{self.patient_id}/").status_code, 200)
+        self.owner_client.put(f"/api/patients/{self.patient_id}/questionnaire/", {
+            "religious_beliefs_priority": "strongly_agree", "new_treatment_openness": "moderate",
+            "caregiver_as_family_member": "yes", "respectful_disagreement_acceptance": "fully_accept",
+            "privacy_comfort_with_caregiver": "yes", "noise_smell_sensitivity": "low",
+            "meal_time_strictness": "moderate", "special_diet_preference": "no",
+            "medication_timing_priority": "very_high", "accent_customs_annoyance": "not_at_all",
+            "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "moderate",
+        }, format="json")
+        response = self.viewer_client.get(f"/api/patients/{self.patient_id}/questionnaire/")
+        self.assertEqual(response.status_code, 200)
+
+    def test_full_access_owner_can_still_do_everything(self):
+        self.assertEqual(self.owner_client.put(f"/api/patients/{self.patient_id}/", {"full_name": "بروزشده"}, format="json").status_code, 200)
+
+    def test_stranger_with_no_link_at_all_gets_404_not_403(self):
+        # Distinguishing "you have no relationship to this patient at
+        # all" (404 — don't even confirm it exists) from "you can see
+        # this patient but can't edit them" (403) matters.
+        stranger_client = APIClient()
+        _, stranger_token = make_authenticated_user("stranger_access", role=UserRole.FAMILY, phone_number="09121110913")
+        stranger_client.credentials(HTTP_AUTHORIZATION=f"Bearer {stranger_token}")
+        response = stranger_client.put(f"/api/patients/{self.patient_id}/", {"full_name": "x"}, format="json")
+        self.assertEqual(response.status_code, 404)

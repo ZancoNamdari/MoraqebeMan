@@ -59,17 +59,43 @@ def _family_for_request(request) -> FamilyProfile | None:
     return FamilyProfile.objects.filter(user_id=request.user.id).first()
 
 
-def _get_patient_for_family_request(request, patient_id) -> PatientProfile | None:
-    """Shared by every per-patient family-side view — a patient is only
-    accessible if the requesting family account has an APPROVED
-    FamilyPatientLink to it. A PENDING link (their own outstanding
-    request) does not grant access yet."""
+def _get_link_for_family_request(request, patient_id) -> FamilyPatientLink | None:
+    """The actual access-control primitive — returns the link itself,
+    not just the patient, specifically so callers can check
+    access_level before allowing a write. Read-only views only need
+    this link to exist (any APPROVED level, full or view-only, can
+    read); write views additionally require FULL access."""
     family = _family_for_request(request)
     if family is None:
         return None
-    return PatientProfile.objects.filter(
-        id=patient_id, family_links__family=family, family_links__status=LinkStatus.APPROVED,
-    ).first()
+    return FamilyPatientLink.objects.filter(
+        family=family, patient_id=patient_id, status=LinkStatus.APPROVED,
+    ).select_related("patient").first()
+
+
+def _get_patient_for_family_request(request, patient_id) -> PatientProfile | None:
+    """Read access — a patient is visible if the requesting family
+    account has ANY approved link to it, view_only or full_access. A
+    PENDING link (their own outstanding request, if one somehow
+    exists) does not grant access yet."""
+    link = _get_link_for_family_request(request, patient_id)
+    return link.patient if link else None
+
+
+def _get_patient_for_family_write(request, patient_id) -> PatientProfile | None:
+    """Write access — unlike reading, this specifically requires
+    FULL access, not just any approved link. This is the fix for a
+    real gap: access_level was being stored on every link but never
+    actually checked before allowing PUT/edit operations, meaning a
+    VIEW_ONLY family member could edit the patient's profile or
+    questionnaire exactly the same as a FULL_ACCESS one — the field
+    existed but did nothing. Returns None (caller responds 403, not
+    404 — the patient DOES exist and IS visible to them, they just
+    can't edit it) when the link exists but is view_only."""
+    link = _get_link_for_family_request(request, patient_id)
+    if link is None or link.access_level != AccessLevel.FULL:
+        return None
+    return link.patient
 
 
 def _approve_link(link: FamilyPatientLink, approving_user) -> None:
@@ -166,10 +192,13 @@ class ConnectToPatientView(APIView):
 
 class PatientDetailView(APIView):
     """
-    GET    /api/patients/<id>/ — only accessible to a family with
-           APPROVED access to this patient.
-    PUT    /api/patients/<id>/ — update.
+    GET    /api/patients/<id>/ — accessible to a family with ANY
+           approved access to this patient (full or view-only).
+    PUT    /api/patients/<id>/ — update. Requires FULL access — a
+           view_only family member can see this patient but not edit
+           them; enforced here, not just implied by the field existing.
     DELETE /api/patients/<id>/ — removes the patient record entirely.
+           Also requires FULL access, same reasoning.
     """
     permission_classes = [IsFamily]
 
@@ -180,9 +209,11 @@ class PatientDetailView(APIView):
         return Response(PatientProfileSerializer(patient).data)
 
     def put(self, request, patient_id):
-        patient = _get_patient_for_family_request(request, patient_id)
-        if patient is None:
+        if _get_patient_for_family_request(request, patient_id) is None:
             return Response({"detail": "بیمار یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        patient = _get_patient_for_family_write(request, patient_id)
+        if patient is None:
+            return Response({"detail": "دسترسی شما فقط مشاهده است — امکان ویرایش اطلاعات این بیمار را ندارید."}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = PatientProfileSerializer(instance=patient, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -191,9 +222,11 @@ class PatientDetailView(APIView):
         return Response(serializer.data)
 
     def delete(self, request, patient_id):
-        patient = _get_patient_for_family_request(request, patient_id)
-        if patient is None:
+        if _get_patient_for_family_request(request, patient_id) is None:
             return Response({"detail": "بیمار یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        patient = _get_patient_for_family_write(request, patient_id)
+        if patient is None:
+            return Response({"detail": "دسترسی شما فقط مشاهده است — امکان حذف این بیمار را ندارید."}, status=status.HTTP_403_FORBIDDEN)
         audit.patient_deleted(request.user.id, patient.id)
         patient.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -213,9 +246,11 @@ class PatientQuestionnaireView(APIView):
         return Response(PatientCompatibilityQuestionnaireSerializer(questionnaire).data)
 
     def put(self, request, patient_id):
-        patient = _get_patient_for_family_request(request, patient_id)
-        if patient is None:
+        if _get_patient_for_family_request(request, patient_id) is None:
             return Response({"detail": "بیمار یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        patient = _get_patient_for_family_write(request, patient_id)
+        if patient is None:
+            return Response({"detail": "دسترسی شما فقط مشاهده است — امکان ویرایش پرسشنامه این بیمار را ندارید."}, status=status.HTTP_403_FORBIDDEN)
 
         existing = PatientCompatibilityQuestionnaire.objects.filter(patient=patient).first()
         serializer = PatientCompatibilityQuestionnaireSerializer(instance=existing, data=request.data)
@@ -243,9 +278,11 @@ class PatientFamilyLinksView(APIView):
         return Response(FamilyPatientLinkSerializer(links, many=True).data)
 
     def post(self, request, patient_id):
-        patient = _get_patient_for_family_request(request, patient_id)
-        if patient is None:
+        if _get_patient_for_family_request(request, patient_id) is None:
             return Response({"detail": "بیمار یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        patient = _get_patient_for_family_write(request, patient_id)
+        if patient is None:
+            return Response({"detail": "دسترسی شما فقط مشاهده است — امکان افزودن عضو خانواده را ندارید."}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = InviteFamilyByCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -285,9 +322,11 @@ class PatientAccessRequestDecisionView(APIView):
     permission_classes = [IsFamily]
 
     def post(self, request, patient_id, link_id, decision):
-        patient = _get_patient_for_family_request(request, patient_id)
-        if patient is None:
+        if _get_patient_for_family_request(request, patient_id) is None:
             return Response({"detail": "بیمار یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        patient = _get_patient_for_family_write(request, patient_id)
+        if patient is None:
+            return Response({"detail": "دسترسی شما فقط مشاهده است — امکان تصمیم‌گیری درباره درخواست‌های دسترسی را ندارید."}, status=status.HTTP_403_FORBIDDEN)
 
         link = FamilyPatientLink.objects.filter(id=link_id, patient=patient, status=LinkStatus.PENDING).first()
         if link is None:
@@ -313,9 +352,11 @@ class PatientFamilyLinkDetailView(APIView):
     permission_classes = [IsFamily]
 
     def patch(self, request, patient_id, link_id):
-        patient = _get_patient_for_family_request(request, patient_id)
-        if patient is None:
+        if _get_patient_for_family_request(request, patient_id) is None:
             return Response({"detail": "بیمار یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        patient = _get_patient_for_family_write(request, patient_id)
+        if patient is None:
+            return Response({"detail": "دسترسی شما فقط مشاهده است — امکان مدیریت دسترسی اعضای خانواده را ندارید."}, status=status.HTTP_403_FORBIDDEN)
 
         link = FamilyPatientLink.objects.filter(id=link_id, patient=patient).first()
         if link is None:
@@ -340,9 +381,11 @@ class PatientFamilyLinkDetailView(APIView):
         return Response(FamilyPatientLinkSerializer(link).data)
 
     def delete(self, request, patient_id, link_id):
-        patient = _get_patient_for_family_request(request, patient_id)
-        if patient is None:
+        if _get_patient_for_family_request(request, patient_id) is None:
             return Response({"detail": "بیمار یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        patient = _get_patient_for_family_write(request, patient_id)
+        if patient is None:
+            return Response({"detail": "دسترسی شما فقط مشاهده است — امکان حذف دسترسی اعضای خانواده را ندارید."}, status=status.HTTP_403_FORBIDDEN)
 
         link = FamilyPatientLink.objects.filter(id=link_id, patient=patient).first()
         if link is None:
