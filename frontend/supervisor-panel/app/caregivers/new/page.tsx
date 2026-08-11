@@ -28,9 +28,9 @@ const STEPS = ["اطلاعات پایه", "فرم ۱ — هویتی", "فرم ۲
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 pt-2">
-      <Separator className="flex-1 bg-indigo-100" />
-      <span className="shrink-0 rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">{children}</span>
-      <Separator className="flex-1 bg-indigo-100" />
+      <Separator className="flex-1 bg-pink-100" />
+      <span className="shrink-0 rounded-full bg-pink-50 px-3 py-1 text-xs font-bold text-rose-700">{children}</span>
+      <Separator className="flex-1 bg-pink-100" />
     </div>
   )
 }
@@ -233,7 +233,7 @@ function NewCaregiverWizardInner() {
 
   if (done) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-background to-indigo-50 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-background to-pink-50 p-4">
         <Card className="w-full max-w-md border-0 text-center shadow-xl">
           <CardContent className="space-y-4 p-8">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-4xl text-white shadow-lg shadow-emerald-500/30">
@@ -241,7 +241,7 @@ function NewCaregiverWizardInner() {
             </div>
             <h2 className="text-xl font-bold text-emerald-900">اطلاعات {caregiverName} با موفقیت ثبت شد</h2>
             <div className="flex flex-col gap-2 pt-2">
-              <Button size="lg" className="bg-gradient-to-l from-indigo-600 to-violet-600 shadow-md shadow-indigo-500/30 hover:from-indigo-700 hover:to-violet-700" onClick={startNext}>
+              <Button size="lg" className="bg-gradient-to-l from-brand-pink to-brand-mint-strong shadow-md shadow-brand-pink/30 hover:from-brand-pink-strong hover:to-brand-mint-strong" onClick={startNext}>
                 + افزودن مراقب بعدی
               </Button>
               <Button variant="outline" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به لیست</Button>
@@ -253,7 +253,7 @@ function NewCaregiverWizardInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50/50 via-background to-background">
+    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background">
       <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto max-w-2xl p-4">
           <div className="mb-3 flex items-center justify-between">
@@ -270,7 +270,7 @@ function NewCaregiverWizardInner() {
 
         {step === 0 && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-indigo-900"><span className="text-xl">👤</span> {caregiverId ? "ویرایش اطلاعات پایه" : "اطلاعات پایه حساب"}</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-rose-900"><span className="text-xl">👤</span> {caregiverId ? "ویرایش اطلاعات پایه" : "اطلاعات پایه حساب"}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="نام" required><Input value={firstName} onChange={(e) => setFirstName(e.target.value)} /></Field>
               <Field label="نام خانوادگی" required><Input value={lastName} onChange={(e) => setLastName(e.target.value)} /></Field>
@@ -284,7 +284,7 @@ function NewCaregiverWizardInner() {
 
         {step === 1 && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-indigo-900"><span className="text-xl">🪪</span> فرم ۱ — اطلاعات هویتی</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-rose-900"><span className="text-xl">🪪</span> فرم ۱ — اطلاعات هویتی</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="نام پدر"><Input value={identity.father_name} onChange={(e) => setIdentity({ ...identity, father_name: e.target.value })} /></Field>
               <Field label="شماره شناسنامه"><Input value={identity.birth_certificate_number} onChange={(e) => setIdentity({ ...identity, birth_certificate_number: e.target.value })} /></Field>
@@ -338,7 +338,7 @@ function NewCaregiverWizardInner() {
 
         {step === 2 && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-indigo-900"><span className="text-xl">💼</span> فرم ۲ — شرایط همکاری</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-rose-900"><span className="text-xl">💼</span> فرم ۲ — شرایط همکاری</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="نوع همکاری"><CheckboxGroup choices={C.COLLABORATION_TYPE} value={workPrefs.collaboration_types} onChange={(v) => setWorkPrefs({ ...workPrefs, collaboration_types: v })} /></Field>
               <Field label="وضعیت کاری"><ChoiceSelect choices={C.WORK_STATUS} value={workPrefs.work_status} onChange={(v) => setWorkPrefs({ ...workPrefs, work_status: v })} /></Field>
@@ -404,7 +404,7 @@ function NewCaregiverWizardInner() {
 
         {step === 3 && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-indigo-900"><span className="text-xl">🎓</span> فرم ۳ — سوابق کاری و مهارت‌ها</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-rose-900"><span className="text-xl">🎓</span> فرم ۳ — سوابق کاری و مهارت‌ها</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <SectionHeading>سوابق کاری</SectionHeading>
               <Field label="سابقه مراقبت از سالمند"><ChoiceSelect choices={C.EXPERIENCE_RANGE} value={experience.elderly_care_experience} onChange={(v) => setExperience({ ...experience, elderly_care_experience: v })} /></Field>
@@ -439,7 +439,7 @@ function NewCaregiverWizardInner() {
 
         {step === 4 && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-indigo-900"><span className="text-xl">📇</span> فرم ۴ — معرف‌ها</CardTitle><p className="text-sm text-muted-foreground">افزودن معرف اختیاری است — هر تعداد که در دسترس دارید کافی است.</p></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-rose-900"><span className="text-xl">📇</span> فرم ۴ — معرف‌ها</CardTitle><p className="text-sm text-muted-foreground">افزودن معرف اختیاری است — هر تعداد که در دسترس دارید کافی است.</p></CardHeader>
             <CardContent className="space-y-6">
               {references.map((ref, i) => (
                 <div key={i} className="space-y-3 rounded-md border p-3">
@@ -489,27 +489,27 @@ function NewCaregiverWizardInner() {
             </Button>
           )}
           {step === 0 && (
-            <Button className="flex-1 bg-gradient-to-l from-indigo-600 to-violet-600 shadow-md shadow-indigo-500/20 hover:from-indigo-700 hover:to-violet-700" size="lg" onClick={handleStep0} disabled={saving || !firstName || !lastName || !phone}>
+            <Button className="flex-1 bg-gradient-to-l from-brand-pink to-brand-mint-strong shadow-md shadow-brand-pink/20 hover:from-brand-pink-strong hover:to-brand-mint-strong" size="lg" onClick={handleStep0} disabled={saving || !firstName || !lastName || !phone}>
               {saving ? "در حال ذخیره..." : caregiverId ? "ذخیره تغییرات" : "ایجاد و ادامه"}
             </Button>
           )}
           {step === 1 && (
-            <Button className="flex-1 bg-gradient-to-l from-indigo-600 to-violet-600 shadow-md shadow-indigo-500/20 hover:from-indigo-700 hover:to-violet-700" size="lg" onClick={handleStep1} disabled={saving}>
+            <Button className="flex-1 bg-gradient-to-l from-brand-pink to-brand-mint-strong shadow-md shadow-brand-pink/20 hover:from-brand-pink-strong hover:to-brand-mint-strong" size="lg" onClick={handleStep1} disabled={saving}>
               {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 2 && (
-            <Button className="flex-1 bg-gradient-to-l from-indigo-600 to-violet-600 shadow-md shadow-indigo-500/20 hover:from-indigo-700 hover:to-violet-700" size="lg" onClick={handleStep2} disabled={saving}>
+            <Button className="flex-1 bg-gradient-to-l from-brand-pink to-brand-mint-strong shadow-md shadow-brand-pink/20 hover:from-brand-pink-strong hover:to-brand-mint-strong" size="lg" onClick={handleStep2} disabled={saving}>
               {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 3 && (
-            <Button className="flex-1 bg-gradient-to-l from-indigo-600 to-violet-600 shadow-md shadow-indigo-500/20 hover:from-indigo-700 hover:to-violet-700" size="lg" onClick={handleStep3} disabled={saving}>
+            <Button className="flex-1 bg-gradient-to-l from-brand-pink to-brand-mint-strong shadow-md shadow-brand-pink/20 hover:from-brand-pink-strong hover:to-brand-mint-strong" size="lg" onClick={handleStep3} disabled={saving}>
               {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 4 && (
-            <Button className="flex-1 bg-gradient-to-l from-indigo-600 to-violet-600 shadow-md shadow-indigo-500/20 hover:from-indigo-700 hover:to-violet-700" size="lg" onClick={handleStep4} disabled={saving}>
+            <Button className="flex-1 bg-gradient-to-l from-brand-pink to-brand-mint-strong shadow-md shadow-brand-pink/20 hover:from-brand-pink-strong hover:to-brand-mint-strong" size="lg" onClick={handleStep4} disabled={saving}>
               {saving ? "در حال ذخیره..." : "ذخیره نهایی"}
             </Button>
           )}

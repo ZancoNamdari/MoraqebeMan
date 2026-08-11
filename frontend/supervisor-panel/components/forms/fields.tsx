@@ -12,10 +12,10 @@ export function Field({
   return (
     <div className={cn("space-y-1.5 rounded-lg", error && "ring-1 ring-rose-400/60 bg-rose-50/60 p-2.5")}>
       <Label className="flex items-center gap-1.5">
-        <span className={cn(required && "font-bold text-indigo-950")}>{label}</span>
+        <span className={cn(required && "font-bold text-rose-950")}>{label}</span>
         {" "}
         {required && (
-          <span className="mr-1.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">
+          <span className="mr-1.5 rounded-full bg-pink-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
             الزامی
           </span>
         )}
@@ -59,7 +59,7 @@ export function CheckboxGroup({
             className={cn(
               "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm transition-colors",
               checked
-                ? "border-indigo-300 bg-indigo-50 text-indigo-900"
+                ? "border-pink-300 bg-pink-50 text-rose-900"
                 : "border-transparent hover:bg-accent"
             )}
           >

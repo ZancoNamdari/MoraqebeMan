@@ -76,14 +76,14 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Top admin bar — solid color band, standard admin-panel pattern */}
-      <header className="bg-gradient-to-l from-indigo-700 to-indigo-600 text-white shadow-md">
+      <header className="bg-gradient-to-l from-brand-pink-strong to-rose-400 text-white shadow-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="text-xl">🤝</span>
             <h1 className="text-base font-bold">پنل ناظر — مراقب من</h1>
           </div>
           <div className="flex items-center gap-3">
-            {user && <span className="text-sm text-indigo-100">{user.username}</span>}
+            {user && <span className="text-sm text-pink-100">{user.username}</span>}
             <Button size="sm" variant="secondary" onClick={logout}>خروج</Button>
           </div>
         </div>
@@ -92,10 +92,10 @@ export default function DashboardPage() {
       <main className="mx-auto max-w-6xl space-y-4 p-4">
         {/* Summary strip — quick counts, admin-dashboard style */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <SummaryCard label="کل مراقبان" value={caregivers.length} color="bg-indigo-50 text-indigo-700 border-indigo-100" />
+          <SummaryCard label="کل مراقبان" value={caregivers.length} color="bg-pink-50 text-rose-700 border-pink-100" />
           <SummaryCard label="تکمیل‌شده" value={doneCount} color="bg-emerald-50 text-emerald-700 border-emerald-100" />
           <SummaryCard label="در حال تکمیل" value={caregivers.length - doneCount} color="bg-amber-50 text-amber-700 border-amber-100" />
-          <SummaryCard label="تأییدشده" value={caregivers.filter((c) => c.status === "approved").length} color="bg-violet-50 text-violet-700 border-violet-100" />
+          <SummaryCard label="تأییدشده" value={caregivers.filter((c) => c.status === "approved").length} color="bg-emerald-50 text-emerald-700 border-emerald-100" />
         </div>
 
         {/* Toolbar */}
@@ -106,7 +106,7 @@ export default function DashboardPage() {
             placeholder="جستجو بر اساس نام یا شماره موبایل..."
             className="h-9 w-full max-w-xs rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
-          <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => router.push(ROUTES.newCaregiver)}>
+          <Button className="bg-brand-pink hover:bg-brand-pink-strong" onClick={() => router.push(ROUTES.newCaregiver)}>
             + افزودن مراقب جدید
           </Button>
         </div>
@@ -135,7 +135,7 @@ export default function DashboardPage() {
               </thead>
               <tbody className="divide-y">
                 {filtered.map((c, i) => (
-                  <tr key={c.user_id} className={cn("transition-colors hover:bg-indigo-50/40", i % 2 === 1 && "bg-slate-50/50")}>
+                  <tr key={c.user_id} className={cn("transition-colors hover:bg-pink-50/40", i % 2 === 1 && "bg-slate-50/50")}>
                     <td className="px-4 py-3 text-center font-medium text-slate-800">{c.full_name || "(بدون نام)"}</td>
                     <td className="px-4 py-3 text-center text-slate-600" dir="ltr">{c.phone_number}</td>
                     <td className="px-4 py-3 text-center">
@@ -150,7 +150,7 @@ export default function DashboardPage() {
                           <div
                             className={cn(
                               "h-full rounded-full",
-                              c.forms_completed === c.forms_total ? "bg-emerald-500" : "bg-indigo-500"
+                              c.forms_completed === c.forms_total ? "bg-emerald-500" : "bg-brand-pink"
                             )}
                             style={{ width: `${(c.forms_completed / c.forms_total) * 100}%` }}
                           />
@@ -167,7 +167,7 @@ export default function DashboardPage() {
                           بررسی
                         </button>
                         <button
-                          className="rounded-md border border-indigo-200 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
+                          className="rounded-md border border-pink-200 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-pink-50"
                           onClick={() => router.push(`${ROUTES.newCaregiver}?id=${c.user_id}`)}
                         >
                           ویرایش

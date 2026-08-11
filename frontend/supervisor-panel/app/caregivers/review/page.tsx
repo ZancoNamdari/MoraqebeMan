@@ -37,7 +37,7 @@ function Section({ icon, title, children }: { icon: string; title: string; child
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base text-indigo-900">
+        <CardTitle className="flex items-center gap-2 text-base text-rose-900">
           <span className="text-lg">{icon}</span> {title}
         </CardTitle>
       </CardHeader>
@@ -117,7 +117,7 @@ function ReviewPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50/50 via-background to-background pb-10">
+    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
       <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between p-4">
           <div>
@@ -238,7 +238,7 @@ function ReviewPageInner() {
             </Section>
 
             {/* Decision actions */}
-            <Card className="border-indigo-100">
+            <Card className="border-pink-100">
               <CardContent className="space-y-3 p-4">
                 {showRejectBox ? (
                   <div className="space-y-2">

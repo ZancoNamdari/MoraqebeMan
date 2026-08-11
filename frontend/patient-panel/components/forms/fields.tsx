@@ -1,7 +1,9 @@
 "use client"
 
+import { useState } from "react"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import type { Choice } from "@/lib/constants"
@@ -12,10 +14,10 @@ export function Field({
   return (
     <div className={cn("space-y-1.5 rounded-lg", error && "ring-1 ring-rose-400/60 bg-rose-50/60 p-2.5")}>
       <Label className="flex items-center gap-1.5">
-        <span className={cn(required && "font-bold text-indigo-950")}>{label}</span>
+        <span className={cn(required && "font-bold text-rose-950")}>{label}</span>
         {" "}
         {required && (
-          <span className="mr-1.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">
+          <span className="mr-1.5 rounded-full bg-pink-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
             الزامی
           </span>
         )}
@@ -41,6 +43,54 @@ export function ChoiceSelect({
   )
 }
 
+const OTHER_SENTINEL = "__other__"
+
+/**
+ * A select with a built-in "سایر" (other) option — choosing it reveals
+ * a text box for whatever isn't in the predefined list, instead of
+ * either forcing free typing for everyone or forcing everyone into a
+ * fixed list with no way to say something else. Tick a choice; only
+ * type if you actually need to.
+ *
+ * Stores the chosen option's own text directly (not an internal code)
+ * since the fields this is used for — language/dialect, etc. — are
+ * free-text on the backend already; no separate "other" flag needed
+ * in the stored value itself, just in this component's own state.
+ */
+export function SelectWithOther({
+  choices, value, onChange, placeholder = "انتخاب کنید...", otherPlaceholder = "توضیح دهید...",
+}: {
+  choices: Choice[]; value: string; onChange: (v: string) => void; placeholder?: string; otherPlaceholder?: string
+}) {
+  const isKnownChoice = choices.some(([, label]) => label === value)
+  const [showOther, setShowOther] = useState(!isKnownChoice && value !== "")
+
+  function handleSelectChange(selected: string) {
+    if (selected === OTHER_SENTINEL) {
+      setShowOther(true)
+      onChange("")
+    } else {
+      setShowOther(false)
+      onChange(selected)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <Select value={showOther ? OTHER_SENTINEL : value} onChange={(e) => handleSelectChange(e.target.value)}>
+        <option value="">{placeholder}</option>
+        {choices.map(([, label]) => (
+          <option key={label} value={label}>{label}</option>
+        ))}
+        <option value={OTHER_SENTINEL}>سایر</option>
+      </Select>
+      {showOther && (
+        <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={otherPlaceholder} autoFocus />
+      )}
+    </div>
+  )
+}
+
 export function CheckboxGroup({
   choices, value, onChange,
 }: {
@@ -59,7 +109,7 @@ export function CheckboxGroup({
             className={cn(
               "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm transition-colors",
               checked
-                ? "border-indigo-300 bg-indigo-50 text-indigo-900"
+                ? "border-pink-300 bg-pink-50 text-rose-900"
                 : "border-transparent hover:bg-accent"
             )}
           >

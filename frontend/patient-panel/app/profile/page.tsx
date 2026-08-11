@@ -8,12 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Field, ChoiceSelect } from "@/components/forms/fields"
+import { Field, ChoiceSelect, SelectWithOther } from "@/components/forms/fields"
 import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
-import { GUARDIANSHIP_STATUS } from "@/lib/constants"
+import { GUARDIANSHIP_STATUS, LANGUAGE_DIALECT } from "@/lib/constants"
 import { myPatientService } from "@/services/patient.service"
 import { ROUTES } from "@/lib/routes"
 import type { PatientProfile } from "@/types/patient"
@@ -125,7 +125,7 @@ export default function ProfilePage() {
                   </Field>
                 )}
                 <Field label="زبان و گویش">
-                  <Input value={profile.language_dialect} onChange={(e) => setProfile({ ...profile, language_dialect: e.target.value })} />
+                  <SelectWithOther choices={LANGUAGE_DIALECT} value={profile.language_dialect} onChange={(v) => setProfile({ ...profile, language_dialect: v })} />
                 </Field>
                 <Field label="اطلاعات پزشکی پایه">
                   <Textarea value={profile.basic_medical_info} onChange={(e) => setProfile({ ...profile, basic_medical_info: e.target.value })} />

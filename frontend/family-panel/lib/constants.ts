@@ -82,3 +82,14 @@ export const RELATION_TYPE: Choice[] = [
   ["grandchild", "نوه"],
   ["other", "سایر"],
 ]
+
+export const LANGUAGE_DIALECT: Choice[] = [
+  ["fa", "فارسی"],
+  ["az", "ترکی آذربایجانی"],
+  ["ku", "کردی"],
+  ["lr", "لری"],
+  ["gl", "گیلکی"],
+  ["mz", "مازندرانی"],
+  ["ar", "عربی"],
+  ["bl", "بلوچی"],
+]

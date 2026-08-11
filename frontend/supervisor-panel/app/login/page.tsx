@@ -31,14 +31,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-500 to-violet-600 p-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-brand-pink via-brand-pink to-brand-mint-strong p-4">
       {/* Soft decorative blobs — purely visual, no content */}
       <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-fuchsia-400/20 blur-3xl" />
 
       <Card className="relative w-full max-w-sm border-0 shadow-2xl">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-2xl shadow-lg shadow-indigo-500/30">
+          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-pink to-brand-mint-strong text-2xl shadow-lg shadow-brand-pink/30">
             🤝
           </div>
           <CardTitle className="text-xl">ورود ناظر</CardTitle>
@@ -73,7 +73,7 @@ export default function LoginPage() {
             )}
             <Button
               type="submit"
-              className="w-full bg-gradient-to-l from-indigo-600 to-violet-600 text-base font-medium shadow-md shadow-indigo-500/30 hover:from-indigo-700 hover:to-violet-700"
+              className="w-full bg-gradient-to-l from-brand-pink to-brand-mint-strong text-base font-medium shadow-md shadow-brand-pink/30 hover:from-brand-pink-strong hover:to-brand-mint-strong"
               size="lg"
               disabled={loading}
             >
