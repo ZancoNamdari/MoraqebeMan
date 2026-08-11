@@ -517,3 +517,41 @@ class PatientOwnAccountTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["family_display_name"], "پسر")
+
+    def test_patient_can_fill_own_questionnaire(self):
+        payload = {
+            "religious_beliefs_priority": "strongly_agree", "new_treatment_openness": "moderate",
+            "caregiver_as_family_member": "yes", "respectful_disagreement_acceptance": "fully_accept",
+            "privacy_comfort_with_caregiver": "yes", "noise_smell_sensitivity": "low",
+            "meal_time_strictness": "moderate", "special_diet_preference": "no",
+            "medication_timing_priority": "very_high", "accent_customs_annoyance": "not_at_all",
+            "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "moderate",
+        }
+        response = self.patient_client.put("/api/patients/me/questionnaire/", payload, format="json")
+        self.assertEqual(response.status_code, 201)
+
+        confirm = self.patient_client.get("/api/patients/me/questionnaire/")
+        self.assertEqual(confirm.status_code, 200)
+        self.assertEqual(confirm.data["religious_beliefs_priority"], "strongly_agree")
+
+    def test_family_sees_the_questionnaire_the_patient_filled_in_themselves(self):
+        payload = {
+            "religious_beliefs_priority": "strongly_agree", "new_treatment_openness": "moderate",
+            "caregiver_as_family_member": "yes", "respectful_disagreement_acceptance": "fully_accept",
+            "privacy_comfort_with_caregiver": "yes", "noise_smell_sensitivity": "low",
+            "meal_time_strictness": "moderate", "special_diet_preference": "no",
+            "medication_timing_priority": "very_high", "accent_customs_annoyance": "not_at_all",
+            "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "moderate",
+        }
+        self.patient_client.put("/api/patients/me/questionnaire/", payload, format="json")
+
+        family_client = APIClient()
+        _, family_token = make_authenticated_user("fam_q", role=UserRole.FAMILY, phone_number="09121110025")
+        family_client.credentials(HTTP_AUTHORIZATION=f"Bearer {family_token}")
+        family_client.post("/api/families/me/", {"display_name": "دختر"}, format="json")
+        family_code = family_client.get("/api/families/me/").data["access_code"]
+        self.patient_client.post("/api/patients/me/invite-family/", {"family_code": family_code, "relation": "فرزند"}, format="json")
+
+        response = family_client.get(f"/api/patients/{self.patient.id}/questionnaire/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["religious_beliefs_priority"], "strongly_agree")

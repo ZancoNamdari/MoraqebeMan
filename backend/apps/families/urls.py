@@ -8,6 +8,7 @@ from .views import (
     MyPatientFamilyLinksView,
     MyPatientInviteFamilyView,
     MyPatientProfileView,
+    MyPatientQuestionnaireView,
     MyPatientsView,
     PatientAccessRequestDecisionView,
     PatientAccessRequestsView,
@@ -39,6 +40,7 @@ urlpatterns = [
 
     # Patient-facing — a PATIENT-role user managing their own record
     path("patients/me/", MyPatientProfileView.as_view(), name="my-patient-profile"),
+    path("patients/me/questionnaire/", MyPatientQuestionnaireView.as_view(), name="my-patient-questionnaire"),
     path("patients/me/family-links/", MyPatientFamilyLinksView.as_view(), name="my-patient-family-links"),
     path("patients/me/invite-family/", MyPatientInviteFamilyView.as_view(), name="my-patient-invite-family"),
     path("patients/me/access-requests/", MyPatientAccessRequestsView.as_view(), name="my-patient-access-requests"),

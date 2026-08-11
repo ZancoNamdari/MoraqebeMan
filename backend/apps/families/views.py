@@ -443,3 +443,36 @@ class MyPatientInviteFamilyView(APIView):
         )
         audit.family_link_added(request.user.id, patient.id, target_family.user_id)
         return Response(FamilyPatientLinkSerializer(link).data, status=status.HTTP_201_CREATED)
+
+
+class MyPatientQuestionnaireView(APIView):
+    """GET/PUT /api/patients/me/questionnaire/ — the patient filling in
+    their own compatibility questionnaire directly, mirroring the
+    family-facing PatientQuestionnaireView. Needed once a patient can
+    have their own account at all — before now every patient record
+    was necessarily created and filled in by a family member; this
+    fills the same gap the rest of the /me/ patient endpoints already
+    closed for profile/access-request management."""
+    permission_classes = [IsPatient]
+
+    def get(self, request):
+        patient = _patient_for_user(request.user)
+        if patient is None:
+            return Response({"detail": "پروفایل بیمار برای این حساب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        questionnaire = PatientCompatibilityQuestionnaire.objects.filter(patient=patient).first()
+        if questionnaire is None:
+            return Response({"detail": "پرسشنامه هنوز تکمیل نشده است."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(PatientCompatibilityQuestionnaireSerializer(questionnaire).data)
+
+    def put(self, request):
+        patient = _patient_for_user(request.user)
+        if patient is None:
+            return Response({"detail": "پروفایل بیمار برای این حساب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        existing = PatientCompatibilityQuestionnaire.objects.filter(patient=patient).first()
+        serializer = PatientCompatibilityQuestionnaireSerializer(instance=existing, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(patient=patient)
+        audit.patient_updated(request.user.id, patient.id, section="questionnaire")
+        return Response(serializer.data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
