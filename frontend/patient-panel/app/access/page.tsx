@@ -133,6 +133,13 @@ export default function AccessPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <Button
+              variant="outline" className="w-full border-pink-200 text-rose-700 hover:bg-pink-50"
+              size="lg" onClick={() => router.push(ROUTES.care)}
+            >
+              ادامه به تیم مراقبت ←
+            </Button>
           </>
         )}
       </main>

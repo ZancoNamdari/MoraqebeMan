@@ -217,7 +217,7 @@ function NewCaregiverWizardInner() {
       await caregiverService.saveReferences(caregiverId, references)
       setDone(true)
     } catch (err: any) {
-      showErrors(err, "حداقل دو معرف با اطلاعات کامل لازم است.")
+      showErrors(err, "ثبت معرف‌ها با خطا مواجه شد.")
     } finally {
       setSaving(false)
     }

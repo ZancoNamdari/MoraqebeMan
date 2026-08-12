@@ -26,24 +26,7 @@ export interface PatientListItem {
   updated_at: string
 }
 
-export interface PatientFormData {
-  full_name: string
-  father_name: string
-  birth_date: string | null
-  national_id: string
-  birth_certificate_number: string
-  birth_certificate_issue_place: string
-  full_address: string
-  province: number | null
-  city: number | null
-  district: number | null
-  postal_code: string
-  emergency_contact_phone: string
-  guardianship_status: string
-  guardian_details: string
-  language_dialect: string
-  basic_medical_info: string
-}
+export type PatientFormData = Omit<PatientListItem, "id" | "user_id" | "access_code" | "province_name" | "city_name" | "district_name" | "created_at" | "updated_at">
 
 export type AccessLevel = "full_access" | "view_only"
 

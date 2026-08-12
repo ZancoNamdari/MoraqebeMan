@@ -27,11 +27,15 @@ export default function QuestionnairePage() {
 
   if (authLoading || !user) return null
 
-  async function handleSave() {
+  async function handleSave(andContinue = false) {
     setSaving(true); setMessage("")
     try {
       const saved = await myPatientService.saveQuestionnaire(answers as Questionnaire)
       setAnswers(saved)
+      if (andContinue) {
+        router.push(ROUTES.access)
+        return
+      }
       setMessage("پرسشنامه ذخیره شد.")
     } finally {
       setSaving(false)
@@ -74,12 +78,20 @@ export default function QuestionnairePage() {
               </Card>
             ))}
 
-            <Button
-              className="w-full bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
-              size="lg" onClick={handleSave} disabled={saving}
-            >
-              {saving ? "در حال ذخیره..." : "ذخیره پرسشنامه"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                className="flex-1 bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
+                size="lg" onClick={() => handleSave(false)} disabled={saving}
+              >
+                {saving ? "در حال ذخیره..." : "ذخیره پرسشنامه"}
+              </Button>
+              <Button
+                variant="outline" className="flex-1 border-pink-200 text-rose-700 hover:bg-pink-50"
+                size="lg" onClick={() => handleSave(true)} disabled={saving}
+              >
+                ذخیره و ادامه به دسترسی خانواده ←
+              </Button>
+            </div>
           </>
         )}
       </main>

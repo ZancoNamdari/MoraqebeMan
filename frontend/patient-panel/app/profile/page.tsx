@@ -49,12 +49,12 @@ export default function ProfilePage() {
 
   if (authLoading || !user) return null
 
-  async function handleSave() {
+  async function handleSave(andContinue = false) {
     if (!profile) return
     setSaving(true); setError([]); setMessage("")
     try {
       const updated = await myPatientService.update({
-        full_name: profile.full_name, father_name: profile.father_name,
+        full_name: profile.full_name, gender: profile.gender, father_name: profile.father_name,
         birth_date: profile.birth_date, national_id: profile.national_id,
         full_address: profile.full_address, province: profile.province,
         city: profile.city, district: profile.district, postal_code: profile.postal_code,
@@ -63,6 +63,10 @@ export default function ProfilePage() {
         language_dialect: profile.language_dialect, basic_medical_info: profile.basic_medical_info,
       })
       setProfile(updated)
+      if (andContinue) {
+        router.push(ROUTES.questionnaire)
+        return
+      }
       setMessage("تغییرات ذخیره شد.")
     } catch (err: any) {
       setError(parseApiErrors(err?.response?.data))
@@ -136,12 +140,20 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            <Button
-              className="w-full bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
-              size="lg" onClick={handleSave} disabled={saving}
-            >
-              {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                className="flex-1 bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
+                size="lg" onClick={() => handleSave(false)} disabled={saving}
+              >
+                {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
+              </Button>
+              <Button
+                variant="outline" className="flex-1 border-pink-200 text-rose-700 hover:bg-pink-50"
+                size="lg" onClick={() => handleSave(true)} disabled={saving}
+              >
+                ذخیره و ادامه به پرسشنامه ←
+              </Button>
+            </div>
           </>
         )}
       </main>

@@ -56,7 +56,7 @@ function PatientDetailInner() {
     setSaving(true); setError([]); setMessage("")
     try {
       const updated = await patientService.update(id, {
-        full_name: patient.full_name, father_name: patient.father_name,
+        full_name: patient.full_name, gender: patient.gender, father_name: patient.father_name,
         birth_date: patient.birth_date, national_id: patient.national_id,
         full_address: patient.full_address, province: patient.province,
         city: patient.city, district: patient.district, postal_code: patient.postal_code,
