@@ -172,3 +172,90 @@ class MeViewTests(BaseAPITestCase):
         response = self.client.get("/api/auth/me/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["username"], "whoami")
+
+
+class RegistrationWithoutPasswordTests(BaseAPITestCase):
+    """Password is now optional at registration — OTP login means a
+    family/patient account never needs to know or type one at all."""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_register_without_password_succeeds(self):
+        response = self.client.post("/api/auth/register/", {
+            "first_name": "علی", "last_name": "رضایی", "phone_number": "09121230100", "role": "family",
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertIn("access", response.data["tokens"])
+
+    def test_register_with_password_still_works(self):
+        response = self.client.post("/api/auth/register/", {
+            "first_name": "علی", "last_name": "رضایی", "phone_number": "09121230101",
+            "password": "StrongPass123", "role": "family",
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
+
+
+class OTPLoginTests(BaseAPITestCase):
+    """Passwordless login — phone number, then the SMS code, no
+    username or password anywhere in the flow."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.reg = self.client.post("/api/auth/register/", {
+            "first_name": "زهرا", "last_name": "کریمی", "phone_number": "09121230110", "role": "family",
+        }, format="json")
+
+    def test_request_otp_login_always_returns_202(self):
+        response = self.client.post("/api/auth/otp-login/request/", {"phone_number": "09121230110"}, format="json")
+        self.assertEqual(response.status_code, 202)
+
+    def test_request_for_nonexistent_phone_also_returns_202_no_enumeration(self):
+        response = self.client.post("/api/auth/otp-login/request/", {"phone_number": "09190000000"}, format="json")
+        self.assertEqual(response.status_code, 202)
+
+    def test_wrong_code_rejected(self):
+        self.client.post("/api/auth/otp-login/request/", {"phone_number": "09121230110"}, format="json")
+        response = self.client.post("/api/auth/otp-login/verify/", {
+            "phone_number": "09121230110", "code": "000000",
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_correct_code_logs_in_and_returns_tokens(self):
+        from apps.accounts.models import User
+        from apps.authentication.models import PhoneOTP
+
+        user = User.objects.get(phone_number="09121230110")
+        _, raw_code = PhoneOTP.issue_for(user)
+
+        response = self.client.post("/api/auth/otp-login/verify/", {
+            "phone_number": "09121230110", "code": raw_code,
+        }, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access", response.data["tokens"])
+        self.assertEqual(response.data["user"]["phone_number"], "09121230110")
+
+    def test_code_cannot_be_reused(self):
+        from apps.accounts.models import User
+        from apps.authentication.models import PhoneOTP
+
+        user = User.objects.get(phone_number="09121230110")
+        _, raw_code = PhoneOTP.issue_for(user)
+
+        first = self.client.post("/api/auth/otp-login/verify/", {"phone_number": "09121230110", "code": raw_code}, format="json")
+        self.assertEqual(first.status_code, 200)
+
+        second = self.client.post("/api/auth/otp-login/verify/", {"phone_number": "09121230110", "code": raw_code}, format="json")
+        self.assertEqual(second.status_code, 400)
+
+    def test_login_via_otp_does_not_require_phone_to_be_previously_verified(self):
+        # OTP login itself IS the verification — no separate
+        # is_phone_verified precondition should block it.
+        from apps.accounts.models import User
+        from apps.authentication.models import PhoneOTP
+
+        user = User.objects.get(phone_number="09121230110")
+        self.assertFalse(user.is_phone_verified)
+        _, raw_code = PhoneOTP.issue_for(user)
+        response = self.client.post("/api/auth/otp-login/verify/", {"phone_number": "09121230110", "code": raw_code}, format="json")
+        self.assertEqual(response.status_code, 200)

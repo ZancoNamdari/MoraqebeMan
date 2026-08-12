@@ -117,3 +117,11 @@ CACHES = {
         "KEY_PREFIX": "moraqebeman_backend",
     }
 }
+
+# SMS gateway (Kavenegar) — OTP login/verification. Unset in every
+# environment without a real Kavenegar account (including local dev
+# and this project's sandbox); apps.authentication.tasks.send_otp_sms
+# falls back to logging the code instead of a hard failure when this
+# is empty, so nothing here blocks development without real credentials.
+KAVENEGAR_API_KEY = env("KAVENEGAR_API_KEY", default="")
+KAVENEGAR_OTP_TEMPLATE = env("KAVENEGAR_OTP_TEMPLATE", default="verify")

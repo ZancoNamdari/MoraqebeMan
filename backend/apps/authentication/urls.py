@@ -5,6 +5,8 @@ from .views import (
     LoginView,
     LogoutView,
     MeView,
+    OTPLoginRequestView,
+    OTPLoginVerifyView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RegisterView,
@@ -15,6 +17,8 @@ from .views import (
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
+    path("otp-login/request/", OTPLoginRequestView.as_view(), name="otp-login-request"),
+    path("otp-login/verify/", OTPLoginVerifyView.as_view(), name="otp-login-verify"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("refresh/", TokenRefreshView.as_view(), name="token-refresh"),
     path("me/", MeView.as_view(), name="me"),

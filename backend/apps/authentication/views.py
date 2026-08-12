@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.accounts.models import User
 from apps.accounts.serializers import UserSerializer
 from apps.audit.services import AuditService
 
@@ -13,6 +14,8 @@ from .repositories import DjangoUserRepository
 from .serializers import (
     LoginSerializer,
     LogoutSerializer,
+    OTPLoginRequestSerializer,
+    OTPLoginVerifySerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     RegisterSerializer,
@@ -52,10 +55,18 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = dict(serializer.validated_data)
+        if not data.get("password"):
+            # OTP login never needs this — a real, unguessable value
+            # still has to exist since password auth stays available
+            # as a fallback, same reasoning as supervisor-created
+            # caregiver accounts already use.
+            from django.utils.crypto import get_random_string
+            data["password"] = get_random_string(32)
 
         auth_service = build_auth_service()
         try:
-            user, tokens = auth_service.register(RegisterUserRequest(**serializer.validated_data))
+            user, tokens = auth_service.register(RegisterUserRequest(**data))
         except RegistrationError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -117,6 +128,54 @@ class MeView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+
+class OTPLoginRequestView(APIView):
+    """
+    POST /api/auth/otp-login/request/ {"phone_number": "09..."}
+    Passwordless login, step 1 — no username, no password. Always
+    returns 202 regardless of whether the phone matched a real
+    account, same enumeration-protection reasoning as password reset.
+    """
+    permission_classes = [AllowAny]
+    throttle_scope = "login"
+
+    def post(self, request):
+        serializer = OTPLoginRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = User.objects.filter(phone_number=serializer.validated_data["phone_number"]).first()
+        if user is not None:
+            OTPService(audit_logger=AuditService()).request_login_otp(user)
+        return Response({"detail": "در صورت معتبر بودن شماره، کد ورود ارسال شد."}, status=status.HTTP_202_ACCEPTED)
+
+
+class OTPLoginVerifyView(APIView):
+    """
+    POST /api/auth/otp-login/verify/ {"phone_number": "09...", "code": "123456"}
+    Passwordless login, step 2 — the actual login success path. Issues
+    the same JWT tokens LoginView does on success.
+    """
+    permission_classes = [AllowAny]
+    throttle_scope = "login"
+
+    def post(self, request):
+        serializer = OTPLoginVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        user = User.objects.filter(phone_number=data["phone_number"]).first()
+        if user is None:
+            # Same message either way — not confirming which part was wrong.
+            return Response({"detail": "کد تأیید نادرست است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            OTPService(audit_logger=AuditService()).verify_login_otp(user, data["code"])
+        except OTPError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        tokens = SimpleJWTTokenIssuer().issue(user)
+        return Response({"user": UserSerializer(user).data, "tokens": tokens})
 
 
 class RequestOTPView(APIView):

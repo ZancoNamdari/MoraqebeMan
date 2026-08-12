@@ -11,7 +11,13 @@ class RegisterSerializer(serializers.Serializer):
     # automatically. Kept available for anyone who wants to pick their
     # own (e.g. an agency onboarding staff members in bulk).
     username = serializers.CharField(max_length=150, required=False, allow_blank=True)
-    password = serializers.CharField(write_only=True, min_length=8)
+    # Optional now that OTP login exists — a family/patient account
+    # never needs to know or type a password at all if they always
+    # sign in by phone + SMS code. Still accepted for anyone who wants
+    # a traditional password (e.g. an agency staff account); left
+    # blank, a random one is generated server-side, same as how a
+    # supervisor-created caregiver account already works.
+    password = serializers.CharField(write_only=True, min_length=8, required=False, allow_blank=True)
     phone_number = serializers.RegexField(
         regex=r"^09\d{9}$",
         error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
@@ -34,6 +40,23 @@ class RegisterSerializer(serializers.Serializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
+
+
+class OTPLoginRequestSerializer(serializers.Serializer):
+    """Passwordless login, step 1 — phone number only, no username or
+    password needed at all. Deliberately doesn't reveal whether the
+    phone number is actually registered (same enumeration-protection
+    reasoning as password reset) — the view always responds success."""
+    phone_number = serializers.RegexField(
+        regex=r"^09\d{9}$",
+        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
+    )
+
+
+class OTPLoginVerifySerializer(serializers.Serializer):
+    """Passwordless login, step 2 — the 6-digit code from the SMS."""
+    phone_number = serializers.RegexField(regex=r"^09\d{9}$")
+    code = serializers.RegexField(regex=r"^\d{6}$", error_messages={"invalid": "کد تأیید باید ۶ رقم باشد."})
 
 
 class VerifyOTPSerializer(serializers.Serializer):

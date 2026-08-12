@@ -190,6 +190,48 @@ class OTPService:
         if self._audit:
             self._audit.log_event("otp_verified", actor_user_id=user.id, target_user_id=user.id)
 
+    # Passwordless login — same underlying PhoneOTP/verify mechanics as
+    # phone verification above, reused rather than duplicated. The
+    # only real difference is WHO is allowed to call it: phone
+    # verification requires an already-authenticated user confirming
+    # their own number; login is the opposite, an anonymous request
+    # that only succeeds if the code matches, at which point it
+    # produces real session tokens — so this intentionally does NOT
+    # set is_phone_verified as a side effect of a successful login the
+    # way verify_otp does for the authenticated confirmation flow.
+    def request_login_otp(self, user: User) -> None:
+        otp, raw_code = PhoneOTP.issue_for(user)
+        try:
+            send_otp_sms.delay(user.id, user.phone_number, raw_code)
+        except Exception:
+            logger.exception("Failed to queue login OTP SMS for user_id=%s", user.id)
+        if self._audit:
+            self._audit.log_event("otp_requested", actor_user_id=user.id, target_user_id=user.id, purpose="login")
+
+    def verify_login_otp(self, user: User, raw_code: str) -> None:
+        otp = PhoneOTP.objects.filter(user=user, is_used=False).order_by("-created_at").first()
+        if otp is None or otp.is_expired():
+            if self._audit:
+                self._audit.log_event("login_failed", actor_user_id=user.id, target_user_id=user.id, reason="otp_expired_or_missing")
+            raise OTPError("کد تأیید منقضی شده یا یافت نشد. لطفاً کد جدید درخواست کنید.")
+
+        if otp.attempts >= PhoneOTP.MAX_ATTEMPTS:
+            if self._audit:
+                self._audit.log_event("login_failed", actor_user_id=user.id, target_user_id=user.id, reason="otp_max_attempts")
+            raise OTPError("تعداد تلاش‌های مجاز برای این کد به پایان رسیده. لطفاً کد جدید درخواست کنید.")
+
+        if not otp.check_code(raw_code):
+            otp.attempts += 1
+            otp.save(update_fields=["attempts"])
+            if self._audit:
+                self._audit.log_event("login_failed", actor_user_id=user.id, target_user_id=user.id, reason="otp_wrong_code")
+            raise OTPError("کد تأیید نادرست است.")
+
+        otp.is_used = True
+        otp.save(update_fields=["is_used"])
+        if self._audit:
+            self._audit.log_event("login_success", actor_user_id=user.id, target_user_id=user.id)
+
 
 class PasswordResetService:
     """
