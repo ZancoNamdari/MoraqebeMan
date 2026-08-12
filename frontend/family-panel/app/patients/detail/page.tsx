@@ -13,7 +13,7 @@ import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
-import { GUARDIANSHIP_STATUS, QUESTIONNAIRE_FIELDS, RELATION_TYPE, LANGUAGE_DIALECT, CARE_LOG_CATEGORY_LABEL, CARE_LOG_CATEGORY_ICON, labelForValue } from "@/lib/constants"
+import { GUARDIANSHIP_STATUS, QUESTIONNAIRE_FIELDS, RELATION_TYPE, LANGUAGE_DIALECT, GENDER, CARE_LOG_CATEGORY_LABEL, CARE_LOG_CATEGORY_ICON, caregiverAvatar, labelForValue } from "@/lib/constants"
 import { patientService } from "@/services/patient.service"
 import { careService } from "@/services/care.service"
 import { ROUTES } from "@/lib/routes"
@@ -142,6 +142,9 @@ function InfoTab({
         <CardContent className="space-y-4">
           <Field label="نام و نام خانوادگی" required>
             <Input value={patient.full_name} onChange={(e) => setPatient({ ...patient, full_name: e.target.value })} />
+          </Field>
+          <Field label="جنسیت">
+            <ChoiceSelect choices={GENDER} value={patient.gender} onChange={(v) => setPatient({ ...patient, gender: v })} />
           </Field>
           <Field label="نام پدر">
             <Input value={patient.father_name} onChange={(e) => setPatient({ ...patient, father_name: e.target.value })} />
@@ -412,7 +415,7 @@ function CareTab({ patientId }: { patientId: number }) {
             <div className="space-y-2">
               {team.map((a) => (
                 <div key={a.id} className="flex items-center gap-3 rounded-lg border border-pink-100 bg-pink-50/50 p-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-sm">👩‍⚕️</div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-sm">{caregiverAvatar(a.caregiver_gender)}</div>
                   <div>
                     <p className="text-sm font-medium">{a.caregiver_name}</p>
                     <p className="text-xs text-muted-foreground">از تاریخ {a.assigned_at.slice(0, 10)}</p>

@@ -10,7 +10,7 @@ import { Field, ChoiceSelect } from "@/components/forms/fields"
 import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
 import { ErrorSummary } from "@/components/forms/error-summary"
-import { RELATION_TYPE } from "@/lib/constants"
+import { RELATION_TYPE, GENDER } from "@/lib/constants"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
 import { patientService } from "@/services/patient.service"
 import { ROUTES } from "@/lib/routes"
@@ -20,6 +20,7 @@ export default function NewPatientPage() {
   const router = useRouter()
 
   const [fullName, setFullName] = useState("")
+  const [gender, setGender] = useState("")
   const [relation, setRelation] = useState("")
   const [birthDate, setBirthDate] = useState("")
   const [province, setProvince] = useState<number | null>(null)
@@ -37,7 +38,7 @@ export default function NewPatientPage() {
     setSaving(true); setError([])
     try {
       const patient = await patientService.create({
-        full_name: fullName, relation,
+        full_name: fullName, gender, relation,
         birth_date: birthDate || null,
         province, city, district,
         full_address: fullAddress,
@@ -72,6 +73,9 @@ export default function NewPatientPage() {
           <CardContent className="space-y-4">
             <Field label="نام و نام خانوادگی سالمند" required>
               <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            </Field>
+            <Field label="جنسیت">
+              <ChoiceSelect choices={GENDER} value={gender} onChange={setGender} />
             </Field>
             <Field label="نسبت شما با سالمند" required>
               <ChoiceSelect choices={RELATION_TYPE} value={relation} onChange={setRelation} />

@@ -13,7 +13,7 @@ import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
-import { GUARDIANSHIP_STATUS, LANGUAGE_DIALECT } from "@/lib/constants"
+import { GUARDIANSHIP_STATUS, LANGUAGE_DIALECT, GENDER } from "@/lib/constants"
 import { myPatientService } from "@/services/patient.service"
 import { ROUTES } from "@/lib/routes"
 import type { PatientProfile } from "@/types/patient"
@@ -36,7 +36,7 @@ export default function ProfilePage() {
         // created one. Start an empty, editable draft rather than
         // leaving the page stuck on a loading skeleton forever.
         setProfile({
-          id: 0, user_id: null, access_code: "", full_name: "", father_name: "", birth_date: null,
+          id: 0, user_id: null, access_code: "", full_name: "", gender: "", father_name: "", birth_date: null,
           national_id: "", birth_certificate_number: "", birth_certificate_issue_place: "",
           full_address: "", province: null, city: null, district: null,
           province_name: null, city_name: null, district_name: null, postal_code: "",
@@ -94,6 +94,9 @@ export default function ProfilePage() {
               <CardContent className="space-y-4">
                 <Field label="نام و نام خانوادگی" required>
                   <Input value={profile.full_name} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} />
+                </Field>
+                <Field label="جنسیت">
+                  <ChoiceSelect choices={GENDER} value={profile.gender} onChange={(v) => setProfile({ ...profile, gender: v })} />
                 </Field>
                 <Field label="نام پدر">
                   <Input value={profile.father_name} onChange={(e) => setProfile({ ...profile, father_name: e.target.value })} />

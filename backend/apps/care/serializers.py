@@ -5,21 +5,27 @@ from .models import CareLogEntry, CaregiverAssignment
 
 class CaregiverAssignmentSerializer(serializers.ModelSerializer):
     caregiver_name = serializers.SerializerMethodField()
+    caregiver_gender = serializers.SerializerMethodField()
     patient_name = serializers.CharField(source="patient.full_name", read_only=True)
+    patient_gender = serializers.CharField(source="patient.gender", read_only=True)
     patient_code = serializers.CharField(source="patient.access_code", read_only=True)
     assigned_by_username = serializers.CharField(source="assigned_by.username", read_only=True, default=None)
 
     class Meta:
         model = CaregiverAssignment
         fields = [
-            "id", "caregiver", "caregiver_name", "patient", "patient_name", "patient_code",
+            "id", "caregiver", "caregiver_name", "caregiver_gender", "patient", "patient_name", "patient_gender", "patient_code",
             "assigned_by", "assigned_by_username", "status", "notes", "assigned_at", "ended_at",
         ]
-        read_only_fields = ["id", "caregiver_name", "patient_name", "patient_code", "assigned_by", "assigned_by_username", "status", "assigned_at", "ended_at"]
+        read_only_fields = ["id", "caregiver_name", "caregiver_gender", "patient_name", "patient_gender", "patient_code", "assigned_by", "assigned_by_username", "status", "assigned_at", "ended_at"]
 
     def get_caregiver_name(self, obj):
         identity = getattr(obj.caregiver.user, "caregiver_identity_profile", None)
         return (identity.full_name if identity else None) or obj.caregiver.user.username
+
+    def get_caregiver_gender(self, obj):
+        identity = getattr(obj.caregiver.user, "caregiver_identity_profile", None)
+        return identity.gender if identity else ""
 
 
 class CreateAssignmentSerializer(serializers.Serializer):
@@ -36,15 +42,20 @@ class CreateAssignmentSerializer(serializers.Serializer):
 
 class CareLogEntrySerializer(serializers.ModelSerializer):
     caregiver_name = serializers.SerializerMethodField()
+    caregiver_gender = serializers.SerializerMethodField()
 
     class Meta:
         model = CareLogEntry
-        fields = ["id", "assignment", "caregiver", "caregiver_name", "patient", "category", "note", "created_at"]
-        read_only_fields = ["id", "assignment", "caregiver", "caregiver_name", "patient", "created_at"]
+        fields = ["id", "assignment", "caregiver", "caregiver_name", "caregiver_gender", "patient", "category", "note", "created_at"]
+        read_only_fields = ["id", "assignment", "caregiver", "caregiver_name", "caregiver_gender", "patient", "created_at"]
 
     def get_caregiver_name(self, obj):
         identity = getattr(obj.caregiver.user, "caregiver_identity_profile", None)
         return (identity.full_name if identity else None) or obj.caregiver.user.username
+
+    def get_caregiver_gender(self, obj):
+        identity = getattr(obj.caregiver.user, "caregiver_identity_profile", None)
+        return identity.gender if identity else ""
 
 
 class CreateCareLogEntrySerializer(serializers.Serializer):

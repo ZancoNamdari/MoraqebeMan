@@ -61,6 +61,17 @@ class GuardianshipStatus(models.TextChoices):
     TRUSTEE = "trustee", "وصی دارد"
 
 
+class Gender(models.TextChoices):
+    """A separate copy from apps.caregivers.choices.Gender, not a
+    shared import — families and caregivers don't depend on each
+    other's Python modules anywhere else in this codebase (only on
+    each other's models, via string FK in apps.care), and this two-
+    value enum isn't worth a new cross-app coupling to avoid
+    duplicating."""
+    FEMALE = "female", "زن"
+    MALE = "male", "مرد"
+
+
 class RelationType(models.TextChoices):
     """Selectable, not free text — 'relation' showing up as an open
     text box meant everyone typed something slightly different
@@ -98,6 +109,7 @@ class PatientProfile(models.Model):
     )
 
     full_name = models.CharField(max_length=150, help_text="نام و نام خانوادگی سالمند")
+    gender = models.CharField(max_length=10, choices=Gender.choices, blank=True, help_text="جنسیت")
     father_name = models.CharField(max_length=150, blank=True, help_text="نام پدر")
     birth_date = jmodels.jDateField(null=True, blank=True, help_text="تاریخ تولد")
     national_id = models.CharField(max_length=10, blank=True, help_text="شماره ملی")

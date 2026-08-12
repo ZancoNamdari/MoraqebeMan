@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChoiceSelect } from "@/components/forms/fields"
-import { RELATION_TYPE } from "@/lib/constants"
+import { RELATION_TYPE, patientAvatar } from "@/lib/constants"
 import { patientService } from "@/services/patient.service"
 import { familyService } from "@/services/family.service"
 import type { PatientListItem } from "@/types/patient"
@@ -138,7 +138,7 @@ export default function DashboardPage() {
               >
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-lg">
-                    👤
+                    {patientAvatar(p.gender)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-rose-950">{p.full_name}</p>

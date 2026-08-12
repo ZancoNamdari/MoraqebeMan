@@ -42,7 +42,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientProfile
         fields = [
-            "id", "user_id", "access_code", "full_name", "father_name", "birth_date",
+            "id", "user_id", "access_code", "full_name", "gender", "father_name", "birth_date",
             "national_id", "birth_certificate_number", "birth_certificate_issue_place",
             "full_address", "province", "city", "district", "province_name", "city_name", "district_name",
             "postal_code", "emergency_contact_phone",

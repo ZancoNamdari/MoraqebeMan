@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { careService } from "@/services/care.service"
 import type { CaregiverAssignment } from "@/types/care"
 import { ROUTES } from "@/lib/routes"
+import { patientAvatar } from "@/lib/constants"
 
 export default function DashboardPage() {
   const { user, loading: authLoading, logout } = useAuth()
@@ -67,7 +68,7 @@ export default function DashboardPage() {
               >
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-lg">
-                    👤
+                    {patientAvatar(a.patient_gender)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-rose-950">{a.patient_name}</p>

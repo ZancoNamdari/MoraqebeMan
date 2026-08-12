@@ -3,6 +3,7 @@ export interface PatientListItem {
   user_id: number | null
   access_code: string
   full_name: string
+  gender: string
   father_name: string
   birth_date: string | null
   national_id: string

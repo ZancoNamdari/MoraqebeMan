@@ -2,8 +2,10 @@ export interface CaregiverAssignment {
   id: number
   caregiver: number
   caregiver_name: string
+  caregiver_gender: string
   patient: number
   patient_name: string
+  patient_gender: string
   patient_code: string
   assigned_by: number | null
   assigned_by_username: string | null
@@ -20,6 +22,7 @@ export interface CareLogEntry {
   assignment: number
   caregiver: number
   caregiver_name: string
+  caregiver_gender: string
   patient: number
   category: CareLogCategory
   note: string
