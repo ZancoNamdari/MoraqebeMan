@@ -24,10 +24,11 @@ export const CHILDREN_COUNT: Choice[] = [
 ]
 
 export const MILITARY_STATUS: Choice[] = [
+  ["not_served", "مشمول (هنوز به خدمت نرفته)"],
+  ["in_service", "در حال خدمت"],
   ["completed", "پایان خدمت"],
   ["permanent_exemption", "معافیت دائم"],
   ["temporary_exemption", "معافیت موقت"],
-  ["in_service", "در حال خدمت"],
 ]
 
 export const HEIGHT_RANGE: Choice[] = [

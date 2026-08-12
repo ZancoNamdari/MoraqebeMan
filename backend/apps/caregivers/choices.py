@@ -24,10 +24,11 @@ class ChildrenCount(models.TextChoices):
 
 class MilitaryStatus(models.TextChoices):
     """Only relevant when gender == MALE — enforced in the serializer, not the DB."""
+    NOT_SERVED = "not_served", "مشمول (هنوز به خدمت نرفته)"
+    IN_SERVICE = "in_service", "در حال خدمت"
     COMPLETED = "completed", "پایان خدمت"
     PERMANENT_EXEMPTION = "permanent_exemption", "معافیت دائم"
     TEMPORARY_EXEMPTION = "temporary_exemption", "معافیت موقت"
-    IN_SERVICE = "in_service", "در حال خدمت"
 
 
 class HeightRange(models.TextChoices):
