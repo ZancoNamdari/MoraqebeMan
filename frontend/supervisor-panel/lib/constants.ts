@@ -361,3 +361,11 @@ export function yesNoLabel(value: boolean | null | undefined): string {
   if (value === false) return "خیر"
   return "—"
 }
+
+/** Gender-appropriate avatar — matches the identical helper already
+ * used in family-panel, patient-panel, and caregiver-panel. */
+export function patientAvatar(gender: string | null | undefined): string {
+  if (gender === "male") return "👴"
+  if (gender === "female") return "👵"
+  return "🧓"
+}

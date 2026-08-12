@@ -7,11 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Input } from "@/components/ui/input"
 import { caregiverService } from "@/services/caregiver.service"
+import { assignmentService } from "@/services/assignment.service"
 import { ROUTES } from "@/lib/routes"
 import * as C from "@/lib/constants"
-import { labelForValue, labelsForValues, yesNoLabel } from "@/lib/constants"
+import { labelForValue, labelsForValues, yesNoLabel, patientAvatar } from "@/lib/constants"
 import type { FullCaregiverProfile } from "@/types/caregiver"
+import type { CaregiverAssignment } from "@/types/assignment"
 import { cn } from "@/lib/utils"
 
 const STATUS_LABEL: Record<string, string> = {
@@ -68,6 +71,21 @@ function ReviewPageInner() {
   const [showRejectBox, setShowRejectBox] = useState(false)
   const [message, setMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null)
 
+  const [assignments, setAssignments] = useState<CaregiverAssignment[]>([])
+  const [assignmentsLoading, setAssignmentsLoading] = useState(true)
+  const [patientCode, setPatientCode] = useState("")
+  const [assigning, setAssigning] = useState(false)
+  const [assignError, setAssignError] = useState("")
+
+  function refreshAssignments() {
+    return assignmentService.listForCaregiver(id).then(setAssignments)
+  }
+
+  useEffect(() => {
+    if (!id) return
+    refreshAssignments().finally(() => setAssignmentsLoading(false))
+  }, [id])
+
   useEffect(() => {
     if (!id) return
     Promise.all([
@@ -114,6 +132,25 @@ function ReviewPageInner() {
     } finally {
       setBusy(false)
     }
+  }
+
+  async function handleAssign() {
+    setAssigning(true); setAssignError("")
+    try {
+      await assignmentService.assign(id, patientCode.trim().toUpperCase())
+      setPatientCode("")
+      await refreshAssignments()
+    } catch (err: any) {
+      setAssignError(err?.response?.data?.detail || "تخصیص با خطا مواجه شد.")
+    } finally {
+      setAssigning(false)
+    }
+  }
+
+  async function handleEndAssignment(assignmentId: number) {
+    if (!window.confirm("آیا از پایان این تخصیص مطمئن هستید؟")) return
+    await assignmentService.end(assignmentId)
+    refreshAssignments()
   }
 
   return (
@@ -234,6 +271,46 @@ function ReviewPageInner() {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">معرفی ثبت نشده (اختیاری است).</p>
+              )}
+            </Section>
+
+            <Section icon="🏥" title="بیماران تخصیص‌یافته">
+              {assignmentsLoading ? (
+                <p className="text-sm text-muted-foreground">در حال بارگذاری...</p>
+              ) : (
+                <div className="space-y-3">
+                  {assignments.filter((a) => a.status === "active").length === 0 ? (
+                    <p className="text-sm text-muted-foreground">این مراقب در حال حاضر به بیماری تخصیص ندارد.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {assignments.filter((a) => a.status === "active").map((a) => (
+                        <div key={a.id} className="flex items-center justify-between rounded-lg border border-pink-100 bg-pink-50/50 p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{patientAvatar(a.patient_gender)}</span>
+                            <div>
+                              <p className="text-sm font-medium">{a.patient_name}</p>
+                              <p className="text-xs text-muted-foreground">از تاریخ {a.assigned_at.slice(0, 10)}</p>
+                            </div>
+                          </div>
+                          <button className="text-xs text-rose-600 hover:underline" onClick={() => handleEndAssignment(a.id)}>
+                            پایان تخصیص
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="space-y-2 rounded-lg border border-dashed border-pink-200 p-3">
+                    <p className="text-xs font-medium text-muted-foreground">تخصیص به بیمار جدید با کد بیمار</p>
+                    {assignError && <p className="text-xs text-rose-600">{assignError}</p>}
+                    <div className="flex flex-wrap gap-2">
+                      <Input placeholder="کد بیمار (مثلاً ELD-7K4P9X)" className="w-48" value={patientCode} onChange={(e) => setPatientCode(e.target.value)} dir="ltr" />
+                      <Button variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" disabled={assigning || !patientCode} onClick={handleAssign}>
+                        + تخصیص
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               )}
             </Section>
 
