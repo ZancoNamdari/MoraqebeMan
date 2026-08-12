@@ -7,62 +7,43 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authService } from "@/services/auth.service"
-import { api } from "@/services/api"
 import { ROUTES } from "@/lib/routes"
 
-type Mode = "login" | "forgot" | "confirm"
+type Mode = "phone" | "code"
 
 export default function LoginPage() {
   const router = useRouter()
-  const [mode, setMode] = useState<Mode>("login")
-
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
+  const [mode, setMode] = useState<Mode>("phone")
 
   const [phone, setPhone] = useState("")
-  const [token, setToken] = useState("")
-  const [newPassword, setNewPassword] = useState("")
+  const [code, setCode] = useState("")
 
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(false)
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleRequestCode(e: React.FormEvent) {
+    e.preventDefault()
+    setError(""); setMessage(""); setLoading(true)
+    try {
+      await authService.requestOtpLogin(phone)
+      setMode("code")
+      setMessage("کد ورود برای شماره شما پیامک شد.")
+    } catch {
+      setError("درخواست با خطا مواجه شد. دوباره تلاش کنید.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleVerifyCode(e: React.FormEvent) {
     e.preventDefault()
     setError(""); setLoading(true)
     try {
-      await authService.login(username, password)
+      await authService.verifyOtpLogin(phone, code)
       router.push(ROUTES.dashboard)
-    } catch {
-      setError("نام کاربری یا رمز عبور اشتباه است.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleRequestReset(e: React.FormEvent) {
-    e.preventDefault()
-    setError(""); setMessage(""); setLoading(true)
-    try {
-      const { data } = await api.post("/api/auth/password-reset/", { phone_number: phone })
-      setMessage(data.detail || "در صورت معتبر بودن شماره، کد بازیابی ارسال شد.")
-      setMode("confirm")
-    } catch {
-      setError("درخواست با خطا مواجه شد.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleConfirmReset(e: React.FormEvent) {
-    e.preventDefault()
-    setError(""); setMessage(""); setLoading(true)
-    try {
-      await api.post("/api/auth/password-reset/confirm/", { phone_number: phone, token, new_password: newPassword })
-      setMessage("رمز عبور با موفقیت تغییر کرد. اکنون می‌توانید وارد شوید.")
-      setMode("login")
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "کد بازیابی نامعتبر یا منقضی شده است.")
+      setError(err?.response?.data?.detail || "کد نادرست است.")
     } finally {
       setLoading(false)
     }
@@ -80,65 +61,38 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-xl">مراقب من</CardTitle>
           <CardDescription>
-            {mode === "login" && "ورود به پنل مراقب"}
-            {mode === "forgot" && "بازیابی رمز عبور"}
-            {mode === "confirm" && "تعیین رمز عبور جدید"}
+            {mode === "phone" && "ورود با شماره موبایل"}
+            {mode === "code" && "کد ورود را وارد کنید"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {message && <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 p-2.5 text-sm text-emerald-800">{message}</div>}
           {error && <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 p-2.5 text-sm text-rose-700">{error}</div>}
 
-          {mode === "login" && (
-            <form onSubmit={handleLogin} className="space-y-4">
+          {mode === "phone" && (
+            <form onSubmit={handleRequestCode} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">نام کاربری</Label>
-                <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus dir="ltr" />
-                <p className="text-xs text-muted-foreground">نام کاربری شما توسط ناظر پلتفرم به شما اعلام شده است.</p>
+                <Label htmlFor="phone">شماره موبایل</Label>
+                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" required autoFocus />
+                <p className="text-xs text-muted-foreground">همان شماره‌ای که ناظر پلتفرم برای حساب شما ثبت کرده است.</p>
               </div>
+              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
+                {loading ? "در حال ارسال..." : "ارسال کد ورود"}
+              </Button>
+            </form>
+          )}
+
+          {mode === "code" && (
+            <form onSubmit={handleVerifyCode} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">رمز عبور</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Label htmlFor="code">کد ۶ رقمی</Label>
+                <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} dir="ltr" inputMode="numeric" maxLength={6} required autoFocus />
               </div>
               <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
                 {loading ? "در حال ورود..." : "ورود"}
               </Button>
-              <button type="button" onClick={() => { setMode("forgot"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
-                اولین بار است وارد می‌شوید یا رمز خود را فراموش کرده‌اید؟
-              </button>
-            </form>
-          )}
-
-          {mode === "forgot" && (
-            <form onSubmit={handleRequestReset} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">شماره موبایل ثبت‌شده</Label>
-                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" required autoFocus />
-              </div>
-              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
-                {loading ? "در حال ارسال..." : "ارسال کد بازیابی"}
-              </Button>
-              <button type="button" onClick={() => { setMode("login"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
-                بازگشت به ورود
-              </button>
-            </form>
-          )}
-
-          {mode === "confirm" && (
-            <form onSubmit={handleConfirmReset} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="token">کد بازیابی (پیامک‌شده)</Label>
-                <Input id="token" value={token} onChange={(e) => setToken(e.target.value)} dir="ltr" required autoFocus />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="newpw">رمز عبور جدید (حداقل ۸ کاراکتر)</Label>
-                <Input id="newpw" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={8} required />
-              </div>
-              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
-                {loading ? "در حال ثبت..." : "تغییر رمز عبور"}
-              </Button>
-              <button type="button" onClick={() => { setMode("login"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
-                بازگشت به ورود
+              <button type="button" onClick={() => { setMode("phone"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
+                تغییر شماره موبایل
               </button>
             </form>
           )}
