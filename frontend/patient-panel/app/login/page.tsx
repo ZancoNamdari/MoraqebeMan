@@ -10,29 +10,43 @@ import { authService } from "@/services/auth.service"
 import { api } from "@/services/api"
 import { ROUTES } from "@/lib/routes"
 
+type Mode = "register" | "login-phone" | "login-code"
+
 export default function LoginPage() {
   const router = useRouter()
-  const [mode, setMode] = useState<"login" | "register">("login")
-
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
+  const [mode, setMode] = useState<Mode>("login-phone")
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [phone, setPhone] = useState("")
-  const [regPassword, setRegPassword] = useState("")
+  const [code, setCode] = useState("")
 
   const [error, setError] = useState("")
+  const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(false)
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleRequestCode(e: React.FormEvent) {
+    e.preventDefault()
+    setError(""); setMessage(""); setLoading(true)
+    try {
+      await authService.requestOtpLogin(phone)
+      setMode("login-code")
+      setMessage("کد ورود برای شماره شما پیامک شد.")
+    } catch {
+      setError("درخواست با خطا مواجه شد. دوباره تلاش کنید.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleVerifyCode(e: React.FormEvent) {
     e.preventDefault()
     setError(""); setLoading(true)
     try {
-      await authService.login(username, password)
+      await authService.verifyOtpLogin(phone, code)
       router.push(ROUTES.dashboard)
-    } catch {
-      setError("نام کاربری یا رمز عبور اشتباه است.")
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "کد نادرست است.")
     } finally {
       setLoading(false)
     }
@@ -43,8 +57,7 @@ export default function LoginPage() {
     setError(""); setLoading(true)
     try {
       const { data } = await api.post("/api/auth/register/", {
-        first_name: firstName, last_name: lastName, phone_number: phone,
-        password: regPassword, role: "patient",
+        first_name: firstName, last_name: lastName, phone_number: phone, role: "patient",
       })
       window.localStorage.setItem("access_token", data.tokens.access)
       window.localStorage.setItem("refresh_token", data.tokens.refresh)
@@ -68,28 +81,47 @@ export default function LoginPage() {
             🧓
           </div>
           <CardTitle className="text-xl">مراقب من</CardTitle>
-          <CardDescription>{mode === "login" ? "ورود به پروفایل من" : "ثبت‌نام به عنوان بیمار/سالمند"}</CardDescription>
+          <CardDescription>
+            {mode === "login-phone" && "ورود با شماره موبایل"}
+            {mode === "login-code" && "کد ورود را وارد کنید"}
+            {mode === "register" && "ثبت‌نام به عنوان بیمار/سالمند"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {mode === "login" ? (
-            <form onSubmit={handleLogin} className="space-y-4">
+          {message && <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 p-2.5 text-sm text-emerald-800">{message}</div>}
+          {error && <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 p-2.5 text-sm text-rose-700">{error}</div>}
+
+          {mode === "login-phone" && (
+            <form onSubmit={handleRequestCode} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">نام کاربری یا شماره موبایل</Label>
-                <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
+                <Label htmlFor="phone">شماره موبایل</Label>
+                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" required autoFocus />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">رمز عبور</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              </div>
-              {error && <div className="rounded-md border border-rose-200 bg-rose-50 p-2.5 text-sm text-rose-700">{error}</div>}
               <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
-                {loading ? "در حال ورود..." : "ورود"}
+                {loading ? "در حال ارسال..." : "ارسال کد ورود"}
               </Button>
-              <button type="button" onClick={() => { setMode("register"); setError("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("register"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
                 حساب ندارید؟ ثبت‌نام کنید
               </button>
             </form>
-          ) : (
+          )}
+
+          {mode === "login-code" && (
+            <form onSubmit={handleVerifyCode} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="code">کد ۶ رقمی</Label>
+                <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} dir="ltr" inputMode="numeric" maxLength={6} required autoFocus />
+              </div>
+              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
+                {loading ? "در حال ورود..." : "ورود"}
+              </Button>
+              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
+                تغییر شماره موبایل
+              </button>
+            </form>
+          )}
+
+          {mode === "register" && (
             <form onSubmit={handleRegister} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
@@ -102,18 +134,13 @@ export default function LoginPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="phone">شماره موبایل</Label>
-                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" required />
+                <Label htmlFor="rphone">شماره موبایل</Label>
+                <Input id="rphone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" required />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="regpw">رمز عبور (حداقل ۸ کاراکتر)</Label>
-                <Input id="regpw" type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} minLength={8} required />
-              </div>
-              {error && <div className="rounded-md border border-rose-200 bg-rose-50 p-2.5 text-sm text-rose-700">{error}</div>}
               <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
                 {loading ? "در حال ثبت‌نام..." : "ثبت‌نام"}
               </Button>
-              <button type="button" onClick={() => { setMode("login"); setError("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
                 قبلاً ثبت‌نام کرده‌اید؟ وارد شوید
               </button>
             </form>
