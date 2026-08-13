@@ -5,4 +5,5 @@ export const ROUTES = {
   newCaregiver: "/caregivers/new",
   review: "/caregivers/review",
   caregiverDetail: (id: number | string) => `/caregivers/${id}`,
+  match: "/match",
 }

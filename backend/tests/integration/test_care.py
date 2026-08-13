@@ -180,3 +180,96 @@ class CareLogEntryTests(TestCase):
         entry = AuditLog.objects.filter(event_type=AuditEventType.CARE_LOG_ENTRY_CREATED).first()
         self.assertIsNotNone(entry)
         self.assertEqual(entry.metadata.get("category"), "incident")
+
+
+class CaregiverSuggestionTests(TestCase):
+    """The first real use of matching — a supervisor deciding who to
+    assign gets a ranked list based on objective, already-captured
+    signals (gender preference, age-range preference, service-area
+    overlap), instead of picking blind."""
+
+    def setUp(self):
+        import datetime
+        from apps.caregivers.models import CaregiverStatus, CaregiverWorkPreferences, CaregiverServiceArea, IdentityProfile
+        from apps.locations.models import Province
+
+        self.supervisor = _make_user("sup_match", UserRole.SUPERUSER, "09100000070")
+        self.sup_client = _client_for(self.supervisor)
+
+        self.tehran = Province.objects.get(name="تهران")
+        self.tehran_city = self.tehran.cities.get(name="تهران")
+        self.other_province = Province.objects.exclude(id=self.tehran.id).first()
+
+        self.patient = PatientProfile.objects.create(
+            full_name="بیمار تست", gender="female", province=self.tehran, city=self.tehran_city,
+            birth_date=datetime.date(1950, 1, 1),
+        )
+
+        def make_caregiver(username, phone, gender, accepted_gender, age_ranges, province, approved=True):
+            u = _make_user(username, UserRole.CAREGIVER, phone)
+            profile = CaregiverProfile.objects.create(user=u, status=CaregiverStatus.APPROVED if approved else CaregiverStatus.DRAFT)
+            IdentityProfile.objects.create(user=u, gender=gender)
+            CaregiverWorkPreferences.objects.create(profile=profile, accepted_gender=accepted_gender, accepted_age_ranges=age_ranges, terms_accepted=True)
+            if province:
+                CaregiverServiceArea.objects.create(profile=profile, province=province, city=self.tehran_city if province == self.tehran else None)
+            return u, profile
+
+        self.perfect_user, self.perfect_profile = make_caregiver("cg_perfect", "09121115001", "female", "female_only", ["70_80"], self.tehran)
+        self.partial_user, _ = make_caregiver("cg_partial", "09121115002", "male", "no_preference", ["60_70"], self.tehran)
+        self.poor_user, _ = make_caregiver("cg_poor", "09121115003", "male", "male_only", ["60_70"], self.other_province)
+        self.unapproved_user, _ = make_caregiver("cg_unapproved", "09121115004", "female", "female_only", ["70_80"], self.tehran, approved=False)
+
+    def test_ranks_caregivers_by_fit_highest_first(self):
+        response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={self.patient.access_code}")
+        self.assertEqual(response.status_code, 200)
+        suggestions = response.data["suggestions"]
+        scores = [s["score"] for s in suggestions]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_correctly_identifies_the_best_fit_with_full_score(self):
+        # The specific bug this caught: birth_date read back from a
+        # real DB fetch is a jdatetime.date (Jalali), not
+        # datetime.date — mixing it into Gregorian arithmetic silently
+        # produced an "age" in the hundreds instead of erroring,
+        # which meant a genuinely perfect age-range match always
+        # showed as a mismatch. This test exercises exactly that path
+        # (a real API request, not an in-memory object) so it can't
+        # silently regress the same way again.
+        response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={self.patient.access_code}")
+        best = response.data["suggestions"][0]
+        self.assertEqual(best["caregiver_user_id"], self.perfect_user.id)
+        self.assertEqual(best["score"], 100)
+
+    def test_unapproved_caregiver_never_suggested_regardless_of_fit(self):
+        response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={self.patient.access_code}")
+        suggested_ids = [s["caregiver_user_id"] for s in response.data["suggestions"]]
+        self.assertNotIn(self.unapproved_user.id, suggested_ids)
+
+    def test_already_assigned_caregiver_excluded_from_suggestions(self):
+        from apps.care.models import CaregiverAssignment
+        CaregiverAssignment.objects.create(caregiver=self.perfect_profile, patient=self.patient, assigned_by=self.supervisor)
+
+        response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={self.patient.access_code}")
+        suggested_ids = [s["caregiver_user_id"] for s in response.data["suggestions"]]
+        self.assertNotIn(self.perfect_user.id, suggested_ids)
+
+    def test_invalid_patient_code_rejected(self):
+        response = self.sup_client.get("/api/care/suggest-caregivers/?patient_code=ELD-ZZZZZZ")
+        self.assertEqual(response.status_code, 404)
+
+    def test_missing_patient_code_rejected(self):
+        response = self.sup_client.get("/api/care/suggest-caregivers/")
+        self.assertEqual(response.status_code, 400)
+
+    def test_non_supervisor_cannot_access_suggestions(self):
+        family_client = _client_for(_make_user("fam_no_access", UserRole.FAMILY, "09121115005"))
+        response = family_client.get(f"/api/care/suggest-caregivers/?patient_code={self.patient.access_code}")
+        self.assertEqual(response.status_code, 403)
+
+    def test_patient_with_no_birth_date_still_scores_gracefully(self):
+        no_dob_patient = PatientProfile.objects.create(full_name="بدون تاریخ تولد", gender="female", province=self.tehran)
+        response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={no_dob_patient.access_code}")
+        self.assertEqual(response.status_code, 200)
+        best = response.data["suggestions"][0]
+        self.assertLess(best["score"], 100)  # can't get full marks without an age match
+        self.assertIn("تاریخ تولد بیمار ثبت نشده", " ".join(best["reasons"]))

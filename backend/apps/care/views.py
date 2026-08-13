@@ -7,6 +7,7 @@ from apps.caregivers.models import CaregiverProfile
 from apps.families.models import FamilyPatientLink, LinkStatus, PatientProfile
 
 from .models import AssignmentStatus, CareLogEntry, CaregiverAssignment
+from .matching import suggest_caregivers_for_patient
 from .permissions import IsAdminOrSuperuser, IsCaregiver, IsFamilyOrPatient
 from .serializers import (
     CareLogEntrySerializer,
@@ -174,3 +175,32 @@ class PatientCareTimelineView(APIView):
             return Response({"detail": "بیمار یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         entries = CareLogEntry.objects.filter(patient=patient).select_related("caregiver__user")
         return Response(CareLogEntrySerializer(entries, many=True).data)
+
+
+class SuggestedCaregiversView(APIView):
+    """
+    GET /api/care/suggest-caregivers/?patient_code=ELD-XXXXXX
+    The first real use of the compatibility data captured on
+    PatientProfile and CaregiverWorkPreferences — a ranked list of
+    approved caregivers for a supervisor to consider when assigning,
+    instead of picking blind. Deliberately supervisor-only for now,
+    same reasoning as assignment itself: this suggests, a human still
+    decides.
+    """
+    permission_classes = [IsAdminOrSuperuser]
+
+    def get(self, request):
+        patient_code = request.query_params.get("patient_code", "").strip().upper()
+        if not patient_code:
+            return Response({"detail": "کد بیمار الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        patient = PatientProfile.objects.filter(access_code=patient_code).first()
+        if patient is None:
+            return Response({"detail": "کد بیمار معتبر نیست."}, status=status.HTTP_404_NOT_FOUND)
+
+        suggestions = suggest_caregivers_for_patient(patient)
+        return Response({
+            "patient_name": patient.full_name,
+            "patient_gender": patient.gender,
+            "suggestions": suggestions,
+        })

@@ -109,6 +109,9 @@ export default function DashboardPage() {
           <Button className="bg-brand-pink hover:bg-brand-pink-strong" onClick={() => router.push(ROUTES.newCaregiver)}>
             + افزودن مراقب جدید
           </Button>
+          <Button variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => router.push(ROUTES.match)}>
+            پیشنهاد مراقب برای بیمار
+          </Button>
         </div>
 
         {/* Main table — Django-admin-changelist style */}
