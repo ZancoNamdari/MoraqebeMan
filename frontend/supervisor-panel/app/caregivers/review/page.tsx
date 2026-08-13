@@ -58,7 +58,7 @@ export default function ReviewPage() {
 }
 
 function ReviewPageInner() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const id = Number(searchParams.get("id"))
@@ -168,6 +168,7 @@ function ReviewPageInner() {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => router.push(`${ROUTES.newCaregiver}?id=${id}`)}>ویرایش</Button>
             <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به لیست</Button>
+            <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
           </div>
         </div>
       </header>

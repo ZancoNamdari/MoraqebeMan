@@ -14,7 +14,7 @@ import { ROUTES } from "@/lib/routes"
 import type { AccessLevel, FamilyLink } from "@/types/patient"
 
 export default function AccessPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
   const [links, setLinks] = useState<FamilyLink[]>([])
   const [pending, setPending] = useState<FamilyLink[]>([])
@@ -63,7 +63,10 @@ export default function AccessPage() {
       <header className="sticky top-0 z-10 border-b border-pink-100 bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-xl items-center justify-between p-4">
           <h1 className="font-bold text-rose-900">دسترسی خانواده</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+          <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+              <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
+            </div>
         </div>
       </header>
 

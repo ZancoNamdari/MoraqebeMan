@@ -81,7 +81,7 @@ export default function NewCaregiverWizard() {
 }
 
 function NewCaregiverWizardInner() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const existingId = searchParams.get("id")
@@ -258,7 +258,10 @@ function NewCaregiverWizardInner() {
         <div className="mx-auto max-w-2xl p-4">
           <div className="mb-3 flex items-center justify-between">
             <h1 className="font-bold">{caregiverName || "مراقب جدید"}</h1>
-            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به لیست</Button>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به لیست</Button>
+              <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
+            </div>
           </div>
           <StepIndicator steps={STEPS} current={step} onNavigate={setStep} canNavigate={!!caregiverId} />
           <p className="mt-2 text-center text-sm font-medium text-muted-foreground">{STEPS[step]}</p>

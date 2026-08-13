@@ -32,7 +32,7 @@ export default function PatientDetailPage() {
 }
 
 function PatientDetailInner() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const id = Number(searchParams.get("id"))
@@ -86,7 +86,10 @@ function PatientDetailInner() {
         <div className="mx-auto max-w-xl p-4">
           <div className="mb-3 flex items-center justify-between">
             <h1 className="font-bold text-rose-900">{patient?.full_name || "..."}</h1>
-            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+              <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
+            </div>
           </div>
           <div className="flex gap-1 rounded-full bg-pink-50 p-1">
             {([["info", "اطلاعات"], ["questionnaire", "پرسشنامه سازگاری"], ["care", "تیم مراقبت"], ["access", "دسترسی خانواده"]] as [Tab, string][]).map(([key, label]) => (

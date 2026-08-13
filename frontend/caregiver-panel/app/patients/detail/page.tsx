@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Field, ChoiceSelect } from "@/components/forms/fields"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
-import { CARE_LOG_CATEGORY, CARE_LOG_CATEGORY_LABEL, CARE_LOG_CATEGORY_ICON } from "@/lib/constants"
+import { CARE_LOG_CATEGORY, CARE_LOG_CATEGORY_LABEL, CARE_LOG_CATEGORY_ICON, patientAvatar } from "@/lib/constants"
 import { careService } from "@/services/care.service"
 import { ROUTES } from "@/lib/routes"
 import type { CareLogCategory, CareLogEntry, CaregiverAssignment } from "@/types/care"
@@ -24,12 +24,13 @@ export default function PatientDetailPage() {
 }
 
 function PatientDetailInner() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const patientId = Number(searchParams.get("id"))
 
   const [patientName, setPatientName] = useState("")
+  const [patientGender, setPatientGender] = useState("")
   const [entries, setEntries] = useState<CareLogEntry[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -42,7 +43,7 @@ function PatientDetailInner() {
     return Promise.all([
       careService.myPatients().then((list: CaregiverAssignment[]) => {
         const match = list.find((a) => a.patient === patientId)
-        if (match) setPatientName(match.patient_name)
+        if (match) { setPatientName(match.patient_name); setPatientGender(match.patient_gender) }
       }),
       careService.myLogEntries(patientId).then(setEntries),
     ])
@@ -73,8 +74,14 @@ function PatientDetailInner() {
     <div className="min-h-screen bg-gradient-to-b from-rose-50/50 via-background to-background pb-10">
       <header className="sticky top-0 z-10 border-b border-pink-100 bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">{patientName || "..."}</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+          <h1 className="flex items-center gap-2 font-bold text-rose-900">
+            <span className="text-lg">{patientAvatar(patientGender)}</span>
+            {patientName || "..."}
+          </h1>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+            <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
+          </div>
         </div>
       </header>
 
