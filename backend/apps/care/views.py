@@ -6,14 +6,16 @@ from apps.audit.services import AuditService
 from apps.caregivers.models import CaregiverProfile
 from apps.families.models import FamilyPatientLink, LinkStatus, PatientProfile
 
-from .models import AssignmentStatus, CareLogEntry, CaregiverAssignment
+from .models import AssignmentStatus, CareLogEntry, CaregiverAssignment, CaregiverReview
 from .matching import suggest_caregivers_for_patient
 from .permissions import IsAdminOrSuperuser, IsCaregiver, IsFamilyOrPatient
 from .serializers import (
     CareLogEntrySerializer,
     CaregiverAssignmentSerializer,
+    CaregiverReviewSerializer,
     CreateAssignmentSerializer,
     CreateCareLogEntrySerializer,
+    CreateReviewSerializer,
 )
 
 audit = AuditService()
@@ -204,3 +206,40 @@ class SuggestedCaregiversView(APIView):
             "patient_gender": patient.gender,
             "suggestions": suggestions,
         })
+
+
+class AssignmentReviewView(APIView):
+    """
+    POST /api/care/assignments/<id>/review/ — a family member (any
+    access level — this doesn't touch the patient's own data, it's
+    about the caregiver) or the patient themselves rates the
+    caregiver on this specific assignment. Works whether the
+    assignment is still active or has already ended — reviewing after
+    the fact ("how did it go overall") is a completely normal use
+    case, not just an active-assignment feature.
+    """
+    permission_classes = [IsFamilyOrPatient]
+
+    def post(self, request, assignment_id):
+        assignment = CaregiverAssignment.objects.filter(id=assignment_id).select_related("patient").first()
+        if assignment is None:
+            return Response({"detail": "تخصیص یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Same visibility rule as team/timeline — must actually have
+        # standing on this patient to review who cared for them.
+        if _patient_visible_to_user(request.user, assignment.patient_id) is None:
+            return Response({"detail": "تخصیص یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CreateReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        review, created = CaregiverReview.objects.update_or_create(
+            assignment=assignment, reviewer=request.user,
+            defaults={"caregiver": assignment.caregiver, "patient": assignment.patient, **data},
+        )
+        audit.caregiver_reviewed(request.user.id, assignment.caregiver.user_id, assignment.patient_id, data["rating"])
+        return Response(
+            CaregiverReviewSerializer(review).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )

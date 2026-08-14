@@ -24,6 +24,7 @@ class AuditEventType(models.TextChoices):
     CAREGIVER_ASSIGNED = "caregiver_assigned", "تخصیص مراقب به بیمار"
     CAREGIVER_ASSIGNMENT_ENDED = "caregiver_assignment_ended", "پایان تخصیص مراقب"
     CARE_LOG_ENTRY_CREATED = "care_log_entry_created", "ثبت گزارش مراقبت"
+    CAREGIVER_REVIEWED = "caregiver_reviewed", "ثبت نظر درباره مراقب"
 
 
 class AuditLog(models.Model):

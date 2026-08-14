@@ -11,6 +11,7 @@ from .supervisor_views import (
     SupervisorServiceAreaDetailView,
     SupervisorServiceAreasView,
     SupervisorSkillsView,
+    SupervisorCompatibilityQuestionnaireView,
     SupervisorWorkPreferencesView,
 )
 from .views import (
@@ -46,6 +47,7 @@ urlpatterns = [
     path("supervisor/caregivers/<int:user_id>/full/", SupervisorCaregiverFullProfileView.as_view(), name="supervisor-caregiver-full"),
     path("supervisor/caregivers/<int:user_id>/identity/", SupervisorIdentityView.as_view(), name="supervisor-identity"),
     path("supervisor/caregivers/<int:user_id>/work-preferences/", SupervisorWorkPreferencesView.as_view(), name="supervisor-work-preferences"),
+    path("supervisor/caregivers/<int:user_id>/compatibility-questionnaire/", SupervisorCompatibilityQuestionnaireView.as_view(), name="supervisor-compatibility-questionnaire"),
     path("supervisor/caregivers/<int:user_id>/service-areas/", SupervisorServiceAreasView.as_view(), name="supervisor-service-areas"),
     path("supervisor/caregivers/<int:user_id>/service-areas/<int:area_id>/", SupervisorServiceAreaDetailView.as_view(), name="supervisor-service-area-detail"),
     path("supervisor/caregivers/<int:user_id>/experience/", SupervisorExperienceView.as_view(), name="supervisor-experience"),

@@ -9,7 +9,7 @@ from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, Collaboration
                       HouseholdSkill, ForeignLanguage, LocalLanguage,
                       PreviousWorkplace, SpecialConditionExperience, TrainingCourse, Gender)    
 from .models import (CaregiverWorkPreferences, CaregiverServiceArea, CaregiverExperience,
-                     CaregiverSkills, CaregiverReference, IdentityProfile)
+                     CaregiverSkills, CaregiverReference, IdentityProfile, CaregiverCompatibilityQuestionnaire)
 
 
 class IdentityProfileSerializer(serializers.ModelSerializer):
@@ -292,3 +292,29 @@ class CaregiverListItemSerializer(serializers.Serializer):
     forms_completed = serializers.IntegerField()
     forms_total = serializers.IntegerField(default=4)
     created_by = serializers.CharField(allow_null=True)
+
+
+class CaregiverCompatibilityQuestionnaireSerializer(serializers.ModelSerializer):
+    section_scores = serializers.SerializerMethodField()
+    overall_flexibility_score = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CaregiverCompatibilityQuestionnaire
+        fields = [
+            "religious_belief_accommodation", "physical_contact_sensitivity_adaptation",
+            "prayer_time_scheduling_flexibility", "traditional_belief_acceptance",
+            "family_event_participation", "false_accusation_reaction",
+            "confidentiality_commitment", "gender_based_task_flexibility",
+            "home_environment_adaptability", "schedule_flexibility_for_family_events",
+            "traditional_food_treatment_openness", "personal_conversation_patience",
+            "home_organization_adaptability",
+            "cultural_expression_tolerance", "unfamiliar_custom_acceptance", "dialect_communication_effort",
+            "section_scores", "overall_flexibility_score", "updated_at",
+        ]
+        read_only_fields = ["section_scores", "overall_flexibility_score", "updated_at"]
+
+    def get_section_scores(self, obj):
+        return obj.section_scores()
+
+    def get_overall_flexibility_score(self, obj):
+        return obj.overall_flexibility_score()

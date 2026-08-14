@@ -43,6 +43,16 @@ export const caregiverService = {
     return data as FullCaregiverProfile
   },
 
+  async getCompatibilityQuestionnaire(userId: number) {
+    const { data } = await api.get(`${base}/${userId}/compatibility-questionnaire/`)
+    return data
+  },
+
+  async saveCompatibilityQuestionnaire(userId: number, answers: Record<string, string>) {
+    const { data } = await api.put(`${base}/${userId}/compatibility-questionnaire/`, answers)
+    return data
+  },
+
   async approve(userId: number) {
     const { data } = await api.post(`/api/caregivers/${userId}/approve/`)
     return data

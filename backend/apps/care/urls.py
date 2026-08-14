@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     MyAssignedPatientsView,
     MyCareLogEntriesView,
+    AssignmentReviewView,
     PatientCareTeamView,
     PatientCareTimelineView,
     SuggestedCaregiversView,
@@ -15,6 +16,9 @@ urlpatterns = [
     path("care/assignments/", SupervisorAssignmentsView.as_view(), name="care-assignments"),
     path("care/assignments/<int:assignment_id>/end/", SupervisorEndAssignmentView.as_view(), name="care-assignment-end"),
     path("care/suggest-caregivers/", SuggestedCaregiversView.as_view(), name="care-suggest-caregivers"),
+
+    # Family/patient-facing review action
+    path("care/assignments/<int:assignment_id>/review/", AssignmentReviewView.as_view(), name="care-assignment-review"),
 
     # Caregiver-facing
     path("care/me/patients/", MyAssignedPatientsView.as_view(), name="care-my-patients"),

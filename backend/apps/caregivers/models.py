@@ -385,3 +385,110 @@ class CaregiverReference(models.Model):
 
     def __str__(self):
         return self.full_name
+
+
+class FlexibilityAnswer(models.TextChoices):
+    """Every question in the caregiver compatibility questionnaire
+    uses the same 4-option structure: option A is always the most
+    accommodating/flexible response, option D is always the response
+    that wants similarity/has the firmest boundary. The actual
+    question and option text is long-form and question-specific (16
+    genuinely different questions, not the same question repeated),
+    so it lives in the frontend as static content — same split
+    already used for PatientCompatibilityQuestionnaire's axis labels
+    — but the underlying scale, and what it means to score it, is
+    identical across all 16 fields, which is what this shared choice
+    class captures."""
+    A = "a", "گزینه الف"
+    B = "b", "گزینه ب"
+    C = "c", "گزینه ج"
+    D = "d", "گزینه د"
+
+
+class CaregiverCompatibilityQuestionnaire(models.Model):
+    """
+    The caregiver-side counterpart to families.
+    PatientCompatibilityQuestionnaire — until this existed, matching
+    could only compare objective signals (gender/age/location
+    preference), never anything about how a caregiver actually
+    approaches the parts of care that vary most by belief, boundaries,
+    and culture. One row per caregiver, 16 questions across 4 sections
+    exactly as specified in the source questionnaire.
+    """
+    caregiver = models.OneToOneField(
+        CaregiverProfile, on_delete=models.CASCADE, related_name="compatibility_questionnaire", verbose_name="مراقب",
+    )
+
+    # بخش اول: هم‌راستایی عقیدتی و مناسکی
+    religious_belief_accommodation = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="پذیرش باور مذهبی متفاوت سالمند")
+    physical_contact_sensitivity_adaptation = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="تطبیق با حساسیت فرهنگی نسبت به تماس بدنی")
+    prayer_time_scheduling_flexibility = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="هماهنگی برنامه مراقبتی با مناسک مذهبی")
+    traditional_belief_acceptance = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="پذیرش باور سنتی غیرعلمی سالمند")
+
+    # بخش دوم: هم‌راستایی ارزش‌های بنیادین و مرزهای حرفه‌ای
+    family_event_participation = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="حضور در مناسبت‌های خانوادگی")
+    false_accusation_reaction = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="واکنش به اتهام ناشی از فراموشی سالمند")
+    confidentiality_commitment = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="تعهد به محرمانگی اطلاعات")
+    gender_based_task_flexibility = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="انعطاف در محدودیت وظایف بر اساس جنسیت")
+
+    # بخش سوم: هم‌راستایی سبک زندگی و محیط کاری
+    home_environment_adaptability = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="سازگاری با شرایط فیزیکی خانه سالمند")
+    schedule_flexibility_for_family_events = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="انعطاف برنامه در تداخل با رویداد خانوادگی")
+    traditional_food_treatment_openness = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="باز بودن به غذا و درمان سنتی سالمند")
+    personal_conversation_patience = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="صبر برای گفت‌وگوی شخصی سالمند")
+    home_organization_adaptability = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="سازگاری با نظم و چیدمان خانه سالمند")
+
+    # بخش چهارم: انعطاف‌پذیری فرهنگی و هوش فرهنگی
+    cultural_expression_tolerance = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="تحمل بیان و شوخی‌های فرهنگی متفاوت")
+    unfamiliar_custom_acceptance = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="پذیرش رسوم ناآشنای خانواده سالمند")
+    dialect_communication_effort = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="تلاش برای ارتباط با وجود تفاوت لهجه")
+
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="زمان تکمیل")
+    updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="آخرین به‌روزرسانی")
+
+    class Meta:
+        verbose_name = "پرسشنامه سازگاری مراقب"
+        verbose_name_plural = "پرسشنامه‌های سازگاری مراقبان"
+
+    # a=4 (most accommodating) down to d=1 (wants similarity/firmest
+    # boundary) — see FlexibilityAnswer's docstring for why every
+    # field can share this one scoring rule.
+    _POINTS = {"a": 4, "b": 3, "c": 2, "d": 1}
+
+    SECTION_FIELDS = {
+        "عقیدتی و مناسکی": [
+            "religious_belief_accommodation", "physical_contact_sensitivity_adaptation",
+            "prayer_time_scheduling_flexibility", "traditional_belief_acceptance",
+        ],
+        "ارزش‌های بنیادین و مرزهای حرفه‌ای": [
+            "family_event_participation", "false_accusation_reaction",
+            "confidentiality_commitment", "gender_based_task_flexibility",
+        ],
+        "سبک زندگی و محیط کاری": [
+            "home_environment_adaptability", "schedule_flexibility_for_family_events",
+            "traditional_food_treatment_openness", "personal_conversation_patience",
+            "home_organization_adaptability",
+        ],
+        "انعطاف‌پذیری فرهنگی": [
+            "cultural_expression_tolerance", "unfamiliar_custom_acceptance", "dialect_communication_effort",
+        ],
+    }
+
+    def section_scores(self) -> dict:
+        """Each section's average flexibility, as a 0-100 percentage —
+        0 would mean every answer in that section was 'd', 100 would
+        mean every answer was 'a'."""
+        scores = {}
+        for section, fields in self.SECTION_FIELDS.items():
+            points = [self._POINTS[getattr(self, f)] for f in fields]
+            scores[section] = round((sum(points) / len(points) - 1) / 3 * 100)
+        return scores
+
+    def overall_flexibility_score(self) -> int:
+        """A single 0-100 summary across all 16 answers."""
+        all_fields = [f for fields in self.SECTION_FIELDS.values() for f in fields]
+        points = [self._POINTS[getattr(self, f)] for f in all_fields]
+        return round((sum(points) / len(points) - 1) / 3 * 100)
+
+    def __str__(self):
+        return f"پرسشنامه سازگاری {self.caregiver}"

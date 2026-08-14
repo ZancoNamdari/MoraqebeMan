@@ -92,3 +92,42 @@ class CareLogEntry(models.Model):
 
     def __str__(self):
         return f"{self.get_category_display()} — {self.patient} — {self.created_at}"
+
+
+class CaregiverReview(models.Model):
+    """
+    A family member or the patient themselves rating a caregiver, tied
+    to a specific assignment — you can only review someone you
+    actually had assigned to you, not a caregiver in the abstract.
+
+    Deliberately allows more than one review per assignment (one per
+    reviewer, not one per assignment overall) — this platform already
+    established that multiple family members can have equal, parallel
+    access to one patient (no single gatekeeper), and a caregiver
+    review is exactly the kind of thing different family members might
+    genuinely experience differently. unique_together prevents the
+    same person spamming repeat reviews for the same assignment, not
+    prevents a second family member from also weighing in.
+    """
+    assignment = models.ForeignKey(CaregiverAssignment, on_delete=models.CASCADE, related_name="reviews", verbose_name="تخصیص")
+    caregiver = models.ForeignKey("caregivers.CaregiverProfile", on_delete=models.CASCADE, related_name="reviews", verbose_name="مراقب")
+    patient = models.ForeignKey("families.PatientProfile", on_delete=models.CASCADE, related_name="reviews", verbose_name="بیمار")
+    reviewer = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="caregiver_reviews_written", verbose_name="ثبت‌کننده نظر",
+    )
+    rating = models.PositiveSmallIntegerField(
+        choices=[(i, str(i)) for i in range(1, 6)], verbose_name="امتیاز",
+        help_text="از ۱ (ضعیف) تا ۵ (عالی)",
+    )
+    comment = models.TextField(blank=True, verbose_name="نظر")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
+
+    class Meta:
+        unique_together = ("assignment", "reviewer")
+        verbose_name = "نظر درباره مراقب"
+        verbose_name_plural = "نظرات درباره مراقبان"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.rating}/5 — {self.caregiver} ({self.patient})"

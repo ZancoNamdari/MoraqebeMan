@@ -273,3 +273,89 @@ class CaregiverSuggestionTests(TestCase):
         best = response.data["suggestions"][0]
         self.assertLess(best["score"], 100)  # can't get full marks without an age match
         self.assertIn("تاریخ تولد بیمار ثبت نشده", " ".join(best["reasons"]))
+
+
+class CaregiverReviewTests(TestCase):
+    """A family member (or the patient) rating a caregiver for a
+    specific assignment — the loop from "care was provided" back to
+    "was it good", and the informational signal shown alongside
+    matching suggestions."""
+
+    def setUp(self):
+        self.supervisor = _make_user("sup_review", UserRole.SUPERUSER, "09100000091")
+        self.caregiver_user = _make_user("cg_review", UserRole.CAREGIVER, "09121118001")
+        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user)
+
+        self.family_user = _make_user("fam_review", UserRole.FAMILY, "09121118002")
+        self.family_client = _client_for(self.family_user)
+        self.family = FamilyProfile.objects.create(user=self.family_user, display_name="خانواده")
+        self.patient = PatientProfile.objects.create(full_name="بیمار سه")
+        from apps.families.models import FamilyPatientLink, LinkStatus
+        FamilyPatientLink.objects.create(family=self.family, patient=self.patient, relation="child", status=LinkStatus.APPROVED)
+
+        self.assignment = CaregiverAssignment.objects.create(caregiver=self.caregiver, patient=self.patient, assigned_by=self.supervisor)
+
+    def test_family_can_submit_a_review(self):
+        response = self.family_client.post(f"/api/care/assignments/{self.assignment.id}/review/", {
+            "rating": 5, "comment": "خیلی خوب بود",
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["rating"], 5)
+
+    def test_resubmitting_updates_rather_than_duplicating(self):
+        from apps.care.models import CaregiverReview
+
+        self.family_client.post(f"/api/care/assignments/{self.assignment.id}/review/", {"rating": 3}, format="json")
+        response = self.family_client.post(f"/api/care/assignments/{self.assignment.id}/review/", {"rating": 5}, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(CaregiverReview.objects.filter(assignment=self.assignment).count(), 1)
+        self.assertEqual(CaregiverReview.objects.get(assignment=self.assignment).rating, 5)
+
+    def test_rating_out_of_range_rejected(self):
+        response = self.family_client.post(f"/api/care/assignments/{self.assignment.id}/review/", {"rating": 6}, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_stranger_with_no_access_to_patient_cannot_review(self):
+        stranger_client = _client_for(_make_user("fam_stranger_review", UserRole.FAMILY, "09121118003"))
+        response = stranger_client.post(f"/api/care/assignments/{self.assignment.id}/review/", {"rating": 1}, format="json")
+        self.assertEqual(response.status_code, 404)
+
+    def test_review_works_after_assignment_has_ended(self):
+        self.assignment.end()
+        response = self.family_client.post(f"/api/care/assignments/{self.assignment.id}/review/", {"rating": 4}, format="json")
+        self.assertEqual(response.status_code, 201)
+
+    def test_aggregate_rating_shows_up_on_care_team_view(self):
+        self.family_client.post(f"/api/care/assignments/{self.assignment.id}/review/", {"rating": 4}, format="json")
+        response = self.family_client.get(f"/api/care/patients/{self.patient.id}/team/")
+        self.assertEqual(response.data[0]["caregiver_avg_rating"], 4.0)
+        self.assertEqual(response.data[0]["caregiver_review_count"], 1)
+
+    def test_no_reviews_yet_shows_null_not_zero(self):
+        # A caregiver with no reviews should show as "no data yet",
+        # not a misleading 0.0 that looks like a bad rating.
+        response = self.family_client.get(f"/api/care/patients/{self.patient.id}/team/")
+        self.assertIsNone(response.data[0]["caregiver_avg_rating"])
+        self.assertEqual(response.data[0]["caregiver_review_count"], 0)
+
+    def test_review_writes_audit_entry(self):
+        from apps.audit.models import AuditEventType, AuditLog
+        self.family_client.post(f"/api/care/assignments/{self.assignment.id}/review/", {"rating": 5}, format="json")
+        entry = AuditLog.objects.filter(event_type=AuditEventType.CAREGIVER_REVIEWED, target_user_id=self.caregiver_user.id).first()
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.metadata.get("rating"), 5)
+
+    def test_suggestion_results_include_rating_info(self):
+        from apps.caregivers.models import CaregiverStatus
+        self.caregiver.status = CaregiverStatus.APPROVED
+        self.caregiver.save(update_fields=["status"])
+
+        self.family_client.post(f"/api/care/assignments/{self.assignment.id}/review/", {"rating": 5}, format="json")
+        self.assignment.end()  # so this caregiver isn't excluded as "already assigned"
+
+        sup_client = _client_for(self.supervisor)
+        second_patient = PatientProfile.objects.create(full_name="بیمار دیگر")
+        response = sup_client.get(f"/api/care/suggest-caregivers/?patient_code={second_patient.access_code}")
+        match = next(s for s in response.data["suggestions"] if s["caregiver_user_id"] == self.caregiver_user.id)
+        self.assertEqual(match["avg_rating"], 5.0)
+        self.assertEqual(match["review_count"], 1)

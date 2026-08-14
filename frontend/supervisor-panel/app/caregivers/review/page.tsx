@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { caregiverService } from "@/services/caregiver.service"
 import { assignmentService } from "@/services/assignment.service"
+import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
 import { ROUTES } from "@/lib/routes"
 import * as C from "@/lib/constants"
 import { labelForValue, labelsForValues, yesNoLabel, patientAvatar } from "@/lib/constants"
@@ -85,6 +86,38 @@ function ReviewPageInner() {
     if (!id) return
     refreshAssignments().finally(() => setAssignmentsLoading(false))
   }, [id])
+
+  const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, string>>({})
+  const [questionnaireScores, setQuestionnaireScores] = useState<{ overall_flexibility_score: number; section_scores: Record<string, number> } | null>(null)
+  const [questionnaireLoading, setQuestionnaireLoading] = useState(true)
+  const [questionnaireSaving, setQuestionnaireSaving] = useState(false)
+  const [questionnaireMessage, setQuestionnaireMessage] = useState("")
+
+  useEffect(() => {
+    if (!id) return
+    caregiverService.getCompatibilityQuestionnaire(id)
+      .then((data) => {
+        const { section_scores, overall_flexibility_score, updated_at, ...answers } = data
+        setQuestionnaireAnswers(answers)
+        setQuestionnaireScores({ overall_flexibility_score, section_scores })
+      })
+      .catch(() => {})
+      .finally(() => setQuestionnaireLoading(false))
+  }, [id])
+
+  async function handleSaveQuestionnaire() {
+    setQuestionnaireSaving(true); setQuestionnaireMessage("")
+    try {
+      const result = await caregiverService.saveCompatibilityQuestionnaire(id, questionnaireAnswers)
+      const { section_scores, overall_flexibility_score } = result
+      setQuestionnaireScores({ overall_flexibility_score, section_scores })
+      setQuestionnaireMessage("پرسشنامه ذخیره شد.")
+    } catch {
+      setQuestionnaireMessage("ذخیره با خطا مواجه شد — همه سؤالات باید پاسخ داده شوند.")
+    } finally {
+      setQuestionnaireSaving(false)
+    }
+  }
 
   useEffect(() => {
     if (!id) return
@@ -311,6 +344,66 @@ function ReviewPageInner() {
                       </Button>
                     </div>
                   </div>
+                </div>
+              )}
+            </Section>
+
+            <Section icon="💬" title="پرسشنامه سازگاری مراقب">
+              {questionnaireLoading ? (
+                <p className="text-sm text-muted-foreground">در حال بارگذاری...</p>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-xs text-muted-foreground">
+                    این پرسشنامه اختیاری است و در تأیید پروفایل مراقب تأثیری ندارد — فقط کیفیت پیشنهاد مراقب در بخش «تطابق» را بهبود می‌دهد.
+                  </p>
+                  {questionnaireMessage && (
+                    <div className={cn("rounded-md p-2 text-xs", questionnaireMessage.includes("خطا") ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-800")}>
+                      {questionnaireMessage}
+                    </div>
+                  )}
+                  {questionnaireScores && (
+                    <div className="rounded-lg bg-pink-50 p-3">
+                      <p className="text-sm font-semibold text-rose-900">امتیاز کلی انعطاف‌پذیری: {questionnaireScores.overall_flexibility_score}٪</p>
+                      <div className="mt-1 grid grid-cols-2 gap-1 text-xs text-muted-foreground sm:grid-cols-4">
+                        {Object.entries(questionnaireScores.section_scores).map(([section, score]) => (
+                          <span key={section}>{section}: {score}٪</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {CAREGIVER_QUESTIONNAIRE.map((section) => (
+                    <div key={section.title} className="space-y-3">
+                      <p className="text-sm font-semibold text-rose-800">{section.title}</p>
+                      {section.questions.map((q) => (
+                        <div key={q.field} className="rounded-lg border border-pink-100 p-3">
+                          <p className="mb-2 text-sm">{q.question}</p>
+                          <div className="space-y-1.5">
+                            {q.options.map((opt) => (
+                              <label key={opt.value} className="flex cursor-pointer items-start gap-2 text-xs">
+                                <input
+                                  type="radio"
+                                  name={q.field}
+                                  checked={questionnaireAnswers[q.field] === opt.value}
+                                  onChange={() => setQuestionnaireAnswers((prev) => ({ ...prev, [q.field]: opt.value }))}
+                                  className="mt-0.5"
+                                />
+                                <span>{opt.text}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+
+                  <Button
+                    className="w-full bg-brand-pink hover:bg-brand-pink-strong"
+                    disabled={questionnaireSaving || Object.keys(questionnaireAnswers).length < 16}
+                    onClick={handleSaveQuestionnaire}
+                  >
+                    {questionnaireSaving ? "در حال ذخیره..." : "ذخیره پرسشنامه"}
+                  </Button>
                 </div>
               )}
             </Section>

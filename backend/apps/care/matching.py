@@ -110,7 +110,8 @@ def suggest_caregivers_for_patient(patient, limit: int = 10) -> list[dict]:
     has no business being recommended for a real assignment — and
     excludes anyone already actively assigned to this same patient,
     since suggesting someone who's already assigned isn't useful."""
-    from apps.care.models import AssignmentStatus, CaregiverAssignment
+    from django.db.models import Avg, Count
+    from apps.care.models import AssignmentStatus, CaregiverAssignment, CaregiverReview
 
     already_assigned_ids = set(
         CaregiverAssignment.objects.filter(
@@ -121,19 +122,31 @@ def suggest_caregivers_for_patient(patient, limit: int = 10) -> list[dict]:
     candidates = CaregiverProfile.objects.filter(
         status=CaregiverStatus.APPROVED,
     ).exclude(id__in=already_assigned_ids).select_related(
-        "user", "work_preferences",
+        "user", "work_preferences", "compatibility_questionnaire",
     ).prefetch_related("service_areas")
 
     results = []
     for caregiver in candidates:
         result = score_caregiver_for_patient(caregiver, patient)
         identity = getattr(caregiver.user, "caregiver_identity_profile", None)
+        # Shown alongside the fit score, deliberately not folded into
+        # it — a caregiver with zero reviews yet shouldn't be
+        # penalized by an implicit "no rating = 0" default the way
+        # baking this into a single number would require, and a
+        # supervisor can weigh "great fit, no track record yet" against
+        # "good fit, proven record" themselves rather than trust an
+        # opaque combined score to make that judgment call for them.
+        review_stats = CaregiverReview.objects.filter(caregiver=caregiver).aggregate(avg=Avg("rating"), count=Count("id"))
+        questionnaire = getattr(caregiver, "compatibility_questionnaire", None)
         results.append({
             "caregiver_user_id": caregiver.user_id,
             "caregiver_name": (identity.full_name if identity else None) or caregiver.user.username,
             "caregiver_gender": identity.gender if identity else "",
             "score": result["score"],
             "reasons": result["reasons"],
+            "avg_rating": round(review_stats["avg"], 1) if review_stats["avg"] is not None else None,
+            "review_count": review_stats["count"],
+            "flexibility_score": questionnaire.overall_flexibility_score() if questionnaire else None,
         })
 
     results.sort(key=lambda r: r["score"], reverse=True)

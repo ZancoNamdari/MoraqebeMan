@@ -97,3 +97,6 @@ class AuditService:
 
     def care_log_entry_created(self, actor_id, patient_id, category):
         return self.log_event(AuditEventType.CARE_LOG_ENTRY_CREATED, actor_id, None, patient_id=patient_id, category=category)
+
+    def caregiver_reviewed(self, actor_id, caregiver_user_id, patient_id, rating):
+        return self.log_event(AuditEventType.CAREGIVER_REVIEWED, actor_id, caregiver_user_id, patient_id=patient_id, rating=rating)

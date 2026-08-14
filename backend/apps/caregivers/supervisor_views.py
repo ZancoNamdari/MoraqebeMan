@@ -39,6 +39,7 @@ from .models import (
 from .permissions import IsAdminOrSuperuser
 from .serializers import (
     CaregiverBasicInfoSerializer,
+    CaregiverCompatibilityQuestionnaireSerializer,
     CaregiverExperienceSerializer,
     CaregiverListItemSerializer,
     CaregiverReferenceListSerializer,
@@ -280,6 +281,38 @@ class SupervisorWorkPreferencesView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(profile=profile)
         audit.caregiver_updated(request.user.id, user_id, section="work_preferences")
+        return Response(serializer.data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
+
+
+class SupervisorCompatibilityQuestionnaireView(APIView):
+    """
+    GET/PUT /api/supervisor/caregivers/<id>/compatibility-questionnaire/
+    Deliberately NOT counted in forms_completed/forms_total — same
+    reasoning already applied to references (relaxed earlier this
+    session): this genuinely improves matching quality but isn't a
+    hard requirement to approve and work as a caregiver, so it stays
+    optional rather than becoming a new gate on approval.
+    """
+    permission_classes = [IsAdminOrSuperuser]
+
+    def get(self, request, user_id):
+        profile = _get_target_profile(user_id)
+        if profile is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        questionnaire = getattr(profile, "compatibility_questionnaire", None)
+        if questionnaire is None:
+            return Response({"detail": "این بخش هنوز تکمیل نشده است."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(CaregiverCompatibilityQuestionnaireSerializer(questionnaire).data)
+
+    def put(self, request, user_id):
+        profile = _get_target_profile(user_id)
+        if profile is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        existing = getattr(profile, "compatibility_questionnaire", None)
+        serializer = CaregiverCompatibilityQuestionnaireSerializer(instance=existing, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(caregiver=profile)
+        audit.caregiver_updated(request.user.id, user_id, section="compatibility_questionnaire")
         return Response(serializer.data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
 
 
