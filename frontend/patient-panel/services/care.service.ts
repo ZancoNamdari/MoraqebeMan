@@ -11,4 +11,9 @@ export const careService = {
     const { data } = await api.get(`/api/care/patients/${patientId}/timeline/`)
     return data
   },
+
+  async submitReview(assignmentId: number, rating: number, comment: string) {
+    const { data } = await api.post(`/api/care/assignments/${assignmentId}/review/`, { rating, comment })
+    return data
+  },
 }
