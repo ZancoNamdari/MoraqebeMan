@@ -26,11 +26,20 @@ export interface CaregiverSuggestion {
   caregiver_gender: string
   score: number
   reasons: string[]
+  avg_rating: number | null
+  review_count: number
+  flexibility_score: number | null
+  flexibility_sections: Record<string, number> | null
 }
 
 export const matchingService = {
   async suggestCaregivers(patientCode: string) {
     const { data } = await api.get("/api/care/suggest-caregivers/", { params: { patient_code: patientCode } })
     return data as { patient_name: string; patient_gender: string; suggestions: CaregiverSuggestion[] }
+  },
+
+  async patientQuestionnaire(patientCode: string) {
+    const { data } = await api.get("/api/care/patient-questionnaire/", { params: { patient_code: patientCode } })
+    return data as Record<string, string>
   },
 }

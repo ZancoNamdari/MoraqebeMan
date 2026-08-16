@@ -359,3 +359,94 @@ class CaregiverReviewTests(TestCase):
         match = next(s for s in response.data["suggestions"] if s["caregiver_user_id"] == self.caregiver_user.id)
         self.assertEqual(match["avg_rating"], 5.0)
         self.assertEqual(match["review_count"], 1)
+
+
+VALID_PATIENT_QUESTIONNAIRE = {
+    "religious_beliefs_priority": "strongly_agree", "new_treatment_openness": "moderate",
+    "caregiver_as_family_member": "yes", "respectful_disagreement_acceptance": "fully_accept",
+    "privacy_comfort_with_caregiver": "yes", "noise_smell_sensitivity": "low",
+    "meal_time_strictness": "moderate", "special_diet_preference": "no",
+    "medication_timing_priority": "very_high", "accent_customs_annoyance": "not_at_all",
+    "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "moderate",
+}
+
+CAREGIVER_FLEX_ANSWERS = {
+    "religious_belief_accommodation": "a", "physical_contact_sensitivity_adaptation": "a",
+    "prayer_time_scheduling_flexibility": "a", "traditional_belief_acceptance": "a",
+    "family_event_participation": "b", "false_accusation_reaction": "b",
+    "confidentiality_commitment": "b", "gender_based_task_flexibility": "b",
+    "home_environment_adaptability": "c", "schedule_flexibility_for_family_events": "c",
+    "traditional_food_treatment_openness": "c", "personal_conversation_patience": "c",
+    "home_organization_adaptability": "c",
+    "cultural_expression_tolerance": "d", "unfamiliar_custom_acceptance": "d", "dialect_communication_effort": "d",
+}
+
+
+class PatientQuestionnaireForMatchingTests(TestCase):
+    """Closes a real, necessary gap: until now only a patient's own
+    family could see their compatibility questionnaire — a supervisor
+    comparing it against a caregiver's flexibility profile had no way
+    to see the patient's side at all."""
+
+    def setUp(self):
+        from apps.families.models import PatientCompatibilityQuestionnaire
+
+        self.supervisor = _make_user("sup_axis_view", UserRole.SUPERUSER, "09100000210")
+        self.sup_client = _client_for(self.supervisor)
+        self.patient = PatientProfile.objects.create(full_name="بیمار محور تست")
+        PatientCompatibilityQuestionnaire.objects.create(patient=self.patient, **VALID_PATIENT_QUESTIONNAIRE)
+
+    def test_supervisor_can_view_patient_questionnaire(self):
+        response = self.sup_client.get(f"/api/care/patient-questionnaire/?patient_code={self.patient.access_code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["religious_beliefs_priority"], "strongly_agree")
+
+    def test_patient_without_completed_questionnaire_returns_404(self):
+        bare_patient = PatientProfile.objects.create(full_name="بدون پرسشنامه")
+        response = self.sup_client.get(f"/api/care/patient-questionnaire/?patient_code={bare_patient.access_code}")
+        self.assertEqual(response.status_code, 404)
+
+    def test_invalid_patient_code_rejected(self):
+        response = self.sup_client.get("/api/care/patient-questionnaire/?patient_code=ELD-ZZZZZZ")
+        self.assertEqual(response.status_code, 404)
+
+    def test_non_supervisor_cannot_access(self):
+        family_client = _client_for(_make_user("fam_axis_view", UserRole.FAMILY, "09121124001"))
+        response = family_client.get(f"/api/care/patient-questionnaire/?patient_code={self.patient.access_code}")
+        self.assertEqual(response.status_code, 403)
+
+
+class MatchingIncludesSectionBreakdownTests(TestCase):
+    """The suggestion output surfaces the caregiver's per-section
+    flexibility breakdown, not just one overall number — the honest
+    alternative to a fused cross-axis score I wasn't confident enough
+    to compute automatically (several patient questionnaire fields
+    don't have an unambiguous semantic direction from the label alone).
+    A supervisor can now see both sides and judge the fit themselves."""
+
+    def setUp(self):
+        from apps.caregivers.models import CaregiverCompatibilityQuestionnaire, CaregiverStatus
+
+        self.supervisor = _make_user("sup_section", UserRole.SUPERUSER, "09100000211")
+        self.sup_client = _client_for(self.supervisor)
+
+        self.caregiver_user = _make_user("cg_section", UserRole.CAREGIVER, "09121124002")
+        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user, status=CaregiverStatus.APPROVED)
+        CaregiverCompatibilityQuestionnaire.objects.create(caregiver=self.caregiver, **CAREGIVER_FLEX_ANSWERS)
+
+        self.patient = PatientProfile.objects.create(full_name="بیمار بخش")
+
+    def test_suggestion_includes_per_section_breakdown(self):
+        response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={self.patient.access_code}")
+        match = next(s for s in response.data["suggestions"] if s["caregiver_user_id"] == self.caregiver_user.id)
+        self.assertEqual(match["flexibility_sections"]["عقیدتی و مناسکی"], 100)
+        self.assertEqual(match["flexibility_sections"]["انعطاف‌پذیری فرهنگی"], 0)
+
+    def test_no_questionnaire_shows_none_sections_not_error(self):
+        from apps.caregivers.models import CaregiverStatus
+        bare_user = _make_user("cg_bare_section", UserRole.CAREGIVER, "09121124003")
+        CaregiverProfile.objects.create(user=bare_user, status=CaregiverStatus.APPROVED)
+
+        response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={self.patient.access_code}")
+        match = next(s for s in response.data["suggestions"] if s["caregiver_user_id"] == bare_user.id)
+        self.assertIsNone(match["flexibility_sections"])

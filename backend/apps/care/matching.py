@@ -147,6 +147,7 @@ def suggest_caregivers_for_patient(patient, limit: int = 10) -> list[dict]:
             "avg_rating": round(review_stats["avg"], 1) if review_stats["avg"] is not None else None,
             "review_count": review_stats["count"],
             "flexibility_score": questionnaire.overall_flexibility_score() if questionnaire else None,
+            "flexibility_sections": questionnaire.section_scores() if questionnaire else None,
         })
 
     results.sort(key=lambda r: r["score"], reverse=True)

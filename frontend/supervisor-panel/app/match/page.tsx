@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { assignmentService, matchingService, type CaregiverSuggestion } from "@/services/assignment.service"
-import { patientAvatar } from "@/lib/constants"
+import { patientAvatar, PATIENT_QUESTIONNAIRE_LABELS, PATIENT_AXIS_TO_CAREGIVER_SECTION } from "@/lib/constants"
 import { ROUTES } from "@/lib/routes"
 
 export default function MatchPage() {
@@ -21,20 +21,33 @@ export default function MatchPage() {
   const [patientName, setPatientName] = useState("")
   const [patientGender, setPatientGender] = useState("")
   const [suggestions, setSuggestions] = useState<CaregiverSuggestion[] | null>(null)
+  const [patientAnswers, setPatientAnswers] = useState<Record<string, string> | null>(null)
   const [assigningId, setAssigningId] = useState<number | null>(null)
   const [assignedIds, setAssignedIds] = useState<Set<number>>(new Set())
+  const [expandedId, setExpandedId] = useState<number | null>(null)
 
   if (authLoading || !user) return null
 
   async function handleSearch() {
-    setLoading(true); setError(""); setSuggestions(null)
+    setLoading(true); setError(""); setSuggestions(null); setPatientAnswers(null)
+    const code = patientCode.trim().toUpperCase()
     try {
-      const result = await matchingService.suggestCaregivers(patientCode.trim().toUpperCase())
+      const result = await matchingService.suggestCaregivers(code)
       setPatientName(result.patient_name)
       setPatientGender(result.patient_gender)
       setSuggestions(result.suggestions)
     } catch (err: any) {
       setError(err?.response?.data?.detail || "کد بیمار معتبر نیست.")
+      setLoading(false)
+      return
+    }
+    // Patient questionnaire is optional — a patient not having filled
+    // it in yet shouldn't block seeing caregiver suggestions at all.
+    try {
+      const answers = await matchingService.patientQuestionnaire(code)
+      setPatientAnswers(answers)
+    } catch {
+      setPatientAnswers(null)
     } finally {
       setLoading(false)
     }
@@ -79,6 +92,29 @@ export default function MatchPage() {
 
         {loading && <Skeleton className="h-64 w-full rounded-2xl" />}
 
+        {patientAnswers && !loading && (
+          <Card className="border-pink-100 bg-pink-50/30">
+            <CardHeader><CardTitle className="text-sm text-rose-800">پرسشنامه سازگاری بیمار</CardTitle></CardHeader>
+            <CardContent>
+              <p className="mb-2 text-xs text-muted-foreground">
+                برای مقایسه با بخش مربوطه در پرسشنامه هر مراقب — «نمایش جزئیات» را در کارت آن مراقب باز کنید.
+              </p>
+              <div className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
+                {Object.entries(PATIENT_QUESTIONNAIRE_LABELS).map(([field, meta]) => {
+                  const answer = patientAnswers[field]
+                  const answerLabel = meta.choices.find(([v]) => v === answer)?.[1] || answer
+                  return (
+                    <div key={field} className="rounded border border-pink-100 bg-white px-2 py-1">
+                      <span className="text-muted-foreground">{meta.label}: </span>
+                      <span className="font-medium text-rose-800">{answerLabel}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {suggestions !== null && !loading && (
           <Card className="border-pink-100">
             <CardHeader>
@@ -99,7 +135,11 @@ export default function MatchPage() {
                           <span className="text-lg">{patientAvatar(s.caregiver_gender)}</span>
                           <div>
                             <p className="text-sm font-medium">{s.caregiver_name}</p>
-                            <p className="text-xs text-muted-foreground">امتیاز تناسب: {s.score} از ۱۰۰</p>
+                            <p className="text-xs text-muted-foreground">
+                              امتیاز تناسب: {s.score} از ۱۰۰
+                              {s.avg_rating !== null && <span> · {"★".repeat(Math.round(s.avg_rating))}{"☆".repeat(5 - Math.round(s.avg_rating))} ({s.avg_rating} از {s.review_count} نظر)</span>}
+                              {s.flexibility_score !== null && <span> · انعطاف‌پذیری: {s.flexibility_score}٪</span>}
+                            </p>
                           </div>
                         </div>
                         {assignedIds.has(s.caregiver_user_id) ? (
@@ -119,6 +159,30 @@ export default function MatchPage() {
                           <li key={i} className="text-xs text-muted-foreground">• {reason}</li>
                         ))}
                       </ul>
+
+                      {s.flexibility_sections && (
+                        <>
+                          <button
+                            className="mt-2 text-xs text-rose-600 hover:underline"
+                            onClick={() => setExpandedId(expandedId === s.caregiver_user_id ? null : s.caregiver_user_id)}
+                          >
+                            {expandedId === s.caregiver_user_id ? "بستن جزئیات" : "نمایش جزئیات پرسشنامه سازگاری"}
+                          </button>
+                          {expandedId === s.caregiver_user_id && (
+                            <div className="mt-2 space-y-1 border-t border-pink-100 pt-2 text-xs">
+                              {Object.entries(s.flexibility_sections).map(([section, score]) => {
+                                const matchingAxis = Object.entries(PATIENT_AXIS_TO_CAREGIVER_SECTION).find(([, sec]) => sec === section)?.[0]
+                                return (
+                                  <div key={section} className="flex items-center justify-between">
+                                    <span>{section}{matchingAxis && <span className="text-muted-foreground"> (معادل «{matchingAxis}» بیمار)</span>}</span>
+                                    <span className="font-medium text-rose-700">{score}٪</span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>

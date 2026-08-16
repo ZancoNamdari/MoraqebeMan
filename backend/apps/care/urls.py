@@ -6,6 +6,7 @@ from .views import (
     AssignmentReviewView,
     PatientCareTeamView,
     PatientCareTimelineView,
+    PatientQuestionnaireForMatchingView,
     SuggestedCaregiversView,
     SupervisorAssignmentsView,
     SupervisorEndAssignmentView,
@@ -16,6 +17,7 @@ urlpatterns = [
     path("care/assignments/", SupervisorAssignmentsView.as_view(), name="care-assignments"),
     path("care/assignments/<int:assignment_id>/end/", SupervisorEndAssignmentView.as_view(), name="care-assignment-end"),
     path("care/suggest-caregivers/", SuggestedCaregiversView.as_view(), name="care-suggest-caregivers"),
+    path("care/patient-questionnaire/", PatientQuestionnaireForMatchingView.as_view(), name="care-patient-questionnaire"),
 
     # Family/patient-facing review action
     path("care/assignments/<int:assignment_id>/review/", AssignmentReviewView.as_view(), name="care-assignment-review"),

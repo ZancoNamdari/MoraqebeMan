@@ -369,3 +369,37 @@ export function patientAvatar(gender: string | null | undefined): string {
   if (gender === "female") return "👵"
   return "🧓"
 }
+
+/** The patient's own 12-question compatibility questionnaire — same
+ * field/axis structure as family-panel and patient-panel already
+ * use, needed here so a supervisor can see the patient's actual
+ * answers (via the new supervisor-facing endpoint) next to a
+ * caregiver's flexibility breakdown, for the matching comparison. */
+export const PATIENT_QUESTIONNAIRE_LABELS: Record<string, { label: string; axis: string; choices: Choice[] }> = {
+  religious_beliefs_priority: { label: "اهمیت باورهای دینی", axis: "محور عقیدتی-مناسکی", choices: [["strongly_agree", "کاملاً موافقم"], ["somewhat_agree", "تاحدی موافق"], ["somewhat_disagree", "تاحدی مخالف"], ["strongly_disagree", "کاملاً مخالف"]] },
+  new_treatment_openness: { label: "باز بودن به درمان جدید", axis: "محور عقیدتی-مناسکی", choices: [["very_high", "خیلی زیاد"], ["moderate", "نسبتاً"], ["low", "کم"], ["none", "اصلاً"]] },
+  caregiver_as_family_member: { label: "مراقب به عنوان عضو خانواده", axis: "محور جمع‌گرایی", choices: [["yes", "بله"], ["no", "خیر"], ["partially", "تاحدی"]] },
+  respectful_disagreement_acceptance: { label: "پذیرش نظرات مخالف با احترام", axis: "محور جمع‌گرایی", choices: [["fully_accept", "کاملاً می‌پذیرم"], ["mostly_accept", "نسبتاً می‌پذیرم"], ["reluctantly_accept", "به سختی می‌پذیرم"], ["reject", "قطعاً رد می‌کنم"]] },
+  privacy_comfort_with_caregiver: { label: "راحتی در حضور مراقب", axis: "محور حریم خصوصی", choices: [["yes", "بله"], ["no", "خیر"], ["partially", "تاحدی"]] },
+  noise_smell_sensitivity: { label: "حساسیت به صدا و بو", axis: "محور سبک زندگی", choices: [["very_high", "خیلی زیاد"], ["moderate", "نسبتاً"], ["low", "کم"], ["none", "اصلاً"]] },
+  meal_time_strictness: { label: "سختی در رعایت زمان وعده غذایی", axis: "محور سبک زندگی", choices: [["very_high", "خیلی زیاد"], ["moderate", "نسبتاً"], ["low", "کم"], ["none", "اصلاً"]] },
+  special_diet_preference: { label: "ترجیح داشتن رژیم خاص", axis: "محور سبک زندگی", choices: [["yes", "بله"], ["no", "خیر"], ["partially", "تاحدی"]] },
+  medication_timing_priority: { label: "اهمیت زمان‌بندی داروها", axis: "محور جهت‌گیری زمانی", choices: [["very_high", "خیلی زیاد"], ["moderate", "نسبتاً"], ["low", "کم"], ["none", "اصلاً"]] },
+  accent_customs_annoyance: { label: "آزردگی از لهجه یا رسوم متفاوت مراقب", axis: "محور تفاوت فرهنگی/نسلی", choices: [["not_at_all", "اصلاً"], ["slightly", "کمی"], ["a_lot", "زیاد"], ["very_much", "خیلی زیاد"]] },
+  cultural_respect_expectation: { label: "انتظار احترام فرهنگی", axis: "محور تفاوت فرهنگی/نسلی", choices: [["yes", "بله"], ["no", "خیر"], ["partially", "تاحدی"]] },
+  willingness_to_express_opinion: { label: "تمایل به ابراز نظر", axis: "محور انعطاف‌پذیری کلی", choices: [["very_high", "خیلی زیاد"], ["moderate", "نسبتاً"], ["low", "کم"], ["none", "اصلاً"]] },
+}
+
+/** Which caregiver questionnaire section corresponds to which patient
+ * axis — a best-effort content mapping (matching section titles/
+ * themes), not a numeric formula. "محور جهت‌گیری زمانی" and "محور
+ * انعطاف‌پذیری کلی" are deliberately left unmapped: no caregiver
+ * section corresponds to them cleanly enough to show side by side
+ * without implying a false precision. */
+export const PATIENT_AXIS_TO_CAREGIVER_SECTION: Record<string, string> = {
+  "محور عقیدتی-مناسکی": "عقیدتی و مناسکی",
+  "محور جمع‌گرایی": "ارزش‌های بنیادین و مرزهای حرفه‌ای",
+  "محور حریم خصوصی": "ارزش‌های بنیادین و مرزهای حرفه‌ای",
+  "محور سبک زندگی": "سبک زندگی و محیط کاری",
+  "محور تفاوت فرهنگی/نسلی": "انعطاف‌پذیری فرهنگی",
+}

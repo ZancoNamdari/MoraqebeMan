@@ -243,3 +243,38 @@ class AssignmentReviewView(APIView):
             CaregiverReviewSerializer(review).data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
+
+
+class PatientQuestionnaireForMatchingView(APIView):
+    """
+    GET /api/care/patient-questionnaire/?patient_code=ELD-XXXXXX
+    Supervisor-only. A real, necessary gap this closes: until now,
+    only the patient's own family could see their compatibility
+    questionnaire (apps.families.PatientQuestionnaireView is
+    IsFamily-only) — a supervisor comparing a patient's answers
+    against a caregiver's flexibility questionnaire had no way to see
+    the patient's side at all. Not a scoring endpoint — returns the
+    patient's raw answers so the frontend (which already has the axis
+    groupings) can show them next to a caregiver's per-section
+    flexibility score for a human to compare, the same "inform, don't
+    decide" pattern as every other matching signal.
+    """
+    permission_classes = [IsAdminOrSuperuser]
+
+    def get(self, request):
+        from apps.families.models import PatientCompatibilityQuestionnaire, PatientProfile
+        from apps.families.serializers import PatientCompatibilityQuestionnaireSerializer
+
+        patient_code = request.query_params.get("patient_code", "").strip().upper()
+        if not patient_code:
+            return Response({"detail": "کد بیمار الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        patient = PatientProfile.objects.filter(access_code=patient_code).first()
+        if patient is None:
+            return Response({"detail": "کد بیمار معتبر نیست."}, status=status.HTTP_404_NOT_FOUND)
+
+        questionnaire = PatientCompatibilityQuestionnaire.objects.filter(patient=patient).first()
+        if questionnaire is None:
+            return Response({"detail": "پرسشنامه این بیمار هنوز تکمیل نشده است."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(PatientCompatibilityQuestionnaireSerializer(questionnaire).data)
