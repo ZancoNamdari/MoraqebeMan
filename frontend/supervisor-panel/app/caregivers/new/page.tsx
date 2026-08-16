@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator"
 import { parseApiErrors, errorsByField, referenceFieldError, type ApiFieldError } from "@/lib/field-labels"
 import { useAuth } from "@/hooks/useauth"
 import { caregiverService } from "@/services/caregiver.service"
+import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
 import { ROUTES } from "@/lib/routes"
 import * as C from "@/lib/constants"
 import type {
@@ -23,7 +24,7 @@ import type {
   SkillsFormData, WorkPreferencesFormData,
 } from "@/types/caregiver"
 
-const STEPS = ["اطلاعات پایه", "فرم ۱ — هویتی", "فرم ۲ — شرایط همکاری", "فرم ۳ — سوابق و مهارت", "فرم ۴ — معرف‌ها"]
+const STEPS = ["اطلاعات پایه", "فرم ۱ — هویتی", "فرم ۲ — شرایط همکاری", "فرم ۳ — سوابق و مهارت", "فرم ۴ — معرف‌ها", "پرسشنامه سازگاری (اختیاری)"]
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -106,6 +107,7 @@ function NewCaregiverWizardInner() {
   const [experience, setExperience] = useState<ExperienceFormData>(EMPTY_EXPERIENCE)
   const [skills, setSkills] = useState<SkillsFormData>(EMPTY_SKILLS)
   const [references, setReferences] = useState<ReferenceFormData[]>([{ ...EMPTY_REFERENCE }])
+  const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, string>>({})
 
   // Resume an in-progress (or already-complete) caregiver: load
   // whatever's already saved for each step, including the basic
@@ -126,6 +128,10 @@ function NewCaregiverWizardInner() {
     caregiverService.getSkills(caregiverId).then(setSkills).catch(() => {})
     caregiverService.getReferences(caregiverId).then((refs) => {
       if (refs.length > 0) setReferences(refs)
+    }).catch(() => {})
+    caregiverService.getCompatibilityQuestionnaire(caregiverId).then((data) => {
+      const { section_scores, overall_flexibility_score, updated_at, ...answers } = data
+      setQuestionnaireAnswers(answers)
     }).catch(() => {})
     // Land straight on Form 1 rather than the "create account" screen
     // — the account already exists. Every step (including this one)
@@ -215,12 +221,29 @@ function NewCaregiverWizardInner() {
     setError([]); setSaving(true)
     try {
       await caregiverService.saveReferences(caregiverId, references)
-      setDone(true)
+      setStep(5)
     } catch (err: any) {
       showErrors(err, "ثبت معرف‌ها با خطا مواجه شد.")
     } finally {
       setSaving(false)
     }
+  }
+
+  async function handleStep5() {
+    if (!caregiverId) return
+    setError([]); setSaving(true)
+    try {
+      await caregiverService.saveCompatibilityQuestionnaire(caregiverId, questionnaireAnswers)
+      setDone(true)
+    } catch (err: any) {
+      showErrors(err, "ثبت پرسشنامه با خطا مواجه شد — همه سؤالات باید پاسخ داده شوند.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function handleSkipQuestionnaire() {
+    setDone(true)
   }
 
   function startNext() {
@@ -229,6 +252,7 @@ function NewCaregiverWizardInner() {
     setIdentity(EMPTY_IDENTITY); setWorkPrefs(EMPTY_WORK_PREFS); setAreas([])
     setExperience(EMPTY_EXPERIENCE); setSkills(EMPTY_SKILLS)
     setReferences([{ ...EMPTY_REFERENCE }])
+    setQuestionnaireAnswers({})
   }
 
   if (done) {
@@ -482,6 +506,40 @@ function NewCaregiverWizardInner() {
             </CardContent>
           </Card>
         )}
+
+        {step === 5 && (
+          <div className="space-y-4">
+            <p className="rounded-lg border border-dashed border-pink-200 bg-pink-50/40 p-3 text-sm text-muted-foreground">
+              این پرسشنامه اختیاری است — تکمیل آن در تأیید یا رد پروفایل مراقب تأثیری ندارد، فقط کیفیت پیشنهاد مراقب در بخش «تطابق» را بهبود می‌دهد. هر زمان می‌توانید آن را رد کنید و بعداً از صفحه بررسی مراقب تکمیل کنید.
+            </p>
+            {CAREGIVER_QUESTIONNAIRE.map((section) => (
+              <Card key={section.title}>
+                <CardHeader><CardTitle className="text-sm text-rose-800">{section.title}</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {section.questions.map((q) => (
+                    <div key={q.field} className="rounded-lg border border-pink-100 p-3">
+                      <p className="mb-2 text-sm">{q.question}</p>
+                      <div className="space-y-1.5">
+                        {q.options.map((opt) => (
+                          <label key={opt.value} className="flex cursor-pointer items-start gap-2 text-xs">
+                            <input
+                              type="radio"
+                              name={q.field}
+                              checked={questionnaireAnswers[q.field] === opt.value}
+                              onChange={() => setQuestionnaireAnswers((prev) => ({ ...prev, [q.field]: opt.value }))}
+                              className="mt-0.5"
+                            />
+                            <span>{opt.text}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
 
       <footer className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur">
@@ -513,8 +571,21 @@ function NewCaregiverWizardInner() {
           )}
           {step === 4 && (
             <Button className="flex-1 bg-gradient-to-l from-brand-pink to-brand-mint-strong shadow-md shadow-brand-pink/20 hover:from-brand-pink-strong hover:to-brand-mint-strong" size="lg" onClick={handleStep4} disabled={saving}>
-              {saving ? "در حال ذخیره..." : "ذخیره نهایی"}
+              {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
+          )}
+          {step === 5 && (
+            <>
+              <Button
+                className="flex-1 bg-gradient-to-l from-brand-pink to-brand-mint-strong shadow-md shadow-brand-pink/20 hover:from-brand-pink-strong hover:to-brand-mint-strong"
+                size="lg" onClick={handleStep5} disabled={saving || Object.keys(questionnaireAnswers).length < 16}
+              >
+                {saving ? "در حال ذخیره..." : "ذخیره نهایی"}
+              </Button>
+              <Button variant="outline" size="lg" onClick={handleSkipQuestionnaire} disabled={saving}>
+                رد کردن این مرحله
+              </Button>
+            </>
           )}
         </div>
       </footer>
