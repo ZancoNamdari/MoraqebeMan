@@ -1,20 +1,29 @@
 """
-The first real implementation of what was always meant to be a
-"matching_service" — the compatibility questionnaire has existed on
-PatientProfile since early in this project, but nothing ever actually
-consumed it to suggest a caregiver. This is a deliberately simple,
-transparent v1: score caregivers against objective, already-captured
-signals (gender preference, age-range preference, service-area
-overlap), not the subjective 12-axis questionnaire, which has no
-caregiver-side counterpart to compare against yet (it captures the
-PATIENT's preferences about how a caregiver should behave, not
-anything about the caregiver themselves) — scoring against it would
-mean inventing a fictional mapping, not a real comparison. Extending
-this to the questionnaire is a natural next step once caregivers have
-an equivalent set of answers to compare against.
+Two layers of matching live here, added in separate phases and kept
+both:
+
+1. The original objective fit score (score_caregiver_for_patient) —
+   gender/age-range/location preference overlap, always computable
+   from data that's mandatory or near-mandatory to collect, so it
+   never depends on either questionnaire being filled in.
+
+2. The trait-based score (apps.care.trait_matching) — the full
+   spec-compliant engine: every questionnaire answer converted to
+   named psychosocial traits via a configurable mapping table, never
+   compared as raw options directly, combined via similarity or
+   adaptability formulas depending on the trait, weighted per
+   dimension into one overall score. Only available once BOTH
+   questionnaires are filled in — until then it's None, not a
+   default/assumed value.
+
+Both are always returned together; nothing here silently prefers one
+over the other. A supervisor comparing two candidates can see the
+objective fit score, the full trait-based score, and where they agree
+or disagree.
 """
 import datetime
 
+from apps.care.trait_matching import compute_full_match, compute_trait_profile
 from apps.caregivers.choices import AcceptedGender
 from apps.caregivers.models import CaregiverProfile, CaregiverStatus
 
@@ -125,6 +134,13 @@ def suggest_caregivers_for_patient(patient, limit: int = 10) -> list[dict]:
         "user", "work_preferences", "compatibility_questionnaire",
     ).prefetch_related("service_areas")
 
+    # Computed once, not per-candidate — the patient's own trait
+    # profile is identical across every caregiver being scored against
+    # them in this same request.
+    from apps.care.models import MatchingProfileSide
+    patient_questionnaire = getattr(patient, "compatibility_questionnaire", None)
+    patient_traits = compute_trait_profile(MatchingProfileSide.PATIENT, patient_questionnaire)
+
     results = []
     for caregiver in candidates:
         result = score_caregiver_for_patient(caregiver, patient)
@@ -147,6 +163,8 @@ def suggest_caregivers_for_patient(patient, limit: int = 10) -> list[dict]:
         # patients and the other has none, rather than have that
         # entirely invisible.
         active_patient_count = caregiver.assignments.filter(status=AssignmentStatus.ACTIVE).count()
+        trait_match = compute_full_match(patient_questionnaire, questionnaire, patient_traits=patient_traits)
+
         results.append({
             "caregiver_user_id": caregiver.user_id,
             "caregiver_name": (identity.full_name if identity else None) or caregiver.user.username,
@@ -158,6 +176,9 @@ def suggest_caregivers_for_patient(patient, limit: int = 10) -> list[dict]:
             "flexibility_score": questionnaire.overall_flexibility_score() if questionnaire else None,
             "flexibility_sections": questionnaire.section_scores() if questionnaire else None,
             "active_patient_count": active_patient_count,
+            "trait_match_score": trait_match["overall_score"],
+            "trait_dimension_scores": trait_match["dimension_scores"],
+            "caregiver_cfi": trait_match["caregiver_cfi"],
         })
 
     results.sort(key=lambda r: r["score"], reverse=True)
