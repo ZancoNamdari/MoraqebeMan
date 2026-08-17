@@ -131,3 +131,77 @@ class CaregiverReview(models.Model):
 
     def __str__(self):
         return f"{self.rating}/5 — {self.caregiver} ({self.patient})"
+
+
+class TraitName(models.TextChoices):
+    """
+    The 16 measurable psychosocial traits the matching engine actually
+    operates on — not the raw A/B/C/D answers themselves. Matches the
+    spec exactly: an option is never inherently "good" or "bad" (a
+    caregiver with a strong professional boundary isn't worse than one
+    without — some patients want exactly that), so every answer gets
+    converted into specific trait values via QuestionTraitMapping
+    below, rather than scored directly.
+    """
+    RELIGIOUS_FLEXIBILITY = "religious_flexibility", "انعطاف مذهبی"
+    GENDER_SENSITIVITY = "gender_sensitivity", "حساسیت جنسیتی"
+    RITUAL_FLEXIBILITY = "ritual_flexibility", "انعطاف مناسکی"
+    TRADITIONAL_BELIEF_TOLERANCE = "traditional_belief_tolerance", "تحمل باور سنتی"
+    PROFESSIONAL_BOUNDARY = "professional_boundary", "مرز حرفه‌ای"
+    PRIVACY_ORIENTATION = "privacy_orientation", "جهت‌گیری حریم خصوصی"
+    GENDER_ROLE_FLEXIBILITY = "gender_role_flexibility", "انعطاف نقش جنسیتی"
+    EMOTIONAL_INVOLVEMENT = "emotional_involvement", "درگیری عاطفی"
+    ENVIRONMENT_TOLERANCE = "environment_tolerance", "تحمل محیط"
+    SCHEDULE_FLEXIBILITY = "schedule_flexibility", "انعطاف زمان‌بندی"
+    TRADITIONAL_MEDICINE_ORIENTATION = "traditional_medicine_orientation", "جهت‌گیری طب سنتی"
+    EMOTIONAL_INTERACTION_PREFERENCE = "emotional_interaction_preference", "ترجیح تعامل عاطفی"
+    ORDERLINESS_TOLERANCE = "orderliness_tolerance", "تحمل نظم"
+    CULTURAL_TOLERANCE = "cultural_tolerance", "تحمل فرهنگی"
+    OFFENSIVE_SPEECH_TOLERANCE = "offensive_speech_tolerance", "تحمل گفتار ناخوشایند"
+    RITUAL_TOLERANCE = "ritual_tolerance", "تحمل آیینی"
+    LANGUAGE_DIALECT_FLEXIBILITY = "language_dialect_flexibility", "انعطاف زبان و گویش"
+
+
+class TraitDimension(models.TextChoices):
+    """The 4 dimensions traits roll up into, matching both
+    questionnaires' section structure exactly."""
+    CULTURAL_RITUAL = "cultural_ritual", "عقیدتی و مناسکی"
+    VALUES_PROFESSIONAL = "values_professional", "ارزش‌های بنیادین و مرزهای حرفه‌ای"
+    LIFESTYLE = "lifestyle", "سبک زندگی و شرایط محیطی"
+    CULTURAL_FLEXIBILITY = "cultural_flexibility", "متاانعطاف‌پذیری و هوش فرهنگی"
+
+
+class MatchingProfileSide(models.TextChoices):
+    PATIENT = "patient", "بیمار"
+    CAREGIVER = "caregiver", "مراقب"
+
+
+class QuestionTraitMapping(models.Model):
+    """
+    The configurable Mapping Table the spec requires — a real database
+    table, not hardcoded Python, specifically so it can be tuned later
+    (per the source spec: once real usage data exists, weights and
+    mappings get refined with AHP, replacing these initial values
+    without a code deploy). An answer is never scored directly; it's
+    looked up here to find which trait(s) it represents and at what
+    strength.
+
+    question_field holds the actual model field name from either
+    questionnaire (e.g. "religious_belief_accommodation" for the
+    caregiver's Q1, or "religious_beliefs_priority" for the patient's
+    corresponding question) — so a mapping row is only ever meaningful
+    together with profile_type, not on its own.
+    """
+    profile_type = models.CharField(max_length=10, choices=MatchingProfileSide.choices, verbose_name="نوع پروفایل")
+    question_field = models.CharField(max_length=100, verbose_name="فیلد سؤال")
+    answer_option = models.CharField(max_length=30, verbose_name="گزینه پاسخ")
+    trait = models.CharField(max_length=50, choices=TraitName.choices, verbose_name="ویژگی")
+    value = models.PositiveSmallIntegerField(verbose_name="مقدار (۰ تا ۱۰۰)")
+
+    class Meta:
+        unique_together = ("profile_type", "question_field", "answer_option", "trait")
+        verbose_name = "نگاشت سؤال به ویژگی"
+        verbose_name_plural = "نگاشت‌های سؤال به ویژگی"
+
+    def __str__(self):
+        return f"{self.profile_type}/{self.question_field}={self.answer_option} -> {self.trait}={self.value}"
