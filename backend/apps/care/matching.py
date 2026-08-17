@@ -138,6 +138,15 @@ def suggest_caregivers_for_patient(patient, limit: int = 10) -> list[dict]:
         # opaque combined score to make that judgment call for them.
         review_stats = CaregiverReview.objects.filter(caregiver=caregiver).aggregate(avg=Avg("rating"), count=Count("id"))
         questionnaire = getattr(caregiver, "compatibility_questionnaire", None)
+        # Informational, not a filter or a score deduction — a
+        # caregiver already caring for several patients isn't
+        # necessarily a worse choice (that depends on real-world
+        # capacity this system has no way to know), but a supervisor
+        # comparing two similarly-scored caregivers should be able to
+        # see that one of them is already stretched across five active
+        # patients and the other has none, rather than have that
+        # entirely invisible.
+        active_patient_count = caregiver.assignments.filter(status=AssignmentStatus.ACTIVE).count()
         results.append({
             "caregiver_user_id": caregiver.user_id,
             "caregiver_name": (identity.full_name if identity else None) or caregiver.user.username,
@@ -148,6 +157,7 @@ def suggest_caregivers_for_patient(patient, limit: int = 10) -> list[dict]:
             "review_count": review_stats["count"],
             "flexibility_score": questionnaire.overall_flexibility_score() if questionnaire else None,
             "flexibility_sections": questionnaire.section_scores() if questionnaire else None,
+            "active_patient_count": active_patient_count,
         })
 
     results.sort(key=lambda r: r["score"], reverse=True)

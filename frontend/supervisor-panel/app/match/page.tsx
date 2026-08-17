@@ -139,6 +139,7 @@ export default function MatchPage() {
                               امتیاز تناسب: {s.score} از ۱۰۰
                               {s.avg_rating !== null && <span> · {"★".repeat(Math.round(s.avg_rating))}{"☆".repeat(5 - Math.round(s.avg_rating))} ({s.avg_rating} از {s.review_count} نظر)</span>}
                               {s.flexibility_score !== null && <span> · انعطاف‌پذیری: {s.flexibility_score}٪</span>}
+                              <span> · {s.active_patient_count > 0 ? `در حال حاضر ${s.active_patient_count} بیمار دیگر` : "بدون بیمار دیگر"}</span>
                             </p>
                           </div>
                         </div>

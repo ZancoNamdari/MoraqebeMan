@@ -30,6 +30,7 @@ export interface CaregiverSuggestion {
   review_count: number
   flexibility_score: number | null
   flexibility_sections: Record<string, number> | null
+  active_patient_count: number
 }
 
 export const matchingService = {

@@ -450,3 +450,58 @@ class MatchingIncludesSectionBreakdownTests(TestCase):
         response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={self.patient.access_code}")
         match = next(s for s in response.data["suggestions"] if s["caregiver_user_id"] == bare_user.id)
         self.assertIsNone(match["flexibility_sections"])
+
+
+class MatchingIncludesCapacitySignalTests(TestCase):
+    """Suggestions surface how many OTHER patients a caregiver is
+    already actively caring for — informational, not a filter or a
+    score deduction, since real-world capacity isn't something this
+    system can judge on its own. A supervisor comparing two similarly-
+    scored caregivers should be able to see that one is already
+    stretched across several patients and the other has none."""
+
+    def setUp(self):
+        from apps.caregivers.models import CaregiverStatus
+
+        self.supervisor = _make_user("sup_capacity", UserRole.SUPERUSER, "09100000220")
+        self.sup_client = _client_for(self.supervisor)
+        self.caregiver_user = _make_user("cg_capacity", UserRole.CAREGIVER, "09121125001")
+        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user, status=CaregiverStatus.APPROVED)
+
+    def test_zero_active_patients_shows_zero(self):
+        patient = PatientProfile.objects.create(full_name="بیمار ظرفیت یک")
+        response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={patient.access_code}")
+        match = next(s for s in response.data["suggestions"] if s["caregiver_user_id"] == self.caregiver_user.id)
+        self.assertEqual(match["active_patient_count"], 0)
+
+    def test_count_reflects_active_assignments_to_other_patients(self):
+        for i in range(3):
+            other_patient = PatientProfile.objects.create(full_name=f"بیمار دیگر {i}")
+            CaregiverAssignment.objects.create(caregiver=self.caregiver, patient=other_patient, assigned_by=self.supervisor)
+
+        target_patient = PatientProfile.objects.create(full_name="بیمار هدف")
+        response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={target_patient.access_code}")
+        match = next(s for s in response.data["suggestions"] if s["caregiver_user_id"] == self.caregiver_user.id)
+        self.assertEqual(match["active_patient_count"], 3)
+
+    def test_ended_assignments_dont_count_toward_capacity(self):
+        other_patient = PatientProfile.objects.create(full_name="بیمار پایان‌یافته")
+        assignment = CaregiverAssignment.objects.create(caregiver=self.caregiver, patient=other_patient, assigned_by=self.supervisor)
+        assignment.end()
+
+        target_patient = PatientProfile.objects.create(full_name="بیمار هدف دو")
+        response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={target_patient.access_code}")
+        match = next(s for s in response.data["suggestions"] if s["caregiver_user_id"] == self.caregiver_user.id)
+        self.assertEqual(match["active_patient_count"], 0)
+
+    def test_high_capacity_does_not_exclude_or_reduce_fit_score(self):
+        # Informational only — a busy caregiver isn't filtered out or
+        # penalized in the numeric score just for having other patients.
+        for i in range(5):
+            other_patient = PatientProfile.objects.create(full_name=f"بیمار شلوغ {i}")
+            CaregiverAssignment.objects.create(caregiver=self.caregiver, patient=other_patient, assigned_by=self.supervisor)
+
+        target_patient = PatientProfile.objects.create(full_name="بیمار هدف سه")
+        response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={target_patient.access_code}")
+        suggested_ids = [s["caregiver_user_id"] for s in response.data["suggestions"]]
+        self.assertIn(self.caregiver_user.id, suggested_ids)
