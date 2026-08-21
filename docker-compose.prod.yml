@@ -1,0 +1,143 @@
+# پیکربندی پروداکشن — همه سرویس‌ها روی یک سرور (VPS) از طریق یک
+# nginx مشترک. برخلاف docker-compose.yml (که برای توسعه محلی است و
+# سورس بک‌اند را mount می‌کند و از manage.py runserver استفاده
+# می‌کند)، این فایل از gunicorn واقعی و ایمیج‌های build‌شده استفاده
+# می‌کند — چیزی که واقعاً باید اجرا شود، نه یک نسخه توسعه.
+#
+# اجرا:
+#   cp backend/.env.example backend/.env   # و مقادیر واقعی را پر کنید
+#   docker compose -f docker-compose.prod.yml --env-file backend/.env up -d --build
+
+x-django-env: &django-env
+  DJANGO_ENV: production
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?"DJANGO_SECRET_KEY باید در .env تنظیم شود"}
+  JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?"JWT_SIGNING_KEY باید در .env تنظیم شود"}
+  ALLOWED_HOSTS: ${ALLOWED_HOSTS:?"ALLOWED_HOSTS باید در .env تنظیم شود"}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?"CORS_ALLOWED_ORIGINS باید در .env تنظیم شود"}
+  DATABASE_URL: postgres://${POSTGRES_USER:-moraqebeman_user}:${POSTGRES_PASSWORD:?"POSTGRES_PASSWORD باید در .env تنظیم شود"}@postgres:5432/${POSTGRES_DB:-moraqebeman_db}
+  REDIS_URL: redis://redis:6379/0
+  KAVENEGAR_API_KEY: ${KAVENEGAR_API_KEY:-}
+  KAVENEGAR_OTP_TEMPLATE: ${KAVENEGAR_OTP_TEMPLATE:-verify}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-moraqebeman_db}
+      POSTGRES_USER: ${POSTGRES_USER:-moraqebeman_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?"POSTGRES_PASSWORD باید در .env تنظیم شود"}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moraqebeman_user} -d ${POSTGRES_DB:-moraqebeman_db}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # بدون ports: — پستگرس نباید مستقیماً از بیرون قابل دسترس باشد؛
+    # فقط سرویس‌های داخل همین شبکه (backend، worker) به آن وصل می‌شوند.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    # بدون override برای command — از CMD واقعی Dockerfile استفاده
+    # می‌شود: gunicorn، نه manage.py runserver.
+    environment:
+      <<: *django-env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  backend_worker:
+    build: ./backend
+    restart: unless-stopped
+    command: celery -A config worker -l info
+    environment:
+      <<: *django-env
+      RUN_MIGRATIONS: "0"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  landing_page:
+    build:
+      context: ./frontend/landing-page
+      args:
+        NEXT_PUBLIC_FAMILY_PANEL_URL: ${FAMILY_PANEL_URL}
+        NEXT_PUBLIC_PATIENT_PANEL_URL: ${PATIENT_PANEL_URL}
+        NEXT_PUBLIC_CAREGIVER_PANEL_URL: ${CAREGIVER_PANEL_URL}
+        NEXT_PUBLIC_SUPERVISOR_PANEL_URL: ${SUPERVISOR_PANEL_URL}
+    restart: unless-stopped
+
+  family_panel:
+    build:
+      context: ./frontend/family-panel
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  patient_panel:
+    build:
+      context: ./frontend/patient-panel
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  caregiver_panel:
+    build:
+      context: ./frontend/caregiver-panel
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  supervisor_panel:
+    build:
+      context: ./frontend/supervisor-panel
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      # HTTPS اضافه می‌شود بعد از راه‌اندازی گواهی — بخش SSL در
+      # docs/DEPLOYMENT.md را ببینید.
+    volumes:
+      - ./gateway/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - landing_page
+      - family_panel
+      - patient_panel
+      - caregiver_panel
+      - supervisor_panel
+
+volumes:
+  pg_data:
