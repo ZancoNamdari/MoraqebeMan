@@ -4,56 +4,51 @@ import math
 from typing import Sequence
 
 
-def _euclidean_distance(
-    values: Sequence[float],
-) -> float:
-
-    return math.sqrt(
-        sum(
-            value ** 2
-            for value in values
-        )
-    )
-
-
 def normalize_matrix(
     matrix: list[list[float]],
 ) -> list[list[float]]:
     """
-    Vector normalization used by TOPSIS.
+    TOPSIS vector normalization.
+
+    r_ij = x_ij / sqrt(sum(x_ij²))
     """
 
     if not matrix:
         return []
 
-    columns = len(matrix[0])
+    column_count = len(matrix[0])
 
-    denominators = []
-
-    for column in range(columns):
-        denominator = _euclidean_distance(
-            row[column]
-            for row in matrix
+    if any(
+        len(row) != column_count
+        for row in matrix
+    ):
+        raise ValueError(
+            "All TOPSIS rows must have equal length."
         )
 
-        denominators.append(
-            denominator
+    normalized = [
+        [0.0] * column_count
+        for _ in matrix
+    ]
+
+    for column in range(column_count):
+
+        denominator = math.sqrt(
+            sum(
+                row[column] ** 2
+                for row in matrix
+            )
         )
 
-    normalized = []
+        for row_index in range(len(matrix)):
 
-    for row in matrix:
-        normalized.append(
-            [
-                (
-                    row[column]
-                    / denominators[column]
-                    if denominators[column] != 0
-                    else 0
+            if denominator == 0:
+                normalized[row_index][column] = 0.0
+            else:
+                normalized[row_index][column] = (
+                    matrix[row_index][column]
+                    / denominator
                 )
-                for column in range(columns)
-            ]
-        )
 
     return normalized
 
@@ -62,13 +57,26 @@ def apply_weights(
     normalized_matrix: list[list[float]],
     weights: Sequence[float],
 ) -> list[list[float]]:
+    """Apply AHP weights to normalized TOPSIS values."""
 
     if not normalized_matrix:
         return []
 
-    if len(normalized_matrix[0]) != len(weights):
+    criterion_count = len(
+        normalized_matrix[0]
+    )
+
+    if len(weights) != criterion_count:
         raise ValueError(
-            "Number of weights must equal number of criteria."
+            "Weights count must equal criterion count."
+        )
+
+    if any(
+        weight < 0
+        for weight in weights
+    ):
+        raise ValueError(
+            "Weights cannot be negative."
         )
 
     return [
@@ -86,15 +94,12 @@ def calculate_topsis(
     benefit_criteria: Sequence[bool],
 ) -> list[float]:
     """
-    Calculate TOPSIS closeness coefficients.
+    Calculate TOPSIS closeness coefficient.
 
-    benefit_criteria:
-        True  → higher is better
-        False → lower is better
+    True  = benefit criterion (higher is better)
+    False = cost criterion (lower is better)
 
-    Returns:
-        One score between 0 and 1 per candidate.
-        Higher is better.
+    Returns scores between 0 and 1.
     """
 
     if not matrix:
@@ -104,34 +109,30 @@ def calculate_topsis(
 
     if len(weights) != criterion_count:
         raise ValueError(
-            "Weights count does not match criteria count."
+            "Weights count must equal criterion count."
         )
 
     if len(benefit_criteria) != criterion_count:
         raise ValueError(
-            "Benefit/cost flags count does not match criteria count."
+            "Benefit flags count must equal criterion count."
         )
 
-    # ---------------------------------------------------------------
-    # 1. Normalize
-    # ---------------------------------------------------------------
+    if any(
+        len(row) != criterion_count
+        for row in matrix
+    ):
+        raise ValueError(
+            "All TOPSIS rows must have equal length."
+        )
 
     normalized = normalize_matrix(
         matrix
     )
 
-    # ---------------------------------------------------------------
-    # 2. Apply weights
-    # ---------------------------------------------------------------
-
     weighted = apply_weights(
         normalized,
         weights,
     )
-
-    # ---------------------------------------------------------------
-    # 3. Positive / negative ideal solutions
-    # ---------------------------------------------------------------
 
     positive_ideal = []
     negative_ideal = []
@@ -144,23 +145,24 @@ def calculate_topsis(
         ]
 
         if benefit_criteria[column]:
+
             positive_ideal.append(
-                max(values)
-            )
-            negative_ideal.append(
-                min(values)
-            )
-        else:
-            positive_ideal.append(
-                min(values)
-            )
-            negative_ideal.append(
                 max(values)
             )
 
-    # ---------------------------------------------------------------
-    # 4. Distance from ideals
-    # ---------------------------------------------------------------
+            negative_ideal.append(
+                min(values)
+            )
+
+        else:
+
+            positive_ideal.append(
+                min(values)
+            )
+
+            negative_ideal.append(
+                max(values)
+            )
 
     scores = []
 
@@ -172,9 +174,7 @@ def calculate_topsis(
                     row[column]
                     - positive_ideal[column]
                 ) ** 2
-                for column in range(
-                    criterion_count
-                )
+                for column in range(criterion_count)
             )
         )
 
@@ -184,9 +184,7 @@ def calculate_topsis(
                     row[column]
                     - negative_ideal[column]
                 ) ** 2
-                for column in range(
-                    criterion_count
-                )
+                for column in range(criterion_count)
             )
         )
 
@@ -203,6 +201,8 @@ def calculate_topsis(
                 / denominator
             )
 
-        scores.append(score)
+        scores.append(
+            round(score, 6)
+        )
 
     return scores

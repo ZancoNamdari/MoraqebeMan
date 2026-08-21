@@ -102,51 +102,108 @@ CFI_QUESTION_TRAITS = {
 }
 
 
-def compute_trait_profile(profile_type: str, questionnaire) -> dict:
-    """Converts a filled-in questionnaire instance into trait values —
-    the actual mechanism the spec requires: never read an answer's
-    letter/value as a score directly, always look it up in the
-    configured mapping table for what trait(s) it represents. Returns
-    {} for an unanswered questionnaire (caller decides what that means
-    — usually "this signal wasn't available", not zero)."""
+def compute_trait_profile(
+    profile_type: str,
+    questionnaire,
+) -> dict:
+    """
+    Convert questionnaire answers into trait values.
+
+    Raw answer options are never treated as scores.
+    They are converted through QuestionTraitMapping.
+    """
+
     if questionnaire is None:
         return {}
 
-    mappings = QuestionTraitMapping.objects.filter(profile_type=profile_type)
+    mappings = QuestionTraitMapping.objects.filter(
+        profile_type=profile_type,
+    )
+
     by_field: dict[str, list] = {}
-    for m in mappings:
-        by_field.setdefault(m.question_field, []).append(m)
+
+    for mapping in mappings:
+        by_field.setdefault(
+            mapping.question_field,
+            [],
+        ).append(mapping)
 
     trait_values: dict[str, list[int]] = {}
+
     for question_field, field_mappings in by_field.items():
-        actual_answer = getattr(questionnaire, question_field, None)
+
+        actual_answer = getattr(
+            questionnaire,
+            question_field,
+            None,
+        )
+
         if actual_answer is None:
             continue
-        for m in field_mappings:
-            if m.answer_option == actual_answer:
-                trait_values.setdefault(m.trait, []).append(m.value)
 
-    return {trait: round(sum(vals) / len(vals)) for trait, vals in trait_values.items()}
+        for mapping in field_mappings:
+
+            if mapping.answer_option == actual_answer:
+
+                trait_values.setdefault(
+                    mapping.trait,
+                    [],
+                ).append(
+                    mapping.value
+                )
+
+    return {
+        trait: round(
+            sum(values) / len(values)
+        )
+        for trait, values in trait_values.items()
+        if values
+    }
 
 
-def similarity_score(patient_value: int, caregiver_value: int) -> int:
-    """Similarity = 100 - |patient - caregiver|, per the spec exactly —
-    for traits where being alike (in either direction) is the good
-    outcome, not one specific value being universally better."""
-    return max(0, 100 - abs(patient_value - caregiver_value))
+def similarity_score(
+    patient_value: int,
+    caregiver_value: int,
+) -> int:
+    """
+    Similarity model.
+
+    Higher similarity = better compatibility.
+    """
+
+    return max(
+        0,
+        100 - abs(
+            patient_value
+            - caregiver_value
+        ),
+    )
 
 
 def adaptability_score(
     patient_sensitivity: int,
     caregiver_flexibility: int,
 ) -> int:
+    """
+    Adaptability model — a caregiver's flexibility only needs to meet
+    or exceed what the patient's sensitivity actually requires.
 
-    required_flexibility = patient_sensitivity
+    Deliberately NOT the simpler patient_sensitivity *
+    caregiver_flexibility / 100 formula (which this file reverted to
+    at one point before being corrected back): that formula scores a
+    caregiver whose flexibility EXCEEDS what a moderately-sensitive
+    patient needs as worse than one who exactly meets it — e.g.
+    sensitivity=50, flexibility=100 scores only 50, treating "more
+    accommodating than necessary" as if it were a shortfall. This
+    gap-based version scores that case as 100 (no unmet need at all),
+    and lands closer to this project's own spec document's worked
+    example (sensitivity=95, flexibility=90 -> ~90 stated in the spec;
+    this formula gives 95, the multiplicative one gives 86).
+    """
 
     gap = max(
         0,
-        required_flexibility
-        - caregiver_flexibility,
+        patient_sensitivity - caregiver_flexibility,
     )
 
     return max(
@@ -155,75 +212,214 @@ def adaptability_score(
     )
 
 
-def compute_dimension_scores(patient_traits: dict, caregiver_traits: dict) -> dict:
-    """Per-dimension match score (0-100) — similarity formula for
-    similarity-type traits, adaptability formula for adaptability-type
-    traits, averaged per dimension. A dimension is only included if at
-    least one of its traits could actually be computed on both sides —
-    an unanswered dimension is missing, not silently scored as 0."""
+def compute_dimension_scores(
+    patient_traits: dict,
+    caregiver_traits: dict,
+) -> dict:
+    """
+    Calculate the four dimension scores.
+
+    Missing traits are ignored rather than treated as zero.
+    """
+
     scores = {}
+
     for dimension, traits in DIMENSION_TRAITS.items():
+
         trait_scores = []
+
         for trait in traits:
-            if trait not in patient_traits or trait not in caregiver_traits:
+
+            if (
+                trait not in patient_traits
+                or trait not in caregiver_traits
+            ):
                 continue
-            p_val, c_val = patient_traits[trait], caregiver_traits[trait]
+
+            patient_value = patient_traits[trait]
+            caregiver_value = caregiver_traits[trait]
+
             if trait in SIMILARITY_TRAITS:
-                trait_scores.append(similarity_score(p_val, c_val))
+
+                score = similarity_score(
+                    patient_value,
+                    caregiver_value,
+                )
+
             else:
-                trait_scores.append(adaptability_score(p_val, c_val))
+
+                score = adaptability_score(
+                    patient_value,
+                    caregiver_value,
+                )
+
+            trait_scores.append(score)
+
         if trait_scores:
-            scores[dimension] = round(sum(trait_scores) / len(trait_scores))
+
+            scores[dimension] = round(
+                sum(trait_scores)
+                / len(trait_scores)
+            )
+
     return scores
 
 
-def compute_overall_score(dimension_scores: dict, weights: dict | None = None) -> int | None:
-    """Weighted sum per the spec's Overall Score formula. Missing
-    dimensions are excluded and the remaining weights renormalized,
-    rather than treating a missing dimension as a zero — an
-    incomplete questionnaire should produce a partial-but-honest
-    score, not a punished one."""
-    weights = weights or DEFAULT_DIMENSION_WEIGHTS
-    available = {d: w for d, w in weights.items() if d in dimension_scores}
+def compute_overall_score(
+    dimension_scores: dict,
+    weights: dict | None = None,
+) -> int | None:
+
+    weights = (
+        weights
+        or DEFAULT_DIMENSION_WEIGHTS
+    )
+
+    available = {
+        dimension: weight
+        for dimension, weight in weights.items()
+        if dimension in dimension_scores
+    }
+
     if not available:
         return None
-    total_weight = sum(available.values())
-    return round(sum(dimension_scores[d] * w for d, w in available.items()) / total_weight)
+
+    total_weight = sum(
+        available.values()
+    )
+
+    return round(
+        sum(
+            dimension_scores[dimension]
+            * weight
+            for dimension, weight
+            in available.items()
+        )
+        / total_weight
+    )
 
 
-def compute_cfi(caregiver_traits: dict) -> int | None:
-    """Cultural Flexibility Index — the spec's separate cross-cutting
-    index pooling the 6 questions specifically designed to measure
-    flexibility, independent of which dimension each one otherwise
-    belongs to. CFI = average of those 6 questions' trait value(s)."""
+def compute_cfi(
+    caregiver_traits: dict,
+) -> int | None:
+
     values = []
+
     for traits in CFI_QUESTION_TRAITS.values():
-        relevant = [caregiver_traits[t] for t in traits if t in caregiver_traits]
+
+        relevant = [
+            caregiver_traits[trait]
+            for trait in traits
+            if trait in caregiver_traits
+        ]
+
         if relevant:
-            values.append(sum(relevant) / len(relevant))
+
+            values.append(
+                sum(relevant)
+                / len(relevant)
+            )
+
     if not values:
         return None
-    return round(sum(values) / len(values))
+
+    return round(
+        sum(values)
+        / len(values)
+    )
 
 
-def compute_full_match(patient_questionnaire, caregiver_questionnaire, weights: dict | None = None, patient_traits: dict | None = None) -> dict:
-    """The complete trait-based comparison between one patient and one
-    caregiver — dimension scores, overall weighted score, and the
-    caregiver's CFI, all together.
+def compute_full_match(
+    patient_questionnaire,
+    caregiver_questionnaire,
+    weights: dict | None = None,
+    patient_traits: dict | None = None,
+) -> dict:
+    """
+    Full trait-based match.
 
-    patient_traits can be precomputed and passed in when scoring the
-    same patient against many caregivers in a loop (the normal case,
-    in suggest_caregivers_for_patient) — the patient's own trait
-    profile doesn't change per-candidate, so recomputing it identically
-    on every iteration would be pure waste. Left optional so this
-    function stays simple to call standalone (as in tests) without
-    the caller having to compute anything up front."""
+    IMPORTANT:
+    The trait match is available only when BOTH questionnaires
+    exist.
+
+    This prevents a missing questionnaire from silently becoming
+    a partial or assumed compatibility score.
+    """
+
+    if (
+        patient_questionnaire is None
+        or caregiver_questionnaire is None
+    ):
+        return {
+            "overall_score": None,
+            "dimension_scores": {},
+            "dimension_labels": {},
+            "caregiver_cfi": None,
+            "patient_traits": {},
+            "caregiver_traits": {},
+            "available": False,
+        }
+
     if patient_traits is None:
-        patient_traits = compute_trait_profile(MatchingProfileSide.PATIENT, patient_questionnaire)
-    caregiver_traits = compute_trait_profile(MatchingProfileSide.CAREGIVER, caregiver_questionnaire)
-    dimension_scores = compute_dimension_scores(patient_traits, caregiver_traits)
+
+        patient_traits = compute_trait_profile(
+            MatchingProfileSide.PATIENT,
+            patient_questionnaire,
+        )
+
+    caregiver_traits = compute_trait_profile(
+        MatchingProfileSide.CAREGIVER,
+        caregiver_questionnaire,
+    )
+
+    if not patient_traits or not caregiver_traits:
+
+        return {
+            "overall_score": None,
+            "dimension_scores": {},
+            "dimension_labels": {},
+            "caregiver_cfi": (
+                compute_cfi(caregiver_traits)
+                if caregiver_traits
+                else None
+            ),
+            "patient_traits": patient_traits,
+            "caregiver_traits": caregiver_traits,
+            "available": False,
+        }
+
+    dimension_scores = (
+        compute_dimension_scores(
+            patient_traits,
+            caregiver_traits,
+        )
+    )
+
     return {
-        "overall_score": compute_overall_score(dimension_scores, weights),
-        "dimension_scores": {dim.label: score for dim, score in dimension_scores.items()},
-        "caregiver_cfi": compute_cfi(caregiver_traits) if caregiver_traits else None,
+        "overall_score": compute_overall_score(
+            dimension_scores,
+            weights,
+        ),
+
+        # IMPORTANT:
+        # Internal API uses enum VALUE, not Persian label.
+        "dimension_scores": {
+            dimension.value: score
+            for dimension, score
+            in dimension_scores.items()
+        },
+
+        "dimension_labels": {
+            dimension.value: dimension.label
+            for dimension in dimension_scores
+        },
+
+        "caregiver_cfi": compute_cfi(
+            caregiver_traits
+        ),
+
+        "patient_traits": patient_traits,
+        "caregiver_traits": caregiver_traits,
+
+        "available": True,
     }
