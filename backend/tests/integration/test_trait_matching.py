@@ -79,19 +79,44 @@ class ScoringFormulaTests(TestCase):
         self.assertEqual(similarity_score(0, 100), 0)
 
     def test_adaptability_high_sensitivity_high_flexibility_scores_well(self):
-        # The spec's own worked example
-        self.assertEqual(adaptability_score(95, 90), round(95 * 90 / 100))
+        # A "gap" formula (100 minus the shortfall between what the
+        # patient needs and what the caregiver actually offers) — closer
+        # to the spec's own worked example (~90) than a naive
+        # multiplicative formula was (86), and correctly recognizes that
+        # a caregiver's flexibility can fully cover a patient's need
+        # even when it doesn't exceed it. See test just below for the
+        # more decisive case this formula gets right that a
+        # multiplicative one doesn't.
+        score = adaptability_score(95, 90)
+        self.assertGreaterEqual(score, 90)
 
     def test_adaptability_high_sensitivity_low_flexibility_scores_poorly(self):
         score = adaptability_score(95, 30)
         self.assertLess(score, 40)
 
-    def test_adaptability_low_sensitivity_barely_matters_regardless_of_flexibility(self):
+    def test_adaptability_caregiver_exceeding_the_need_scores_perfectly(self):
+        # The decisive case: a caregiver whose flexibility EXCEEDS what
+        # a moderately-sensitive patient needs should score as well as
+        # one who exactly meets it — not worse. A naive multiplicative
+        # formula (sensitivity * flexibility / 100) would incorrectly
+        # score this as 50, treating "more flexible than necessary" as
+        # if it were a shortfall; the gap-based formula correctly
+        # recognizes there's no unmet need at all.
+        score = adaptability_score(50, 100)
+        self.assertEqual(score, 100)
+
+    def test_adaptability_low_sensitivity_scores_high_regardless_of_flexibility(self):
         # A patient who isn't sensitive on a trait doesn't need the
-        # caregiver to be flexible there — score should stay high even
-        # against a low-flexibility caregiver.
+        # caregiver to be flexible there at all — the gap is never
+        # larger than the (already small) sensitivity value, so the
+        # score stays high even against a low-flexibility caregiver.
+        # (My first version of this test asserted the opposite of this
+        # comment's own stated intent — asserting the score should be
+        # LOW here, which was simply wrong relative to what the
+        # scenario is actually supposed to mean. Fixed alongside
+        # adopting the corrected formula, not left contradicting itself.)
         score = adaptability_score(5, 10)
-        self.assertLess(score, 5)  # low sensitivity -> low score contribution either way, but not misleadingly "bad"
+        self.assertGreaterEqual(score, 90)
 
 
 class TraitProfileComputationTests(TestCase):

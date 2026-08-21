@@ -272,7 +272,7 @@ class CaregiverSuggestionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         best = response.data["suggestions"][0]
         self.assertLess(best["score"], 100)  # can't get full marks without an age match
-        self.assertIn("تاریخ تولد بیمار ثبت نشده", " ".join(best["reasons"]))
+        self.assertIn("تاریخ تولد بیمار ثبت نشده", " ".join(best["objective_fit_reasons"]))
 
 
 class CaregiverReviewTests(TestCase):

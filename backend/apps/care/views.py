@@ -8,6 +8,7 @@ from apps.families.models import FamilyPatientLink, LinkStatus, PatientProfile
 
 from .models import AssignmentStatus, CareLogEntry, CaregiverAssignment, CaregiverReview
 from .matching import suggest_caregivers_for_patient
+from .mcdm.ranking import rank_candidates_with_topsis
 from .permissions import IsAdminOrSuperuser, IsCaregiver, IsFamilyOrPatient
 from .serializers import (
     CareLogEntrySerializer,
@@ -182,12 +183,20 @@ class PatientCareTimelineView(APIView):
 class SuggestedCaregiversView(APIView):
     """
     GET /api/care/suggest-caregivers/?patient_code=ELD-XXXXXX
-    The first real use of the compatibility data captured on
-    PatientProfile and CaregiverWorkPreferences — a ranked list of
-    approved caregivers for a supervisor to consider when assigning,
-    instead of picking blind. Deliberately supervisor-only for now,
-    same reasoning as assignment itself: this suggests, a human still
-    decides.
+    A ranked list of approved caregivers for a supervisor to consider
+    when assigning, instead of picking blind. Deliberately supervisor-
+    only for now, same reasoning as assignment itself: this suggests,
+    a human still decides.
+
+    suggest_caregivers_for_patient() computes the underlying signals
+    (objective fit, trait compatibility, rating, capacity) and an
+    initial simple weighted ranking. rank_candidates_with_topsis()
+    then re-ranks the same candidates using a proper AHP-weighted
+    TOPSIS calculation across 7 criteria — the more academically
+    rigorous "Phase 4" the matching engine's docstring always
+    anticipated replacing the simple weighted average with. Every
+    original field is preserved; mcdm_score, ahp_weights, and ahp_
+    consistency_ratio are added, not substituted in place of anything.
     """
     permission_classes = [IsAdminOrSuperuser]
 
@@ -201,6 +210,7 @@ class SuggestedCaregiversView(APIView):
             return Response({"detail": "کد بیمار معتبر نیست."}, status=status.HTTP_404_NOT_FOUND)
 
         suggestions = suggest_caregivers_for_patient(patient)
+        suggestions = rank_candidates_with_topsis(suggestions)
         return Response({
             "patient_name": patient.full_name,
             "patient_gender": patient.gender,

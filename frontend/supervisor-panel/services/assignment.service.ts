@@ -24,13 +24,25 @@ export interface CaregiverSuggestion {
   caregiver_user_id: number
   caregiver_name: string
   caregiver_gender: string
-  score: number
-  reasons: string[]
-  avg_rating: number | null
-  review_count: number
+  eligible: boolean
+  rejection_reasons: string[]
+  objective_fit_score: number | null
+  objective_fit_criteria: { gender: number | null; age: number | null; location: number | null }
+  objective_fit_reasons: string[]
+  location_match_level: string
+  score: number | null
+  trait_match_score: number | null
+  trait_dimension_scores: Record<string, number>
+  caregiver_cfi: number | null
   flexibility_score: number | null
   flexibility_sections: Record<string, number> | null
+  avg_rating: number | null
+  review_count: number
   active_patient_count: number
+  ranking_score: number | null
+  mcdm_score: number | null
+  ahp_weights: Record<string, number> | null
+  ahp_consistency_ratio: number | null
 }
 
 export const matchingService = {

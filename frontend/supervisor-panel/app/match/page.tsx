@@ -136,9 +136,11 @@ export default function MatchPage() {
                           <div>
                             <p className="text-sm font-medium">{s.caregiver_name}</p>
                             <p className="text-xs text-muted-foreground">
-                              امتیاز تناسب: {s.score} از ۱۰۰
+                              {s.mcdm_score !== null && <span>امتیاز نهایی (AHP/TOPSIS): {s.mcdm_score.toFixed(1)} از ۱۰۰</span>}
+                              {s.objective_fit_score !== null && <span> · تناسب عینی: {s.objective_fit_score}</span>}
+                              {s.trait_match_score !== null && <span> · تناسب روان‌سنجی: {s.trait_match_score}</span>}
                               {s.avg_rating !== null && <span> · {"★".repeat(Math.round(s.avg_rating))}{"☆".repeat(5 - Math.round(s.avg_rating))} ({s.avg_rating} از {s.review_count} نظر)</span>}
-                              {s.flexibility_score !== null && <span> · انعطاف‌پذیری: {s.flexibility_score}٪</span>}
+                              {s.caregiver_cfi !== null && <span> · شاخص انعطاف‌پذیری فرهنگی: {s.caregiver_cfi}٪</span>}
                               <span> · {s.active_patient_count > 0 ? `در حال حاضر ${s.active_patient_count} بیمار دیگر` : "بدون بیمار دیگر"}</span>
                             </p>
                           </div>
@@ -156,12 +158,12 @@ export default function MatchPage() {
                         )}
                       </div>
                       <ul className="mt-2 space-y-1 border-t border-pink-100 pt-2">
-                        {s.reasons.map((reason, i) => (
+                        {s.objective_fit_reasons.map((reason, i) => (
                           <li key={i} className="text-xs text-muted-foreground">• {reason}</li>
                         ))}
                       </ul>
 
-                      {s.flexibility_sections && (
+                      {(s.flexibility_sections || Object.keys(s.trait_dimension_scores).length > 0) && (
                         <>
                           <button
                             className="mt-2 text-xs text-rose-600 hover:underline"
@@ -170,16 +172,32 @@ export default function MatchPage() {
                             {expandedId === s.caregiver_user_id ? "بستن جزئیات" : "نمایش جزئیات پرسشنامه سازگاری"}
                           </button>
                           {expandedId === s.caregiver_user_id && (
-                            <div className="mt-2 space-y-1 border-t border-pink-100 pt-2 text-xs">
-                              {Object.entries(s.flexibility_sections).map(([section, score]) => {
-                                const matchingAxis = Object.entries(PATIENT_AXIS_TO_CAREGIVER_SECTION).find(([, sec]) => sec === section)?.[0]
-                                return (
-                                  <div key={section} className="flex items-center justify-between">
-                                    <span>{section}{matchingAxis && <span className="text-muted-foreground"> (معادل «{matchingAxis}» بیمار)</span>}</span>
-                                    <span className="font-medium text-rose-700">{score}٪</span>
-                                  </div>
-                                )
-                              })}
+                            <div className="mt-2 space-y-3 border-t border-pink-100 pt-2 text-xs">
+                              {Object.keys(s.trait_dimension_scores).length > 0 && (
+                                <div>
+                                  <p className="mb-1 font-medium text-rose-800">تناسب روان‌سنجی (بر اساس هر دو پرسشنامه)</p>
+                                  {Object.entries(s.trait_dimension_scores).map(([dimension, score]) => (
+                                    <div key={dimension} className="flex items-center justify-between">
+                                      <span>{dimension}</span>
+                                      <span className="font-medium text-rose-700">{score}٪</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {s.flexibility_sections && (
+                                <div>
+                                  <p className="mb-1 font-medium text-rose-800">پرسشنامه مراقب به‌تفکیک بخش</p>
+                                  {Object.entries(s.flexibility_sections).map(([section, score]) => {
+                                    const matchingAxis = Object.entries(PATIENT_AXIS_TO_CAREGIVER_SECTION).find(([, sec]) => sec === section)?.[0]
+                                    return (
+                                      <div key={section} className="flex items-center justify-between">
+                                        <span>{section}{matchingAxis && <span className="text-muted-foreground"> (معادل «{matchingAxis}» بیمار)</span>}</span>
+                                        <span className="font-medium text-rose-700">{score}٪</span>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
                             </div>
                           )}
                         </>

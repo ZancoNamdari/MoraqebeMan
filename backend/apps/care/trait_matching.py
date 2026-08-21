@@ -136,17 +136,23 @@ def similarity_score(patient_value: int, caregiver_value: int) -> int:
     return max(0, 100 - abs(patient_value - caregiver_value))
 
 
-def adaptability_score(patient_sensitivity: int, caregiver_flexibility: int) -> int:
-    """For traits where the caregiver's own flexibility matters more
-    than matching the patient's value — a highly sensitive patient
-    paired with a highly flexible caregiver scores well regardless of
-    what the caregiver's own raw trait value would otherwise suggest; a
-    highly sensitive patient paired with an inflexible caregiver scores
-    poorly. A patient with LOW sensitivity on a trait barely needs
-    caregiver flexibility there at all, so the score stays high almost
-    regardless of the caregiver's own value — direct multiplication and
-    rescale captures exactly that relationship."""
-    return round(patient_sensitivity * caregiver_flexibility / 100)
+def adaptability_score(
+    patient_sensitivity: int,
+    caregiver_flexibility: int,
+) -> int:
+
+    required_flexibility = patient_sensitivity
+
+    gap = max(
+        0,
+        required_flexibility
+        - caregiver_flexibility,
+    )
+
+    return max(
+        0,
+        100 - gap,
+    )
 
 
 def compute_dimension_scores(patient_traits: dict, caregiver_traits: dict) -> dict:
