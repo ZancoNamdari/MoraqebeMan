@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { assignmentService, matchingService, type CaregiverSuggestion } from "@/services/assignment.service"
 import { patientAvatar, PATIENT_QUESTIONNAIRE_LABELS, PATIENT_AXIS_TO_CAREGIVER_SECTION } from "@/lib/constants"
 import { ROUTES } from "@/lib/routes"
+import { cn } from "@/lib/utils"
 
 export default function MatchPage() {
   const { user, loading: authLoading } = useAuth()
@@ -157,9 +158,31 @@ export default function MatchPage() {
                           </Button>
                         )}
                       </div>
+
+                      <div className="mt-2 flex items-center gap-2 border-t border-pink-100 pt-2">
+                        <span className="text-xs font-medium text-rose-800">{s.explanation.summary}</span>
+                        <span className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                          s.match_confidence === "high" && "bg-emerald-100 text-emerald-800",
+                          s.match_confidence === "medium" && "bg-amber-100 text-amber-800",
+                          s.match_confidence === "low" && "bg-gray-100 text-gray-600",
+                        )}>
+                          اطمینان {s.match_confidence === "high" ? "بالا" : s.match_confidence === "medium" ? "متوسط" : "کم"}
+                        </span>
+                      </div>
+                      {s.explanation.strengths.length > 0 && (
+                        <p className="mt-1 text-xs text-emerald-700">✓ {s.explanation.strengths.join(" · ")}</p>
+                      )}
+                      {s.explanation.weaknesses.length > 0 && (
+                        <p className="mt-1 text-xs text-amber-700">⚠ {s.explanation.weaknesses.join(" · ")}</p>
+                      )}
+
                       <ul className="mt-2 space-y-1 border-t border-pink-100 pt-2">
-                        {s.objective_fit_reasons.map((reason, i) => (
+                        {s.objective_reasons.map((reason, i) => (
                           <li key={i} className="text-xs text-muted-foreground">• {reason}</li>
+                        ))}
+                        {s.waterfall_reasons.map((reason, i) => (
+                          <li key={`w-${i}`} className="text-xs text-muted-foreground">• {reason}</li>
                         ))}
                       </ul>
 
@@ -176,9 +199,9 @@ export default function MatchPage() {
                               {Object.keys(s.trait_dimension_scores).length > 0 && (
                                 <div>
                                   <p className="mb-1 font-medium text-rose-800">تناسب روان‌سنجی (بر اساس هر دو پرسشنامه)</p>
-                                  {Object.entries(s.trait_dimension_scores).map(([dimension, score]) => (
-                                    <div key={dimension} className="flex items-center justify-between">
-                                      <span>{dimension}</span>
+                                  {Object.entries(s.trait_dimension_scores).map(([dimensionKey, score]) => (
+                                    <div key={dimensionKey} className="flex items-center justify-between">
+                                      <span>{s.trait_dimension_labels[dimensionKey] || dimensionKey}</span>
                                       <span className="font-medium text-rose-700">{score}٪</span>
                                     </div>
                                   ))}
