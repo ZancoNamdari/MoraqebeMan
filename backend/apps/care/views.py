@@ -6,7 +6,7 @@ from apps.audit.services import AuditService
 from apps.caregivers.models import CaregiverProfile
 from apps.families.models import FamilyPatientLink, LinkStatus, PatientProfile
 
-from .models import AssignmentStatus, CareLogEntry, CaregiverAssignment, CaregiverReview
+from .models import AssignmentStatus, CareLogEntry, CaregiverAssignment, CaregiverReview, MCDMWeightConfig
 from .matching import suggest_caregivers_for_patient
 from .permissions import IsAdminOrSuperuser, IsCaregiver, IsFamilyOrPatient
 from .serializers import (
@@ -16,6 +16,7 @@ from .serializers import (
     CreateAssignmentSerializer,
     CreateCareLogEntrySerializer,
     CreateReviewSerializer,
+    MCDMWeightConfigSerializer,
 )
 
 audit = AuditService()
@@ -283,3 +284,73 @@ class PatientQuestionnaireForMatchingView(APIView):
             return Response({"detail": "پرسشنامه این بیمار هنوز تکمیل نشده است."}, status=status.HTTP_404_NOT_FOUND)
 
         return Response(PatientCompatibilityQuestionnaireSerializer(questionnaire).data)
+
+
+class MCDMWeightConfigView(APIView):
+    """
+    GET/PUT /api/care/mcdm-weights/ — supervisor-facing view and edit
+    of the AHP pairwise comparison matrix that weights the final
+    matching ranking. The "later move this to database configuration"
+    the matching engine always anticipated (apps.care.matching.mcdm).
+
+    GET always returns something usable — either the currently active
+    config, or the hardcoded default if nobody has ever set one —
+    together with the resulting computed weights and consistency
+    ratio, so a supervisor can see exactly what's in effect before
+    changing anything.
+
+    PUT validates AHP consistency (CR < 0.10, the conventional
+    acceptability threshold) and REJECTS an inconsistent matrix rather
+    than silently saving it — the entire point of AHP is enforcing
+    that pairwise judgments don't contradict each other; saving a
+    matrix that fails that check would produce a ranking nobody could
+    actually trust or explain.
+    """
+    permission_classes = [IsAdminOrSuperuser]
+
+    def get(self, request):
+        from apps.care.matching.mcdm import get_active_ahp_config
+
+        weights, consistency_ratio, matrix = get_active_ahp_config()
+        active_config = MCDMWeightConfig.objects.filter(is_active=True).first()
+        return Response({
+            "pairwise_matrix": matrix,
+            "weights": weights,
+            "consistency_ratio": consistency_ratio,
+            "is_default": active_config is None,
+            "updated_at": active_config.updated_at if active_config else None,
+        })
+
+    def put(self, request):
+        from apps.care.matching.ahp import ahp_consistency_ratio, calculate_ahp_weights
+        from apps.care.matching.mcdm import CRITERIA
+
+        serializer = MCDMWeightConfigSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        matrix = serializer.validated_data["pairwise_matrix"]
+
+        try:
+            consistency_ratio = ahp_consistency_ratio(matrix)
+        except (ValueError, ZeroDivisionError):
+            return Response({"detail": "محاسبه نسبت سازگاری ممکن نشد — ماتریس را بررسی کنید."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if consistency_ratio >= 0.10:
+            return Response({
+                "detail": f"ماتریس ناسازگار است (نسبت سازگاری {consistency_ratio:.3f} — باید کمتر از ۰.۱۰ باشد). قضاوت‌های زوجی را بازبینی کنید.",
+                "consistency_ratio": consistency_ratio,
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        weights = calculate_ahp_weights(criteria=CRITERIA, pairwise_matrix=matrix)
+
+        config = MCDMWeightConfig.objects.create(
+            pairwise_matrix=matrix, is_active=True, updated_by=request.user,
+        )
+        audit.mcdm_weights_updated(request.user.id, consistency_ratio)
+
+        return Response({
+            "pairwise_matrix": config.pairwise_matrix,
+            "weights": weights,
+            "consistency_ratio": consistency_ratio,
+            "is_default": False,
+            "updated_at": config.updated_at,
+        }, status=status.HTTP_201_CREATED)

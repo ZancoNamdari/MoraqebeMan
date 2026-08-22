@@ -106,3 +106,29 @@ class CaregiverReviewSerializer(serializers.ModelSerializer):
 class CreateReviewSerializer(serializers.Serializer):
     rating = serializers.IntegerField(min_value=1, max_value=5)
     comment = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class MCDMWeightConfigSerializer(serializers.Serializer):
+    """
+    Validates the shape (6x6, all positive) before the matrix ever
+    reaches the AHP math — a malformed matrix should be rejected with
+    a clear message here, not surface as a confusing crash deep inside
+    calculate_ahp_weights.
+    """
+    pairwise_matrix = serializers.ListField(
+        child=serializers.ListField(child=serializers.FloatField(min_value=0.001)),
+    )
+
+    def validate_pairwise_matrix(self, value):
+        from apps.care.matching.mcdm import CRITERIA
+
+        n = len(CRITERIA)
+        if len(value) != n:
+            raise serializers.ValidationError(f"ماتریس باید {n}×{n} باشد — تعداد سطرها نادرست است.")
+        for row in value:
+            if len(row) != n:
+                raise serializers.ValidationError(f"ماتریس باید {n}×{n} باشد — تعداد ستون‌ها نادرست است.")
+        for i in range(n):
+            if abs(value[i][i] - 1.0) > 1e-9:
+                raise serializers.ValidationError("مقادیر روی قطر اصلی باید همیشه ۱ باشند.")
+        return value

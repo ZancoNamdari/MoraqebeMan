@@ -25,6 +25,7 @@ class AuditEventType(models.TextChoices):
     CAREGIVER_ASSIGNMENT_ENDED = "caregiver_assignment_ended", "پایان تخصیص مراقب"
     CARE_LOG_ENTRY_CREATED = "care_log_entry_created", "ثبت گزارش مراقبت"
     CAREGIVER_REVIEWED = "caregiver_reviewed", "ثبت نظر درباره مراقب"
+    MCDM_WEIGHTS_UPDATED = "mcdm_weights_updated", "به‌روزرسانی وزن‌های تطابق"
 
 
 class AuditLog(models.Model):

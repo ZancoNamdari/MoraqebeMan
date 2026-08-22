@@ -205,3 +205,41 @@ class QuestionTraitMapping(models.Model):
 
     def __str__(self):
         return f"{self.profile_type}/{self.question_field}={self.answer_option} -> {self.trait}={self.value}"
+
+
+class MCDMWeightConfig(models.Model):
+    """
+    The AHP pairwise comparison matrix used to weight the final
+    ranking (apps.care.matching.mcdm) — stored so it can be tuned
+    without a code deploy, exactly what mcdm.py's own comment
+    anticipated ("Later move this to database configuration").
+
+    Only one row is ever active at a time — saving a new active
+    config automatically deactivates any previous one, so there's
+    never ambiguity about which matrix is actually in effect.
+    Inactive rows are kept as history, not deleted, so a bad change
+    can be traced and reverted.
+    """
+    pairwise_matrix = models.JSONField(
+        verbose_name="ماتریس مقایسه زوجی",
+        help_text="ماتریس ۶×۶ برای معیارهای: objective_fit, cultural_ritual, values_professional, lifestyle, cultural_flexibility, reputation",
+    )
+    is_active = models.BooleanField(default=False, verbose_name="فعال")
+    updated_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="ثبت‌کننده",
+    )
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین به‌روزرسانی")
+
+    class Meta:
+        ordering = ["-updated_at"]
+        verbose_name = "پیکربندی وزن‌های تطابق"
+        verbose_name_plural = "پیکربندی‌های وزن‌های تطابق"
+
+    def save(self, *args, **kwargs):
+        if self.is_active:
+            MCDMWeightConfig.objects.exclude(pk=self.pk).update(is_active=False)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        status = "فعال" if self.is_active else "غیرفعال"
+        return f"پیکربندی وزن ({status}) — {self.updated_at:%Y-%m-%d}"

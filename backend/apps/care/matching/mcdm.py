@@ -18,12 +18,14 @@ CRITERIA = (
 
 
 # ------------------------------------------------------------------
-# Initial expert configuration.
+# Default expert configuration — used as the fallback when no active
+# apps.care.models.MCDMWeightConfig row exists in the database (a
+# fresh deployment, or nobody has used the weight-editing endpoint
+# yet). Once a supervisor sets an active config via that endpoint,
+# get_active_ahp_config() below returns THAT instead of this.
 #
-# This is NOT claimed to be scientifically validated.
-# It is our V1 configuration.
-#
-# Later move this to database configuration.
+# This default is NOT claimed to be scientifically validated.
+# It is our V1 configuration, same as it always was.
 # ------------------------------------------------------------------
 
 AHP_PAIRWISE_MATRIX = [
@@ -199,12 +201,48 @@ def build_candidate_matrix(
     )
 
 
+def get_active_ahp_config() -> tuple[dict, float, list]:
+    """
+    Loads the currently-active weight configuration from the database
+    (apps.care.models.MCDMWeightConfig) — the "later move this to
+    database configuration" the module-level default above always
+    anticipated. Falls back to the hardcoded default matrix if no
+    active config exists yet (a fresh deployment, or nobody has ever
+    used the weight-editing endpoint), or if a stored matrix is
+    somehow invalid (e.g. wrong shape) — a broken stored config should
+    never crash matching, it should silently fall back to a known-
+    good default and let the supervisor notice and fix it via the
+    same endpoint that set it.
+    """
+    from apps.care.models import MCDMWeightConfig
+
+    active = MCDMWeightConfig.objects.filter(is_active=True).first()
+
+    if active is None:
+        return AHP_WEIGHTS, AHP_CONSISTENCY_RATIO, AHP_PAIRWISE_MATRIX
+
+    try:
+        weights = calculate_ahp_weights(
+            criteria=CRITERIA,
+            pairwise_matrix=active.pairwise_matrix,
+        )
+        consistency_ratio = ahp_consistency_ratio(
+            active.pairwise_matrix
+        )
+    except (ValueError, TypeError, ZeroDivisionError):
+        return AHP_WEIGHTS, AHP_CONSISTENCY_RATIO, AHP_PAIRWISE_MATRIX
+
+    return weights, consistency_ratio, active.pairwise_matrix
+
+
 def rank_candidates_with_topsis(
     candidates: list[dict],
 ) -> list[dict]:
 
     if not candidates:
         return []
+
+    active_weights, active_consistency_ratio, _ = get_active_ahp_config()
 
     (
         rows,
@@ -232,7 +270,7 @@ def rank_candidates_with_topsis(
     # --------------------------------------------------------------
 
     raw_weights = {
-        criterion: AHP_WEIGHTS[criterion]
+        criterion: active_weights[criterion]
         for criterion in active_criteria
     }
 
@@ -286,7 +324,7 @@ def rank_candidates_with_topsis(
         }
 
         result["ahp_consistency_ratio"] = (
-            AHP_CONSISTENCY_RATIO
+            active_consistency_ratio
         )
 
         ranked.append(result)

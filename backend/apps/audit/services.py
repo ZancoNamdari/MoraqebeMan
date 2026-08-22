@@ -100,3 +100,6 @@ class AuditService:
 
     def caregiver_reviewed(self, actor_id, caregiver_user_id, patient_id, rating):
         return self.log_event(AuditEventType.CAREGIVER_REVIEWED, actor_id, caregiver_user_id, patient_id=patient_id, rating=rating)
+
+    def mcdm_weights_updated(self, actor_id, consistency_ratio):
+        return self.log_event(AuditEventType.MCDM_WEIGHTS_UPDATED, actor_id, None, consistency_ratio=consistency_ratio)
