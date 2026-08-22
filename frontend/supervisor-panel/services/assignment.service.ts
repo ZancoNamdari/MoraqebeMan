@@ -64,3 +64,36 @@ export const matchingService = {
     return data as Record<string, string>
   },
 }
+
+export const MCDM_CRITERIA = [
+  "objective_fit", "cultural_ritual", "values_professional", "lifestyle", "cultural_flexibility", "reputation",
+] as const
+
+export const MCDM_CRITERIA_LABELS: Record<string, string> = {
+  objective_fit: "تناسب عینی (جنسیت/سن/منطقه)",
+  cultural_ritual: "عقیدتی و مناسکی",
+  values_professional: "ارزش‌های بنیادین و مرزهای حرفه‌ای",
+  lifestyle: "سبک زندگی و شرایط محیطی",
+  cultural_flexibility: "انعطاف‌پذیری فرهنگی",
+  reputation: "امتیاز کاربران",
+}
+
+export interface MCDMWeightConfig {
+  pairwise_matrix: number[][]
+  weights: Record<string, number>
+  consistency_ratio: number
+  is_default: boolean
+  updated_at: string | null
+}
+
+export const mcdmWeightService = {
+  async get() {
+    const { data } = await api.get("/api/care/mcdm-weights/")
+    return data as MCDMWeightConfig
+  },
+
+  async save(pairwiseMatrix: number[][]) {
+    const { data } = await api.put("/api/care/mcdm-weights/", { pairwise_matrix: pairwiseMatrix })
+    return data as MCDMWeightConfig
+  },
+}

@@ -69,7 +69,12 @@ export default function MatchPage() {
       <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
           <h1 className="font-bold text-rose-900">پیشنهاد مراقب مناسب</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => router.push(ROUTES.matchWeights)}>
+              تنظیم وزن معیارها
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+          </div>
         </div>
       </header>
 

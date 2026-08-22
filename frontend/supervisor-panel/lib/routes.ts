@@ -6,4 +6,5 @@ export const ROUTES = {
   review: "/caregivers/review",
   caregiverDetail: (id: number | string) => `/caregivers/${id}`,
   match: "/match",
+  matchWeights: "/match/weights",
 }
