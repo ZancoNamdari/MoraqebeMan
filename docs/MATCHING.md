@@ -87,17 +87,23 @@ score = max(0, 100 - gap)
 می‌شود، در حالی که باید ۱۰۰ باشد — نیازی کاملاً پوشش داده شده است). اگر در
 آینده این فرمول دوباره تغییر کرد، این دلیل را در نظر بگیرید.
 
-### وضعیت شناخته‌شده: `match_confidence` می‌تواند با خلاصه توضیح ناهم‌خوان باشد
+### رفع‌شده: ناهم‌خوانی `match_confidence` با خلاصه توضیح
 
-`calculate_confidence` در `explanations.py` سطح اطمینان را **کاملاً بر
-اساس وجود `objective_fit_score`** تعیین می‌کند؛ اگر این امتیاز به هر
-دلیلی محاسبه نشده باشد (مثلاً هیچ ترجیح جنسیت/سن/منطقه‌ای برای مراقب ثبت
-نشده)، اطمینان همیشه `low` می‌شود — حتی اگر تناسب روان‌سنجی (`trait_match
-_score`) کامل و عالی باشد و `explanation.summary` بگوید «پیشنهاد بسیار
-قوی». این یک تناقض واقعی و مشاهده‌شده است (نه فرضی) که در تست‌های زنده
-این پروژه تکرار شد. عمداً بدون تغییر رها شده چون تصمیم درباره فلسفه
-صحیح «اطمینان» (آیا باید فقط بر تناسب عینی متکی باشد یا میانگین همه
-سیگنال‌ها؟) نیاز به ورودی محصول دارد، نه یک تصمیم یک‌طرفه.
+قبلاً `calculate_confidence` در `explanations.py` سطح اطمینان را
+**کاملاً بر اساس وجود `objective_fit_score`** تعیین می‌کرد؛ اگر این
+امتیاز محاسبه نشده بود (مثلاً هیچ ترجیح جنسیت/سن/منطقه‌ای ثبت نشده)،
+اطمینان همیشه `low` می‌شد — حتی اگر تناسب روان‌سنجی (`trait_match_score`)
+کامل و عالی بود و `explanation.summary` می‌گفت «پیشنهاد بسیار قوی». این
+تناقض واقعی و مشاهده‌شده بود، نه فرضی.
+
+با بررسی مجدد مشخص شد این یک باگ واقعی است، نه یک سؤال فلسفی محصول:
+منطق تابع خودش می‌گوید اطمینان باید «کامل بودن اطلاعات» را نشان دهد،
+اما فقط برای حالت «فقط تناسب عینی موجود است» بررسی متقارن داشت و برای
+حالت متقارن «فقط تناسب روان‌سنجی موجود است» هیچ بررسی‌ای نداشت — این
+یک سهل‌انگاری در کد بود، نه انتخاب آگاهانه. رفع شد: اکنون هر دو حالت
+(فقط عینی، فقط روان‌سنجی) به‌طور یکسان `medium` محسوب می‌شوند. تست
+regression مخصوص این حالت اضافه شد (`test_trait_only_match_is_medium
+_not_low`).
 
 
 ## سیگنال‌های محاسبه‌شده
@@ -163,6 +169,15 @@ AHP_PAIRWISE_MATRIX = [
 وزن‌های باقی‌مانده بازتوزیع می‌شوند — نه اینکه با یک عدد جعلی پر شود.
 نسبت سازگاری (`ahp_consistency_ratio`) کمتر از ۰.۱۰ نشان می‌دهد قضاوت‌های
 زوجی این ماتریس منطقاً ناسازگار نیستند.
+
+**قابل تنظیم بدون deploy کد**: ماتریس بالا فقط پیش‌فرض است — یک ناظر
+می‌تواند از صفحه «تنظیم وزن معیارها» (`/match/weights` در supervisor-panel،
+یا مستقیم `GET/PUT /api/care/mcdm-weights/`) وزن‌های جدید تنظیم کند.
+تنظیمات جدید در `MCDMWeightConfig` ذخیره می‌شوند (فقط یک ردیف در هر زمان
+فعال است، تاریخچه نگه‌داشته می‌شود)، و `get_active_ahp_config()` هر بار
+پیکربندی فعال را می‌خواند — نه فقط یک‌بار در زمان import. اگر ماتریس
+پیشنهادی ناسازگار باشد (نسبت سازگاری ≥ ۰.۱۰)، ذخیره **رد** می‌شود، نه
+اینکه چیزی غیرقابل‌اعتماد بی‌صدا ذخیره شود.
 
 ### توضیح خودکار (`explanation`، `match_confidence`)
 
@@ -413,6 +428,7 @@ DISTURBANCE_SCALE).
 |---|---|---|---|
 | GET | `/api/care/suggest-caregivers/?patient_code=` | ناظر | لیست رتبه‌بندی‌شده مراقبان پیشنهادی |
 | GET | `/api/care/patient-questionnaire/?patient_code=` | ناظر | پاسخ‌های خام پرسشنامه بیمار (برای مقایسه) |
+| GET/PUT | `/api/care/mcdm-weights/` | ناظر | مشاهده/ویرایش ماتریس مقایسه زوجی AHP (رد می‌شود اگر ناسازگار باشد) |
 | GET/POST | `/api/care/assignments/?caregiver_user_id=` | ناظر | لیست/ایجاد تخصیص |
 | POST | `/api/care/assignments/<id>/end/` | ناظر | پایان تخصیص |
 | POST | `/api/care/assignments/<id>/review/` | خانواده/بیمار (با دسترسی به بیمار) | ثبت/به‌روزرسانی نظر و امتیاز |
@@ -477,18 +493,20 @@ DISTURBANCE_SCALE).
 - `backend/apps/caregivers/models.py` — `CaregiverCompatibilityQuestionnaire`
 - `backend/apps/families/models.py` — `PatientCompatibilityQuestionnaire`
 - `backend/tests/integration/test_care.py` — تست‌های end-to-end تطابق، تخصیص، نظرات، ظرفیت
+- `backend/tests/integration/test_mcdm_weight_config.py` — تست‌های پیکربندی وزن
 - `backend/tests/integration/test_matching_*.py` — تست‌های واحد هر بخش از پکیج matching
 - `backend/tests/integration/test_trait_matching.py`
 - `backend/tests/integration/test_caregiver_compatibility_questionnaire.py`
 - `frontend/supervisor-panel/app/match/page.tsx` — صفحه جست‌وجو، پیشنهاد، توضیح خودکار
+- `frontend/supervisor-panel/app/match/weights/page.tsx` — ویرایش وزن‌های AHP (۱۵ قضاوت زوجی)
 - `frontend/supervisor-panel/lib/compatibility-questionnaire.ts` — متن کامل ۱۶ سؤال
 - `frontend/supervisor-panel/lib/constants.ts` — نگاشت محور↔بخش، برچسب‌های پرسشنامه بیمار
 
 ## آنچه هنوز باز است
 
 - امتیاز واحد ترکیبی بین دو پرسشنامه: عمداً ساخته نشده (دلیل بالا)
-- ناهم‌خوانی شناخته‌شده بین `match_confidence` و `explanation.summary` در برخی موارد (بالا توضیح داده شده)
-- وزن‌های AHP در `mcdm.py` هاردکد هستند، رابط کاربری برای تنظیم آن توسط ناظر وجود ندارد
+- ~~ناهم‌خوانی `match_confidence` و `explanation.summary`~~ — رفع شد (بالا توضیح داده شده)
+- ~~وزن‌های AHP در `mcdm.py` هاردکد هستند~~ — رفع شد: `MCDMWeightConfig` + `/api/care/mcdm-weights/` + صفحه `/match/weights` در supervisor-panel
 - ۳ فیلد پرسشنامه بیمار هنوز روی مقیاس placeholder‌اند، منتظر تأیید محصول
 - خانواده/بیمار نمی‌توانند خودشان مراقب پیشنهادی را مرور کنند — فقط ناظر
 - تست واقعی در مرورگر هرگز انجام نشده — تمام تأییدها build موفق + آزمایش زنده API بوده‌اند
