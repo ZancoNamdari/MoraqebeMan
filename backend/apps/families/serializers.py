@@ -48,6 +48,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
             "postal_code", "emergency_contact_phone",
             "guardianship_status", "guardian_details",
             "language_dialect", "basic_medical_info",
+            "physical_condition", "needed_shifts",
             "created_at", "updated_at",
         ]
         read_only_fields = ["id", "user_id", "access_code", "created_at", "updated_at"]

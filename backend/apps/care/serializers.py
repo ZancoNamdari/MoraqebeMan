@@ -110,10 +110,10 @@ class CreateReviewSerializer(serializers.Serializer):
 
 class MCDMWeightConfigSerializer(serializers.Serializer):
     """
-    Validates the shape (6x6, all positive) before the matrix ever
-    reaches the AHP math — a malformed matrix should be rejected with
-    a clear message here, not surface as a confusing crash deep inside
-    calculate_ahp_weights.
+    Validates the shape (6x6, all positive, diagonal of 1s) before the
+    matrix ever reaches the AHP math — a malformed matrix should be
+    rejected with a clear message here, not surface as a confusing
+    crash deep inside calculate_ahp_weights.
     """
     pairwise_matrix = serializers.ListField(
         child=serializers.ListField(child=serializers.FloatField(min_value=0.001)),

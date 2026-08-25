@@ -81,3 +81,30 @@ class TraitMappingSeedTests(TestCase):
             profile_type=MatchingProfileSide.PATIENT, question_field="privacy_comfort_with_caregiver",
         ).values_list("answer_option", flat=True))
         self.assertEqual(privacy, {"yes", "no", "partially"})
+
+    def test_resolved_placeholder_fields_match_the_confirmed_option_keys(self):
+        # meal_time_strictness/medication_timing_priority/
+        # willingness_to_express_opinion used to sit on the generic
+        # IntensityScale placeholder (very_high/moderate/low/none).
+        # Their real option sets (TimingStrictnessScale,
+        # ExpressionWillingnessScale — see docs/MATCHING.md) were
+        # confirmed and the seed data updated to match; this guards
+        # against the mapping table silently drifting back out of
+        # sync with the model's actual choices, which would make
+        # every answer to these three questions score as "no mapping
+        # found" without raising any error.
+        timing_fields = ["meal_time_strictness", "medication_timing_priority"]
+        for field in timing_fields:
+            options = set(QuestionTraitMapping.objects.filter(
+                profile_type=MatchingProfileSide.PATIENT, question_field=field,
+            ).values_list("answer_option", flat=True))
+            self.assertEqual(
+                options, {"very_strict", "moderately_strict", "flexible", "not_important"},
+            )
+
+        willingness = set(QuestionTraitMapping.objects.filter(
+            profile_type=MatchingProfileSide.PATIENT, question_field="willingness_to_express_opinion",
+        ).values_list("answer_option", flat=True))
+        self.assertEqual(
+            willingness, {"very_willing", "somewhat_willing", "rarely_willing", "not_willing"},
+        )

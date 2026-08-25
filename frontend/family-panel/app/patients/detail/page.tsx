@@ -8,12 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Field, ChoiceSelect, SelectWithOther } from "@/components/forms/fields"
+import { Field, ChoiceSelect, SelectWithOther, CheckboxGroup } from "@/components/forms/fields"
 import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
-import { GUARDIANSHIP_STATUS, QUESTIONNAIRE_FIELDS, RELATION_TYPE, LANGUAGE_DIALECT, GENDER, CARE_LOG_CATEGORY_LABEL, CARE_LOG_CATEGORY_ICON, caregiverAvatar, labelForValue } from "@/lib/constants"
+import { GUARDIANSHIP_STATUS, QUESTIONNAIRE_FIELDS, RELATION_TYPE, LANGUAGE_DIALECT, GENDER, PHYSICAL_CONDITION, NEEDED_SHIFT, CARE_LOG_CATEGORY_LABEL, CARE_LOG_CATEGORY_ICON, caregiverAvatar, labelForValue } from "@/lib/constants"
 import { patientService } from "@/services/patient.service"
 import { careService } from "@/services/care.service"
 import { StarRating } from "@/components/forms/star-rating"
@@ -64,6 +64,7 @@ function PatientDetailInner() {
         emergency_contact_phone: patient.emergency_contact_phone,
         guardianship_status: patient.guardianship_status, guardian_details: patient.guardian_details,
         language_dialect: patient.language_dialect, basic_medical_info: patient.basic_medical_info,
+        physical_condition: patient.physical_condition, needed_shifts: patient.needed_shifts,
       })
       setPatient(updated)
       setMessage("تغییرات ذخیره شد.")
@@ -184,6 +185,12 @@ function InfoTab({
           </Field>
           <Field label="اطلاعات پزشکی پایه">
             <Textarea value={patient.basic_medical_info} onChange={(e) => setPatient({ ...patient, basic_medical_info: e.target.value })} />
+          </Field>
+          <Field label="شرایط جسمانی فعلی سالمند">
+            <ChoiceSelect choices={PHYSICAL_CONDITION} value={patient.physical_condition} onChange={(v) => setPatient({ ...patient, physical_condition: v })} />
+          </Field>
+          <Field label="شیفت‌های زمانی مورد نیاز برای مراقبت">
+            <CheckboxGroup choices={NEEDED_SHIFT} value={patient.needed_shifts || []} onChange={(v) => setPatient({ ...patient, needed_shifts: v })} />
           </Field>
         </CardContent>
       </Card>

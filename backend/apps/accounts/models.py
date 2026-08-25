@@ -8,6 +8,7 @@ class UserRole(models.TextChoices):
     SUPERUSER = "superuser", "سوپریوزر"
     ADMIN = "admin", "ادمین / کارشناس"
     AGENCY = "agency", "آژانس / شرکت"
+    AGENCY_SUPERVISOR = "agency_supervisor", "سوپروایزر آژانس"
     FAMILY = "family", "خانواده"
     PATIENT = "patient", "بیمار / سالمند"
     CAREGIVER = "caregiver", "مراقب"

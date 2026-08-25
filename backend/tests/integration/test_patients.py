@@ -29,12 +29,12 @@ VALID_QUESTIONNAIRE = {
     "respectful_disagreement_acceptance": "mostly_accept",
     "privacy_comfort_with_caregiver": "partially",
     "noise_smell_sensitivity": "very_high",
-    "meal_time_strictness": "moderate",
+    "meal_time_strictness": "moderately_strict",
     "special_diet_preference": "yes",
-    "medication_timing_priority": "very_high",
+    "medication_timing_priority": "very_strict",
     "accent_customs_annoyance": "slightly",
     "cultural_respect_expectation": "yes",
-    "willingness_to_express_opinion": "low",
+    "willingness_to_express_opinion": "rarely_willing",
 }
 
 
@@ -187,10 +187,10 @@ class QuestionnaireTests(TestCase):
 
     def test_resubmitting_updates_instead_of_erroring(self):
         self.client.put(f"/api/patients/{self.patient_id}/questionnaire/", VALID_QUESTIONNAIRE, format="json")
-        updated = dict(VALID_QUESTIONNAIRE, willingness_to_express_opinion="very_high")
+        updated = dict(VALID_QUESTIONNAIRE, willingness_to_express_opinion="very_willing")
         response = self.client.put(f"/api/patients/{self.patient_id}/questionnaire/", updated, format="json")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["willingness_to_express_opinion"], "very_high")
+        self.assertEqual(response.data["willingness_to_express_opinion"], "very_willing")
 
     def test_invalid_choice_value_rejected(self):
         bad = dict(VALID_QUESTIONNAIRE, religious_beliefs_priority="not_a_real_choice")
@@ -535,9 +535,9 @@ class PatientOwnAccountTests(TestCase):
             "religious_beliefs_priority": "strongly_agree", "new_treatment_openness": "moderate",
             "caregiver_as_family_member": "yes", "respectful_disagreement_acceptance": "fully_accept",
             "privacy_comfort_with_caregiver": "yes", "noise_smell_sensitivity": "low",
-            "meal_time_strictness": "moderate", "special_diet_preference": "no",
-            "medication_timing_priority": "very_high", "accent_customs_annoyance": "not_at_all",
-            "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "moderate",
+            "meal_time_strictness": "moderately_strict", "special_diet_preference": "no",
+            "medication_timing_priority": "very_strict", "accent_customs_annoyance": "not_at_all",
+            "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "somewhat_willing",
         }
         response = self.patient_client.put("/api/patients/me/questionnaire/", payload, format="json")
         self.assertEqual(response.status_code, 201)
@@ -551,9 +551,9 @@ class PatientOwnAccountTests(TestCase):
             "religious_beliefs_priority": "strongly_agree", "new_treatment_openness": "moderate",
             "caregiver_as_family_member": "yes", "respectful_disagreement_acceptance": "fully_accept",
             "privacy_comfort_with_caregiver": "yes", "noise_smell_sensitivity": "low",
-            "meal_time_strictness": "moderate", "special_diet_preference": "no",
-            "medication_timing_priority": "very_high", "accent_customs_annoyance": "not_at_all",
-            "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "moderate",
+            "meal_time_strictness": "moderately_strict", "special_diet_preference": "no",
+            "medication_timing_priority": "very_strict", "accent_customs_annoyance": "not_at_all",
+            "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "somewhat_willing",
         }
         self.patient_client.put("/api/patients/me/questionnaire/", payload, format="json")
 
@@ -668,9 +668,9 @@ class AccessLevelEnforcementTests(TestCase):
             "religious_beliefs_priority": "strongly_agree", "new_treatment_openness": "moderate",
             "caregiver_as_family_member": "yes", "respectful_disagreement_acceptance": "fully_accept",
             "privacy_comfort_with_caregiver": "yes", "noise_smell_sensitivity": "low",
-            "meal_time_strictness": "moderate", "special_diet_preference": "no",
-            "medication_timing_priority": "very_high", "accent_customs_annoyance": "not_at_all",
-            "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "moderate",
+            "meal_time_strictness": "moderately_strict", "special_diet_preference": "no",
+            "medication_timing_priority": "very_strict", "accent_customs_annoyance": "not_at_all",
+            "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "somewhat_willing",
         }, format="json")
         response = self.viewer_client.get(f"/api/patients/{self.patient_id}/questionnaire/")
         self.assertEqual(response.status_code, 200)

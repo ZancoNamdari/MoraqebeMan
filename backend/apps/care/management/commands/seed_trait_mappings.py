@@ -151,20 +151,20 @@ PATIENT_MAPPINGS = {
         "very_high": {T.ENVIRONMENT_TOLERANCE: 90}, "moderate": {T.ENVIRONMENT_TOLERANCE: 55},
         "low": {T.ENVIRONMENT_TOLERANCE: 30}, "none": {T.ENVIRONMENT_TOLERANCE: 10},
     },
-    # Still on the generic placeholder scale pending real product-
-    # defined options (see docs/MATCHING.md's long-standing open item)
-    # — mapping uses the same generic very_high..none values as a
-    # stand-in; will need revisiting once real options exist.
+    # TimingStrictnessScale — resolved option set (see
+    # docs/MATCHING.md), same point spread the earlier generic
+    # very_high..none placeholder used, just carried over onto the
+    # real confirmed option keys.
     "meal_time_strictness": {
-        "very_high": {T.SCHEDULE_FLEXIBILITY: 85}, "moderate": {T.SCHEDULE_FLEXIBILITY: 55},
-        "low": {T.SCHEDULE_FLEXIBILITY: 30}, "none": {T.SCHEDULE_FLEXIBILITY: 10},
+        "very_strict": {T.SCHEDULE_FLEXIBILITY: 85}, "moderately_strict": {T.SCHEDULE_FLEXIBILITY: 55},
+        "flexible": {T.SCHEDULE_FLEXIBILITY: 30}, "not_important": {T.SCHEDULE_FLEXIBILITY: 10},
     },
     "special_diet_preference": {
         "yes": {T.TRADITIONAL_MEDICINE_ORIENTATION: 75}, "partially": {T.TRADITIONAL_MEDICINE_ORIENTATION: 45}, "no": {T.TRADITIONAL_MEDICINE_ORIENTATION: 15},
     },
     "medication_timing_priority": {
-        "very_high": {T.SCHEDULE_FLEXIBILITY: 85}, "moderate": {T.SCHEDULE_FLEXIBILITY: 55},
-        "low": {T.SCHEDULE_FLEXIBILITY: 30}, "none": {T.SCHEDULE_FLEXIBILITY: 10},
+        "very_strict": {T.SCHEDULE_FLEXIBILITY: 85}, "moderately_strict": {T.SCHEDULE_FLEXIBILITY: 55},
+        "flexible": {T.SCHEDULE_FLEXIBILITY: 30}, "not_important": {T.SCHEDULE_FLEXIBILITY: 10},
     },
     "accent_customs_annoyance": {
         "very_much": {T.LANGUAGE_DIALECT_FLEXIBILITY: 90}, "a_lot": {T.LANGUAGE_DIALECT_FLEXIBILITY: 70},
@@ -173,9 +173,13 @@ PATIENT_MAPPINGS = {
     "cultural_respect_expectation": {
         "yes": {T.CULTURAL_TOLERANCE: 80}, "partially": {T.CULTURAL_TOLERANCE: 50}, "no": {T.CULTURAL_TOLERANCE: 20},
     },
+    # ExpressionWillingnessScale — resolved option set (see
+    # docs/MATCHING.md), same point spread the earlier generic
+    # very_high..none placeholder used, carried over onto the real
+    # confirmed option keys.
     "willingness_to_express_opinion": {
-        "very_high": {T.OFFENSIVE_SPEECH_TOLERANCE: 70}, "moderate": {T.OFFENSIVE_SPEECH_TOLERANCE: 50},
-        "low": {T.OFFENSIVE_SPEECH_TOLERANCE: 35}, "none": {T.OFFENSIVE_SPEECH_TOLERANCE: 20},
+        "very_willing": {T.OFFENSIVE_SPEECH_TOLERANCE: 70}, "somewhat_willing": {T.OFFENSIVE_SPEECH_TOLERANCE: 50},
+        "rarely_willing": {T.OFFENSIVE_SPEECH_TOLERANCE: 35}, "not_willing": {T.OFFENSIVE_SPEECH_TOLERANCE: 20},
     },
 }
 

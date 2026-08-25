@@ -59,16 +59,36 @@
 `mcdm_score`، ...) تا ناظر بتواند ببیند هر عدد از کجا آمده، نه فقط یک
 امتیاز نهایی مبهم.
 
-## پنج بخش کد در `apps/care/matching/`
+## شش بخش کد در `apps/care/matching/`
 
 | فایل | مسئولیت |
 |---|---|
 | `waterfall.py` | فیلتر سخت: تأیید مراقب، عدم تخصیص فعلی، محدودیت جنسیتی مراقب (اگر `accepted_gender` مقداردهی شده)، منطقه خدماتی |
 | `objective.py` | امتیاز عینی جنسیت/سن/منطقه (۰ تا ۱۰۰) — معیارهای غیرقابل‌محاسبه حذف می‌شوند، نه صفر فرض می‌شوند |
+| `specialization.py` | امتیاز تخصص (تطابق شرایط جسمانی سالمند با `accepted_physical_conditions` مراقب) و ساعات کاری (تطابق `needed_shifts` بیمار با `available_shifts` مراقب) — **فقط برای تای‌بریکر رتبه‌بندی**، نه بخشی از `objective_fit_score` یا معیارهای AHP/TOPSIS |
 | (در `apps/care/trait_matching.py`) | پروفایل صفت‌محور، فرمول‌های Similarity/Adaptability، امتیاز هر بُعد، شاخص انعطاف‌پذیری فرهنگی (CFI) |
-| `mcdm.py` (+ `ahp.py`, `topsis.py`) | رتبه‌بندی نهایی AHP-weighted TOPSIS روی ۶ معیار — وزن‌ها به‌طور خودکار بین معیارهای موجود بازتوزیع می‌شوند اگر معیاری برای همه نامزدها ناموجود باشد |
+| `mcdm.py` (+ `ahp.py`, `topsis.py`) | رتبه‌بندی نهایی AHP-weighted TOPSIS روی ۶ معیار — وزن‌ها به‌طور خودکار بین معیارهای موجود بازتوزیع می‌شوند اگر معیاری برای همه نامزدها ناموجود باشد؛ شامل تای‌بریکر (`_ranking_sort_key`) برای امتیازهای مساوی |
 | `explanations.py` | تبدیل اعداد خام به خلاصه قابل‌فهم («پیشنهاد بسیار قوی»)، سطح اطمینان (`high`/`medium`/`low`)، نقاط قوت/ضعف |
-| `engine.py` | نقطه ورود عمومی (`suggest_caregivers_for_patient`) — هر پنج مرحله بالا را به‌ترتیب اجرا می‌کند |
+| `engine.py` | نقطه ورود عمومی (`suggest_caregivers_for_patient`) — هر مرحله بالا را به‌ترتیب اجرا می‌کند |
+
+### تای‌بریکر رتبه‌بندی — رفع‌شده (۲۰۲۶-۰۸-۲۳)
+
+طبق سند طراحی تطبیق (SAS-4)، وقتی دو مراقب امتیاز نهایی (`mcdm_score`) یکسان دارند، شش معیار
+برای شکست تساوی مشخص شده: تخصص، ساعات کاری، فاصله جغرافیایی، زبان/گویش، سازگاری فرهنگی، سبک
+زندگی. تا پیش از این تاریخ، فقط سه معیار آخر پیاده‌سازی شده بود چون داده ساختاریافته‌ای برای
+«تخصص» و «ساعات کاری» در پرسشنامه یا پروفایل بیمار وجود نداشت.
+
+اکنون دو فیلد جدید به `PatientProfile` اضافه شده (`physical_condition`، `needed_shifts`)، دقیقاً
+هم‌ارز با فیلدهای موجود مراقب (`accepted_physical_conditions`، `available_shifts`) — و
+`specialization.py` این دو را مقایسه می‌کند. زبان/گویش عمداً یک کلید جدا در تای‌بریکر نشده، چون
+از قبل یکی از چهار ویژگی داخل بُعد `cultural_flexibility` است (`language_dialect_flexibility`) و
+مقایسه مجزای دوباره، همان سیگنال را دوبار حساب می‌کرد.
+
+**نکته طراحی**: این دو امتیاز فقط در تای‌بریکر استفاده می‌شوند، نه در `objective_fit_score` یا
+معیارهای AHP/TOPSIS — چون افزودن آن‌ها به عنوان معیار رسمی AHP نیازمند بازتعریف کل ماتریس مقایسه
+دوبه‌دو و تغییر ساختار `objective_criterion_scores` در فرانت‌اند بود؛ فراتر از دامنه همین رفع نقص.
+
+
 
 ### فرمول Adaptability — نکته مهم
 
@@ -87,23 +107,26 @@ score = max(0, 100 - gap)
 می‌شود، در حالی که باید ۱۰۰ باشد — نیازی کاملاً پوشش داده شده است). اگر در
 آینده این فرمول دوباره تغییر کرد، این دلیل را در نظر بگیرید.
 
-### رفع‌شده: ناهم‌خوانی `match_confidence` با خلاصه توضیح
+### رفع‌شده: `match_confidence` می‌تواند با خلاصه توضیح ناهم‌خوان باشد
 
-قبلاً `calculate_confidence` در `explanations.py` سطح اطمینان را
-**کاملاً بر اساس وجود `objective_fit_score`** تعیین می‌کرد؛ اگر این
-امتیاز محاسبه نشده بود (مثلاً هیچ ترجیح جنسیت/سن/منطقه‌ای ثبت نشده)،
-اطمینان همیشه `low` می‌شد — حتی اگر تناسب روان‌سنجی (`trait_match_score`)
-کامل و عالی بود و `explanation.summary` می‌گفت «پیشنهاد بسیار قوی». این
-تناقض واقعی و مشاهده‌شده بود، نه فرضی.
+`calculate_confidence` در `explanations.py` سطح اطمینان را **کاملاً بر
+اساس وجود `objective_fit_score`** تعیین می‌کرد؛ اگر این امتیاز به هر
+دلیلی محاسبه نشده بود (مثلاً هیچ ترجیح جنسیت/سن/منطقه‌ای برای مراقب ثبت
+نشده)، اطمینان همیشه `low` می‌شد — حتی اگر تناسب روان‌سنجی (`trait_match
+_score`) کامل و عالی باشد و `explanation.summary` بگوید «پیشنهاد بسیار
+قوی». این یک تناقض واقعی و مشاهده‌شده بود (نه فرضی) که در تست‌های زنده
+این پروژه تکرار شد.
 
-با بررسی مجدد مشخص شد این یک باگ واقعی است، نه یک سؤال فلسفی محصول:
-منطق تابع خودش می‌گوید اطمینان باید «کامل بودن اطلاعات» را نشان دهد،
-اما فقط برای حالت «فقط تناسب عینی موجود است» بررسی متقارن داشت و برای
-حالت متقارن «فقط تناسب روان‌سنجی موجود است» هیچ بررسی‌ای نداشت — این
-یک سهل‌انگاری در کد بود، نه انتخاب آگاهانه. رفع شد: اکنون هر دو حالت
-(فقط عینی، فقط روان‌سنجی) به‌طور یکسان `medium` محسوب می‌شوند. تست
-regression مخصوص این حالت اضافه شد (`test_trait_only_match_is_medium
-_not_low`).
+با بررسی مجدد (۲۰۲۶-۰۸-۲۳) مشخص شد این یک باگ واقعی است، نه فقط یک سؤال
+فلسفی محصول که نیاز به تصمیم‌گیری جداگانه داشته باشد: منطق تابع خودش
+می‌گوید اطمینان باید «کامل بودن اطلاعات» را نشان دهد، اما فقط برای حالت
+«فقط تناسب عینی موجود است» بررسی متقارن داشت و برای حالت متقارن «فقط
+تناسب روان‌سنجی موجود است» هیچ بررسی‌ای نداشت — این یک سهل‌انگاری در کد
+بود، نه انتخاب آگاهانه‌ای که منتظر ورودی محصول باشد. رفع شد: اکنون هر دو
+حالت (فقط عینی، فقط روان‌سنجی) به‌طور یکسان `medium` محسوب می‌شوند. تست
+regression مخصوص این حالت اضافه شد
+(`test_trait_only_match_is_medium_not_low` در
+`test_matching_explanations.py`).
 
 
 ## سیگنال‌های محاسبه‌شده
@@ -170,15 +193,6 @@ AHP_PAIRWISE_MATRIX = [
 نسبت سازگاری (`ahp_consistency_ratio`) کمتر از ۰.۱۰ نشان می‌دهد قضاوت‌های
 زوجی این ماتریس منطقاً ناسازگار نیستند.
 
-**قابل تنظیم بدون deploy کد**: ماتریس بالا فقط پیش‌فرض است — یک ناظر
-می‌تواند از صفحه «تنظیم وزن معیارها» (`/match/weights` در supervisor-panel،
-یا مستقیم `GET/PUT /api/care/mcdm-weights/`) وزن‌های جدید تنظیم کند.
-تنظیمات جدید در `MCDMWeightConfig` ذخیره می‌شوند (فقط یک ردیف در هر زمان
-فعال است، تاریخچه نگه‌داشته می‌شود)، و `get_active_ahp_config()` هر بار
-پیکربندی فعال را می‌خواند — نه فقط یک‌بار در زمان import. اگر ماتریس
-پیشنهادی ناسازگار باشد (نسبت سازگاری ≥ ۰.۱۰)، ذخیره **رد** می‌شود، نه
-اینکه چیزی غیرقابل‌اعتماد بی‌صدا ذخیره شود.
-
 ### توضیح خودکار (`explanation`، `match_confidence`)
 
 `explanations.py` امتیازهای خام را به یک خلاصه قابل‌فهم («پیشنهاد بسیار
@@ -207,21 +221,36 @@ AHP_PAIRWISE_MATRIX = [
 | `respectful_disagreement_acceptance` | محور جمع‌گرایی | ACCEPTANCE_SCALE |
 | `privacy_comfort_with_caregiver` | محور حریم خصوصی | YES_NO_PARTIAL |
 | `noise_smell_sensitivity` | محور سبک زندگی | INTENSITY_SCALE |
-| `meal_time_strictness` | محور سبک زندگی | INTENSITY_SCALE |
+| `meal_time_strictness` | محور سبک زندگی | TIMING_STRICTNESS_SCALE |
 | `special_diet_preference` | محور سبک زندگی | YES_NO_PARTIAL |
-| `medication_timing_priority` | محور جهت‌گیری زمانی | INTENSITY_SCALE |
+| `medication_timing_priority` | محور جهت‌گیری زمانی | TIMING_STRICTNESS_SCALE |
 | `accent_customs_annoyance` | محور تفاوت فرهنگی/نسلی | DISTURBANCE_SCALE |
 | `cultural_respect_expectation` | محور تفاوت فرهنگی/نسلی | YES_NO_PARTIAL |
-| `willingness_to_express_opinion` | محور انعطاف‌پذیری کلی | INTENSITY_SCALE |
+| `willingness_to_express_opinion` | محور انعطاف‌پذیری کلی | EXPRESSION_WILLINGNESS_SCALE |
 
 مقیاس‌های کامل در `frontend/family-panel/lib/constants.ts` تعریف شده‌اند
 (AGREEMENT_SCALE، INTENSITY_SCALE، YES_NO_PARTIAL، ACCEPTANCE_SCALE،
-DISTURBANCE_SCALE).
+DISTURBANCE_SCALE، TIMING_STRICTNESS_SCALE، EXPRESSION_WILLINGNESS_SCALE)
+و به‌طور یکسان در `frontend/patient-panel/lib/constants.ts` تکرار شده‌اند.
 
-⚠️ سه فیلد هنوز روی مقیاس عمومی placeholder هستند و منتظر تأیید محصول
-برای گزینه‌های واقعی‌اند: `meal_time_strictness`،
-`medication_timing_priority`، `willingness_to_express_opinion` — این
-مورد از همان روزهای اول پروژه باز مانده است.
+✅ **رفع‌شده (۲۰۲۶-۰۸-۲۳)**: سه فیلدی که از همان روزهای اول پروژه روی
+مقیاس عمومی placeholder (`INTENSITY_SCALE`) باقی مانده بودند —
+`meal_time_strictness`، `medication_timing_priority`، و
+`willingness_to_express_opinion` — اکنون گزینه‌های واقعی و مخصوص به خود
+را دارند:
+- `meal_time_strictness` و `medication_timing_priority` هر دو از
+  `TIMING_STRICTNESS_SCALE` جدید استفاده می‌کنند (بسیار مهم/نسبتاً
+  مهم/چندان مهم نیست/بدون اهمیت) — هر دو سؤال اساساً یک چیز را می‌پرسند:
+  برنامه روزانه بیمار چقدر باید دقیق رعایت شود.
+- `willingness_to_express_opinion` از `EXPRESSION_WILLINGNESS_SCALE`
+  جدید استفاده می‌کند (همیشه/بیشتر مواقع/به‌ندرت/تمایلی ندارد) — میزان
+  واقعی ابراز نظر بیمار، نه شدت آن.
+
+مقادیر امتیازدهی در `QuestionTraitMapping` (جدول نگاشت سؤال↔ویژگی، از
+طریق `seed_trait_mappings.py`) بدون تغییر باقی ماندند و فقط روی کلیدهای
+گزینه جدید منتقل شدند — یعنی آنچه قبلاً `"very_high": 85` بود اکنون
+`"very_strict": 85` است؛ فقط متن و کلید گزینه‌ها placeholder بودند، نه
+خودِ امتیازدهی کالیبره‌شده.
 
 ---
 
@@ -428,7 +457,6 @@ DISTURBANCE_SCALE).
 |---|---|---|---|
 | GET | `/api/care/suggest-caregivers/?patient_code=` | ناظر | لیست رتبه‌بندی‌شده مراقبان پیشنهادی |
 | GET | `/api/care/patient-questionnaire/?patient_code=` | ناظر | پاسخ‌های خام پرسشنامه بیمار (برای مقایسه) |
-| GET/PUT | `/api/care/mcdm-weights/` | ناظر | مشاهده/ویرایش ماتریس مقایسه زوجی AHP (رد می‌شود اگر ناسازگار باشد) |
 | GET/POST | `/api/care/assignments/?caregiver_user_id=` | ناظر | لیست/ایجاد تخصیص |
 | POST | `/api/care/assignments/<id>/end/` | ناظر | پایان تخصیص |
 | POST | `/api/care/assignments/<id>/review/` | خانواده/بیمار (با دسترسی به بیمار) | ثبت/به‌روزرسانی نظر و امتیاز |
@@ -453,6 +481,8 @@ DISTURBANCE_SCALE).
       "objective_criterion_scores": {"gender": 100, "age": 100, "location": 60},
       "objective_reasons": ["..."],
       "score": 88,
+      "physical_condition_match_score": 100,
+      "shift_availability_score": 100,
       "trait_match_available": true,
       "trait_match_score": 91,
       "trait_dimension_scores": {"cultural_ritual": 83, "...": 100},
@@ -486,27 +516,26 @@ DISTURBANCE_SCALE).
 - `backend/apps/care/matching/engine.py` — نقطه ورود اصلی (`suggest_caregivers_for_patient`)
 - `backend/apps/care/matching/waterfall.py` — فیلتر سخت (تأیید، جنسیت، منطقه)
 - `backend/apps/care/matching/objective.py` — امتیاز عینی جنسیت/سن/منطقه
+- `backend/apps/care/matching/specialization.py` — امتیاز تخصص و ساعات کاری (فقط تای‌بریکر)
 - `backend/apps/care/matching/mcdm.py` + `ahp.py` + `topsis.py` — رتبه‌بندی نهایی
 - `backend/apps/care/matching/explanations.py` — خلاصه و سطح اطمینان
 - `backend/apps/care/trait_matching.py` — پروفایل صفت‌محور، Similarity/Adaptability، CFI
 - `backend/apps/care/models.py` — `CaregiverAssignment`، `CaregiverReview`، `QuestionTraitMapping`
 - `backend/apps/caregivers/models.py` — `CaregiverCompatibilityQuestionnaire`
-- `backend/apps/families/models.py` — `PatientCompatibilityQuestionnaire`
+- `backend/apps/families/models.py` — `PatientCompatibilityQuestionnaire`، `PatientProfile.physical_condition`/`needed_shifts`
 - `backend/tests/integration/test_care.py` — تست‌های end-to-end تطابق، تخصیص، نظرات، ظرفیت
-- `backend/tests/integration/test_mcdm_weight_config.py` — تست‌های پیکربندی وزن
 - `backend/tests/integration/test_matching_*.py` — تست‌های واحد هر بخش از پکیج matching
 - `backend/tests/integration/test_trait_matching.py`
 - `backend/tests/integration/test_caregiver_compatibility_questionnaire.py`
 - `frontend/supervisor-panel/app/match/page.tsx` — صفحه جست‌وجو، پیشنهاد، توضیح خودکار
-- `frontend/supervisor-panel/app/match/weights/page.tsx` — ویرایش وزن‌های AHP (۱۵ قضاوت زوجی)
 - `frontend/supervisor-panel/lib/compatibility-questionnaire.ts` — متن کامل ۱۶ سؤال
 - `frontend/supervisor-panel/lib/constants.ts` — نگاشت محور↔بخش، برچسب‌های پرسشنامه بیمار
 
 ## آنچه هنوز باز است
 
 - امتیاز واحد ترکیبی بین دو پرسشنامه: عمداً ساخته نشده (دلیل بالا)
-- ~~ناهم‌خوانی `match_confidence` و `explanation.summary`~~ — رفع شد (بالا توضیح داده شده)
-- ~~وزن‌های AHP در `mcdm.py` هاردکد هستند~~ — رفع شد: `MCDMWeightConfig` + `/api/care/mcdm-weights/` + صفحه `/match/weights` در supervisor-panel
-- ۳ فیلد پرسشنامه بیمار هنوز روی مقیاس placeholder‌اند، منتظر تأیید محصول
+- ~~ناهم‌خوانی شناخته‌شده بین `match_confidence` و `explanation.summary` در برخی موارد~~ — رفع شد (۲۰۲۶-۰۸-۲۳، بالا توضیح داده شده)
+- وزن‌های AHP در `mcdm.py` هاردکد هستند، رابط کاربری برای تنظیم آن توسط ناظر وجود ندارد
+- ~~۳ فیلد پرسشنامه بیمار هنوز روی مقیاس placeholder‌اند~~ — رفع شد (۲۰۲۶-۰۸-۲۳، بالا در بخش «پرسشنامه سازگاری بیمار» توضیح داده شده)
 - خانواده/بیمار نمی‌توانند خودشان مراقب پیشنهادی را مرور کنند — فقط ناظر
 - تست واقعی در مرورگر هرگز انجام نشده — تمام تأییدها build موفق + آزمایش زنده API بوده‌اند

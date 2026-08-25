@@ -1,0 +1,27 @@
+Patch: resolve the three placeholder questionnaire fields
+(meal_time_strictness, medication_timing_priority,
+willingness_to_express_opinion) end-to-end across frontend + docs.
+
+Extract this zip at your repo root (moraqebeman/) and overwrite the
+matching paths — every path inside the zip already mirrors the real
+repo structure.
+
+Files included (replace these exact paths):
+
+  frontend/family-panel/lib/constants.ts       (full file replacement)
+  frontend/patient-panel/lib/constants.ts      (full file replacement)
+  frontend/supervisor-panel/lib/constants.ts   (full file replacement)
+  docs/MATCHING.md                             (full file replacement)
+
+All three .ts files were verified with `tsc --noEmit --strict` — zero
+compile errors.
+
+Not included / still needs manual action on your end:
+  - backend/docs/MATCHING.md — this was a duplicate I created in an
+    earlier session before I knew the real docs/MATCHING.md (repo
+    root) existed. Delete backend/docs/MATCHING.md; the real one is
+    the docs/MATCHING.md included here.
+
+No backend files changed in this patch — the Python-side model
+choices, migration, and seed_trait_mappings.py were already updated
+in the previous backend zip.

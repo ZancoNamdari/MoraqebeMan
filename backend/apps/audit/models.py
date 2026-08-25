@@ -26,6 +26,9 @@ class AuditEventType(models.TextChoices):
     CARE_LOG_ENTRY_CREATED = "care_log_entry_created", "ثبت گزارش مراقبت"
     CAREGIVER_REVIEWED = "caregiver_reviewed", "ثبت نظر درباره مراقب"
     MCDM_WEIGHTS_UPDATED = "mcdm_weights_updated", "به‌روزرسانی وزن‌های تطابق"
+    AGENCY_FAMILY_LINK_DECIDED = "agency_family_link_decided", "تصمیم درباره درخواست پیوستن خانواده به آژانس"
+    AGENCY_CAREGIVER_LINK_DECIDED = "agency_caregiver_link_decided", "تصمیم درباره درخواست پیوستن مراقب به آژانس"
+    AGENCY_SUPERVISOR_CREATED = "agency_supervisor_created", "ایجاد سوپروایزر آژانس"
 
 
 class AuditLog(models.Model):

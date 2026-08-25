@@ -72,6 +72,32 @@ class Gender(models.TextChoices):
     MALE = "male", "مرد"
 
 
+class PatientPhysicalCondition(models.TextChoices):
+    """Same duplication convention as Gender above — mirrors
+    apps.caregivers.choices.AcceptedPhysicalCondition's values
+    exactly (minus NO_PREFERENCE, which only makes sense from the
+    caregiver's acceptance side, not as a description of the
+    patient's actual condition) so the two sides are directly
+    comparable in apps.care.matching.specialization, without a new
+    cross-app import."""
+    INDEPENDENT = "independent", "سالمند مستقل"
+    LOW_MOBILITY = "low_mobility", "سالمند کم‌توان (همراهی در راه رفتن)"
+    LIMITED_MOBILITY_BEDRIDDEN = "limited_mobility_bedridden", "سالمند دارای محدودیت حرکتی (روی تخت)"
+    BEDRIDDEN_DIAPER = "bedridden_diaper", "سالمند بستری در منزل (پوشکی)"
+    ALZHEIMERS = "alzheimers", "سالمند مبتلا به آلزایمر"
+    PARKINSONS = "parkinsons", "سالمند مبتلا به پارکینسون"
+    HOSPITAL_COMPANION_NEEDED = "hospital_companion_needed", "سالمند نیازمند همراهی بیمارستانی"
+
+
+class NeededShift(models.TextChoices):
+    """Same duplication convention as Gender above — mirrors
+    apps.caregivers.choices.Shift's values exactly."""
+    MORNING = "morning", "صبح"
+    AFTERNOON = "afternoon", "عصر"
+    NIGHT = "night", "شب"
+    ALL_DAY = "24h", "شبانه‌روزی"
+
+
 class RelationType(models.TextChoices):
     """Selectable, not free text — 'relation' showing up as an open
     text box meant everyone typed something slightly different
@@ -140,6 +166,21 @@ class PatientProfile(models.Model):
     language_dialect = models.CharField(max_length=100, blank=True, help_text="زبان و گویش")
     basic_medical_info = models.TextField(
         blank=True, help_text="اطلاعات پزشکی پایه — بیماری‌های مهم و نیازهای ویژه"
+    )
+
+    # Structured care-need fields, added specifically so the matching
+    # tie-breaker (apps/care/matching/specialization.py) has something
+    # concrete to compare against the caregiver's own
+    # accepted_physical_conditions/available_shifts — the free-text
+    # basic_medical_info field above was never meant to be parsed
+    # programmatically, and isn't.
+    physical_condition = models.CharField(
+        max_length=30, choices=PatientPhysicalCondition.choices, blank=True,
+        help_text="شرایط جسمانی فعلی سالمند — برای تطبیق با تخصص مراقب در سیستم تطبیق",
+    )
+    needed_shifts = models.JSONField(
+        default=list, blank=True,
+        help_text="شیفت‌های زمانی مورد نیاز برای مراقبت (چندانتخابی از NeededShift)",
     )
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
@@ -253,15 +294,39 @@ class DisturbanceScale(models.TextChoices):
     VERY_MUCH = "very_much", "خیلی زیاد"
 
 
+class TimingStrictnessScale(models.TextChoices):
+    """Shared by meal_time_strictness and medication_timing_priority —
+    both questions ask the same underlying thing (how strictly must a
+    daily schedule be kept for this patient) and previously sat on the
+    generic IntensityScale as an unconfirmed placeholder. Resolved with
+    product-facing option text of its own rather than staying on a
+    scale meant for unrelated questions; see docs/MATCHING.md."""
+    VERY_STRICT = "very_strict", "بسیار مهم است و باید دقیقاً رعایت شود"
+    MODERATELY_STRICT = "moderately_strict", "نسبتاً مهم است، کمی تأخیر قابل قبول است"
+    FLEXIBLE = "flexible", "چندان مهم نیست، انعطاف‌پذیر است"
+    NOT_IMPORTANT = "not_important", "اهمیتی ندارد"
+
+
+class ExpressionWillingnessScale(models.TextChoices):
+    """Resolved placeholder for willingness_to_express_opinion — how
+    often the patient actually speaks their mind, distinct from the
+    generic IntensityScale it borrowed before confirmation; see
+    docs/MATCHING.md."""
+    VERY_WILLING = "very_willing", "همیشه نظر خود را بیان می‌کند"
+    SOMEWHAT_WILLING = "somewhat_willing", "بیشتر مواقع نظر خود را می‌گوید"
+    RARELY_WILLING = "rarely_willing", "به‌ندرت نظر خود را بیان می‌کند"
+    NOT_WILLING = "not_willing", "تمایلی به بیان نظر ندارد"
+
+
 class PatientCompatibilityQuestionnaire(models.Model):
     """
     One row per patient. Twelve questions across seven axes, exactly as
-    specified in the source form. Three questions (marked below) only
-    said "گزینه‌ای" (multiple-choice) in the source without listing the
-    actual option text — those three default to IntensityScale as the
-    closest fit given the question wording, but this is a placeholder:
-    confirm the real option text with the product team before this goes
-    live, the same way earlier form corrections were flagged and applied.
+    specified in the source form. Three questions only said "گزینه‌ای"
+    (multiple-choice) in the source without listing the actual option
+    text; their real option sets (TimingStrictnessScale,
+    ExpressionWillingnessScale) have since been confirmed and are
+    documented in docs/MATCHING.md, replacing the earlier IntensityScale
+    placeholder.
     """
     patient = models.OneToOneField(
         PatientProfile, on_delete=models.CASCADE, related_name="compatibility_questionnaire", verbose_name="سالمند"
@@ -281,16 +346,14 @@ class PatientCompatibilityQuestionnaire(models.Model):
     # محور سبک زندگی (Lifestyle axis)
     noise_smell_sensitivity = models.CharField(max_length=20, choices=IntensityScale.choices, verbose_name="حساسیت به صدا و بو")
     meal_time_strictness = models.CharField(
-        max_length=20, choices=IntensityScale.choices,
-        help_text="⚠️ گزینه‌های دقیق در سند منبع مشخص نشده بود — placeholder، نیاز به تأیید محصول",
+        max_length=20, choices=TimingStrictnessScale.choices,
         verbose_name="سختی در رعایت زمان وعده غذایی"
     )
     special_diet_preference = models.CharField(max_length=20, choices=YesNoPartial.choices, verbose_name="ترجیح داشتن رژیم خاص")
 
     # محور جهت‌گیری زمانی (Time-orientation axis)
     medication_timing_priority = models.CharField(
-        max_length=20, choices=IntensityScale.choices,
-        help_text="⚠️ گزینه‌های دقیق در سند منبع مشخص نشده بود — placeholder، نیاز به تأیید محصول",
+        max_length=20, choices=TimingStrictnessScale.choices,
         verbose_name="اهمیت زمان‌بندی داروها"
     )
 
@@ -300,8 +363,7 @@ class PatientCompatibilityQuestionnaire(models.Model):
 
     # محور انعطاف‌پذیری کلی (General flexibility axis)
     willingness_to_express_opinion = models.CharField(
-        max_length=20, choices=IntensityScale.choices,
-        help_text="⚠️ گزینه‌های دقیق در سند منبع مشخص نشده بود — placeholder، نیاز به تأیید محصول",
+        max_length=20, choices=ExpressionWillingnessScale.choices,
         verbose_name="آمادگی برای بیان نظر"
     )
 

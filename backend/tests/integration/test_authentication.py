@@ -59,7 +59,22 @@ class RegisterViewTests(BaseAPITestCase):
             "role": "superuser",
         }, format="json")
         # RegisterSerializer's role field only allows family/patient/
-        # caregiver/agency — "superuser" isn't a valid choice there.
+        # caregiver — "superuser" isn't a valid choice there.
+        self.assertEqual(response.status_code, 400)
+
+    def test_register_cannot_self_assign_agency_role(self):
+        # AGENCY is a paying B2B account (contracts, billing, and the
+        # ability to approve/reject other people's join requests) —
+        # must be created deliberately, not through open self-
+        # registration alongside ordinary consumer roles.
+        response = self.client.post("/api/auth/register/", {
+            "first_name": "شرکت", "last_name": "آزمایشی",
+            "username": "sneaky_agency",
+            "password": "StrongPass123",
+            "phone_number": "09121110001",
+            "email": "agency@example.com",
+            "role": "agency",
+        }, format="json")
         self.assertEqual(response.status_code, 400)
 
 

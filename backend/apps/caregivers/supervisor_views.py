@@ -36,7 +36,7 @@ from .models import (
     CaregiverWorkPreferences,
     IdentityProfile,
 )
-from .permissions import IsAdminOrSuperuser
+from .permissions import IsAdminOrSuperuserOrAgencySupervisor
 from .serializers import (
     CaregiverBasicInfoSerializer,
     CaregiverCompatibilityQuestionnaireSerializer,
@@ -56,16 +56,54 @@ from .views import _get_identity_dict, _missing_forms
 audit = AuditService()
 
 
-def _get_target_user(user_id: int) -> User | None:
+def _get_target_user(request, user_id: int) -> User | None:
+    """Returns None both when the user doesn't exist AND when the
+    caller isn't allowed to see them — the two cases are
+    indistinguishable to the caller on purpose (see
+    _caregiver_visible_to_actor's docstring)."""
+    if not _caregiver_visible_to_actor(request, user_id):
+        return None
     return User.objects.filter(id=user_id, role=UserRole.CAREGIVER).first()
 
 
-def _get_target_profile(user_id: int) -> CaregiverProfile | None:
-    user = _get_target_user(user_id)
+def _get_target_profile(request, user_id: int) -> CaregiverProfile | None:
+    user = _get_target_user(request, user_id)
     if user is None:
         return None
     profile, _ = CaregiverProfile.objects.get_or_create(user=user)
     return profile
+
+
+def _caregiver_visible_to_actor(request, user_id: int) -> bool:
+    """
+    ADMIN/SUPERUSER see every caregiver on the platform (unchanged
+    behavior). AGENCY_SUPERVISOR only sees caregivers actually linked
+    to their own agency, and only once that link is APPROVED — a
+    supervisor entering a brand-new caregiver auto-approves that link
+    themselves (see SupervisorCaregiverListView.post below), so this
+    only ever blocks a DIFFERENT agency's caregivers, not their own
+    freshly-created ones.
+
+    Returns False (not an exception) for anything unexpected — e.g. an
+    AGENCY_SUPERVISOR whose own AgencySupervisor row is somehow
+    missing — callers turn a False into a 404, matching this
+    platform's established "don't reveal whether the record exists at
+    all to someone who can't see it" convention (see apps.families's
+    patients app: "stranger gets 404 not 403").
+    """
+    if request.user.role in (UserRole.ADMIN, UserRole.SUPERUSER):
+        return True
+
+    if request.user.role != UserRole.AGENCY_SUPERVISOR:
+        return False
+
+    from apps.agencies.tenancy import caregiver_visible_to_tenant, resolve_own_agency_for_supervisor
+
+    agency = resolve_own_agency_for_supervisor(request.user)
+    if agency is None:
+        return False
+
+    return caregiver_visible_to_tenant(agency, user_id)
 
 
 class SupervisorCaregiverDetailView(APIView):
@@ -87,10 +125,10 @@ class SupervisorCaregiverDetailView(APIView):
            bulk import, not meant as a routine "remove someone from
            the platform" action.
     """
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def get(self, request, user_id):
-        user = _get_target_user(user_id)
+        user = _get_target_user(request, user_id)
         if user is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         return Response({
@@ -102,7 +140,7 @@ class SupervisorCaregiverDetailView(APIView):
         })
 
     def patch(self, request, user_id):
-        user = _get_target_user(user_id)
+        user = _get_target_user(request, user_id)
         if user is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         serializer = CaregiverBasicInfoSerializer(data=request.data, context={"user_id": user_id})
@@ -124,7 +162,7 @@ class SupervisorCaregiverDetailView(APIView):
         })
 
     def delete(self, request, user_id):
-        user = _get_target_user(user_id)
+        user = _get_target_user(request, user_id)
         if user is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         # Logged before the delete, not after — user_id would still be
@@ -146,10 +184,10 @@ class SupervisorCaregiverFullProfileView(APIView):
     instead of IsCaregiver, same pattern as every other view in this
     file.
     """
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def get(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         data = {
@@ -174,10 +212,19 @@ class SupervisorCaregiverListView(APIView):
          Returns the new user_id the frontend then uses for every
          subsequent step of the wizard.
     """
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def get(self, request):
         caregivers = User.objects.filter(role=UserRole.CAREGIVER).order_by("-date_joined")
+
+        if request.user.role == UserRole.AGENCY_SUPERVISOR:
+            from apps.agencies.tenancy import agency_caregiver_user_ids, resolve_own_agency_for_supervisor
+            agency = resolve_own_agency_for_supervisor(request.user)
+            if agency is None:
+                caregivers = caregivers.none()
+            else:
+                caregivers = caregivers.filter(id__in=agency_caregiver_user_ids(agency))
+
         rows = []
         for user in caregivers:
             profile = CaregiverProfile.objects.filter(user=user).first()
@@ -207,6 +254,13 @@ class SupervisorCaregiverListView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
+        agency_to_link = None
+        if request.user.role == UserRole.AGENCY_SUPERVISOR:
+            from apps.agencies.tenancy import resolve_own_agency_for_supervisor
+            agency_to_link = resolve_own_agency_for_supervisor(request.user)
+            if agency_to_link is None:
+                return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+
         if User.objects.filter(phone_number=data["phone_number"]).exists():
             return Response(
                 {"detail": "این شماره تلفن قبلاً ثبت شده است."}, status=status.HTTP_400_BAD_REQUEST
@@ -226,8 +280,21 @@ class SupervisorCaregiverListView(APIView):
         user.set_password(get_random_string(32))
         user.save()
 
-        CaregiverProfile.objects.get_or_create(user=user, defaults={"created_by": request.user})
+        profile, _ = CaregiverProfile.objects.get_or_create(user=user, defaults={"created_by": request.user})
         audit.caregiver_created(request.user.id, user.id)
+
+        if agency_to_link is not None:
+            # Unlike the caregiver-initiated join-request flow (which
+            # always starts PENDING — see apps.agencies.views), an
+            # agency supervisor is entering this caregiver directly
+            # ON BEHALF of their own agency, so the link is
+            # immediately APPROVED — there's no separate party who'd
+            # need to review and approve their own supervisor's entry.
+            from apps.agencies.models import AgencyCaregiverLink, AgencyLinkStatus
+            AgencyCaregiverLink.objects.create(
+                agency=agency_to_link, caregiver=profile,
+                status=AgencyLinkStatus.APPROVED, decided_by=request.user,
+            )
 
         return Response({
             "user_id": user.id,
@@ -237,10 +304,10 @@ class SupervisorCaregiverListView(APIView):
 
 
 class SupervisorIdentityView(APIView):
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def get(self, request, user_id):
-        user = _get_target_user(user_id)
+        user = _get_target_user(request, user_id)
         if user is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         profile = IdentityProfile.objects.filter(user=user).first()
@@ -249,7 +316,7 @@ class SupervisorIdentityView(APIView):
         return Response(IdentityProfileSerializer(profile).data)
 
     def put(self, request, user_id):
-        user = _get_target_user(user_id)
+        user = _get_target_user(request, user_id)
         if user is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         existing = IdentityProfile.objects.filter(user=user).first()
@@ -261,10 +328,10 @@ class SupervisorIdentityView(APIView):
 
 
 class SupervisorWorkPreferencesView(APIView):
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def get(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         prefs = getattr(profile, "work_preferences", None)
@@ -273,7 +340,7 @@ class SupervisorWorkPreferencesView(APIView):
         return Response(CaregiverWorkPreferencesSerializer(prefs).data)
 
     def put(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         existing = getattr(profile, "work_preferences", None)
@@ -293,10 +360,10 @@ class SupervisorCompatibilityQuestionnaireView(APIView):
     hard requirement to approve and work as a caregiver, so it stays
     optional rather than becoming a new gate on approval.
     """
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def get(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         questionnaire = getattr(profile, "compatibility_questionnaire", None)
@@ -305,7 +372,7 @@ class SupervisorCompatibilityQuestionnaireView(APIView):
         return Response(CaregiverCompatibilityQuestionnaireSerializer(questionnaire).data)
 
     def put(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         existing = getattr(profile, "compatibility_questionnaire", None)
@@ -317,16 +384,16 @@ class SupervisorCompatibilityQuestionnaireView(APIView):
 
 
 class SupervisorServiceAreasView(APIView):
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def get(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         return Response(CaregiverServiceAreaSerializer(profile.service_areas.all(), many=True).data)
 
     def post(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         serializer = CaregiverServiceAreaSerializer(data=request.data)
@@ -337,10 +404,10 @@ class SupervisorServiceAreasView(APIView):
 
 
 class SupervisorServiceAreaDetailView(APIView):
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def delete(self, request, user_id, area_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         deleted, _ = CaregiverServiceArea.objects.filter(id=area_id, profile=profile).delete()
@@ -351,10 +418,10 @@ class SupervisorServiceAreaDetailView(APIView):
 
 
 class SupervisorExperienceView(APIView):
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def get(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         exp = getattr(profile, "experience", None)
@@ -363,7 +430,7 @@ class SupervisorExperienceView(APIView):
         return Response(CaregiverExperienceSerializer(exp).data)
 
     def put(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         existing = getattr(profile, "experience", None)
@@ -375,10 +442,10 @@ class SupervisorExperienceView(APIView):
 
 
 class SupervisorSkillsView(APIView):
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def get(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         skills = getattr(profile, "skills", None)
@@ -387,7 +454,7 @@ class SupervisorSkillsView(APIView):
         return Response(CaregiverSkillsSerializer(skills).data)
 
     def put(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         existing = getattr(profile, "skills", None)
@@ -399,16 +466,16 @@ class SupervisorSkillsView(APIView):
 
 
 class SupervisorReferencesView(APIView):
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def get(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         return Response(CaregiverReferenceSerializer(profile.references.all(), many=True).data)
 
     def put(self, request, user_id):
-        profile = _get_target_profile(user_id)
+        profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         serializer = CaregiverReferenceListSerializer(data=request.data)
@@ -427,10 +494,10 @@ class SupervisorCaregiverProgressView(APIView):
     """GET /api/supervisor/caregivers/<user_id>/progress/ — which of
     the 4 forms are done, for the wizard's step indicator / resume
     logic when a supervisor comes back to an in-progress entry."""
-    permission_classes = [IsAdminOrSuperuser]
+    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
 
     def get(self, request, user_id):
-        user = _get_target_user(user_id)
+        user = _get_target_user(request, user_id)
         if user is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         profile, _ = CaregiverProfile.objects.get_or_create(user=user)

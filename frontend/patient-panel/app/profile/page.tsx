@@ -8,12 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Field, ChoiceSelect, SelectWithOther } from "@/components/forms/fields"
+import { Field, ChoiceSelect, SelectWithOther, CheckboxGroup } from "@/components/forms/fields"
 import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
-import { GUARDIANSHIP_STATUS, LANGUAGE_DIALECT, GENDER } from "@/lib/constants"
+import { GUARDIANSHIP_STATUS, LANGUAGE_DIALECT, GENDER, PHYSICAL_CONDITION, NEEDED_SHIFT } from "@/lib/constants"
 import { myPatientService } from "@/services/patient.service"
 import { ROUTES } from "@/lib/routes"
 import type { PatientProfile } from "@/types/patient"
@@ -41,7 +41,7 @@ export default function ProfilePage() {
           full_address: "", province: null, city: null, district: null,
           province_name: null, city_name: null, district_name: null, postal_code: "",
           emergency_contact_phone: "", guardianship_status: "none", guardian_details: "",
-          language_dialect: "", basic_medical_info: "", created_at: "", updated_at: "",
+          language_dialect: "", basic_medical_info: "", physical_condition: "", needed_shifts: [], created_at: "", updated_at: "",
         })
       })
       .finally(() => setLoading(false))
@@ -61,6 +61,7 @@ export default function ProfilePage() {
         emergency_contact_phone: profile.emergency_contact_phone,
         guardianship_status: profile.guardianship_status, guardian_details: profile.guardian_details,
         language_dialect: profile.language_dialect, basic_medical_info: profile.basic_medical_info,
+        physical_condition: profile.physical_condition, needed_shifts: profile.needed_shifts,
       })
       setProfile(updated)
       if (andContinue) {
@@ -139,6 +140,12 @@ export default function ProfilePage() {
                 </Field>
                 <Field label="اطلاعات پزشکی پایه">
                   <Textarea value={profile.basic_medical_info} onChange={(e) => setProfile({ ...profile, basic_medical_info: e.target.value })} />
+                </Field>
+                <Field label="شرایط جسمانی فعلی">
+                  <ChoiceSelect choices={PHYSICAL_CONDITION} value={profile.physical_condition} onChange={(v) => setProfile({ ...profile, physical_condition: v })} />
+                </Field>
+                <Field label="شیفت‌های زمانی مورد نیاز برای مراقبت">
+                  <CheckboxGroup choices={NEEDED_SHIFT} value={profile.needed_shifts || []} onChange={(v) => setProfile({ ...profile, needed_shifts: v })} />
                 </Field>
               </CardContent>
             </Card>

@@ -22,6 +22,8 @@ export interface PatientProfile {
   guardian_details: string
   language_dialect: string
   basic_medical_info: string
+  physical_condition: string
+  needed_shifts: string[]
   created_at: string
   updated_at: string
 }

@@ -40,18 +40,13 @@ def calculate_confidence(
     NOT how good the caregiver is.
 
     Symmetric by design: objective-fit data alone and trait-match data
-    alone should count equally toward confidence — the previous
-    version only checked for objective data in isolation, so a
-    caregiver with a complete, high-quality trait match (both
-    questionnaires filled in) but no recorded gender/age/location
-    preference fell all the way through to "low" confidence, even
-    though real, complete matching information existed. That
-    contradicts this function's own stated principle rather than
-    reflecting a deliberate choice about it — confirmed by testing
-    this exact case live and finding "low" confidence paired with an
-    explanation summary calling the same candidate a "very strong
-    suggestion," which is the kind of contradiction a supervisor
-    reading both together shouldn't see.
+    alone count equally toward confidence. An earlier version only
+    checked for objective data in isolation, so a caregiver with a
+    complete, high-quality trait match (both questionnaires filled in)
+    but no recorded gender/age/location preference fell all the way
+    through to "low" confidence, even though real, complete matching
+    information existed — contradicting this function's own stated
+    principle rather than reflecting a deliberate choice about it.
     """
 
     objective = candidate.get(

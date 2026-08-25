@@ -19,6 +19,7 @@ from apps.caregivers.models import (
 from .explanations import build_match_explanation
 from .mcdm import rank_candidates_with_topsis
 from .objective import calculate_objective_score
+from .specialization import physical_condition_score, shift_availability_score
 from .waterfall import evaluate_waterfall
 
 
@@ -245,6 +246,26 @@ def _build_candidate(
         "score": objective["score"],
 
         # ====================================================
+        # Tie-break-only signals (specialization.py)
+        #
+        # NOT part of objective_fit_score or the AHP/TOPSIS ranking —
+        # these two exist purely so mcdm.py's tie-breaker can
+        # distinguish otherwise-equal candidates on the two SAS-4
+        # tie-break criteria this pipeline previously had no data for
+        # at all. See specialization.py's module docstring.
+        # ====================================================
+
+        "physical_condition_match_score": physical_condition_score(
+            caregiver,
+            patient,
+        ),
+
+        "shift_availability_score": shift_availability_score(
+            caregiver,
+            patient,
+        ),
+
+        # ====================================================
         # Trait compatibility
         # ====================================================
 
@@ -335,6 +356,7 @@ def _build_candidate(
 def suggest_caregivers_for_patient(
     patient,
     limit: int = 10,
+    candidate_queryset=None,
 ) -> list[dict]:
     """
     Complete caregiver matching pipeline.
@@ -355,6 +377,15 @@ def suggest_caregivers_for_patient(
 
     Missing questionnaire data is represented as unavailable,
     not as zero compatibility.
+
+    candidate_queryset — optional pre-filtered CaregiverProfile
+    queryset to intersect with the normal APPROVED/not-already-
+    assigned filtering below, instead of considering every approved
+    caregiver on the platform. Added specifically for agency-scoped
+    matching (apps.care.matching.agency_scoped) — a family/supervisor
+    calling this the normal way (candidate_queryset=None, the
+    existing default) sees no change in behavior at all; only the
+    new agency-scoped call site passes this.
     """
 
     # --------------------------------------------------------
@@ -383,8 +414,14 @@ def suggest_caregivers_for_patient(
     # We calculate reputation and active workload here once.
     # --------------------------------------------------------
 
+    base_queryset = (
+        candidate_queryset
+        if candidate_queryset is not None
+        else CaregiverProfile.objects.all()
+    )
+
     candidates = (
-        CaregiverProfile.objects
+        base_queryset
         .filter(
             status=CaregiverStatus.APPROVED,
         )

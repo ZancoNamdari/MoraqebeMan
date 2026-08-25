@@ -1,0 +1,1434 @@
+Found 344 test(s).
+Creating test database for alias 'default' ('test_moraqebeman_db')...
+Operations to perform:
+  Synchronize unmigrated apps: authorization, corsheaders, django_jalali, drf_spectacular, messages, rest_framework, rest_framework_simplejwt, staticfiles
+  Apply all migrations: accounts, admin, agencies, audit, auth, authentication, care, caregivers, contenttypes, families, locations, sessions, token_blacklist
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying accounts.0001_initial... OK
+  Applying accounts.0002_alter_user_options_alter_user_first_name_and_more... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying families.0001_initial... OK
+  Applying locations.0001_initial... OK
+  Applying locations.0002_auto_20260802_1344... OK
+  Applying locations.0003_auto_20260802_1415... OK
+  Applying locations.0004_auto_20260802_1424... OK
+  Applying locations.0005_alter_district_options_and_more... OK
+  Applying locations.0006_auto_20260802_1517... OK
+  Applying locations.0007_alter_city_options_alter_district_options_and_more... OK
+  Applying locations.0008_alter_province_options_and_more... OK
+  Applying locations.0009_alter_province_ordering_number... OK
+  Applying caregivers.0001_initial... OK
+  Applying agencies.0001_initial... OK
+  Applying audit.0001_initial... OK
+  Applying audit.0002_alter_auditlog_event_type... OK
+  Applying audit.0003_alter_auditlog_event_type... OK
+  Applying audit.0004_alter_auditlog_event_type... OK
+  Applying audit.0005_alter_auditlog_event_type... OK
+  Applying audit.0006_alter_auditlog_event_type... OK
+  Applying audit.0007_alter_auditlog_event_type... OK
+  Applying authentication.0001_initial... OK
+  Applying families.0002_user_id_to_fk... OK
+  Applying families.0003_alter_familyprofile_user_notnull... OK
+  Applying families.0004_location_fields... OK
+  Applying families.0005_access_codes_and_link_status... OK
+  Applying families.0006_alter_familypatientlink_relation_and_more... OK
+  Applying families.0007_patientprofile_gender... OK
+  Applying caregivers.0002_create_supervisor_group... OK
+  Applying caregivers.0003_caregiverprofile_created_by... OK
+  Applying caregivers.0004_alter_identityprofile_military_status... OK
+  Applying care.0001_initial... OK
+  Applying care.0002_caregiverreview... OK
+  Applying care.0003_questiontraitmapping... OK
+  Applying care.0004_mcdmweightconfig... OK
+  Applying caregivers.0005_caregivercompatibilityquestionnaire... OK
+  Applying families.0008_resolve_questionnaire_placeholder_options... OK
+  Applying families.0009_patient_care_needs... OK
+  Applying sessions.0001_initial... OK
+  Applying token_blacklist.0001_initial... OK
+  Applying token_blacklist.0002_outstandingtoken_jti_hex... OK
+  Applying token_blacklist.0003_auto_20171017_2007... OK
+  Applying token_blacklist.0004_auto_20171017_2013... OK
+  Applying token_blacklist.0005_remove_outstandingtoken_jti... OK
+  Applying token_blacklist.0006_auto_20171017_2113... OK
+  Applying token_blacklist.0007_auto_20171017_2214... OK
+  Applying token_blacklist.0008_migrate_to_bigautofield... OK
+  Applying token_blacklist.0010_fix_migrate_to_bigautofield... OK
+  Applying token_blacklist.0011_linearizes_history... OK
+  Applying token_blacklist.0012_alter_outstandingtoken_user... OK
+System check identified no issues (0 silenced).
+test_approve_moves_into_roster_with_caregiver_status_visible (tests.integration.test_agencies.AgencyCaregiverRosterTests.test_approve_moves_into_roster_with_caregiver_status_visible) ... [2026-08-24 10:23:43,006] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=1)
+[2026-08-24 10:23:44,118] INFO apps.audit — POST /api/agencies/join/caregiver/ -> 201 (user=2)
+[2026-08-24 10:23:44,135] INFO apps.audit — audit_event=agency_caregiver_link_decided actor=1 target=2
+[2026-08-24 10:23:44,140] INFO apps.audit — POST /api/agencies/me/caregivers/requests/1/approve/ -> 200 (user=1)
+[2026-08-24 10:23:44,150] INFO apps.audit — GET /api/agencies/me/caregivers/ -> 200 (user=1)
+ok
+test_caregiver_join_request_starts_pending (tests.integration.test_agencies.AgencyCaregiverRosterTests.test_caregiver_join_request_starts_pending) ... [2026-08-24 10:23:45,070] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=3)
+[2026-08-24 10:23:45,865] INFO apps.audit — POST /api/agencies/join/caregiver/ -> 201 (user=4)
+ok
+test_caregiver_without_profile_cannot_join (tests.integration.test_agencies.AgencyCaregiverRosterTests.test_caregiver_without_profile_cannot_join) ... [2026-08-24 10:23:47,071] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=5)
+[2026-08-24 10:23:48,646] INFO apps.audit — POST /api/agencies/join/caregiver/ -> 400 (user=7)
+[2026-08-24 10:23:48,650] WARNING django.request — Bad Request: /api/agencies/join/caregiver/
+ok
+test_draft_caregiver_can_still_request_to_join (tests.integration.test_agencies.AgencyCaregiverRosterTests.test_draft_caregiver_can_still_request_to_join) ... [2026-08-24 10:23:49,524] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=8)
+[2026-08-24 10:23:51,140] INFO apps.audit — POST /api/agencies/join/caregiver/ -> 201 (user=10)
+ok
+test_dashboard_counts_start_at_zero (tests.integration.test_agencies.AgencyDashboardTests.test_dashboard_counts_start_at_zero) ... [2026-08-24 10:23:52,066] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=11)
+[2026-08-24 10:23:52,083] INFO apps.audit — GET /api/agencies/me/dashboard/ -> 200 (user=11)
+ok
+test_dashboard_reflects_pending_and_approved_counts (tests.integration.test_agencies.AgencyDashboardTests.test_dashboard_reflects_pending_and_approved_counts) ... [2026-08-24 10:23:52,958] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=12)
+[2026-08-24 10:23:53,674] INFO apps.audit — POST /api/agencies/join/family/ -> 201 (user=13)
+[2026-08-24 10:23:54,676] INFO apps.audit — POST /api/agencies/join/family/ -> 201 (user=14)
+[2026-08-24 10:23:54,696] INFO apps.audit — audit_event=agency_family_link_decided actor=12 target=14
+[2026-08-24 10:23:54,702] INFO apps.audit — POST /api/agencies/me/families/requests/2/approve/ -> 200 (user=12)
+[2026-08-24 10:23:54,722] INFO apps.audit — GET /api/agencies/me/dashboard/ -> 200 (user=12)
+ok
+test_another_agency_cannot_decide_on_this_ones_requests (tests.integration.test_agencies.AgencyFamilyRosterTests.test_another_agency_cannot_decide_on_this_ones_requests) ... [2026-08-24 10:23:55,853] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=15)
+[2026-08-24 10:23:56,716] INFO apps.audit — POST /api/agencies/join/family/ -> 201 (user=16)
+[2026-08-24 10:23:57,567] INFO apps.audit — POST /api/agencies/me/families/requests/3/approve/ -> 404 (user=17)
+[2026-08-24 10:23:57,568] WARNING django.request — Not Found: /api/agencies/me/families/requests/3/approve/
+ok
+test_approve_moves_request_into_roster (tests.integration.test_agencies.AgencyFamilyRosterTests.test_approve_moves_request_into_roster) ... [2026-08-24 10:23:58,464] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=18)
+[2026-08-24 10:23:59,219] INFO apps.audit — POST /api/agencies/join/family/ -> 201 (user=19)
+[2026-08-24 10:23:59,233] INFO apps.audit — audit_event=agency_family_link_decided actor=18 target=19
+[2026-08-24 10:23:59,237] INFO apps.audit — POST /api/agencies/me/families/requests/4/approve/ -> 200 (user=18)
+[2026-08-24 10:23:59,247] INFO apps.audit — GET /api/agencies/me/families/ -> 200 (user=18)
+ok
+test_duplicate_join_request_rejected (tests.integration.test_agencies.AgencyFamilyRosterTests.test_duplicate_join_request_rejected) ... [2026-08-24 10:24:00,097] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=20)
+[2026-08-24 10:24:00,831] INFO apps.audit — POST /api/agencies/join/family/ -> 201 (user=21)
+[2026-08-24 10:24:00,846] INFO apps.audit — POST /api/agencies/join/family/ -> 400 (user=21)
+[2026-08-24 10:24:00,846] WARNING django.request — Bad Request: /api/agencies/join/family/
+ok
+test_family_join_request_starts_pending (tests.integration.test_agencies.AgencyFamilyRosterTests.test_family_join_request_starts_pending) ... [2026-08-24 10:24:01,743] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=22)
+[2026-08-24 10:24:02,504] INFO apps.audit — POST /api/agencies/join/family/ -> 201 (user=23)
+ok
+test_invalid_agency_code_rejected (tests.integration.test_agencies.AgencyFamilyRosterTests.test_invalid_agency_code_rejected) ... [2026-08-24 10:24:03,255] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=24)
+[2026-08-24 10:24:04,033] INFO apps.audit — POST /api/agencies/join/family/ -> 400 (user=25)
+[2026-08-24 10:24:04,034] WARNING django.request — Bad Request: /api/agencies/join/family/
+ok
+test_pending_request_not_in_roster_until_approved (tests.integration.test_agencies.AgencyFamilyRosterTests.test_pending_request_not_in_roster_until_approved) ... [2026-08-24 10:24:04,805] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=26)
+[2026-08-24 10:24:05,644] INFO apps.audit — POST /api/agencies/join/family/ -> 201 (user=27)
+[2026-08-24 10:24:05,651] INFO apps.audit — GET /api/agencies/me/families/ -> 200 (user=26)
+[2026-08-24 10:24:05,667] INFO apps.audit — GET /api/agencies/me/families/requests/ -> 200 (user=26)
+ok
+test_reject_does_not_appear_in_roster (tests.integration.test_agencies.AgencyFamilyRosterTests.test_reject_does_not_appear_in_roster) ... [2026-08-24 10:24:06,351] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=28)
+[2026-08-24 10:24:07,431] INFO apps.audit — POST /api/agencies/join/family/ -> 201 (user=29)
+[2026-08-24 10:24:07,442] INFO apps.audit — audit_event=agency_family_link_decided actor=28 target=29
+[2026-08-24 10:24:07,448] INFO apps.audit — POST /api/agencies/me/families/requests/8/reject/ -> 200 (user=28)
+[2026-08-24 10:24:07,455] INFO apps.audit — GET /api/agencies/me/families/ -> 200 (user=28)
+ok
+test_writes_audit_entry_on_approval (tests.integration.test_agencies.AgencyFamilyRosterTests.test_writes_audit_entry_on_approval) ... [2026-08-24 10:24:08,138] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=30)
+[2026-08-24 10:24:09,023] INFO apps.audit — POST /api/agencies/join/family/ -> 201 (user=31)
+[2026-08-24 10:24:09,041] INFO apps.audit — audit_event=agency_family_link_decided actor=30 target=31
+[2026-08-24 10:24:09,045] INFO apps.audit — POST /api/agencies/me/families/requests/9/approve/ -> 200 (user=30)
+ok
+test_access_code_is_stable_across_requests (tests.integration.test_agencies.AgencyProfileTests.test_access_code_is_stable_across_requests) ... [2026-08-24 10:24:09,860] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=32)
+[2026-08-24 10:24:09,867] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=32)
+ok
+test_get_before_any_profile_auto_creates_one (tests.integration.test_agencies.AgencyProfileTests.test_get_before_any_profile_auto_creates_one) ... [2026-08-24 10:24:10,574] INFO apps.audit — GET /api/agencies/me/ -> 200 (user=33)
+ok
+test_non_agency_cannot_access (tests.integration.test_agencies.AgencyProfileTests.test_non_agency_cannot_access) ... [2026-08-24 10:24:12,245] INFO apps.audit — GET /api/agencies/me/ -> 403 (user=35)
+[2026-08-24 10:24:12,246] WARNING django.request — Forbidden: /api/agencies/me/
+ok
+test_put_updates_company_name (tests.integration.test_agencies.AgencyProfileTests.test_put_updates_company_name) ... [2026-08-24 10:24:13,030] INFO apps.audit — PUT /api/agencies/me/ -> 200 (user=36)
+ok
+test_login_locks_after_five_failed_attempts (tests.integration.test_authentication.LoginViewTests.test_login_locks_after_five_failed_attempts) ... [2026-08-24 10:24:14,562] WARNING apps.authentication — Failed login attempt for username=sara
+[2026-08-24 10:24:14,566] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:24:14,571] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:24:14,572] WARNING django.request — Unauthorized: /api/auth/login/
+[2026-08-24 10:24:15,414] WARNING apps.authentication — Failed login attempt for username=sara
+[2026-08-24 10:24:15,419] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:24:15,424] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:24:15,426] WARNING django.request — Unauthorized: /api/auth/login/
+[2026-08-24 10:24:16,395] WARNING apps.authentication — Failed login attempt for username=sara
+[2026-08-24 10:24:16,399] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:24:16,401] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:24:16,403] WARNING django.request — Unauthorized: /api/auth/login/
+[2026-08-24 10:24:17,634] WARNING apps.authentication — Failed login attempt for username=sara
+[2026-08-24 10:24:17,641] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:24:17,643] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:24:17,644] WARNING django.request — Unauthorized: /api/auth/login/
+[2026-08-24 10:24:18,314] WARNING apps.authentication — Failed login attempt for username=sara
+[2026-08-24 10:24:18,317] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:24:18,318] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:24:18,320] WARNING django.request — Unauthorized: /api/auth/login/
+[2026-08-24 10:24:18,329] WARNING apps.authentication — Login blocked (locked): username=sara
+[2026-08-24 10:24:18,331] INFO apps.audit — audit_event=login_locked actor=None target=None
+[2026-08-24 10:24:18,332] INFO apps.audit — POST /api/auth/login/ -> 423 (user=anonymous)
+[2026-08-24 10:24:18,333] WARNING django.request — Locked: /api/auth/login/
+ok
+test_login_success (tests.integration.test_authentication.LoginViewTests.test_login_success) ... [2026-08-24 10:24:20,130] INFO apps.audit — audit_event=login_success actor=38 target=38
+[2026-08-24 10:24:20,163] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+ok
+test_login_with_phone_number_instead_of_username (tests.integration.test_authentication.LoginViewTests.test_login_with_phone_number_instead_of_username) ... [2026-08-24 10:24:21,811] INFO apps.audit — audit_event=login_success actor=39 target=39
+[2026-08-24 10:24:21,814] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+ok
+test_login_wrong_password_returns_401 (tests.integration.test_authentication.LoginViewTests.test_login_wrong_password_returns_401) ... [2026-08-24 10:24:23,299] WARNING apps.authentication — Failed login attempt for username=sara
+[2026-08-24 10:24:23,303] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:24:23,304] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:24:23,305] WARNING django.request — Unauthorized: /api/auth/login/
+ok
+test_successful_login_resets_failed_attempt_counter (tests.integration.test_authentication.LoginViewTests.test_successful_login_resets_failed_attempt_counter) ... [2026-08-24 10:24:24,841] WARNING apps.authentication — Failed login attempt for username=sara
+[2026-08-24 10:24:24,847] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:24:24,850] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:24:24,851] WARNING django.request — Unauthorized: /api/auth/login/
+[2026-08-24 10:24:25,519] WARNING apps.authentication — Failed login attempt for username=sara
+[2026-08-24 10:24:25,522] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:24:25,524] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:24:25,525] WARNING django.request — Unauthorized: /api/auth/login/
+[2026-08-24 10:24:26,409] WARNING apps.authentication — Failed login attempt for username=sara
+[2026-08-24 10:24:26,413] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:24:26,414] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:24:26,417] WARNING django.request — Unauthorized: /api/auth/login/
+[2026-08-24 10:24:27,423] INFO apps.audit — audit_event=login_success actor=41 target=41
+[2026-08-24 10:24:27,427] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:24:28,136] WARNING apps.authentication — Failed login attempt for username=sara
+[2026-08-24 10:24:28,141] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:24:28,143] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:24:28,144] WARNING django.request — Unauthorized: /api/auth/login/
+[2026-08-24 10:24:28,979] WARNING apps.authentication — Failed login attempt for username=sara
+[2026-08-24 10:24:28,982] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:24:28,986] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:24:28,987] WARNING django.request — Unauthorized: /api/auth/login/
+ok
+test_logout_blacklists_refresh_token (tests.integration.test_authentication.LogoutViewTests.test_logout_blacklists_refresh_token) ... [2026-08-24 10:24:30,987] INFO apps.audit — audit_event=login_success actor=42 target=42
+[2026-08-24 10:24:30,993] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:24:31,012] INFO apps.audit — audit_event=logout actor=42 target=42
+[2026-08-24 10:24:31,014] INFO apps.audit — POST /api/auth/logout/ -> 204 (user=42)
+[2026-08-24 10:24:31,024] INFO apps.audit — POST /api/auth/refresh/ -> 401 (user=anonymous)
+[2026-08-24 10:24:31,026] WARNING django.request — Unauthorized: /api/auth/refresh/
+ok
+test_logout_requires_authentication (tests.integration.test_authentication.LogoutViewTests.test_logout_requires_authentication) ... [2026-08-24 10:24:32,186] INFO apps.audit — POST /api/auth/logout/ -> 401 (user=anonymous)
+[2026-08-24 10:24:32,189] WARNING django.request — Unauthorized: /api/auth/logout/
+ok
+test_me_requires_authentication (tests.integration.test_authentication.MeViewTests.test_me_requires_authentication) ... [2026-08-24 10:24:32,214] INFO apps.audit — GET /api/auth/me/ -> 401 (user=anonymous)
+[2026-08-24 10:24:32,215] WARNING django.request — Unauthorized: /api/auth/me/
+ok
+test_me_returns_current_user (tests.integration.test_authentication.MeViewTests.test_me_returns_current_user) ... [2026-08-24 10:24:34,391] INFO apps.audit — audit_event=login_success actor=44 target=44
+[2026-08-24 10:24:34,399] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:24:34,414] INFO apps.audit — GET /api/auth/me/ -> 200 (user=44)
+ok
+test_code_cannot_be_reused (tests.integration.test_authentication.OTPLoginTests.test_code_cannot_be_reused) ... [2026-08-24 10:24:35,556] INFO apps.authentication — New user registered: id=45 role=family username=zhr_khrymy
+[2026-08-24 10:24:35,560] INFO apps.audit — audit_event=user_registered actor=45 target=45
+[2026-08-24 10:24:35,565] INFO apps.audit — POST /api/auth/register/ -> 201 (user=anonymous)
+[2026-08-24 10:24:37,429] INFO apps.audit — audit_event=login_success actor=45 target=45
+[2026-08-24 10:24:37,433] INFO apps.audit — POST /api/auth/otp-login/verify/ -> 200 (user=anonymous)
+[2026-08-24 10:24:37,445] INFO apps.audit — audit_event=login_failed actor=45 target=45
+[2026-08-24 10:24:37,447] INFO apps.audit — POST /api/auth/otp-login/verify/ -> 400 (user=anonymous)
+[2026-08-24 10:24:37,448] WARNING django.request — Bad Request: /api/auth/otp-login/verify/
+ok
+test_correct_code_logs_in_and_returns_tokens (tests.integration.test_authentication.OTPLoginTests.test_correct_code_logs_in_and_returns_tokens) ... [2026-08-24 10:24:38,262] INFO apps.authentication — New user registered: id=46 role=family username=zhr_khrymy
+[2026-08-24 10:24:38,264] INFO apps.audit — audit_event=user_registered actor=46 target=46
+[2026-08-24 10:24:38,268] INFO apps.audit — POST /api/auth/register/ -> 201 (user=anonymous)
+[2026-08-24 10:24:39,881] INFO apps.audit — audit_event=login_success actor=46 target=46
+[2026-08-24 10:24:39,885] INFO apps.audit — POST /api/auth/otp-login/verify/ -> 200 (user=anonymous)
+ok
+test_login_via_otp_does_not_require_phone_to_be_previously_verified (tests.integration.test_authentication.OTPLoginTests.test_login_via_otp_does_not_require_phone_to_be_previously_verified) ... [2026-08-24 10:24:40,819] INFO apps.authentication — New user registered: id=47 role=family username=zhr_khrymy
+[2026-08-24 10:24:40,821] INFO apps.audit — audit_event=user_registered actor=47 target=47
+[2026-08-24 10:24:40,825] INFO apps.audit — POST /api/auth/register/ -> 201 (user=anonymous)
+[2026-08-24 10:24:42,515] INFO apps.audit — audit_event=login_success actor=47 target=47
+[2026-08-24 10:24:42,520] INFO apps.audit — POST /api/auth/otp-login/verify/ -> 200 (user=anonymous)
+ok
+test_request_for_nonexistent_phone_also_returns_202_no_enumeration (tests.integration.test_authentication.OTPLoginTests.test_request_for_nonexistent_phone_also_returns_202_no_enumeration) ... [2026-08-24 10:24:43,270] INFO apps.authentication — New user registered: id=48 role=family username=zhr_khrymy
+[2026-08-24 10:24:43,272] INFO apps.audit — audit_event=user_registered actor=48 target=48
+[2026-08-24 10:24:43,279] INFO apps.audit — POST /api/auth/register/ -> 201 (user=anonymous)
+[2026-08-24 10:24:43,290] INFO apps.audit — POST /api/auth/otp-login/request/ -> 202 (user=anonymous)
+ok
+test_request_otp_login_always_returns_202 (tests.integration.test_authentication.OTPLoginTests.test_request_otp_login_always_returns_202) ... [2026-08-24 10:24:44,078] INFO apps.authentication — New user registered: id=49 role=family username=zhr_khrymy
+[2026-08-24 10:24:44,083] INFO apps.audit — audit_event=user_registered actor=49 target=49
+[2026-08-24 10:24:44,088] INFO apps.audit — POST /api/auth/register/ -> 201 (user=anonymous)
+[2026-08-24 10:24:45,075] INFO apps.audit — audit_event=otp_requested actor=49 target=49
+[2026-08-24 10:24:45,077] INFO apps.audit — POST /api/auth/otp-login/request/ -> 202 (user=anonymous)
+ok
+test_wrong_code_rejected (tests.integration.test_authentication.OTPLoginTests.test_wrong_code_rejected) ... [2026-08-24 10:24:45,857] INFO apps.authentication — New user registered: id=50 role=family username=zhr_khrymy
+[2026-08-24 10:24:45,859] INFO apps.audit — audit_event=user_registered actor=50 target=50
+[2026-08-24 10:24:45,863] INFO apps.audit — POST /api/auth/register/ -> 201 (user=anonymous)
+[2026-08-24 10:24:46,916] INFO apps.audit — audit_event=otp_requested actor=50 target=50
+[2026-08-24 10:24:46,918] INFO apps.audit — POST /api/auth/otp-login/request/ -> 202 (user=anonymous)
+[2026-08-24 10:24:47,780] INFO apps.audit — audit_event=login_failed actor=50 target=50
+[2026-08-24 10:24:47,782] INFO apps.audit — POST /api/auth/otp-login/verify/ -> 400 (user=anonymous)
+[2026-08-24 10:24:47,784] WARNING django.request — Bad Request: /api/auth/otp-login/verify/
+ok
+test_register_cannot_self_assign_agency_role (tests.integration.test_authentication.RegisterViewTests.test_register_cannot_self_assign_agency_role) ... [2026-08-24 10:24:47,948] INFO apps.audit — POST /api/auth/register/ -> 400 (user=anonymous)
+[2026-08-24 10:24:47,949] WARNING django.request — Bad Request: /api/auth/register/
+ok
+test_register_cannot_self_assign_superuser_role (tests.integration.test_authentication.RegisterViewTests.test_register_cannot_self_assign_superuser_role) ... [2026-08-24 10:24:47,970] INFO apps.audit — POST /api/auth/register/ -> 400 (user=anonymous)
+[2026-08-24 10:24:47,972] WARNING django.request — Bad Request: /api/auth/register/
+ok
+test_register_duplicate_phone_number_rejected (tests.integration.test_authentication.RegisterViewTests.test_register_duplicate_phone_number_rejected) ... [2026-08-24 10:24:49,818] INFO apps.audit — POST /api/auth/register/ -> 400 (user=anonymous)
+[2026-08-24 10:24:49,819] WARNING django.request — Bad Request: /api/auth/register/
+ok
+test_register_success_returns_tokens (tests.integration.test_authentication.RegisterViewTests.test_register_success_returns_tokens) ... [2026-08-24 10:24:50,579] INFO apps.authentication — New user registered: id=52 role=family username=sara_family
+[2026-08-24 10:24:50,586] INFO apps.audit — audit_event=user_registered actor=52 target=52
+[2026-08-24 10:24:50,597] INFO apps.audit — POST /api/auth/register/ -> 201 (user=anonymous)
+ok
+test_register_without_username_auto_generates_one (tests.integration.test_authentication.RegisterViewTests.test_register_without_username_auto_generates_one) ... [2026-08-24 10:24:51,565] INFO apps.authentication — New user registered: id=53 role=caregiver username=ly_mhmdy
+[2026-08-24 10:24:51,569] INFO apps.audit — audit_event=user_registered actor=53 target=53
+[2026-08-24 10:24:51,584] INFO apps.audit — POST /api/auth/register/ -> 201 (user=anonymous)
+ok
+test_register_with_password_still_works (tests.integration.test_authentication.RegistrationWithoutPasswordTests.test_register_with_password_still_works) ... [2026-08-24 10:24:52,825] INFO apps.authentication — New user registered: id=54 role=family username=ly_rdyy
+[2026-08-24 10:24:52,830] INFO apps.audit — audit_event=user_registered actor=54 target=54
+[2026-08-24 10:24:52,836] INFO apps.audit — POST /api/auth/register/ -> 201 (user=anonymous)
+ok
+test_register_without_password_succeeds (tests.integration.test_authentication.RegistrationWithoutPasswordTests.test_register_without_password_succeeds) ... [2026-08-24 10:24:53,646] INFO apps.authentication — New user registered: id=55 role=family username=ly_rdyy
+[2026-08-24 10:24:53,648] INFO apps.audit — audit_event=user_registered actor=55 target=55
+[2026-08-24 10:24:53,653] INFO apps.audit — POST /api/auth/register/ -> 201 (user=anonymous)
+ok
+test_change_role_for_nonexistent_user_returns_400 (tests.integration.test_authorization.ChangeUserRoleTests.test_change_role_for_nonexistent_user_returns_400) ... [2026-08-24 10:24:58,256] INFO apps.audit — audit_event=login_success actor=57 target=57
+[2026-08-24 10:24:58,264] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:24:58,286] INFO apps.audit — PATCH /api/auth/users/999999/role/ -> 400 (user=57)
+[2026-08-24 10:24:58,288] WARNING django.request — Bad Request: /api/auth/users/999999/role/
+ok
+test_change_role_requires_authentication (tests.integration.test_authorization.ChangeUserRoleTests.test_change_role_requires_authentication) ... [2026-08-24 10:25:00,877] INFO apps.audit — PATCH /api/auth/users/59/role/ -> 401 (user=anonymous)
+[2026-08-24 10:25:00,878] WARNING django.request — Unauthorized: /api/auth/users/59/role/
+ok
+test_invalid_role_value_rejected (tests.integration.test_authorization.ChangeUserRoleTests.test_invalid_role_value_rejected) ... [2026-08-24 10:25:04,011] INFO apps.audit — audit_event=login_success actor=63 target=63
+[2026-08-24 10:25:04,014] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:25:04,020] INFO apps.audit — PATCH /api/auth/users/62/role/ -> 400 (user=63)
+[2026-08-24 10:25:04,022] WARNING django.request — Bad Request: /api/auth/users/62/role/
+ok
+test_regular_user_cannot_change_role (tests.integration.test_authorization.ChangeUserRoleTests.test_regular_user_cannot_change_role) ... [2026-08-24 10:25:07,360] INFO apps.audit — audit_event=login_success actor=67 target=67
+[2026-08-24 10:25:07,364] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:25:07,368] INFO apps.audit — PATCH /api/auth/users/65/role/ -> 403 (user=67)
+[2026-08-24 10:25:07,370] WARNING django.request — Forbidden: /api/auth/users/65/role/
+ok
+test_superuser_can_change_role (tests.integration.test_authorization.ChangeUserRoleTests.test_superuser_can_change_role) ... [2026-08-24 10:25:10,535] INFO apps.audit — audit_event=login_success actor=69 target=69
+[2026-08-24 10:25:10,539] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:25:10,549] INFO apps.audit — audit_event=role_changed actor=69 target=68
+[2026-08-24 10:25:10,552] INFO apps.audit — PATCH /api/auth/users/68/role/ -> 200 (user=69)
+ok
+test_assigned_caregiver_can_submit_report (tests.integration.test_care.CareLogEntryTests.test_assigned_caregiver_can_submit_report) ... [2026-08-24 10:25:13,092] INFO apps.audit — audit_event=caregiver_assigned actor=71 target=72
+[2026-08-24 10:25:13,108] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=71)
+[2026-08-24 10:25:13,133] INFO apps.audit — audit_event=care_log_entry_created actor=72 target=None
+[2026-08-24 10:25:13,140] INFO apps.audit — POST /api/care/me/log-entries/ -> 201 (user=72)
+ok
+test_caregiver_lists_own_assigned_patients (tests.integration.test_care.CareLogEntryTests.test_caregiver_lists_own_assigned_patients) ... [2026-08-24 10:25:15,343] INFO apps.audit — audit_event=caregiver_assigned actor=74 target=75
+[2026-08-24 10:25:15,357] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=74)
+[2026-08-24 10:25:15,385] INFO apps.audit — GET /api/care/me/patients/ -> 200 (user=75)
+ok
+test_family_sees_the_care_team (tests.integration.test_care.CareLogEntryTests.test_family_sees_the_care_team) ... [2026-08-24 10:25:18,104] INFO apps.audit — audit_event=caregiver_assigned actor=77 target=78
+[2026-08-24 10:25:18,118] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=77)
+[2026-08-24 10:25:18,144] INFO apps.audit — GET /api/care/patients/3/team/ -> 200 (user=79)
+ok
+test_family_sees_the_timeline (tests.integration.test_care.CareLogEntryTests.test_family_sees_the_timeline) ... [2026-08-24 10:25:20,825] INFO apps.audit — audit_event=caregiver_assigned actor=80 target=81
+[2026-08-24 10:25:20,834] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=80)
+[2026-08-24 10:25:20,845] INFO apps.audit — audit_event=care_log_entry_created actor=81 target=None
+[2026-08-24 10:25:20,852] INFO apps.audit — POST /api/care/me/log-entries/ -> 201 (user=81)
+[2026-08-24 10:25:20,870] INFO apps.audit — GET /api/care/patients/4/timeline/ -> 200 (user=82)
+ok
+test_patient_can_see_own_timeline (tests.integration.test_care.CareLogEntryTests.test_patient_can_see_own_timeline) ... [2026-08-24 10:25:23,434] INFO apps.audit — audit_event=caregiver_assigned actor=83 target=84
+[2026-08-24 10:25:23,443] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=83)
+[2026-08-24 10:25:24,302] INFO apps.audit — audit_event=care_log_entry_created actor=84 target=None
+[2026-08-24 10:25:24,310] INFO apps.audit — POST /api/care/me/log-entries/ -> 201 (user=84)
+[2026-08-24 10:25:24,327] INFO apps.audit — GET /api/care/patients/5/timeline/ -> 200 (user=86)
+ok
+test_report_writes_audit_entry (tests.integration.test_care.CareLogEntryTests.test_report_writes_audit_entry) ... [2026-08-24 10:25:26,719] INFO apps.audit — audit_event=caregiver_assigned actor=87 target=88
+[2026-08-24 10:25:26,738] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=87)
+[2026-08-24 10:25:26,769] INFO apps.audit — audit_event=care_log_entry_created actor=88 target=None
+[2026-08-24 10:25:26,805] INFO apps.audit — POST /api/care/me/log-entries/ -> 201 (user=88)
+ok
+test_unassigned_caregiver_cannot_report (tests.integration.test_care.CareLogEntryTests.test_unassigned_caregiver_cannot_report) ... [2026-08-24 10:25:29,281] INFO apps.audit — audit_event=caregiver_assigned actor=90 target=91
+[2026-08-24 10:25:29,295] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=90)
+[2026-08-24 10:25:30,098] INFO apps.audit — POST /api/care/me/log-entries/ -> 403 (user=93)
+[2026-08-24 10:25:30,100] WARNING django.request — Forbidden: /api/care/me/log-entries/
+ok
+test_unrelated_family_cannot_see_timeline (tests.integration.test_care.CareLogEntryTests.test_unrelated_family_cannot_see_timeline) ... [2026-08-24 10:25:32,461] INFO apps.audit — audit_event=caregiver_assigned actor=94 target=95
+[2026-08-24 10:25:32,478] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=94)
+[2026-08-24 10:25:33,290] INFO apps.audit — GET /api/care/patients/8/timeline/ -> 404 (user=97)
+[2026-08-24 10:25:33,291] WARNING django.request — Not Found: /api/care/patients/8/timeline/
+ok
+test_assigning_same_pair_twice_while_active_rejected (tests.integration.test_care.CaregiverAssignmentTests.test_assigning_same_pair_twice_while_active_rejected) ... [2026-08-24 10:25:36,136] INFO apps.audit — audit_event=caregiver_assigned actor=98 target=99
+[2026-08-24 10:25:36,155] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=98)
+[2026-08-24 10:25:36,169] INFO apps.audit — POST /api/care/assignments/ -> 400 (user=98)
+[2026-08-24 10:25:36,170] WARNING django.request — Bad Request: /api/care/assignments/
+ok
+test_assigning_with_invalid_patient_code_rejected (tests.integration.test_care.CaregiverAssignmentTests.test_assigning_with_invalid_patient_code_rejected) ... [2026-08-24 10:25:39,580] INFO apps.audit — POST /api/care/assignments/ -> 404 (user=101)
+[2026-08-24 10:25:39,582] WARNING django.request — Not Found: /api/care/assignments/
+ok
+test_assignment_writes_audit_entry (tests.integration.test_care.CaregiverAssignmentTests.test_assignment_writes_audit_entry) ... [2026-08-24 10:25:42,536] INFO apps.audit — audit_event=caregiver_assigned actor=104 target=105
+[2026-08-24 10:25:42,547] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=104)
+ok
+test_can_reassign_after_ending (tests.integration.test_care.CaregiverAssignmentTests.test_can_reassign_after_ending) ... [2026-08-24 10:25:45,075] INFO apps.audit — audit_event=caregiver_assigned actor=107 target=108
+[2026-08-24 10:25:45,086] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=107)
+[2026-08-24 10:25:45,106] INFO apps.audit — audit_event=caregiver_assignment_ended actor=107 target=108
+[2026-08-24 10:25:45,124] INFO apps.audit — POST /api/care/assignments/11/end/ -> 200 (user=107)
+[2026-08-24 10:25:45,139] INFO apps.audit — audit_event=caregiver_assigned actor=107 target=108
+[2026-08-24 10:25:45,155] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=107)
+ok
+test_ending_an_assignment (tests.integration.test_care.CaregiverAssignmentTests.test_ending_an_assignment) ... [2026-08-24 10:25:47,880] INFO apps.audit — audit_event=caregiver_assigned actor=110 target=111
+[2026-08-24 10:25:47,888] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=110)
+[2026-08-24 10:25:47,899] INFO apps.audit — audit_event=caregiver_assignment_ended actor=110 target=111
+[2026-08-24 10:25:47,909] INFO apps.audit — POST /api/care/assignments/13/end/ -> 200 (user=110)
+ok
+test_non_supervisor_cannot_assign (tests.integration.test_care.CaregiverAssignmentTests.test_non_supervisor_cannot_assign) ... [2026-08-24 10:25:50,238] INFO apps.audit — POST /api/care/assignments/ -> 403 (user=115)
+[2026-08-24 10:25:50,239] WARNING django.request — Forbidden: /api/care/assignments/
+ok
+test_supervisor_assigns_caregiver_to_patient_by_code (tests.integration.test_care.CaregiverAssignmentTests.test_supervisor_assigns_caregiver_to_patient_by_code) ... [2026-08-24 10:25:52,711] INFO apps.audit — audit_event=caregiver_assigned actor=116 target=117
+[2026-08-24 10:25:52,722] INFO apps.audit — POST /api/care/assignments/ -> 201 (user=116)
+ok
+test_aggregate_rating_shows_up_on_care_team_view (tests.integration.test_care.CaregiverReviewTests.test_aggregate_rating_shows_up_on_care_team_view) ... [2026-08-24 10:25:55,174] INFO apps.audit — audit_event=caregiver_reviewed actor=121 target=120
+[2026-08-24 10:25:55,178] INFO apps.audit — POST /api/care/assignments/15/review/ -> 201 (user=121)
+[2026-08-24 10:25:55,207] INFO apps.audit — GET /api/care/patients/16/team/ -> 200 (user=121)
+ok
+test_family_can_submit_a_review (tests.integration.test_care.CaregiverReviewTests.test_family_can_submit_a_review) ... [2026-08-24 10:25:57,757] INFO apps.audit — audit_event=caregiver_reviewed actor=124 target=123
+[2026-08-24 10:25:57,761] INFO apps.audit — POST /api/care/assignments/16/review/ -> 201 (user=124)
+ok
+test_no_reviews_yet_shows_null_not_zero (tests.integration.test_care.CaregiverReviewTests.test_no_reviews_yet_shows_null_not_zero) ... [2026-08-24 10:26:00,723] INFO apps.audit — GET /api/care/patients/18/team/ -> 200 (user=127)
+ok
+test_rating_out_of_range_rejected (tests.integration.test_care.CaregiverReviewTests.test_rating_out_of_range_rejected) ... [2026-08-24 10:26:03,097] INFO apps.audit — POST /api/care/assignments/18/review/ -> 400 (user=130)
+[2026-08-24 10:26:03,098] WARNING django.request — Bad Request: /api/care/assignments/18/review/
+ok
+test_resubmitting_updates_rather_than_duplicating (tests.integration.test_care.CaregiverReviewTests.test_resubmitting_updates_rather_than_duplicating) ... [2026-08-24 10:26:05,413] INFO apps.audit — audit_event=caregiver_reviewed actor=133 target=132
+[2026-08-24 10:26:05,417] INFO apps.audit — POST /api/care/assignments/19/review/ -> 201 (user=133)
+[2026-08-24 10:26:05,434] INFO apps.audit — audit_event=caregiver_reviewed actor=133 target=132
+[2026-08-24 10:26:05,439] INFO apps.audit — POST /api/care/assignments/19/review/ -> 200 (user=133)
+ok
+test_review_works_after_assignment_has_ended (tests.integration.test_care.CaregiverReviewTests.test_review_works_after_assignment_has_ended) ... [2026-08-24 10:26:08,001] INFO apps.audit — audit_event=caregiver_reviewed actor=136 target=135
+[2026-08-24 10:26:08,005] INFO apps.audit — POST /api/care/assignments/20/review/ -> 201 (user=136)
+ok
+test_review_writes_audit_entry (tests.integration.test_care.CaregiverReviewTests.test_review_writes_audit_entry) ... [2026-08-24 10:26:10,437] INFO apps.audit — audit_event=caregiver_reviewed actor=139 target=138
+[2026-08-24 10:26:10,440] INFO apps.audit — POST /api/care/assignments/21/review/ -> 201 (user=139)
+ok
+test_stranger_with_no_access_to_patient_cannot_review (tests.integration.test_care.CaregiverReviewTests.test_stranger_with_no_access_to_patient_cannot_review) ... [2026-08-24 10:26:13,645] INFO apps.audit — POST /api/care/assignments/22/review/ -> 404 (user=143)
+[2026-08-24 10:26:13,646] WARNING django.request — Not Found: /api/care/assignments/22/review/
+ok
+test_suggestion_results_include_rating_info (tests.integration.test_care.CaregiverReviewTests.test_suggestion_results_include_rating_info) ... [2026-08-24 10:26:16,068] INFO apps.audit — audit_event=caregiver_reviewed actor=146 target=145
+[2026-08-24 10:26:16,077] INFO apps.audit — POST /api/care/assignments/23/review/ -> 201 (user=146)
+[2026-08-24 10:26:16,134] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=144)
+ok
+test_already_assigned_caregiver_excluded_from_suggestions (tests.integration.test_care.CaregiverSuggestionTests.test_already_assigned_caregiver_excluded_from_suggestions) ... [2026-08-24 10:26:20,737] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=147)
+ok
+test_correctly_identifies_the_best_fit_with_full_score (tests.integration.test_care.CaregiverSuggestionTests.test_correctly_identifies_the_best_fit_with_full_score) ... [2026-08-24 10:26:24,978] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=152)
+ok
+test_invalid_patient_code_rejected (tests.integration.test_care.CaregiverSuggestionTests.test_invalid_patient_code_rejected) ... [2026-08-24 10:26:29,182] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 404 (user=157)
+[2026-08-24 10:26:29,183] WARNING django.request — Not Found: /api/care/suggest-caregivers/
+ok
+test_missing_patient_code_rejected (tests.integration.test_care.CaregiverSuggestionTests.test_missing_patient_code_rejected) ... [2026-08-24 10:26:33,172] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 400 (user=162)
+[2026-08-24 10:26:33,175] WARNING django.request — Bad Request: /api/care/suggest-caregivers/
+ok
+test_non_supervisor_cannot_access_suggestions (tests.integration.test_care.CaregiverSuggestionTests.test_non_supervisor_cannot_access_suggestions) ... [2026-08-24 10:26:38,104] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 403 (user=172)
+[2026-08-24 10:26:38,105] WARNING django.request — Forbidden: /api/care/suggest-caregivers/
+ok
+test_patient_with_no_birth_date_still_scores_gracefully (tests.integration.test_care.CaregiverSuggestionTests.test_patient_with_no_birth_date_still_scores_gracefully) ... [2026-08-24 10:26:42,972] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=173)
+ok
+test_ranks_caregivers_by_fit_highest_first (tests.integration.test_care.CaregiverSuggestionTests.test_ranks_caregivers_by_fit_highest_first) ... [2026-08-24 10:26:48,218] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=178)
+ok
+test_unapproved_caregiver_never_suggested_regardless_of_fit (tests.integration.test_care.CaregiverSuggestionTests.test_unapproved_caregiver_never_suggested_regardless_of_fit) ... [2026-08-24 10:26:52,438] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=183)
+ok
+test_count_reflects_active_assignments_to_other_patients (tests.integration.test_care.MatchingIncludesCapacitySignalTests.test_count_reflects_active_assignments_to_other_patients) ... [2026-08-24 10:26:54,122] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=188)
+ok
+test_ended_assignments_dont_count_toward_capacity (tests.integration.test_care.MatchingIncludesCapacitySignalTests.test_ended_assignments_dont_count_toward_capacity) ... [2026-08-24 10:26:55,714] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=190)
+ok
+test_high_capacity_does_not_exclude_or_reduce_fit_score (tests.integration.test_care.MatchingIncludesCapacitySignalTests.test_high_capacity_does_not_exclude_or_reduce_fit_score) ... [2026-08-24 10:26:57,640] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=192)
+ok
+test_zero_active_patients_shows_zero (tests.integration.test_care.MatchingIncludesCapacitySignalTests.test_zero_active_patients_shows_zero) ... [2026-08-24 10:26:59,370] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=194)
+ok
+test_no_questionnaire_shows_none_sections_not_error (tests.integration.test_care.MatchingIncludesSectionBreakdownTests.test_no_questionnaire_shows_none_sections_not_error) ... [2026-08-24 10:27:02,358] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=196)
+ok
+test_suggestion_includes_per_section_breakdown (tests.integration.test_care.MatchingIncludesSectionBreakdownTests.test_suggestion_includes_per_section_breakdown) ... [2026-08-24 10:27:04,086] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=199)
+ok
+test_invalid_patient_code_rejected (tests.integration.test_care.PatientQuestionnaireForMatchingTests.test_invalid_patient_code_rejected) ... [2026-08-24 10:27:04,865] INFO apps.audit — GET /api/care/patient-questionnaire/ -> 404 (user=201)
+[2026-08-24 10:27:04,866] WARNING django.request — Not Found: /api/care/patient-questionnaire/
+ok
+test_non_supervisor_cannot_access (tests.integration.test_care.PatientQuestionnaireForMatchingTests.test_non_supervisor_cannot_access) ... [2026-08-24 10:27:06,396] INFO apps.audit — GET /api/care/patient-questionnaire/ -> 403 (user=203)
+[2026-08-24 10:27:06,396] WARNING django.request — Forbidden: /api/care/patient-questionnaire/
+ok
+test_patient_without_completed_questionnaire_returns_404 (tests.integration.test_care.PatientQuestionnaireForMatchingTests.test_patient_without_completed_questionnaire_returns_404) ... [2026-08-24 10:27:07,460] INFO apps.audit — GET /api/care/patient-questionnaire/ -> 404 (user=204)
+[2026-08-24 10:27:07,461] WARNING django.request — Not Found: /api/care/patient-questionnaire/
+ok
+test_supervisor_can_view_patient_questionnaire (tests.integration.test_care.PatientQuestionnaireForMatchingTests.test_supervisor_can_view_patient_questionnaire) ... [2026-08-24 10:27:08,449] INFO apps.audit — GET /api/care/patient-questionnaire/ -> 200 (user=205)
+ok
+test_all_d_answers_score_zero (tests.integration.test_caregiver_compatibility_questionnaire.CaregiverCompatibilityQuestionnaireTests.test_all_d_answers_score_zero) ... [2026-08-24 10:27:10,650] INFO apps.audit — audit_event=caregiver_updated actor=206 target=207
+[2026-08-24 10:27:10,652] INFO apps.audit — PUT /api/supervisor/caregivers/207/compatibility-questionnaire/ -> 201 (user=206)
+ok
+test_incomplete_questionnaire_missing_a_field_rejected (tests.integration.test_caregiver_compatibility_questionnaire.CaregiverCompatibilityQuestionnaireTests.test_incomplete_questionnaire_missing_a_field_rejected) ... [2026-08-24 10:27:12,655] INFO apps.audit — PUT /api/supervisor/caregivers/209/compatibility-questionnaire/ -> 400 (user=208)
+[2026-08-24 10:27:12,656] WARNING django.request — Bad Request: /api/supervisor/caregivers/209/compatibility-questionnaire/
+ok
+test_invalid_answer_letter_rejected (tests.integration.test_caregiver_compatibility_questionnaire.CaregiverCompatibilityQuestionnaireTests.test_invalid_answer_letter_rejected) ... [2026-08-24 10:27:14,490] INFO apps.audit — PUT /api/supervisor/caregivers/211/compatibility-questionnaire/ -> 400 (user=210)
+[2026-08-24 10:27:14,492] WARNING django.request — Bad Request: /api/supervisor/caregivers/211/compatibility-questionnaire/
+ok
+test_missing_before_first_save_returns_404 (tests.integration.test_caregiver_compatibility_questionnaire.CaregiverCompatibilityQuestionnaireTests.test_missing_before_first_save_returns_404) ... [2026-08-24 10:27:16,236] INFO apps.audit — GET /api/supervisor/caregivers/213/compatibility-questionnaire/ -> 404 (user=212)
+[2026-08-24 10:27:16,237] WARNING django.request — Not Found: /api/supervisor/caregivers/213/compatibility-questionnaire/
+ok
+test_non_supervisor_cannot_access (tests.integration.test_caregiver_compatibility_questionnaire.CaregiverCompatibilityQuestionnaireTests.test_non_supervisor_cannot_access) ... [2026-08-24 10:27:20,021] INFO apps.audit — PUT /api/supervisor/caregivers/215/compatibility-questionnaire/ -> 403 (user=216)
+[2026-08-24 10:27:20,023] WARNING django.request — Forbidden: /api/supervisor/caregivers/215/compatibility-questionnaire/
+ok
+test_questionnaire_not_required_for_caregiver_creation (tests.integration.test_caregiver_compatibility_questionnaire.CaregiverCompatibilityQuestionnaireTests.test_questionnaire_not_required_for_caregiver_creation) ... [2026-08-24 10:27:24,611] INFO apps.audit — audit_event=caregiver_created actor=217 target=219
+[2026-08-24 10:27:24,613] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=217)
+[2026-08-24 10:27:24,623] INFO apps.audit — GET /api/supervisor/caregivers/219/compatibility-questionnaire/ -> 404 (user=217)
+[2026-08-24 10:27:24,624] WARNING django.request — Not Found: /api/supervisor/caregivers/219/compatibility-questionnaire/
+ok
+test_scores_correctly_after_a_real_db_round_trip (tests.integration.test_caregiver_compatibility_questionnaire.CaregiverCompatibilityQuestionnaireTests.test_scores_correctly_after_a_real_db_round_trip) ... [2026-08-24 10:27:26,451] INFO apps.audit — audit_event=caregiver_updated actor=220 target=221
+[2026-08-24 10:27:26,453] INFO apps.audit — PUT /api/supervisor/caregivers/221/compatibility-questionnaire/ -> 201 (user=220)
+[2026-08-24 10:27:26,466] INFO apps.audit — GET /api/supervisor/caregivers/221/compatibility-questionnaire/ -> 200 (user=220)
+ok
+test_second_put_updates_rather_than_duplicating (tests.integration.test_caregiver_compatibility_questionnaire.CaregiverCompatibilityQuestionnaireTests.test_second_put_updates_rather_than_duplicating) ... [2026-08-24 10:27:28,711] INFO apps.audit — audit_event=caregiver_updated actor=222 target=223
+[2026-08-24 10:27:28,715] INFO apps.audit — PUT /api/supervisor/caregivers/223/compatibility-questionnaire/ -> 201 (user=222)
+[2026-08-24 10:27:28,733] INFO apps.audit — audit_event=caregiver_updated actor=222 target=223
+[2026-08-24 10:27:28,736] INFO apps.audit — PUT /api/supervisor/caregivers/223/compatibility-questionnaire/ -> 200 (user=222)
+ok
+test_section_scores_reflect_mixed_answers_correctly (tests.integration.test_caregiver_compatibility_questionnaire.CaregiverCompatibilityQuestionnaireTests.test_section_scores_reflect_mixed_answers_correctly) ... [2026-08-24 10:27:30,919] INFO apps.audit — audit_event=caregiver_updated actor=224 target=225
+[2026-08-24 10:27:30,921] INFO apps.audit — PUT /api/supervisor/caregivers/225/compatibility-questionnaire/ -> 201 (user=224)
+ok
+test_supervisor_can_fill_in_questionnaire (tests.integration.test_caregiver_compatibility_questionnaire.CaregiverCompatibilityQuestionnaireTests.test_supervisor_can_fill_in_questionnaire) ... [2026-08-24 10:27:33,111] INFO apps.audit — audit_event=caregiver_updated actor=226 target=227
+[2026-08-24 10:27:33,113] INFO apps.audit — PUT /api/supervisor/caregivers/227/compatibility-questionnaire/ -> 201 (user=226)
+ok
+test_suggestion_includes_flexibility_score_when_completed (tests.integration.test_caregiver_compatibility_questionnaire.MatchingIncludesFlexibilityScoreTests.test_suggestion_includes_flexibility_score_when_completed) ... [2026-08-24 10:27:36,012] INFO apps.audit — audit_event=caregiver_updated actor=228 target=229
+[2026-08-24 10:27:36,015] INFO apps.audit — PUT /api/supervisor/caregivers/229/compatibility-questionnaire/ -> 201 (user=228)
+[2026-08-24 10:27:36,066] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=228)
+ok
+test_suggestion_shows_none_when_questionnaire_not_completed (tests.integration.test_caregiver_compatibility_questionnaire.MatchingIncludesFlexibilityScoreTests.test_suggestion_shows_none_when_questionnaire_not_completed) ... [2026-08-24 10:27:38,729] INFO apps.audit — GET /api/care/suggest-caregivers/ -> 200 (user=230)
+ok
+test_approval_rejected_when_incomplete (tests.integration.test_caregivers.FullProfileAndApprovalTests.test_approval_rejected_when_incomplete) ... [2026-08-24 10:27:40,314] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 201 (user=232)
+[2026-08-24 10:27:41,127] INFO apps.audit — POST /api/caregivers/232/approve/ -> 400 (user=233)
+[2026-08-24 10:27:41,128] WARNING django.request — Bad Request: /api/caregivers/232/approve/
+ok
+test_approval_returns_404_when_no_profile_exists_yet (tests.integration.test_caregivers.FullProfileAndApprovalTests.test_approval_returns_404_when_no_profile_exists_yet) ... [2026-08-24 10:27:43,400] INFO apps.audit — POST /api/caregivers/234/approve/ -> 404 (user=235)
+[2026-08-24 10:27:43,400] WARNING django.request — Not Found: /api/caregivers/234/approve/
+ok
+test_approval_succeeds_when_all_four_forms_complete (tests.integration.test_caregivers.FullProfileAndApprovalTests.test_approval_succeeds_when_all_four_forms_complete) ... [2026-08-24 10:27:44,552] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 201 (user=236)
+[2026-08-24 10:27:44,593] INFO apps.audit — POST /api/caregivers/me/service-areas/ -> 201 (user=236)
+[2026-08-24 10:27:44,640] INFO apps.audit — PUT /api/caregivers/me/experience/ -> 201 (user=236)
+[2026-08-24 10:27:44,667] INFO apps.audit — PUT /api/caregivers/me/skills/ -> 201 (user=236)
+[2026-08-24 10:27:44,769] INFO apps.audit — PUT /api/caregivers/me/references/ -> 201 (user=236)
+[2026-08-24 10:27:44,812] INFO apps.audit — PUT /api/caregivers/me/identity/ -> 201 (user=236)
+[2026-08-24 10:27:46,520] INFO apps.audit — POST /api/caregivers/236/approve/ -> 200 (user=237)
+ok
+test_full_profile_nested_view_reflects_all_parts (tests.integration.test_caregivers.FullProfileAndApprovalTests.test_full_profile_nested_view_reflects_all_parts) ... [2026-08-24 10:27:48,388] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 201 (user=238)
+[2026-08-24 10:27:48,404] INFO apps.audit — POST /api/caregivers/me/service-areas/ -> 201 (user=238)
+[2026-08-24 10:27:48,424] INFO apps.audit — PUT /api/caregivers/me/experience/ -> 201 (user=238)
+[2026-08-24 10:27:48,450] INFO apps.audit — PUT /api/caregivers/me/skills/ -> 201 (user=238)
+[2026-08-24 10:27:48,476] INFO apps.audit — PUT /api/caregivers/me/references/ -> 201 (user=238)
+[2026-08-24 10:27:48,523] INFO apps.audit — GET /api/caregivers/me/full/ -> 200 (user=238)
+ok
+test_non_admin_cannot_approve (tests.integration.test_caregivers.FullProfileAndApprovalTests.test_non_admin_cannot_approve) ... [2026-08-24 10:27:50,178] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 201 (user=239)
+[2026-08-24 10:27:50,202] INFO apps.audit — POST /api/caregivers/me/service-areas/ -> 201 (user=239)
+[2026-08-24 10:27:50,225] INFO apps.audit — PUT /api/caregivers/me/experience/ -> 201 (user=239)
+[2026-08-24 10:27:50,262] INFO apps.audit — PUT /api/caregivers/me/skills/ -> 201 (user=239)
+[2026-08-24 10:27:50,294] INFO apps.audit — PUT /api/caregivers/me/references/ -> 201 (user=239)
+[2026-08-24 10:27:50,321] INFO apps.audit — PUT /api/caregivers/me/identity/ -> 201 (user=239)
+[2026-08-24 10:27:50,329] INFO apps.audit — POST /api/caregivers/239/approve/ -> 403 (user=239)
+[2026-08-24 10:27:50,331] WARNING django.request — Forbidden: /api/caregivers/239/approve/
+ok
+test_resubmit_replaces_entire_set (tests.integration.test_caregivers.ReferencesTests.test_resubmit_replaces_entire_set) ... [2026-08-24 10:27:52,232] INFO apps.audit — PUT /api/caregivers/me/references/ -> 201 (user=240)
+[2026-08-24 10:27:52,272] INFO apps.audit — PUT /api/caregivers/me/references/ -> 201 (user=240)
+ok
+test_single_reference_now_accepted (tests.integration.test_caregivers.ReferencesTests.test_single_reference_now_accepted) ... [2026-08-24 10:27:53,778] INFO apps.audit — PUT /api/caregivers/me/references/ -> 201 (user=241)
+ok
+test_two_references_accepted (tests.integration.test_caregivers.ReferencesTests.test_two_references_accepted) ... [2026-08-24 10:27:55,516] INFO apps.audit — PUT /api/caregivers/me/references/ -> 201 (user=242)
+ok
+test_zero_references_now_accepted (tests.integration.test_caregivers.ReferencesTests.test_zero_references_now_accepted) ... [2026-08-24 10:27:56,600] INFO apps.audit — PUT /api/caregivers/me/references/ -> 201 (user=243)
+ok
+test_add_multiple_areas (tests.integration.test_caregivers.ServiceAreaTests.test_add_multiple_areas) ... [2026-08-24 10:27:58,010] INFO apps.audit — POST /api/caregivers/me/service-areas/ -> 201 (user=244)
+[2026-08-24 10:27:58,025] INFO apps.audit — POST /api/caregivers/me/service-areas/ -> 201 (user=244)
+[2026-08-24 10:27:58,046] INFO apps.audit — GET /api/caregivers/me/service-areas/ -> 200 (user=244)
+ok
+test_delete_area (tests.integration.test_caregivers.ServiceAreaTests.test_delete_area) ... [2026-08-24 10:27:59,293] INFO apps.audit — POST /api/caregivers/me/service-areas/ -> 201 (user=245)
+[2026-08-24 10:27:59,306] INFO apps.audit — DELETE /api/caregivers/me/service-areas/38/ -> 204 (user=245)
+[2026-08-24 10:27:59,320] INFO apps.audit — GET /api/caregivers/me/service-areas/ -> 200 (user=245)
+ok
+test_24h_alone_is_valid (tests.integration.test_caregivers.WorkPreferencesTests.test_24h_alone_is_valid) ... [2026-08-24 10:28:00,536] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 201 (user=246)
+ok
+test_24h_shift_cannot_combine_with_specific_shifts (tests.integration.test_caregivers.WorkPreferencesTests.test_24h_shift_cannot_combine_with_specific_shifts) ... [2026-08-24 10:28:02,347] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 400 (user=247)
+[2026-08-24 10:28:02,348] WARNING django.request — Bad Request: /api/caregivers/me/work-preferences/
+ok
+test_invalid_choice_value_rejected (tests.integration.test_caregivers.WorkPreferencesTests.test_invalid_choice_value_rejected) ... [2026-08-24 10:28:04,209] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 400 (user=248)
+[2026-08-24 10:28:04,211] WARNING django.request — Bad Request: /api/caregivers/me/work-preferences/
+ok
+test_non_caregiver_rejected (tests.integration.test_caregivers.WorkPreferencesTests.test_non_caregiver_rejected) ... [2026-08-24 10:28:06,602] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 403 (user=250)
+[2026-08-24 10:28:06,604] WARNING django.request — Forbidden: /api/caregivers/me/work-preferences/
+ok
+test_resubmit_updates_not_duplicates (tests.integration.test_caregivers.WorkPreferencesTests.test_resubmit_updates_not_duplicates) ... [2026-08-24 10:28:08,208] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 201 (user=251)
+[2026-08-24 10:28:08,224] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 200 (user=251)
+ok
+test_terms_not_accepted_rejected (tests.integration.test_caregivers.WorkPreferencesTests.test_terms_not_accepted_rejected) ... [2026-08-24 10:28:09,536] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 400 (user=252)
+[2026-08-24 10:28:09,539] WARNING django.request — Bad Request: /api/caregivers/me/work-preferences/
+ok
+test_valid_submission (tests.integration.test_caregivers.WorkPreferencesTests.test_valid_submission) ... [2026-08-24 10:28:10,960] INFO apps.audit — PUT /api/caregivers/me/work-preferences/ -> 201 (user=253)
+ok
+test_chronic_disease_true_requires_disease_types (tests.integration.test_identity_profile.IdentityProfileTests.test_chronic_disease_true_requires_disease_types) ... [2026-08-24 10:28:13,593] INFO apps.audit — audit_event=login_success actor=254 target=254
+[2026-08-24 10:28:13,602] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:28:13,630] INFO apps.audit — PUT /api/caregivers/me/identity/ -> 400 (user=254)
+[2026-08-24 10:28:13,632] WARNING django.request — Bad Request: /api/caregivers/me/identity/
+ok
+test_chronic_disease_true_with_types_is_valid (tests.integration.test_identity_profile.IdentityProfileTests.test_chronic_disease_true_with_types_is_valid) ... [2026-08-24 10:28:15,684] INFO apps.audit — audit_event=login_success actor=255 target=255
+[2026-08-24 10:28:15,689] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:28:15,704] INFO apps.audit — PUT /api/caregivers/me/identity/ -> 201 (user=255)
+ok
+test_female_without_military_status_is_valid (tests.integration.test_identity_profile.IdentityProfileTests.test_female_without_military_status_is_valid) ... [2026-08-24 10:28:18,536] INFO apps.audit — audit_event=login_success actor=256 target=256
+[2026-08-24 10:28:18,544] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:28:18,567] INFO apps.audit — PUT /api/caregivers/me/identity/ -> 201 (user=256)
+ok
+test_get_before_creation_returns_404 (tests.integration.test_identity_profile.IdentityProfileTests.test_get_before_creation_returns_404) ... [2026-08-24 10:28:22,801] INFO apps.audit — audit_event=login_success actor=257 target=257
+[2026-08-24 10:28:22,806] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:28:22,816] INFO apps.audit — GET /api/caregivers/me/identity/ -> 404 (user=257)
+[2026-08-24 10:28:22,817] WARNING django.request — Not Found: /api/caregivers/me/identity/
+ok
+test_identity_profile_requires_authentication (tests.integration.test_identity_profile.IdentityProfileTests.test_identity_profile_requires_authentication) ... [2026-08-24 10:28:26,132] INFO apps.audit — audit_event=login_success actor=258 target=258
+[2026-08-24 10:28:26,139] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:28:26,143] INFO apps.audit — GET /api/caregivers/me/identity/ -> 401 (user=anonymous)
+[2026-08-24 10:28:26,144] WARNING django.request — Unauthorized: /api/caregivers/me/identity/
+ok
+test_medication_true_requires_medication_types (tests.integration.test_identity_profile.IdentityProfileTests.test_medication_true_requires_medication_types) ... [2026-08-24 10:28:28,749] INFO apps.audit — audit_event=login_success actor=259 target=259
+[2026-08-24 10:28:28,756] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:28:28,773] INFO apps.audit — PUT /api/caregivers/me/identity/ -> 400 (user=259)
+[2026-08-24 10:28:28,774] WARNING django.request — Bad Request: /api/caregivers/me/identity/
+ok
+test_military_status_rejected_for_female (tests.integration.test_identity_profile.IdentityProfileTests.test_military_status_rejected_for_female) ... [2026-08-24 10:28:30,918] INFO apps.audit — audit_event=login_success actor=260 target=260
+[2026-08-24 10:28:30,924] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:28:30,935] INFO apps.audit — PUT /api/caregivers/me/identity/ -> 400 (user=260)
+[2026-08-24 10:28:30,936] WARNING django.request — Bad Request: /api/caregivers/me/identity/
+ok
+test_put_again_updates_instead_of_creating_duplicate (tests.integration.test_identity_profile.IdentityProfileTests.test_put_again_updates_instead_of_creating_duplicate) ... [2026-08-24 10:28:33,229] INFO apps.audit — audit_event=login_success actor=261 target=261
+[2026-08-24 10:28:33,234] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:28:33,253] INFO apps.audit — PUT /api/caregivers/me/identity/ -> 201 (user=261)
+[2026-08-24 10:28:33,274] INFO apps.audit — PUT /api/caregivers/me/identity/ -> 200 (user=261)
+ok
+test_put_valid_data_creates_profile (tests.integration.test_identity_profile.IdentityProfileTests.test_put_valid_data_creates_profile) ... [2026-08-24 10:28:35,763] INFO apps.audit — audit_event=login_success actor=262 target=262
+[2026-08-24 10:28:35,767] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:28:35,783] INFO apps.audit — PUT /api/caregivers/me/identity/ -> 201 (user=262)
+[2026-08-24 10:28:35,800] INFO apps.audit — GET /api/caregivers/me/identity/ -> 200 (user=262)
+ok
+test_cities_filtered_by_province (tests.integration.test_locations_api.LocationsApiTests.test_cities_filtered_by_province) ... [2026-08-24 10:28:38,006] INFO apps.audit — GET /api/locations/provinces/ -> 200 (user=263)
+[2026-08-24 10:28:38,022] INFO apps.audit — GET /api/locations/cities/ -> 200 (user=263)
+ok
+test_districts_filtered_by_city (tests.integration.test_locations_api.LocationsApiTests.test_districts_filtered_by_city) ... [2026-08-24 10:28:39,356] INFO apps.audit — GET /api/locations/provinces/ -> 200 (user=264)
+[2026-08-24 10:28:39,371] INFO apps.audit — GET /api/locations/cities/ -> 200 (user=264)
+[2026-08-24 10:28:39,390] INFO apps.audit — GET /api/locations/districts/ -> 200 (user=264)
+ok
+test_non_tehran_city_has_no_districts (tests.integration.test_locations_api.LocationsApiTests.test_non_tehran_city_has_no_districts) ... [2026-08-24 10:28:40,832] INFO apps.audit — GET /api/locations/provinces/ -> 200 (user=265)
+[2026-08-24 10:28:40,841] INFO apps.audit — GET /api/locations/cities/ -> 200 (user=265)
+[2026-08-24 10:28:40,851] INFO apps.audit — GET /api/locations/districts/ -> 200 (user=265)
+ok
+test_provinces_list (tests.integration.test_locations_api.LocationsApiTests.test_provinces_list) ... [2026-08-24 10:28:42,941] INFO apps.audit — GET /api/locations/provinces/ -> 200 (user=266)
+ok
+test_requires_authentication (tests.integration.test_locations_api.LocationsApiTests.test_requires_authentication) ... [2026-08-24 10:28:46,139] INFO apps.audit — GET /api/locations/provinces/ -> 401 (user=anonymous)
+[2026-08-24 10:28:46,140] WARNING django.request — Unauthorized: /api/locations/provinces/
+ok
+test_consistency_ratio_zero_for_a_perfectly_consistent_matrix (tests.integration.test_mcdm.AHPWeightCalculationTests.test_consistency_ratio_zero_for_a_perfectly_consistent_matrix) ... ok
+test_equal_importance_matrix_gives_equal_weights (tests.integration.test_mcdm.AHPWeightCalculationTests.test_equal_importance_matrix_gives_equal_weights) ... ok
+test_matrix_must_be_square (tests.integration.test_mcdm.AHPWeightCalculationTests.test_matrix_must_be_square) ... ok
+test_weights_sum_to_one (tests.integration.test_mcdm.AHPWeightCalculationTests.test_weights_sum_to_one) ... ok
+test_build_candidate_matrix_excludes_criteria_missing_for_every_candidate (tests.integration.test_mcdm.MCDMIntegrationTests.test_build_candidate_matrix_excludes_criteria_missing_for_every_candidate) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_empty_candidate_list_returns_empty_not_error (tests.integration.test_mcdm.MCDMIntegrationTests.test_empty_candidate_list_returns_empty_not_error) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_every_ranked_result_includes_ahp_metadata (tests.integration.test_mcdm.MCDMIntegrationTests.test_every_ranked_result_includes_ahp_metadata) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_flexible_caregiver_ranks_above_rigid_one (tests.integration.test_mcdm.MCDMIntegrationTests.test_flexible_caregiver_ranks_above_rigid_one) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_ranking_with_zero_objective_fit_data_does_not_crash (tests.integration.test_mcdm.MCDMIntegrationTests.test_ranking_with_zero_objective_fit_data_does_not_crash) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_specialization_and_hours_scores_flow_through_the_real_pipeline (tests.integration.test_mcdm.MCDMIntegrationTests.test_specialization_and_hours_scores_flow_through_the_real_pipeline) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_project_matrix_is_internally_consistent (tests.integration.test_mcdm.ProjectAHPConfigurationTests.test_project_matrix_is_internally_consistent) ... ok
+test_seven_criteria_weights_sum_to_one (tests.integration.test_mcdm.ProjectAHPConfigurationTests.test_seven_criteria_weights_sum_to_one) ... ok
+test_equal_mcdm_score_broken_by_location (tests.integration.test_mcdm.RankingTieBreakTests.test_equal_mcdm_score_broken_by_location) ... ok
+test_equal_mcdm_score_broken_by_specialization (tests.integration.test_mcdm.RankingTieBreakTests.test_equal_mcdm_score_broken_by_specialization) ... ok
+test_equal_score_and_location_broken_by_cultural_ritual (tests.integration.test_mcdm.RankingTieBreakTests.test_equal_score_and_location_broken_by_cultural_ritual) ... ok
+test_equal_through_cultural_broken_by_lifestyle (tests.integration.test_mcdm.RankingTieBreakTests.test_equal_through_cultural_broken_by_lifestyle) ... ok
+test_equal_through_specialization_broken_by_hours (tests.integration.test_mcdm.RankingTieBreakTests.test_equal_through_specialization_broken_by_hours) ... ok
+test_higher_mcdm_score_always_wins_regardless_of_tie_break_fields (tests.integration.test_mcdm.RankingTieBreakTests.test_higher_mcdm_score_always_wins_regardless_of_tie_break_fields) ... ok
+test_missing_tie_break_fields_do_not_crash (tests.integration.test_mcdm.RankingTieBreakTests.test_missing_tie_break_fields_do_not_crash) ... ok
+test_specialization_outranks_location (tests.integration.test_mcdm.RankingTieBreakTests.test_specialization_outranks_location) ... ok
+test_higher_values_on_benefit_criteria_rank_first (tests.integration.test_mcdm.TOPSISRankingTests.test_higher_values_on_benefit_criteria_rank_first) ... ok
+test_scores_are_bounded_zero_to_one (tests.integration.test_mcdm.TOPSISRankingTests.test_scores_are_bounded_zero_to_one) ... ok
+test_weight_count_must_match_criteria_count (tests.integration.test_mcdm.TOPSISRankingTests.test_weight_count_must_match_criteria_count) ... ok
+test_active_config_is_actually_used (tests.integration.test_mcdm_weight_config.MCDMWeightConfigModelTests.test_active_config_is_actually_used) ... ok
+test_get_active_ahp_config_falls_back_to_default_when_none_exists (tests.integration.test_mcdm_weight_config.MCDMWeightConfigModelTests.test_get_active_ahp_config_falls_back_to_default_when_none_exists) ... ok
+test_invalid_stored_matrix_falls_back_to_default_rather_than_crashing (tests.integration.test_mcdm_weight_config.MCDMWeightConfigModelTests.test_invalid_stored_matrix_falls_back_to_default_rather_than_crashing) ... ok
+test_saving_a_new_active_config_deactivates_the_previous_one (tests.integration.test_mcdm_weight_config.MCDMWeightConfigModelTests.test_saving_a_new_active_config_deactivates_the_previous_one) ... ok
+test_diagonal_must_be_one (tests.integration.test_mcdm_weight_config.MCDMWeightConfigViewTests.test_diagonal_must_be_one) ... [2026-08-24 10:29:32,301] INFO apps.audit — PUT /api/care/mcdm-weights/ -> 400 (user=276)
+[2026-08-24 10:29:32,360] WARNING django.request — Bad Request: /api/care/mcdm-weights/
+ok
+test_get_after_put_returns_the_new_active_config (tests.integration.test_mcdm_weight_config.MCDMWeightConfigViewTests.test_get_after_put_returns_the_new_active_config) ... [2026-08-24 10:29:34,107] INFO apps.audit — audit_event=mcdm_weights_updated actor=277 target=None
+[2026-08-24 10:29:34,111] INFO apps.audit — PUT /api/care/mcdm-weights/ -> 201 (user=277)
+[2026-08-24 10:29:34,133] INFO apps.audit — GET /api/care/mcdm-weights/ -> 200 (user=277)
+ok
+test_get_before_any_config_returns_default (tests.integration.test_mcdm_weight_config.MCDMWeightConfigViewTests.test_get_before_any_config_returns_default) ... [2026-08-24 10:29:35,849] INFO apps.audit — GET /api/care/mcdm-weights/ -> 200 (user=278)
+ok
+test_inconsistent_matrix_is_rejected_not_saved (tests.integration.test_mcdm_weight_config.MCDMWeightConfigViewTests.test_inconsistent_matrix_is_rejected_not_saved) ... [2026-08-24 10:29:37,958] INFO apps.audit — PUT /api/care/mcdm-weights/ -> 400 (user=279)
+[2026-08-24 10:29:37,960] WARNING django.request — Bad Request: /api/care/mcdm-weights/
+ok
+test_non_supervisor_cannot_view_or_edit (tests.integration.test_mcdm_weight_config.MCDMWeightConfigViewTests.test_non_supervisor_cannot_view_or_edit) ... [2026-08-24 10:29:41,370] INFO apps.audit — GET /api/care/mcdm-weights/ -> 403 (user=281)
+[2026-08-24 10:29:41,376] WARNING django.request — Forbidden: /api/care/mcdm-weights/
+[2026-08-24 10:29:41,384] INFO apps.audit — PUT /api/care/mcdm-weights/ -> 403 (user=281)
+[2026-08-24 10:29:41,385] WARNING django.request — Forbidden: /api/care/mcdm-weights/
+ok
+test_put_valid_matrix_activates_it (tests.integration.test_mcdm_weight_config.MCDMWeightConfigViewTests.test_put_valid_matrix_activates_it) ... [2026-08-24 10:29:43,132] INFO apps.audit — audit_event=mcdm_weights_updated actor=282 target=None
+[2026-08-24 10:29:43,135] INFO apps.audit — PUT /api/care/mcdm-weights/ -> 201 (user=282)
+ok
+test_put_writes_audit_entry (tests.integration.test_mcdm_weight_config.MCDMWeightConfigViewTests.test_put_writes_audit_entry) ... [2026-08-24 10:29:44,743] INFO apps.audit — audit_event=mcdm_weights_updated actor=283 target=None
+[2026-08-24 10:29:44,749] INFO apps.audit — PUT /api/care/mcdm-weights/ -> 201 (user=283)
+ok
+test_rejected_matrix_does_not_overwrite_a_previously_valid_one (tests.integration.test_mcdm_weight_config.MCDMWeightConfigViewTests.test_rejected_matrix_does_not_overwrite_a_previously_valid_one) ... [2026-08-24 10:29:46,258] INFO apps.audit — audit_event=mcdm_weights_updated actor=284 target=None
+[2026-08-24 10:29:46,266] INFO apps.audit — PUT /api/care/mcdm-weights/ -> 201 (user=284)
+[2026-08-24 10:29:46,272] INFO apps.audit — PUT /api/care/mcdm-weights/ -> 400 (user=284)
+[2026-08-24 10:29:46,275] WARNING django.request — Bad Request: /api/care/mcdm-weights/
+[2026-08-24 10:29:46,286] INFO apps.audit — GET /api/care/mcdm-weights/ -> 200 (user=284)
+ok
+test_wrong_shape_matrix_is_rejected (tests.integration.test_mcdm_weight_config.MCDMWeightConfigViewTests.test_wrong_shape_matrix_is_rejected) ... [2026-08-24 10:29:47,955] INFO apps.audit — PUT /api/care/mcdm-weights/ -> 400 (user=285)
+[2026-08-24 10:29:47,957] WARNING django.request — Bad Request: /api/care/mcdm-weights/
+ok
+test_empty_experience_and_skills_accepted (tests.integration.test_optional_fields.OptionalFieldsTests.test_empty_experience_and_skills_accepted) ... [2026-08-24 10:29:51,891] INFO apps.audit — audit_event=caregiver_created actor=286 target=287
+[2026-08-24 10:29:51,898] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=286)
+[2026-08-24 10:29:51,942] INFO apps.audit — audit_event=caregiver_updated actor=286 target=287
+[2026-08-24 10:29:51,944] INFO apps.audit — PUT /api/supervisor/caregivers/287/experience/ -> 201 (user=286)
+[2026-08-24 10:29:51,993] INFO apps.audit — audit_event=caregiver_updated actor=286 target=287
+[2026-08-24 10:29:52,005] INFO apps.audit — PUT /api/supervisor/caregivers/287/skills/ -> 201 (user=286)
+ok
+test_empty_identity_form_is_accepted (tests.integration.test_optional_fields.OptionalFieldsTests.test_empty_identity_form_is_accepted) ... [2026-08-24 10:29:56,128] INFO apps.audit — audit_event=caregiver_created actor=288 target=289
+[2026-08-24 10:29:56,131] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=288)
+[2026-08-24 10:29:56,167] INFO apps.audit — audit_event=caregiver_updated actor=288 target=289
+[2026-08-24 10:29:56,170] INFO apps.audit — PUT /api/supervisor/caregivers/289/identity/ -> 201 (user=288)
+ok
+test_minimal_work_preferences_is_accepted (tests.integration.test_optional_fields.OptionalFieldsTests.test_minimal_work_preferences_is_accepted) ... [2026-08-24 10:29:59,097] INFO apps.audit — audit_event=caregiver_created actor=290 target=291
+[2026-08-24 10:29:59,111] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=290)
+[2026-08-24 10:29:59,165] INFO apps.audit — audit_event=caregiver_updated actor=290 target=291
+[2026-08-24 10:29:59,167] INFO apps.audit — PUT /api/supervisor/caregivers/291/work-preferences/ -> 201 (user=290)
+ok
+test_one_reference_also_accepted (tests.integration.test_optional_fields.OptionalFieldsTests.test_one_reference_also_accepted) ... [2026-08-24 10:30:02,569] INFO apps.audit — audit_event=caregiver_created actor=292 target=293
+[2026-08-24 10:30:02,571] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=292)
+[2026-08-24 10:30:02,593] INFO apps.audit — audit_event=caregiver_updated actor=292 target=293
+[2026-08-24 10:30:02,600] INFO apps.audit — PUT /api/supervisor/caregivers/293/references/ -> 201 (user=292)
+ok
+test_reference_with_only_name_and_phone_is_accepted (tests.integration.test_optional_fields.OptionalFieldsTests.test_reference_with_only_name_and_phone_is_accepted) ... [2026-08-24 10:30:05,991] INFO apps.audit — audit_event=caregiver_created actor=294 target=295
+[2026-08-24 10:30:05,997] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=294)
+[2026-08-24 10:30:06,024] INFO apps.audit — audit_event=caregiver_updated actor=294 target=295
+[2026-08-24 10:30:06,031] INFO apps.audit — PUT /api/supervisor/caregivers/295/references/ -> 201 (user=294)
+ok
+test_reference_without_name_or_phone_still_rejected (tests.integration.test_optional_fields.OptionalFieldsTests.test_reference_without_name_or_phone_still_rejected) ... [2026-08-24 10:30:10,521] INFO apps.audit — audit_event=caregiver_created actor=296 target=297
+[2026-08-24 10:30:10,524] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=296)
+[2026-08-24 10:30:10,546] INFO apps.audit — PUT /api/supervisor/caregivers/297/references/ -> 400 (user=296)
+[2026-08-24 10:30:10,548] WARNING django.request — Bad Request: /api/supervisor/caregivers/297/references/
+ok
+test_zero_references_now_accepted (tests.integration.test_optional_fields.OptionalFieldsTests.test_zero_references_now_accepted) ... [2026-08-24 10:30:13,888] INFO apps.audit — audit_event=caregiver_created actor=298 target=299
+[2026-08-24 10:30:13,890] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=298)
+[2026-08-24 10:30:13,906] INFO apps.audit — audit_event=caregiver_updated actor=298 target=299
+[2026-08-24 10:30:13,908] INFO apps.audit — PUT /api/supervisor/caregivers/299/references/ -> 201 (user=298)
+ok
+test_five_wrong_attempts_exhausts_the_code (tests.integration.test_otp.OTPFlowTests.test_five_wrong_attempts_exhausts_the_code) ... [2026-08-24 10:30:16,804] INFO apps.audit — audit_event=login_success actor=300 target=300
+[2026-08-24 10:30:16,816] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:30:18,412] INFO apps.audit — audit_event=otp_requested actor=300 target=300
+[2026-08-24 10:30:18,414] INFO apps.audit — POST /api/auth/otp/request/ -> 202 (user=300)
+[2026-08-24 10:30:19,645] INFO apps.audit — audit_event=otp_failed actor=300 target=300
+[2026-08-24 10:30:19,662] INFO apps.audit — POST /api/auth/otp/verify/ -> 400 (user=300)
+[2026-08-24 10:30:19,673] WARNING django.request — Bad Request: /api/auth/otp/verify/
+[2026-08-24 10:30:21,104] INFO apps.audit — audit_event=otp_failed actor=300 target=300
+[2026-08-24 10:30:21,108] INFO apps.audit — POST /api/auth/otp/verify/ -> 400 (user=300)
+[2026-08-24 10:30:21,109] WARNING django.request — Bad Request: /api/auth/otp/verify/
+[2026-08-24 10:30:22,551] INFO apps.audit — audit_event=otp_failed actor=300 target=300
+[2026-08-24 10:30:22,555] INFO apps.audit — POST /api/auth/otp/verify/ -> 400 (user=300)
+[2026-08-24 10:30:22,557] WARNING django.request — Bad Request: /api/auth/otp/verify/
+[2026-08-24 10:30:23,812] INFO apps.audit — audit_event=otp_failed actor=300 target=300
+[2026-08-24 10:30:23,814] INFO apps.audit — POST /api/auth/otp/verify/ -> 400 (user=300)
+[2026-08-24 10:30:23,819] WARNING django.request — Bad Request: /api/auth/otp/verify/
+[2026-08-24 10:30:25,198] INFO apps.audit — audit_event=otp_failed actor=300 target=300
+[2026-08-24 10:30:25,217] INFO apps.audit — POST /api/auth/otp/verify/ -> 400 (user=300)
+[2026-08-24 10:30:25,218] WARNING django.request — Bad Request: /api/auth/otp/verify/
+[2026-08-24 10:30:25,234] INFO apps.audit — audit_event=otp_failed actor=300 target=300
+[2026-08-24 10:30:25,236] INFO apps.audit — POST /api/auth/otp/verify/ -> 400 (user=300)
+[2026-08-24 10:30:25,237] WARNING django.request — Bad Request: /api/auth/otp/verify/
+ok
+test_request_otp_requires_authentication (tests.integration.test_otp.OTPFlowTests.test_request_otp_requires_authentication) ... [2026-08-24 10:30:27,788] INFO apps.audit — audit_event=login_success actor=301 target=301
+[2026-08-24 10:30:27,794] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:30:27,798] INFO apps.audit — POST /api/auth/otp/request/ -> 401 (user=anonymous)
+[2026-08-24 10:30:27,799] WARNING django.request — Unauthorized: /api/auth/otp/request/
+ok
+test_request_then_verify_with_correct_code_succeeds (tests.integration.test_otp.OTPFlowTests.test_request_then_verify_with_correct_code_succeeds) ... [2026-08-24 10:30:29,820] INFO apps.audit — audit_event=login_success actor=302 target=302
+[2026-08-24 10:30:29,827] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:30:31,040] INFO apps.audit — audit_event=otp_requested actor=302 target=302
+[2026-08-24 10:30:31,042] INFO apps.audit — POST /api/auth/otp/request/ -> 202 (user=302)
+[2026-08-24 10:30:32,758] INFO apps.audit — audit_event=otp_verified actor=302 target=302
+[2026-08-24 10:30:32,763] INFO apps.audit — POST /api/auth/otp/verify/ -> 200 (user=302)
+ok
+test_requesting_new_otp_invalidates_previous_one (tests.integration.test_otp.OTPFlowTests.test_requesting_new_otp_invalidates_previous_one) ... [2026-08-24 10:30:34,955] INFO apps.audit — audit_event=login_success actor=303 target=303
+[2026-08-24 10:30:34,960] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:30:36,034] INFO apps.audit — audit_event=otp_requested actor=303 target=303
+[2026-08-24 10:30:36,035] INFO apps.audit — POST /api/auth/otp/request/ -> 202 (user=303)
+[2026-08-24 10:30:36,734] INFO apps.audit — audit_event=otp_requested actor=303 target=303
+[2026-08-24 10:30:36,736] INFO apps.audit — POST /api/auth/otp/request/ -> 202 (user=303)
+[2026-08-24 10:30:37,746] INFO apps.audit — audit_event=otp_failed actor=303 target=303
+[2026-08-24 10:30:37,748] INFO apps.audit — POST /api/auth/otp/verify/ -> 400 (user=303)
+[2026-08-24 10:30:37,749] WARNING django.request — Bad Request: /api/auth/otp/verify/
+ok
+test_verify_with_wrong_code_fails_and_does_not_verify_phone (tests.integration.test_otp.OTPFlowTests.test_verify_with_wrong_code_fails_and_does_not_verify_phone) ... [2026-08-24 10:30:39,347] INFO apps.audit — audit_event=login_success actor=304 target=304
+[2026-08-24 10:30:39,352] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:30:40,255] INFO apps.audit — audit_event=otp_requested actor=304 target=304
+[2026-08-24 10:30:40,257] INFO apps.audit — POST /api/auth/otp/request/ -> 202 (user=304)
+[2026-08-24 10:30:40,939] INFO apps.audit — audit_event=otp_failed actor=304 target=304
+[2026-08-24 10:30:40,941] INFO apps.audit — POST /api/auth/otp/verify/ -> 400 (user=304)
+[2026-08-24 10:30:40,942] WARNING django.request — Bad Request: /api/auth/otp/verify/
+ok
+test_verify_without_requesting_first_fails (tests.integration.test_otp.OTPFlowTests.test_verify_without_requesting_first_fails) ... [2026-08-24 10:30:43,148] INFO apps.audit — audit_event=login_success actor=305 target=305
+[2026-08-24 10:30:43,155] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+[2026-08-24 10:30:43,165] INFO apps.audit — audit_event=otp_failed actor=305 target=305
+[2026-08-24 10:30:43,167] INFO apps.audit — POST /api/auth/otp/verify/ -> 400 (user=305)
+[2026-08-24 10:30:43,168] WARNING django.request — Bad Request: /api/auth/otp/verify/
+ok
+test_confirm_with_wrong_token_fails (tests.integration.test_password_reset.PasswordResetTests.test_confirm_with_wrong_token_fails) ... [2026-08-24 10:30:45,449] INFO apps.audit — audit_event=password_reset_requested actor=306 target=306
+[2026-08-24 10:30:45,451] INFO apps.audit — POST /api/auth/password-reset/ -> 202 (user=anonymous)
+[2026-08-24 10:30:46,434] INFO apps.audit — POST /api/auth/password-reset/confirm/ -> 400 (user=anonymous)
+[2026-08-24 10:30:46,436] WARNING django.request — Bad Request: /api/auth/password-reset/confirm/
+ok
+test_full_reset_flow_changes_password (tests.integration.test_password_reset.PasswordResetTests.test_full_reset_flow_changes_password) ... [2026-08-24 10:30:48,437] INFO apps.audit — audit_event=password_reset_requested actor=307 target=307
+[2026-08-24 10:30:48,439] INFO apps.audit — POST /api/auth/password-reset/ -> 202 (user=anonymous)
+[2026-08-24 10:30:49,936] INFO apps.audit — audit_event=password_reset_completed actor=307 target=307
+[2026-08-24 10:30:49,937] INFO apps.audit — POST /api/auth/password-reset/confirm/ -> 200 (user=anonymous)
+[2026-08-24 10:30:50,677] WARNING apps.authentication — Failed login attempt for username=reset_user
+[2026-08-24 10:30:50,681] INFO apps.audit — audit_event=login_failed actor=None target=None
+[2026-08-24 10:30:50,682] INFO apps.audit — POST /api/auth/login/ -> 401 (user=anonymous)
+[2026-08-24 10:30:50,684] WARNING django.request — Unauthorized: /api/auth/login/
+[2026-08-24 10:30:51,408] INFO apps.audit — audit_event=login_success actor=307 target=307
+[2026-08-24 10:30:51,413] INFO apps.audit — POST /api/auth/login/ -> 200 (user=anonymous)
+ok
+test_request_reset_for_unknown_phone_still_returns_202 (tests.integration.test_password_reset.PasswordResetTests.test_request_reset_for_unknown_phone_still_returns_202) ... [2026-08-24 10:30:52,448] INFO apps.authentication — Password reset requested for unknown phone_number=09120000099 (no-op)
+[2026-08-24 10:30:52,450] INFO apps.audit — POST /api/auth/password-reset/ -> 202 (user=anonymous)
+ok
+test_token_cannot_be_reused (tests.integration.test_password_reset.PasswordResetTests.test_token_cannot_be_reused) ... [2026-08-24 10:30:54,032] INFO apps.audit — audit_event=password_reset_requested actor=309 target=309
+[2026-08-24 10:30:54,033] INFO apps.audit — POST /api/auth/password-reset/ -> 202 (user=anonymous)
+[2026-08-24 10:30:55,616] INFO apps.audit — audit_event=password_reset_completed actor=309 target=309
+[2026-08-24 10:30:55,618] INFO apps.audit — POST /api/auth/password-reset/confirm/ -> 200 (user=anonymous)
+[2026-08-24 10:30:55,626] INFO apps.audit — POST /api/auth/password-reset/confirm/ -> 400 (user=anonymous)
+[2026-08-24 10:30:55,628] WARNING django.request — Bad Request: /api/auth/password-reset/confirm/
+ok
+test_full_access_owner_can_still_do_everything (tests.integration.test_patients.AccessLevelEnforcementTests.test_full_access_owner_can_still_do_everything) ... [2026-08-24 10:30:56,499] INFO apps.audit — audit_event=patient_created actor=310 target=None
+[2026-08-24 10:30:56,504] INFO apps.audit — POST /api/patients/ -> 201 (user=310)
+[2026-08-24 10:30:57,658] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=311)
+[2026-08-24 10:30:57,687] INFO apps.audit — audit_event=patient_updated actor=310 target=None
+[2026-08-24 10:30:57,689] INFO apps.audit — PUT /api/patients/63/ -> 200 (user=310)
+ok
+test_stranger_with_no_link_at_all_gets_404_not_403 (tests.integration.test_patients.AccessLevelEnforcementTests.test_stranger_with_no_link_at_all_gets_404_not_403) ... [2026-08-24 10:30:58,400] INFO apps.audit — audit_event=patient_created actor=312 target=None
+[2026-08-24 10:30:58,403] INFO apps.audit — POST /api/patients/ -> 201 (user=312)
+[2026-08-24 10:30:59,166] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=313)
+[2026-08-24 10:30:59,942] INFO apps.audit — PUT /api/patients/64/ -> 404 (user=314)
+[2026-08-24 10:30:59,942] WARNING django.request — Not Found: /api/patients/64/
+ok
+test_view_only_can_still_read_profile_and_questionnaire (tests.integration.test_patients.AccessLevelEnforcementTests.test_view_only_can_still_read_profile_and_questionnaire) ... [2026-08-24 10:31:01,410] INFO apps.audit — audit_event=patient_created actor=315 target=None
+[2026-08-24 10:31:01,414] INFO apps.audit — POST /api/patients/ -> 201 (user=315)
+[2026-08-24 10:31:02,713] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=316)
+[2026-08-24 10:31:02,759] INFO apps.audit — GET /api/patients/65/ -> 200 (user=316)
+[2026-08-24 10:31:02,804] INFO apps.audit — audit_event=patient_updated actor=315 target=None
+[2026-08-24 10:31:02,807] INFO apps.audit — PUT /api/patients/65/questionnaire/ -> 201 (user=315)
+[2026-08-24 10:31:02,830] INFO apps.audit — GET /api/patients/65/questionnaire/ -> 200 (user=316)
+ok
+test_view_only_cannot_delete_patient (tests.integration.test_patients.AccessLevelEnforcementTests.test_view_only_cannot_delete_patient) ... [2026-08-24 10:31:04,339] INFO apps.audit — audit_event=patient_created actor=317 target=None
+[2026-08-24 10:31:04,353] INFO apps.audit — POST /api/patients/ -> 201 (user=317)
+[2026-08-24 10:31:05,753] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=318)
+[2026-08-24 10:31:05,777] INFO apps.audit — DELETE /api/patients/66/ -> 403 (user=318)
+[2026-08-24 10:31:05,778] WARNING django.request — Forbidden: /api/patients/66/
+ok
+test_view_only_cannot_edit_patient_profile (tests.integration.test_patients.AccessLevelEnforcementTests.test_view_only_cannot_edit_patient_profile) ... [2026-08-24 10:31:07,631] INFO apps.audit — audit_event=patient_created actor=319 target=None
+[2026-08-24 10:31:07,638] INFO apps.audit — POST /api/patients/ -> 201 (user=319)
+[2026-08-24 10:31:08,629] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=320)
+[2026-08-24 10:31:08,659] INFO apps.audit — PUT /api/patients/67/ -> 403 (user=320)
+[2026-08-24 10:31:08,663] WARNING django.request — Forbidden: /api/patients/67/
+[2026-08-24 10:31:08,690] INFO apps.audit — GET /api/patients/67/ -> 200 (user=319)
+ok
+test_view_only_cannot_edit_questionnaire (tests.integration.test_patients.AccessLevelEnforcementTests.test_view_only_cannot_edit_questionnaire) ... [2026-08-24 10:31:10,698] INFO apps.audit — audit_event=patient_created actor=321 target=None
+[2026-08-24 10:31:10,703] INFO apps.audit — POST /api/patients/ -> 201 (user=321)
+[2026-08-24 10:31:11,994] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=322)
+[2026-08-24 10:31:12,010] INFO apps.audit — PUT /api/patients/68/questionnaire/ -> 403 (user=322)
+[2026-08-24 10:31:12,011] WARNING django.request — Forbidden: /api/patients/68/questionnaire/
+ok
+test_view_only_cannot_invite_other_family_members (tests.integration.test_patients.AccessLevelEnforcementTests.test_view_only_cannot_invite_other_family_members) ... [2026-08-24 10:31:12,944] INFO apps.audit — audit_event=patient_created actor=323 target=None
+[2026-08-24 10:31:12,950] INFO apps.audit — POST /api/patients/ -> 201 (user=323)
+[2026-08-24 10:31:13,636] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=324)
+[2026-08-24 10:31:14,562] INFO apps.audit — POST /api/families/me/ -> 201 (user=325)
+[2026-08-24 10:31:14,569] INFO apps.audit — GET /api/families/me/ -> 200 (user=325)
+[2026-08-24 10:31:14,585] INFO apps.audit — POST /api/patients/69/family-links/ -> 403 (user=324)
+[2026-08-24 10:31:14,586] WARNING django.request — Forbidden: /api/patients/69/family-links/
+ok
+test_view_only_cannot_remove_others_access (tests.integration.test_patients.AccessLevelEnforcementTests.test_view_only_cannot_remove_others_access) ... [2026-08-24 10:31:15,259] INFO apps.audit — audit_event=patient_created actor=326 target=None
+[2026-08-24 10:31:15,262] INFO apps.audit — POST /api/patients/ -> 201 (user=326)
+[2026-08-24 10:31:16,046] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=327)
+[2026-08-24 10:31:16,068] INFO apps.audit — GET /api/patients/70/family-links/ -> 200 (user=326)
+[2026-08-24 10:31:16,085] INFO apps.audit — DELETE /api/patients/70/family-links/39/ -> 403 (user=327)
+[2026-08-24 10:31:16,086] WARNING django.request — Forbidden: /api/patients/70/family-links/39/
+ok
+test_a_third_sibling_can_also_connect_independently_no_one_elses_approval_needed (tests.integration.test_patients.ConnectionRequestTests.test_a_third_sibling_can_also_connect_independently_no_one_elses_approval_needed) ... [2026-08-24 10:31:16,959] INFO apps.audit — audit_event=patient_created actor=328 target=None
+[2026-08-24 10:31:16,965] INFO apps.audit — POST /api/patients/ -> 201 (user=328)
+[2026-08-24 10:31:18,685] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=329)
+[2026-08-24 10:31:18,717] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=330)
+[2026-08-24 10:31:18,736] INFO apps.audit — GET /api/patients/71/ -> 200 (user=330)
+[2026-08-24 10:31:18,769] INFO apps.audit — GET /api/patients/71/family-links/ -> 200 (user=328)
+ok
+test_access_granted_is_view_only_not_full (tests.integration.test_patients.ConnectionRequestTests.test_access_granted_is_view_only_not_full) ... [2026-08-24 10:31:19,926] INFO apps.audit — audit_event=patient_created actor=331 target=None
+[2026-08-24 10:31:19,932] INFO apps.audit — POST /api/patients/ -> 201 (user=331)
+[2026-08-24 10:31:20,785] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=332)
+[2026-08-24 10:31:20,822] INFO apps.audit — GET /api/patients/72/family-links/ -> 200 (user=331)
+ok
+test_approve_reject_endpoints_still_function_for_a_pending_link_however_it_may_arise (tests.integration.test_patients.ConnectionRequestTests.test_approve_reject_endpoints_still_function_for_a_pending_link_however_it_may_arise) ... [2026-08-24 10:31:21,775] INFO apps.audit — audit_event=patient_created actor=333 target=None
+[2026-08-24 10:31:21,787] INFO apps.audit — POST /api/patients/ -> 201 (user=333)
+[2026-08-24 10:31:22,717] INFO apps.audit — GET /api/patients/73/access-requests/ -> 200 (user=333)
+[2026-08-24 10:31:22,746] INFO apps.audit — audit_event=family_link_added actor=333 target=334
+[2026-08-24 10:31:22,754] INFO apps.audit — POST /api/patients/73/access-requests/47/approve/ -> 200 (user=333)
+ok
+test_connecting_twice_rejected (tests.integration.test_patients.ConnectionRequestTests.test_connecting_twice_rejected) ... [2026-08-24 10:31:23,557] INFO apps.audit — audit_event=patient_created actor=335 target=None
+[2026-08-24 10:31:23,561] INFO apps.audit — POST /api/patients/ -> 201 (user=335)
+[2026-08-24 10:31:24,515] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=336)
+[2026-08-24 10:31:24,533] INFO apps.audit — POST /api/patients/connect/ -> 400 (user=336)
+[2026-08-24 10:31:24,535] WARNING django.request — Bad Request: /api/patients/connect/
+ok
+test_connecting_with_patient_code_grants_immediate_access (tests.integration.test_patients.ConnectionRequestTests.test_connecting_with_patient_code_grants_immediate_access) ... [2026-08-24 10:31:25,336] INFO apps.audit — audit_event=patient_created actor=337 target=None
+[2026-08-24 10:31:25,342] INFO apps.audit — POST /api/patients/ -> 201 (user=337)
+[2026-08-24 10:31:26,357] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=338)
+[2026-08-24 10:31:26,376] INFO apps.audit — GET /api/patients/75/ -> 200 (user=338)
+ok
+test_requesting_with_invalid_code_rejected (tests.integration.test_patients.ConnectionRequestTests.test_requesting_with_invalid_code_rejected) ... [2026-08-24 10:31:27,632] INFO apps.audit — audit_event=patient_created actor=339 target=None
+[2026-08-24 10:31:27,640] INFO apps.audit — POST /api/patients/ -> 201 (user=339)
+[2026-08-24 10:31:29,643] INFO apps.audit — POST /api/patients/connect/ -> 400 (user=340)
+[2026-08-24 10:31:29,646] WARNING django.request — Bad Request: /api/patients/connect/
+ok
+test_adding_family_link_writes_audit_entry (tests.integration.test_patients.FamilyLinkTests.test_adding_family_link_writes_audit_entry) ... [2026-08-24 10:31:33,909] INFO apps.audit — audit_event=patient_created actor=341 target=None
+[2026-08-24 10:31:33,919] INFO apps.audit — POST /api/patients/ -> 201 (user=341)
+[2026-08-24 10:31:33,960] INFO apps.audit — POST /api/families/me/ -> 201 (user=342)
+[2026-08-24 10:31:33,989] INFO apps.audit — GET /api/families/me/ -> 200 (user=342)
+[2026-08-24 10:31:34,057] INFO apps.audit — audit_event=family_link_added actor=341 target=342
+[2026-08-24 10:31:34,068] INFO apps.audit — POST /api/patients/77/family-links/ -> 201 (user=341)
+ok
+test_any_linked_family_member_can_delete_the_patient (tests.integration.test_patients.FamilyLinkTests.test_any_linked_family_member_can_delete_the_patient) ... [2026-08-24 10:31:37,762] INFO apps.audit — audit_event=patient_created actor=343 target=None
+[2026-08-24 10:31:37,768] INFO apps.audit — POST /api/patients/ -> 201 (user=343)
+[2026-08-24 10:31:37,793] INFO apps.audit — POST /api/families/me/ -> 201 (user=344)
+[2026-08-24 10:31:37,809] INFO apps.audit — GET /api/families/me/ -> 200 (user=344)
+[2026-08-24 10:31:37,851] INFO apps.audit — audit_event=family_link_added actor=343 target=344
+[2026-08-24 10:31:37,860] INFO apps.audit — POST /api/patients/78/family-links/ -> 201 (user=343)
+[2026-08-24 10:31:37,884] INFO apps.audit — audit_event=patient_deleted actor=344 target=None
+[2026-08-24 10:31:37,912] INFO apps.audit — DELETE /api/patients/78/ -> 204 (user=344)
+[2026-08-24 10:31:37,941] INFO apps.audit — GET /api/patients/ -> 200 (user=343)
+[2026-08-24 10:31:37,966] INFO apps.audit — GET /api/patients/ -> 200 (user=344)
+ok
+test_can_remove_a_link_when_another_remains (tests.integration.test_patients.FamilyLinkTests.test_can_remove_a_link_when_another_remains) ... [2026-08-24 10:31:40,713] INFO apps.audit — audit_event=patient_created actor=345 target=None
+[2026-08-24 10:31:40,720] INFO apps.audit — POST /api/patients/ -> 201 (user=345)
+[2026-08-24 10:31:40,745] INFO apps.audit — POST /api/families/me/ -> 201 (user=346)
+[2026-08-24 10:31:40,760] INFO apps.audit — GET /api/families/me/ -> 200 (user=346)
+[2026-08-24 10:31:40,804] INFO apps.audit — audit_event=family_link_added actor=345 target=346
+[2026-08-24 10:31:40,811] INFO apps.audit — POST /api/patients/79/family-links/ -> 201 (user=345)
+[2026-08-24 10:31:40,848] INFO apps.audit — GET /api/patients/79/family-links/ -> 200 (user=345)
+[2026-08-24 10:31:40,901] INFO apps.audit — audit_event=family_link_removed actor=345 target=346
+[2026-08-24 10:31:40,906] INFO apps.audit — DELETE /api/patients/79/family-links/58/ -> 204 (user=345)
+[2026-08-24 10:31:40,931] INFO apps.audit — GET /api/patients/79/ -> 404 (user=346)
+[2026-08-24 10:31:40,934] WARNING django.request — Not Found: /api/patients/79/
+ok
+test_cannot_remove_the_last_remaining_link (tests.integration.test_patients.FamilyLinkTests.test_cannot_remove_the_last_remaining_link) ... [2026-08-24 10:31:43,301] INFO apps.audit — audit_event=patient_created actor=347 target=None
+[2026-08-24 10:31:43,308] INFO apps.audit — POST /api/patients/ -> 201 (user=347)
+[2026-08-24 10:31:43,329] INFO apps.audit — POST /api/families/me/ -> 201 (user=348)
+[2026-08-24 10:31:43,340] INFO apps.audit — GET /api/families/me/ -> 200 (user=348)
+[2026-08-24 10:31:43,364] INFO apps.audit — GET /api/patients/80/family-links/ -> 200 (user=347)
+[2026-08-24 10:31:43,390] INFO apps.audit — DELETE /api/patients/80/family-links/59/ -> 400 (user=347)
+[2026-08-24 10:31:43,393] WARNING django.request — Bad Request: /api/patients/80/family-links/59/
+ok
+test_creating_patient_writes_audit_entry (tests.integration.test_patients.FamilyLinkTests.test_creating_patient_writes_audit_entry) ... [2026-08-24 10:31:45,648] INFO apps.audit — audit_event=patient_created actor=349 target=None
+[2026-08-24 10:31:45,652] INFO apps.audit — POST /api/patients/ -> 201 (user=349)
+[2026-08-24 10:31:45,667] INFO apps.audit — POST /api/families/me/ -> 201 (user=350)
+[2026-08-24 10:31:45,675] INFO apps.audit — GET /api/families/me/ -> 200 (user=350)
+ok
+test_deleting_patient_writes_audit_entry (tests.integration.test_patients.FamilyLinkTests.test_deleting_patient_writes_audit_entry) ... [2026-08-24 10:31:47,683] INFO apps.audit — audit_event=patient_created actor=351 target=None
+[2026-08-24 10:31:47,686] INFO apps.audit — POST /api/patients/ -> 201 (user=351)
+[2026-08-24 10:31:47,705] INFO apps.audit — POST /api/families/me/ -> 201 (user=352)
+[2026-08-24 10:31:47,716] INFO apps.audit — GET /api/families/me/ -> 200 (user=352)
+[2026-08-24 10:31:47,739] INFO apps.audit — audit_event=patient_deleted actor=351 target=None
+[2026-08-24 10:31:47,751] INFO apps.audit — DELETE /api/patients/82/ -> 204 (user=351)
+ok
+test_family_links_list_shows_everyone_with_access (tests.integration.test_patients.FamilyLinkTests.test_family_links_list_shows_everyone_with_access) ... [2026-08-24 10:31:49,796] INFO apps.audit — audit_event=patient_created actor=353 target=None
+[2026-08-24 10:31:49,801] INFO apps.audit — POST /api/patients/ -> 201 (user=353)
+[2026-08-24 10:31:49,818] INFO apps.audit — POST /api/families/me/ -> 201 (user=354)
+[2026-08-24 10:31:49,827] INFO apps.audit — GET /api/families/me/ -> 200 (user=354)
+[2026-08-24 10:31:49,853] INFO apps.audit — audit_event=family_link_added actor=353 target=354
+[2026-08-24 10:31:49,858] INFO apps.audit — POST /api/patients/83/family-links/ -> 201 (user=353)
+[2026-08-24 10:31:49,888] INFO apps.audit — GET /api/patients/83/family-links/ -> 200 (user=353)
+ok
+test_inviting_by_code_grants_immediate_full_access (tests.integration.test_patients.FamilyLinkTests.test_inviting_by_code_grants_immediate_full_access) ... [2026-08-24 10:31:51,393] INFO apps.audit — audit_event=patient_created actor=355 target=None
+[2026-08-24 10:31:51,398] INFO apps.audit — POST /api/patients/ -> 201 (user=355)
+[2026-08-24 10:31:51,416] INFO apps.audit — POST /api/families/me/ -> 201 (user=356)
+[2026-08-24 10:31:51,430] INFO apps.audit — GET /api/families/me/ -> 200 (user=356)
+[2026-08-24 10:31:51,463] INFO apps.audit — audit_event=family_link_added actor=355 target=356
+[2026-08-24 10:31:51,470] INFO apps.audit — POST /api/patients/84/family-links/ -> 201 (user=355)
+[2026-08-24 10:31:51,490] INFO apps.audit — GET /api/patients/84/ -> 200 (user=356)
+[2026-08-24 10:31:51,510] INFO apps.audit — GET /api/patients/ -> 200 (user=356)
+ok
+test_inviting_nonexistent_code_rejected (tests.integration.test_patients.FamilyLinkTests.test_inviting_nonexistent_code_rejected) ... [2026-08-24 10:31:53,525] INFO apps.audit — audit_event=patient_created actor=357 target=None
+[2026-08-24 10:31:53,529] INFO apps.audit — POST /api/patients/ -> 201 (user=357)
+[2026-08-24 10:31:53,544] INFO apps.audit — POST /api/families/me/ -> 201 (user=358)
+[2026-08-24 10:31:53,550] INFO apps.audit — GET /api/families/me/ -> 200 (user=358)
+[2026-08-24 10:31:53,571] INFO apps.audit — POST /api/patients/85/family-links/ -> 400 (user=357)
+[2026-08-24 10:31:53,574] WARNING django.request — Bad Request: /api/patients/85/family-links/
+ok
+test_inviting_same_family_twice_rejected (tests.integration.test_patients.FamilyLinkTests.test_inviting_same_family_twice_rejected) ... [2026-08-24 10:31:55,249] INFO apps.audit — audit_event=patient_created actor=359 target=None
+[2026-08-24 10:31:55,252] INFO apps.audit — POST /api/patients/ -> 201 (user=359)
+[2026-08-24 10:31:55,265] INFO apps.audit — POST /api/families/me/ -> 201 (user=360)
+[2026-08-24 10:31:55,275] INFO apps.audit — GET /api/families/me/ -> 200 (user=360)
+[2026-08-24 10:31:55,299] INFO apps.audit — audit_event=family_link_added actor=359 target=360
+[2026-08-24 10:31:55,304] INFO apps.audit — POST /api/patients/86/family-links/ -> 201 (user=359)
+[2026-08-24 10:31:55,331] INFO apps.audit — POST /api/patients/86/family-links/ -> 400 (user=359)
+[2026-08-24 10:31:55,332] WARNING django.request — Bad Request: /api/patients/86/family-links/
+ok
+test_patch_can_update_relation_and_access_level (tests.integration.test_patients.FamilyLinkTests.test_patch_can_update_relation_and_access_level) ... [2026-08-24 10:31:57,271] INFO apps.audit — audit_event=patient_created actor=361 target=None
+[2026-08-24 10:31:57,280] INFO apps.audit — POST /api/patients/ -> 201 (user=361)
+[2026-08-24 10:31:57,317] INFO apps.audit — POST /api/families/me/ -> 201 (user=362)
+[2026-08-24 10:31:57,335] INFO apps.audit — GET /api/families/me/ -> 200 (user=362)
+[2026-08-24 10:31:57,377] INFO apps.audit — GET /api/patients/87/family-links/ -> 200 (user=361)
+[2026-08-24 10:31:57,438] INFO apps.audit — audit_event=patient_updated actor=361 target=None
+[2026-08-24 10:31:57,449] INFO apps.audit — PATCH /api/patients/87/family-links/69/ -> 200 (user=361)
+ok
+test_patch_hands_off_primary_contact (tests.integration.test_patients.FamilyLinkTests.test_patch_hands_off_primary_contact) ... [2026-08-24 10:31:59,364] INFO apps.audit — audit_event=patient_created actor=363 target=None
+[2026-08-24 10:31:59,368] INFO apps.audit — POST /api/patients/ -> 201 (user=363)
+[2026-08-24 10:31:59,385] INFO apps.audit — POST /api/families/me/ -> 201 (user=364)
+[2026-08-24 10:31:59,398] INFO apps.audit — GET /api/families/me/ -> 200 (user=364)
+[2026-08-24 10:31:59,432] INFO apps.audit — audit_event=family_link_added actor=363 target=364
+[2026-08-24 10:31:59,437] INFO apps.audit — POST /api/patients/88/family-links/ -> 201 (user=363)
+[2026-08-24 10:31:59,465] INFO apps.audit — audit_event=patient_updated actor=363 target=None
+[2026-08-24 10:31:59,480] INFO apps.audit — PATCH /api/patients/88/family-links/71/ -> 200 (user=363)
+[2026-08-24 10:31:59,505] INFO apps.audit — GET /api/patients/88/family-links/ -> 200 (user=363)
+ok
+test_second_sibling_has_no_access_before_being_linked (tests.integration.test_patients.FamilyLinkTests.test_second_sibling_has_no_access_before_being_linked) ... [2026-08-24 10:32:01,186] INFO apps.audit — audit_event=patient_created actor=365 target=None
+[2026-08-24 10:32:01,190] INFO apps.audit — POST /api/patients/ -> 201 (user=365)
+[2026-08-24 10:32:01,206] INFO apps.audit — POST /api/families/me/ -> 201 (user=366)
+[2026-08-24 10:32:01,221] INFO apps.audit — GET /api/families/me/ -> 200 (user=366)
+[2026-08-24 10:32:01,234] INFO apps.audit — GET /api/patients/89/ -> 404 (user=366)
+[2026-08-24 10:32:01,235] WARNING django.request — Not Found: /api/patients/89/
+ok
+test_unlinked_family_cannot_add_others_to_a_patient_they_cant_see (tests.integration.test_patients.FamilyLinkTests.test_unlinked_family_cannot_add_others_to_a_patient_they_cant_see) ... [2026-08-24 10:32:03,184] INFO apps.audit — audit_event=patient_created actor=367 target=None
+[2026-08-24 10:32:03,187] INFO apps.audit — POST /api/patients/ -> 201 (user=367)
+[2026-08-24 10:32:03,201] INFO apps.audit — POST /api/families/me/ -> 201 (user=368)
+[2026-08-24 10:32:03,209] INFO apps.audit — GET /api/families/me/ -> 200 (user=368)
+[2026-08-24 10:32:03,222] INFO apps.audit — POST /api/patients/90/family-links/ -> 404 (user=368)
+[2026-08-24 10:32:03,223] WARNING django.request — Not Found: /api/patients/90/family-links/
+ok
+test_create_and_retrieve_profile (tests.integration.test_patients.FamilyProfileTests.test_create_and_retrieve_profile) ... [2026-08-24 10:32:04,267] INFO apps.audit — POST /api/families/me/ -> 201 (user=369)
+[2026-08-24 10:32:04,276] INFO apps.audit — GET /api/families/me/ -> 200 (user=369)
+ok
+test_get_before_creation_returns_404 (tests.integration.test_patients.FamilyProfileTests.test_get_before_creation_returns_404) ... [2026-08-24 10:32:05,184] INFO apps.audit — GET /api/families/me/ -> 404 (user=370)
+[2026-08-24 10:32:05,185] WARNING django.request — Not Found: /api/families/me/
+ok
+test_non_family_role_rejected (tests.integration.test_patients.FamilyProfileTests.test_non_family_role_rejected) ... [2026-08-24 10:32:06,939] INFO apps.audit — GET /api/families/me/ -> 403 (user=372)
+[2026-08-24 10:32:06,941] WARNING django.request — Forbidden: /api/families/me/
+ok
+test_real_province_and_city_ids_accepted_with_name_display (tests.integration.test_patients.FamilyProfileTests.test_real_province_and_city_ids_accepted_with_name_display) ... [2026-08-24 10:32:08,051] INFO apps.audit — POST /api/families/me/ -> 201 (user=373)
+ok
+test_requires_authentication (tests.integration.test_patients.FamilyProfileTests.test_requires_authentication) ... [2026-08-24 10:32:08,942] INFO apps.audit — GET /api/families/me/ -> 401 (user=anonymous)
+[2026-08-24 10:32:08,943] WARNING django.request — Unauthorized: /api/families/me/
+ok
+test_string_city_value_rejected_like_caregivers (tests.integration.test_patients.FamilyProfileTests.test_string_city_value_rejected_like_caregivers) ... [2026-08-24 10:32:10,053] INFO apps.audit — POST /api/families/me/ -> 400 (user=375)
+[2026-08-24 10:32:10,054] WARNING django.request — Bad Request: /api/families/me/
+ok
+test_family_connecting_via_patient_code_gets_immediate_access_no_patient_approval_needed (tests.integration.test_patients.PatientOwnAccountTests.test_family_connecting_via_patient_code_gets_immediate_access_no_patient_approval_needed) ... [2026-08-24 10:32:12,461] INFO apps.audit — POST /api/patients/connect/ -> 201 (user=377)
+[2026-08-24 10:32:12,483] INFO apps.audit — GET /api/patients/me/access-requests/ -> 200 (user=376)
+[2026-08-24 10:32:12,505] INFO apps.audit — GET /api/patients/ -> 200 (user=377)
+ok
+test_family_sees_the_questionnaire_the_patient_filled_in_themselves (tests.integration.test_patients.PatientOwnAccountTests.test_family_sees_the_questionnaire_the_patient_filled_in_themselves) ... [2026-08-24 10:32:13,723] INFO apps.audit — audit_event=patient_updated actor=378 target=None
+[2026-08-24 10:32:13,727] INFO apps.audit — PUT /api/patients/me/questionnaire/ -> 201 (user=378)
+[2026-08-24 10:32:14,730] INFO apps.audit — POST /api/families/me/ -> 201 (user=379)
+[2026-08-24 10:32:14,741] INFO apps.audit — GET /api/families/me/ -> 200 (user=379)
+[2026-08-24 10:32:14,757] INFO apps.audit — audit_event=family_link_added actor=378 target=379
+[2026-08-24 10:32:14,764] INFO apps.audit — POST /api/patients/me/invite-family/ -> 201 (user=378)
+[2026-08-24 10:32:14,779] INFO apps.audit — GET /api/patients/92/questionnaire/ -> 200 (user=379)
+ok
+test_family_user_cannot_use_patient_me_endpoint (tests.integration.test_patients.PatientOwnAccountTests.test_family_user_cannot_use_patient_me_endpoint) ... [2026-08-24 10:32:16,416] INFO apps.audit — GET /api/patients/me/ -> 403 (user=381)
+[2026-08-24 10:32:16,417] WARNING django.request — Forbidden: /api/patients/me/
+ok
+test_get_my_own_profile (tests.integration.test_patients.PatientOwnAccountTests.test_get_my_own_profile) ... [2026-08-24 10:32:17,611] INFO apps.audit — GET /api/patients/me/ -> 200 (user=382)
+ok
+test_patient_can_fill_own_questionnaire (tests.integration.test_patients.PatientOwnAccountTests.test_patient_can_fill_own_questionnaire) ... [2026-08-24 10:32:18,413] INFO apps.audit — audit_event=patient_updated actor=383 target=None
+[2026-08-24 10:32:18,415] INFO apps.audit — PUT /api/patients/me/questionnaire/ -> 201 (user=383)
+[2026-08-24 10:32:18,427] INFO apps.audit — GET /api/patients/me/questionnaire/ -> 200 (user=383)
+ok
+test_patient_invites_a_family_member_by_code_with_immediate_access (tests.integration.test_patients.PatientOwnAccountTests.test_patient_invites_a_family_member_by_code_with_immediate_access) ... [2026-08-24 10:32:20,269] INFO apps.audit — POST /api/families/me/ -> 201 (user=385)
+[2026-08-24 10:32:20,276] INFO apps.audit — GET /api/families/me/ -> 200 (user=385)
+[2026-08-24 10:32:20,293] INFO apps.audit — audit_event=family_link_added actor=384 target=385
+[2026-08-24 10:32:20,302] INFO apps.audit — POST /api/patients/me/invite-family/ -> 201 (user=384)
+[2026-08-24 10:32:20,316] INFO apps.audit — GET /api/patients/96/ -> 200 (user=385)
+ok
+test_patient_sees_who_has_access_to_them (tests.integration.test_patients.PatientOwnAccountTests.test_patient_sees_who_has_access_to_them) ... [2026-08-24 10:32:22,218] INFO apps.audit — POST /api/families/me/ -> 201 (user=387)
+[2026-08-24 10:32:22,235] INFO apps.audit — GET /api/families/me/ -> 200 (user=387)
+[2026-08-24 10:32:22,257] INFO apps.audit — audit_event=family_link_added actor=386 target=387
+[2026-08-24 10:32:22,262] INFO apps.audit — POST /api/patients/me/invite-family/ -> 201 (user=386)
+[2026-08-24 10:32:22,289] INFO apps.audit — GET /api/patients/me/family-links/ -> 200 (user=386)
+ok
+test_get_before_any_profile_exists_returns_404 (tests.integration.test_patients.PatientSelfServiceCreationTests.test_get_before_any_profile_exists_returns_404) ... [2026-08-24 10:32:23,063] INFO apps.audit — GET /api/patients/me/ -> 404 (user=388)
+[2026-08-24 10:32:23,066] WARNING django.request — Not Found: /api/patients/me/
+ok
+test_put_creates_the_profile_on_first_save (tests.integration.test_patients.PatientSelfServiceCreationTests.test_put_creates_the_profile_on_first_save) ... [2026-08-24 10:32:24,107] INFO apps.audit — audit_event=patient_updated actor=389 target=None
+[2026-08-24 10:32:24,110] INFO apps.audit — PUT /api/patients/me/ -> 201 (user=389)
+[2026-08-24 10:32:24,120] INFO apps.audit — GET /api/patients/me/ -> 200 (user=389)
+ok
+test_second_put_updates_rather_than_creating_a_duplicate (tests.integration.test_patients.PatientSelfServiceCreationTests.test_second_put_updates_rather_than_creating_a_duplicate) ... [2026-08-24 10:32:24,902] INFO apps.audit — audit_event=patient_updated actor=390 target=None
+[2026-08-24 10:32:24,905] INFO apps.audit — PUT /api/patients/me/ -> 201 (user=390)
+[2026-08-24 10:32:24,927] INFO apps.audit — audit_event=patient_updated actor=390 target=None
+[2026-08-24 10:32:24,929] INFO apps.audit — PUT /api/patients/me/ -> 200 (user=390)
+ok
+test_add_patient_success (tests.integration.test_patients.PatientTests.test_add_patient_success) ... [2026-08-24 10:32:25,848] INFO apps.audit — audit_event=patient_created actor=391 target=None
+[2026-08-24 10:32:25,853] INFO apps.audit — POST /api/patients/ -> 201 (user=391)
+ok
+test_add_patient_with_real_district_id (tests.integration.test_patients.PatientTests.test_add_patient_with_real_district_id) ... [2026-08-24 10:32:26,795] INFO apps.audit — audit_event=patient_created actor=392 target=None
+[2026-08-24 10:32:26,799] INFO apps.audit — POST /api/patients/ -> 201 (user=392)
+ok
+test_different_family_cannot_see_this_patient (tests.integration.test_patients.PatientTests.test_different_family_cannot_see_this_patient) ... [2026-08-24 10:32:27,914] INFO apps.audit — audit_event=patient_created actor=393 target=None
+[2026-08-24 10:32:27,921] INFO apps.audit — POST /api/patients/ -> 201 (user=393)
+[2026-08-24 10:32:28,825] INFO apps.audit — GET /api/patients/102/ -> 404 (user=394)
+[2026-08-24 10:32:28,826] WARNING django.request — Not Found: /api/patients/102/
+ok
+test_family_can_have_multiple_patients (tests.integration.test_patients.PatientTests.test_family_can_have_multiple_patients) ... [2026-08-24 10:32:29,943] INFO apps.audit — audit_event=patient_created actor=395 target=None
+[2026-08-24 10:32:29,947] INFO apps.audit — POST /api/patients/ -> 201 (user=395)
+[2026-08-24 10:32:29,963] INFO apps.audit — audit_event=patient_created actor=395 target=None
+[2026-08-24 10:32:29,967] INFO apps.audit — POST /api/patients/ -> 201 (user=395)
+[2026-08-24 10:32:29,986] INFO apps.audit — GET /api/patients/ -> 200 (user=395)
+ok
+test_guardianship_status_with_details_accepted (tests.integration.test_patients.PatientTests.test_guardianship_status_with_details_accepted) ... [2026-08-24 10:32:30,977] INFO apps.audit — audit_event=patient_created actor=396 target=None
+[2026-08-24 10:32:30,982] INFO apps.audit — POST /api/patients/ -> 201 (user=396)
+ok
+test_guardianship_status_without_details_rejected (tests.integration.test_patients.PatientTests.test_guardianship_status_without_details_rejected) ... [2026-08-24 10:32:31,833] INFO apps.audit — POST /api/patients/ -> 400 (user=397)
+[2026-08-24 10:32:31,834] WARNING django.request — Bad Request: /api/patients/
+ok
+test_update_patient (tests.integration.test_patients.PatientTests.test_update_patient) ... [2026-08-24 10:32:32,910] INFO apps.audit — audit_event=patient_created actor=398 target=None
+[2026-08-24 10:32:32,914] INFO apps.audit — POST /api/patients/ -> 201 (user=398)
+[2026-08-24 10:32:32,936] INFO apps.audit — audit_event=patient_updated actor=398 target=None
+[2026-08-24 10:32:32,938] INFO apps.audit — PUT /api/patients/106/ -> 200 (user=398)
+ok
+test_get_before_submission_returns_404 (tests.integration.test_patients.QuestionnaireTests.test_get_before_submission_returns_404) ... [2026-08-24 10:32:34,563] INFO apps.audit — audit_event=patient_created actor=399 target=None
+[2026-08-24 10:32:34,569] INFO apps.audit — POST /api/patients/ -> 201 (user=399)
+[2026-08-24 10:32:34,605] INFO apps.audit — GET /api/patients/107/questionnaire/ -> 404 (user=399)
+[2026-08-24 10:32:34,607] WARNING django.request — Not Found: /api/patients/107/questionnaire/
+ok
+test_invalid_choice_value_rejected (tests.integration.test_patients.QuestionnaireTests.test_invalid_choice_value_rejected) ... [2026-08-24 10:32:35,654] INFO apps.audit — audit_event=patient_created actor=400 target=None
+[2026-08-24 10:32:35,661] INFO apps.audit — POST /api/patients/ -> 201 (user=400)
+[2026-08-24 10:32:35,700] INFO apps.audit — PUT /api/patients/108/questionnaire/ -> 400 (user=400)
+[2026-08-24 10:32:35,703] WARNING django.request — Bad Request: /api/patients/108/questionnaire/
+ok
+test_questionnaire_for_nonexistent_patient_returns_404 (tests.integration.test_patients.QuestionnaireTests.test_questionnaire_for_nonexistent_patient_returns_404) ... [2026-08-24 10:32:37,446] INFO apps.audit — audit_event=patient_created actor=401 target=None
+[2026-08-24 10:32:37,483] INFO apps.audit — POST /api/patients/ -> 201 (user=401)
+[2026-08-24 10:32:37,532] INFO apps.audit — GET /api/patients/999999/questionnaire/ -> 404 (user=401)
+[2026-08-24 10:32:37,540] WARNING django.request — Not Found: /api/patients/999999/questionnaire/
+ok
+test_resubmitting_updates_instead_of_erroring (tests.integration.test_patients.QuestionnaireTests.test_resubmitting_updates_instead_of_erroring) ... [2026-08-24 10:32:39,453] INFO apps.audit — audit_event=patient_created actor=402 target=None
+[2026-08-24 10:32:39,460] INFO apps.audit — POST /api/patients/ -> 201 (user=402)
+[2026-08-24 10:32:39,533] INFO apps.audit — audit_event=patient_updated actor=402 target=None
+[2026-08-24 10:32:39,541] INFO apps.audit — PUT /api/patients/110/questionnaire/ -> 201 (user=402)
+[2026-08-24 10:32:39,611] INFO apps.audit — audit_event=patient_updated actor=402 target=None
+[2026-08-24 10:32:39,616] INFO apps.audit — PUT /api/patients/110/questionnaire/ -> 200 (user=402)
+ok
+test_submit_and_retrieve_questionnaire (tests.integration.test_patients.QuestionnaireTests.test_submit_and_retrieve_questionnaire) ... [2026-08-24 10:32:40,813] INFO apps.audit — audit_event=patient_created actor=403 target=None
+[2026-08-24 10:32:40,820] INFO apps.audit — POST /api/patients/ -> 201 (user=403)
+[2026-08-24 10:32:40,843] INFO apps.audit — audit_event=patient_updated actor=403 target=None
+[2026-08-24 10:32:40,845] INFO apps.audit — PUT /api/patients/111/questionnaire/ -> 201 (user=403)
+[2026-08-24 10:32:40,869] INFO apps.audit — GET /api/patients/111/questionnaire/ -> 200 (user=403)
+ok
+test_create_caregiver_success (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_create_caregiver_success) ... [2026-08-24 10:32:43,124] INFO apps.audit — audit_event=caregiver_created actor=404 target=405
+[2026-08-24 10:32:43,125] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=404)
+ok
+test_create_writes_an_audit_log_entry (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_create_writes_an_audit_log_entry) ... [2026-08-24 10:32:45,146] INFO apps.audit — audit_event=caregiver_created actor=406 target=407
+[2026-08-24 10:32:45,148] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=406)
+ok
+test_created_by_distinguishes_superuser_from_admin (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_created_by_distinguishes_superuser_from_admin) ... [2026-08-24 10:32:48,068] INFO apps.audit — audit_event=caregiver_created actor=409 target=410
+[2026-08-24 10:32:48,069] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=409)
+[2026-08-24 10:32:48,095] INFO apps.audit — GET /api/supervisor/caregivers/ -> 200 (user=408)
+ok
+test_delete_caregiver (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_delete_caregiver) ... [2026-08-24 10:32:50,003] INFO apps.audit — audit_event=caregiver_created actor=411 target=412
+[2026-08-24 10:32:50,004] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=411)
+[2026-08-24 10:32:50,015] INFO apps.audit — audit_event=caregiver_deleted actor=411 target=412
+[2026-08-24 10:32:50,083] INFO apps.audit — DELETE /api/supervisor/caregivers/412/ -> 204 (user=411)
+[2026-08-24 10:32:50,091] INFO apps.audit — GET /api/supervisor/caregivers/ -> 200 (user=411)
+[2026-08-24 10:32:50,099] INFO apps.audit — DELETE /api/supervisor/caregivers/412/ -> 404 (user=411)
+[2026-08-24 10:32:50,100] WARNING django.request — Not Found: /api/supervisor/caregivers/412/
+ok
+test_delete_nonexistent_caregiver_returns_404 (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_delete_nonexistent_caregiver_returns_404) ... [2026-08-24 10:32:51,031] INFO apps.audit — DELETE /api/supervisor/caregivers/999999/ -> 404 (user=413)
+[2026-08-24 10:32:51,032] WARNING django.request — Not Found: /api/supervisor/caregivers/999999/
+ok
+test_delete_writes_an_audit_log_entry_before_the_record_is_gone (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_delete_writes_an_audit_log_entry_before_the_record_is_gone) ... [2026-08-24 10:32:53,080] INFO apps.audit — audit_event=caregiver_created actor=414 target=415
+[2026-08-24 10:32:53,082] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=414)
+[2026-08-24 10:32:53,088] INFO apps.audit — audit_event=caregiver_deleted actor=414 target=415
+[2026-08-24 10:32:53,123] INFO apps.audit — DELETE /api/supervisor/caregivers/415/ -> 204 (user=414)
+ok
+test_duplicate_phone_rejected (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_duplicate_phone_rejected) ... [2026-08-24 10:32:54,844] INFO apps.audit — audit_event=caregiver_created actor=416 target=417
+[2026-08-24 10:32:54,849] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=416)
+[2026-08-24 10:32:54,854] INFO apps.audit — POST /api/supervisor/caregivers/ -> 400 (user=416)
+[2026-08-24 10:32:54,855] WARNING django.request — Bad Request: /api/supervisor/caregivers/
+ok
+test_editing_a_form_writes_an_audit_log_entry_naming_the_section (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_editing_a_form_writes_an_audit_log_entry_naming_the_section) ... [2026-08-24 10:32:56,686] INFO apps.audit — audit_event=caregiver_created actor=418 target=419
+[2026-08-24 10:32:56,687] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=418)
+[2026-08-24 10:32:56,712] INFO apps.audit — audit_event=caregiver_updated actor=418 target=419
+[2026-08-24 10:32:56,722] INFO apps.audit — PUT /api/supervisor/caregivers/419/work-preferences/ -> 201 (user=418)
+ok
+test_get_basic_info (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_get_basic_info) ... [2026-08-24 10:32:58,809] INFO apps.audit — audit_event=caregiver_created actor=420 target=421
+[2026-08-24 10:32:58,811] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=420)
+[2026-08-24 10:32:58,820] INFO apps.audit — GET /api/supervisor/caregivers/421/ -> 200 (user=420)
+ok
+test_list_shows_progress (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_list_shows_progress) ... [2026-08-24 10:33:00,846] INFO apps.audit — audit_event=caregiver_created actor=422 target=423
+[2026-08-24 10:33:00,848] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=422)
+[2026-08-24 10:33:00,866] INFO apps.audit — GET /api/supervisor/caregivers/ -> 200 (user=422)
+[2026-08-24 10:33:00,882] INFO apps.audit — audit_event=caregiver_updated actor=422 target=423
+[2026-08-24 10:33:00,888] INFO apps.audit — PUT /api/supervisor/caregivers/423/identity/ -> 201 (user=422)
+[2026-08-24 10:33:00,908] INFO apps.audit — GET /api/supervisor/caregivers/ -> 200 (user=422)
+ok
+test_list_shows_who_created_each_caregiver (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_list_shows_who_created_each_caregiver) ... [2026-08-24 10:33:03,011] INFO apps.audit — audit_event=caregiver_created actor=424 target=425
+[2026-08-24 10:33:03,012] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=424)
+[2026-08-24 10:33:03,051] INFO apps.audit — GET /api/supervisor/caregivers/ -> 200 (user=424)
+ok
+test_non_supervisor_gets_403 (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_non_supervisor_gets_403) ... [2026-08-24 10:33:04,819] INFO apps.audit — GET /api/supervisor/caregivers/ -> 403 (user=427)
+[2026-08-24 10:33:04,822] WARNING django.request — Forbidden: /api/supervisor/caregivers/
+ok
+test_patch_fixes_a_typo_in_the_name (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_patch_fixes_a_typo_in_the_name) ... [2026-08-24 10:33:06,588] INFO apps.audit — audit_event=caregiver_created actor=428 target=429
+[2026-08-24 10:33:06,591] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=428)
+[2026-08-24 10:33:06,602] INFO apps.audit — audit_event=caregiver_updated actor=428 target=429
+[2026-08-24 10:33:06,603] INFO apps.audit — PATCH /api/supervisor/caregivers/429/ -> 200 (user=428)
+[2026-08-24 10:33:06,612] INFO apps.audit — GET /api/supervisor/caregivers/429/ -> 200 (user=428)
+ok
+test_patch_keeping_the_same_phone_number_is_fine (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_patch_keeping_the_same_phone_number_is_fine) ... [2026-08-24 10:33:08,599] INFO apps.audit — audit_event=caregiver_created actor=430 target=431
+[2026-08-24 10:33:08,601] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=430)
+[2026-08-24 10:33:08,617] INFO apps.audit — audit_event=caregiver_updated actor=430 target=431
+[2026-08-24 10:33:08,619] INFO apps.audit — PATCH /api/supervisor/caregivers/431/ -> 200 (user=430)
+ok
+test_patch_to_a_phone_already_used_by_someone_else_rejected (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_patch_to_a_phone_already_used_by_someone_else_rejected) ... [2026-08-24 10:33:10,540] INFO apps.audit — audit_event=caregiver_created actor=432 target=433
+[2026-08-24 10:33:10,542] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=432)
+[2026-08-24 10:33:11,358] INFO apps.audit — audit_event=caregiver_created actor=432 target=434
+[2026-08-24 10:33:11,360] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=432)
+[2026-08-24 10:33:11,374] INFO apps.audit — PATCH /api/supervisor/caregivers/434/ -> 400 (user=432)
+[2026-08-24 10:33:11,376] WARNING django.request — Bad Request: /api/supervisor/caregivers/434/
+ok
+test_unauthenticated_rejected (tests.integration.test_supervisor_api.SupervisorCreateCaregiverTests.test_unauthenticated_rejected) ... [2026-08-24 10:33:12,486] INFO apps.audit — GET /api/supervisor/caregivers/ -> 401 (user=anonymous)
+[2026-08-24 10:33:12,487] WARNING django.request — Unauthorized: /api/supervisor/caregivers/
+ok
+test_editing_an_already_filled_form_updates_not_duplicates (tests.integration.test_supervisor_api.SupervisorFullWizardFlowTests.test_editing_an_already_filled_form_updates_not_duplicates) ... [2026-08-24 10:33:15,267] INFO apps.audit — audit_event=caregiver_created actor=436 target=437
+[2026-08-24 10:33:15,269] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=436)
+[2026-08-24 10:33:15,314] INFO apps.audit — audit_event=caregiver_updated actor=436 target=437
+[2026-08-24 10:33:15,319] INFO apps.audit — PUT /api/supervisor/caregivers/437/identity/ -> 201 (user=436)
+[2026-08-24 10:33:15,361] INFO apps.audit — audit_event=caregiver_updated actor=436 target=437
+[2026-08-24 10:33:15,369] INFO apps.audit — PUT /api/supervisor/caregivers/437/identity/ -> 200 (user=436)
+ok
+test_empty_string_birth_date_treated_as_no_value_not_format_error (tests.integration.test_supervisor_api.SupervisorFullWizardFlowTests.test_empty_string_birth_date_treated_as_no_value_not_format_error) ... [2026-08-24 10:33:17,624] INFO apps.audit — audit_event=caregiver_created actor=438 target=439
+[2026-08-24 10:33:17,626] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=438)
+[2026-08-24 10:33:17,647] INFO apps.audit — audit_event=caregiver_updated actor=438 target=439
+[2026-08-24 10:33:17,650] INFO apps.audit — PUT /api/supervisor/caregivers/439/identity/ -> 201 (user=438)
+ok
+test_full_flow_completes_all_four_forms (tests.integration.test_supervisor_api.SupervisorFullWizardFlowTests.test_full_flow_completes_all_four_forms) ... [2026-08-24 10:33:19,462] INFO apps.audit — audit_event=caregiver_created actor=440 target=441
+[2026-08-24 10:33:19,466] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=440)
+[2026-08-24 10:33:19,497] INFO apps.audit — audit_event=caregiver_updated actor=440 target=441
+[2026-08-24 10:33:19,499] INFO apps.audit — PUT /api/supervisor/caregivers/441/identity/ -> 201 (user=440)
+[2026-08-24 10:33:19,522] INFO apps.audit — audit_event=caregiver_updated actor=440 target=441
+[2026-08-24 10:33:19,526] INFO apps.audit — PUT /api/supervisor/caregivers/441/work-preferences/ -> 201 (user=440)
+[2026-08-24 10:33:19,548] INFO apps.audit — audit_event=caregiver_updated actor=440 target=441
+[2026-08-24 10:33:19,549] INFO apps.audit — POST /api/supervisor/caregivers/441/service-areas/ -> 201 (user=440)
+[2026-08-24 10:33:19,570] INFO apps.audit — audit_event=caregiver_updated actor=440 target=441
+[2026-08-24 10:33:19,575] INFO apps.audit — PUT /api/supervisor/caregivers/441/experience/ -> 201 (user=440)
+[2026-08-24 10:33:19,594] INFO apps.audit — audit_event=caregiver_updated actor=440 target=441
+[2026-08-24 10:33:19,596] INFO apps.audit — PUT /api/supervisor/caregivers/441/skills/ -> 201 (user=440)
+[2026-08-24 10:33:19,620] INFO apps.audit — audit_event=caregiver_updated actor=440 target=441
+[2026-08-24 10:33:19,625] INFO apps.audit — PUT /api/supervisor/caregivers/441/references/ -> 201 (user=440)
+[2026-08-24 10:33:19,656] INFO apps.audit — GET /api/supervisor/caregivers/441/progress/ -> 200 (user=440)
+ok
+test_nonexistent_caregiver_returns_404 (tests.integration.test_supervisor_api.SupervisorFullWizardFlowTests.test_nonexistent_caregiver_returns_404) ... [2026-08-24 10:33:21,441] INFO apps.audit — audit_event=caregiver_created actor=442 target=443
+[2026-08-24 10:33:21,443] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=442)
+[2026-08-24 10:33:21,452] INFO apps.audit — GET /api/supervisor/caregivers/999999/progress/ -> 404 (user=442)
+[2026-08-24 10:33:21,453] WARNING django.request — Not Found: /api/supervisor/caregivers/999999/progress/
+ok
+test_progress_shows_specific_missing_forms (tests.integration.test_supervisor_api.SupervisorFullWizardFlowTests.test_progress_shows_specific_missing_forms) ... [2026-08-24 10:33:23,402] INFO apps.audit — audit_event=caregiver_created actor=444 target=445
+[2026-08-24 10:33:23,404] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=444)
+[2026-08-24 10:33:23,433] INFO apps.audit — audit_event=caregiver_updated actor=444 target=445
+[2026-08-24 10:33:23,436] INFO apps.audit — PUT /api/supervisor/caregivers/445/identity/ -> 201 (user=444)
+[2026-08-24 10:33:23,468] INFO apps.audit — GET /api/supervisor/caregivers/445/progress/ -> 200 (user=444)
+ok
+test_admin_role_not_in_supervisor_group_gets_403 (tests.integration.test_supervisor_dashboard.SupervisorDashboardFlowTests.test_admin_role_not_in_supervisor_group_gets_403) ... [2026-08-24 10:33:25,299] WARNING django.request — Forbidden (Permission denied): /admin/caregivers/caregiverprofile/add/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/core/handlers/base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/contrib/admin/options.py", line 711, in wrapper
+    return self.admin_site.admin_view(view)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/views/decorators/cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/contrib/admin/sites.py", line 247, in inner
+    return view(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/contrib/admin/options.py", line 1943, in add_view
+    return self.changeform_view(request, None, form_url, extra_context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/utils/decorators.py", line 48, in _wrapper
+    return bound_method(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/contrib/admin/options.py", line 1799, in changeform_view
+    return self._changeform_view(request, object_id, form_url, extra_context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/contrib/admin/options.py", line 1818, in _changeform_view
+    raise PermissionDenied
+django.core.exceptions.PermissionDenied
+ok
+test_caregiver_profile_add_page_has_every_form_inlined (tests.integration.test_supervisor_dashboard.SupervisorDashboardFlowTests.test_caregiver_profile_add_page_has_every_form_inlined) ... ok
+test_full_two_step_flow_creates_user_and_identity_together (tests.integration.test_supervisor_dashboard.SupervisorDashboardFlowTests.test_full_two_step_flow_creates_user_and_identity_together) ... ok
+test_non_staff_caregiver_redirected_to_login (tests.integration.test_supervisor_dashboard.SupervisorDashboardFlowTests.test_non_staff_caregiver_redirected_to_login) ... ok
+test_supervisor_group_has_expected_permissions_only (tests.integration.test_supervisor_dashboard.SupervisorGroupPermissionTests.test_supervisor_group_has_expected_permissions_only) ... ok
+test_approve_incomplete_profile_rejected_with_missing_list (tests.integration.test_supervisor_review.SupervisorFullProfileReviewTests.test_approve_incomplete_profile_rejected_with_missing_list) ... [2026-08-24 10:33:33,431] INFO apps.audit — audit_event=caregiver_created actor=453 target=454
+[2026-08-24 10:33:33,432] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=453)
+[2026-08-24 10:33:33,458] INFO apps.audit — POST /api/caregivers/454/approve/ -> 400 (user=453)
+[2026-08-24 10:33:33,459] WARNING django.request — Bad Request: /api/caregivers/454/approve/
+ok
+test_approve_succeeds_with_zero_references (tests.integration.test_supervisor_review.SupervisorFullProfileReviewTests.test_approve_succeeds_with_zero_references) ... [2026-08-24 10:33:35,340] INFO apps.audit — audit_event=caregiver_created actor=455 target=456
+[2026-08-24 10:33:35,341] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=455)
+[2026-08-24 10:33:35,361] INFO apps.audit — audit_event=caregiver_updated actor=455 target=456
+[2026-08-24 10:33:35,363] INFO apps.audit — PUT /api/supervisor/caregivers/456/identity/ -> 201 (user=455)
+[2026-08-24 10:33:35,384] INFO apps.audit — audit_event=caregiver_updated actor=455 target=456
+[2026-08-24 10:33:35,388] INFO apps.audit — PUT /api/supervisor/caregivers/456/work-preferences/ -> 201 (user=455)
+[2026-08-24 10:33:35,409] INFO apps.audit — audit_event=caregiver_updated actor=455 target=456
+[2026-08-24 10:33:35,411] INFO apps.audit — PUT /api/supervisor/caregivers/456/experience/ -> 201 (user=455)
+[2026-08-24 10:33:35,429] INFO apps.audit — audit_event=caregiver_updated actor=455 target=456
+[2026-08-24 10:33:35,431] INFO apps.audit — PUT /api/supervisor/caregivers/456/skills/ -> 201 (user=455)
+[2026-08-24 10:33:35,450] INFO apps.audit — audit_event=caregiver_updated actor=455 target=456
+[2026-08-24 10:33:35,456] INFO apps.audit — PUT /api/supervisor/caregivers/456/references/ -> 201 (user=455)
+[2026-08-24 10:33:35,478] INFO apps.audit — POST /api/caregivers/456/approve/ -> 200 (user=455)
+ok
+test_full_profile_nonexistent_caregiver_404 (tests.integration.test_supervisor_review.SupervisorFullProfileReviewTests.test_full_profile_nonexistent_caregiver_404) ... [2026-08-24 10:33:37,511] INFO apps.audit — audit_event=caregiver_created actor=457 target=458
+[2026-08-24 10:33:37,513] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=457)
+[2026-08-24 10:33:37,523] INFO apps.audit — GET /api/supervisor/caregivers/999999/full/ -> 404 (user=457)
+[2026-08-24 10:33:37,524] WARNING django.request — Not Found: /api/supervisor/caregivers/999999/full/
+ok
+test_full_profile_reflects_saved_data (tests.integration.test_supervisor_review.SupervisorFullProfileReviewTests.test_full_profile_reflects_saved_data) ... [2026-08-24 10:33:39,593] INFO apps.audit — audit_event=caregiver_created actor=459 target=460
+[2026-08-24 10:33:39,595] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=459)
+[2026-08-24 10:33:39,637] INFO apps.audit — audit_event=caregiver_updated actor=459 target=460
+[2026-08-24 10:33:39,644] INFO apps.audit — PUT /api/supervisor/caregivers/460/identity/ -> 201 (user=459)
+[2026-08-24 10:33:39,682] INFO apps.audit — audit_event=caregiver_updated actor=459 target=460
+[2026-08-24 10:33:39,687] INFO apps.audit — PUT /api/supervisor/caregivers/460/work-preferences/ -> 201 (user=459)
+[2026-08-24 10:33:39,758] INFO apps.audit — GET /api/supervisor/caregivers/460/full/ -> 200 (user=459)
+ok
+test_full_profile_shows_draft_status_before_anything_filled (tests.integration.test_supervisor_review.SupervisorFullProfileReviewTests.test_full_profile_shows_draft_status_before_anything_filled) ... [2026-08-24 10:33:43,015] INFO apps.audit — audit_event=caregiver_created actor=461 target=462
+[2026-08-24 10:33:43,017] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=461)
+[2026-08-24 10:33:43,037] INFO apps.audit — GET /api/supervisor/caregivers/462/full/ -> 200 (user=461)
+ok
+test_reject_with_reason_reflected_in_full_profile (tests.integration.test_supervisor_review.SupervisorFullProfileReviewTests.test_reject_with_reason_reflected_in_full_profile) ... [2026-08-24 10:33:45,738] INFO apps.audit — audit_event=caregiver_created actor=463 target=464
+[2026-08-24 10:33:45,739] INFO apps.audit — POST /api/supervisor/caregivers/ -> 201 (user=463)
+[2026-08-24 10:33:45,759] INFO apps.audit — POST /api/caregivers/464/reject/ -> 200 (user=463)
+[2026-08-24 10:33:45,789] INFO apps.audit — GET /api/supervisor/caregivers/464/full/ -> 200 (user=463)
+ok
+test_all_sixteen_caregiver_questions_covered (tests.integration.test_trait_mapping.TraitMappingSeedTests.test_all_sixteen_caregiver_questions_covered) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_all_twelve_patient_questions_covered (tests.integration.test_trait_mapping.TraitMappingSeedTests.test_all_twelve_patient_questions_covered) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_all_values_within_zero_to_hundred_range (tests.integration.test_trait_mapping.TraitMappingSeedTests.test_all_values_within_zero_to_hundred_range) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_caregiver_answer_options_are_the_four_letter_scale (tests.integration.test_trait_mapping.TraitMappingSeedTests.test_caregiver_answer_options_are_the_four_letter_scale) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_caregiver_q5_matches_the_one_worked_example_from_the_spec (tests.integration.test_trait_mapping.TraitMappingSeedTests.test_caregiver_q5_matches_the_one_worked_example_from_the_spec) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_every_defined_trait_is_used_at_least_once (tests.integration.test_trait_mapping.TraitMappingSeedTests.test_every_defined_trait_is_used_at_least_once) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_patient_answer_options_match_real_questionnaire_choice_keys (tests.integration.test_trait_mapping.TraitMappingSeedTests.test_patient_answer_options_match_real_questionnaire_choice_keys) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_resolved_placeholder_fields_match_the_confirmed_option_keys (tests.integration.test_trait_mapping.TraitMappingSeedTests.test_resolved_placeholder_fields_match_the_confirmed_option_keys) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_seed_command_is_idempotent (tests.integration.test_trait_mapping.TraitMappingSeedTests.test_seed_command_is_idempotent) ... seeded trait mappings: 120 created, 0 updated
+seeded trait mappings: 0 created, 120 updated
+ok
+test_all_four_dimensions_present_when_both_questionnaires_complete (tests.integration.test_trait_matching.FullMatchComputationTests.test_all_four_dimensions_present_when_both_questionnaires_complete) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_custom_weights_change_the_overall_score (tests.integration.test_trait_matching.FullMatchComputationTests.test_custom_weights_change_the_overall_score) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_flexible_caregiver_cfi_much_higher_than_rigid (tests.integration.test_trait_matching.FullMatchComputationTests.test_flexible_caregiver_cfi_much_higher_than_rigid) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_flexible_caregiver_scores_much_higher_than_rigid_caregiver (tests.integration.test_trait_matching.FullMatchComputationTests.test_flexible_caregiver_scores_much_higher_than_rigid_caregiver) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_missing_caregiver_questionnaire_returns_none_overall_not_zero (tests.integration.test_trait_matching.FullMatchComputationTests.test_missing_caregiver_questionnaire_returns_none_overall_not_zero) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_adaptability_caregiver_exceeding_the_need_scores_perfectly (tests.integration.test_trait_matching.ScoringFormulaTests.test_adaptability_caregiver_exceeding_the_need_scores_perfectly) ... ok
+test_adaptability_high_sensitivity_high_flexibility_scores_well (tests.integration.test_trait_matching.ScoringFormulaTests.test_adaptability_high_sensitivity_high_flexibility_scores_well) ... ok
+test_adaptability_high_sensitivity_low_flexibility_scores_poorly (tests.integration.test_trait_matching.ScoringFormulaTests.test_adaptability_high_sensitivity_low_flexibility_scores_poorly) ... ok
+test_adaptability_low_sensitivity_scores_high_regardless_of_flexibility (tests.integration.test_trait_matching.ScoringFormulaTests.test_adaptability_low_sensitivity_scores_high_regardless_of_flexibility) ... ok
+test_similarity_decreases_with_distance (tests.integration.test_trait_matching.ScoringFormulaTests.test_similarity_decreases_with_distance) ... ok
+test_similarity_is_100_when_values_match_exactly (tests.integration.test_trait_matching.ScoringFormulaTests.test_similarity_is_100_when_values_match_exactly) ... ok
+test_similarity_never_goes_negative (tests.integration.test_trait_matching.ScoringFormulaTests.test_similarity_never_goes_negative) ... ok
+test_every_trait_belongs_to_exactly_one_dimension (tests.integration.test_trait_matching.TraitClassificationTests.test_every_trait_belongs_to_exactly_one_dimension) ... ok
+test_every_trait_classified_as_similarity_or_adaptability_exactly_once (tests.integration.test_trait_matching.TraitClassificationTests.test_every_trait_classified_as_similarity_or_adaptability_exactly_once) ... ok
+test_all_a_answers_produce_all_17_traits (tests.integration.test_trait_matching.TraitProfileComputationTests.test_all_a_answers_produce_all_17_traits) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_averaging_across_multiple_questions_mapping_to_the_same_trait (tests.integration.test_trait_matching.TraitProfileComputationTests.test_averaging_across_multiple_questions_mapping_to_the_same_trait) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_none_questionnaire_returns_empty_profile_not_error (tests.integration.test_trait_matching.TraitProfileComputationTests.test_none_questionnaire_returns_empty_profile_not_error) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_question_mapping_to_two_traits_populates_both (tests.integration.test_trait_matching.TraitProfileComputationTests.test_question_mapping_to_two_traits_populates_both) ... seeded trait mappings: 120 created, 0 updated
+ok
+test_different_usernames_tracked_independently (tests.unit.test_lockout.LoginAttemptGuardTests.test_different_usernames_tracked_independently) ... ok
+test_locks_after_max_attempts (tests.unit.test_lockout.LoginAttemptGuardTests.test_locks_after_max_attempts) ... ok
+test_not_locked_below_max_attempts (tests.unit.test_lockout.LoginAttemptGuardTests.test_not_locked_below_max_attempts) ... ok
+test_not_locked_initially (tests.unit.test_lockout.LoginAttemptGuardTests.test_not_locked_initially) ... ok
+test_reset_clears_lockout (tests.unit.test_lockout.LoginAttemptGuardTests.test_reset_clears_lockout) ... ok
+test_issue_for_returns_matching_hash_and_raw_token (tests.unit.test_otp_model.PasswordResetTokenModelTests.test_issue_for_returns_matching_hash_and_raw_token) ... ok
+test_wrong_token_does_not_match (tests.unit.test_otp_model.PasswordResetTokenModelTests.test_wrong_token_does_not_match) ... ok
+test_is_expired (tests.unit.test_otp_model.PhoneOTPModelTests.test_is_expired) ... ok
+test_issue_for_invalidates_previous_otp (tests.unit.test_otp_model.PhoneOTPModelTests.test_issue_for_invalidates_previous_otp) ... ok
+test_issue_for_returns_matching_hash_and_raw_code (tests.unit.test_otp_model.PhoneOTPModelTests.test_issue_for_returns_matching_hash_and_raw_code) ... ok
+test_consistent_matrix_has_low_cr (apps.care.tests.test_ahp.AHPTests.test_consistent_matrix_has_low_cr) ... ok
+test_invalid_matrix_is_rejected (apps.care.tests.test_ahp.AHPTests.test_invalid_matrix_is_rejected) ... ok
+test_weights_sum_to_one (apps.care.tests.test_ahp.AHPTests.test_weights_sum_to_one) ... ok
+test_complete_match_has_high_or_medium_confidence (apps.care.tests.test_engine.MatchingEngineTests.test_complete_match_has_high_or_medium_confidence) ... ok
+test_no_objective_information_is_low (apps.care.tests.test_engine.MatchingEngineTests.test_no_objective_information_is_low) ... ok
+test_objective_only_match_is_medium (apps.care.tests.test_engine.MatchingEngineTests.test_objective_only_match_is_medium) ... ok
+test_trait_only_match_is_medium_not_low (apps.care.tests.test_engine.MatchingEngineTests.test_trait_only_match_is_medium_not_low) ... ok
+test_age_brackets (apps.care.tests.test_objective.ObjectiveTests.test_age_brackets) ... ok
+test_under_60_has_no_matching_bracket (apps.care.tests.test_objective.ObjectiveTests.test_under_60_has_no_matching_bracket) ... ok
+test_caregiver_accepted_conditions_empty_returns_none (apps.care.tests.test_specialization.PhysicalConditionScoreTests.test_caregiver_accepted_conditions_empty_returns_none) ... ok
+test_caregiver_has_no_work_preferences_returns_none (apps.care.tests.test_specialization.PhysicalConditionScoreTests.test_caregiver_has_no_work_preferences_returns_none) ... ok
+test_caregiver_no_preference_always_matches (apps.care.tests.test_specialization.PhysicalConditionScoreTests.test_caregiver_no_preference_always_matches) ... ok
+test_matching_condition_scores_100 (apps.care.tests.test_specialization.PhysicalConditionScoreTests.test_matching_condition_scores_100) ... ok
+test_non_matching_condition_scores_zero (apps.care.tests.test_specialization.PhysicalConditionScoreTests.test_non_matching_condition_scores_zero) ... ok
+test_patient_condition_not_set_returns_none (apps.care.tests.test_specialization.PhysicalConditionScoreTests.test_patient_condition_not_set_returns_none) ... ok
+test_24h_caregiver_always_matches (apps.care.tests.test_specialization.ShiftAvailabilityScoreTests.test_24h_caregiver_always_matches) ... ok
+test_caregiver_available_shifts_empty_returns_none (apps.care.tests.test_specialization.ShiftAvailabilityScoreTests.test_caregiver_available_shifts_empty_returns_none) ... ok
+test_caregiver_has_no_work_preferences_returns_none (apps.care.tests.test_specialization.ShiftAvailabilityScoreTests.test_caregiver_has_no_work_preferences_returns_none) ... ok
+test_no_overlap_scores_zero (apps.care.tests.test_specialization.ShiftAvailabilityScoreTests.test_no_overlap_scores_zero) ... ok
+test_overlapping_shift_scores_100 (apps.care.tests.test_specialization.ShiftAvailabilityScoreTests.test_overlapping_shift_scores_100) ... ok
+test_patient_needed_shifts_empty_returns_none (apps.care.tests.test_specialization.ShiftAvailabilityScoreTests.test_patient_needed_shifts_empty_returns_none) ... ok
+test_cost_criterion (apps.care.tests.test_topsis.TOPSISTests.test_cost_criterion) ... ok
+test_identical_candidates_are_equal (apps.care.tests.test_topsis.TOPSISTests.test_identical_candidates_are_equal) ... ok
+test_scores_are_between_zero_and_one (apps.care.tests.test_topsis.TOPSISTests.test_scores_are_between_zero_and_one) ... ok
+test_adaptability_exact_match_is_full_score (apps.care.tests.test_trait_matching.TraitMatchingTests.test_adaptability_exact_match_is_full_score) ... ok
+test_adaptability_exceeding_need_is_full_score (apps.care.tests.test_trait_matching.TraitMatchingTests.test_adaptability_exceeding_need_is_full_score) ... ok
+test_adaptability_shortfall_scores_the_gap (apps.care.tests.test_trait_matching.TraitMatchingTests.test_adaptability_shortfall_scores_the_gap) ... ok
+test_identical_traits_have_full_similarity (apps.care.tests.test_trait_matching.TraitMatchingTests.test_identical_traits_have_full_similarity) ... ok
+test_similarity_decreases_with_distance (apps.care.tests.test_trait_matching.TraitMatchingTests.test_similarity_decreases_with_distance) ... ok
+test_eligible_result (apps.care.tests.test_waterfall.WaterfallResultTests.test_eligible_result) ... ok
+test_rejected_result (apps.care.tests.test_waterfall.WaterfallResultTests.test_rejected_result) ... ok
+test_complete_match_has_high_or_medium_confidence (tests.integration.test_matching_explanations.MatchingEngineTests.test_complete_match_has_high_or_medium_confidence) ... ok
+test_no_objective_information_is_low (tests.integration.test_matching_explanations.MatchingEngineTests.test_no_objective_information_is_low) ... ok
+test_objective_only_match_is_medium (tests.integration.test_matching_explanations.MatchingEngineTests.test_objective_only_match_is_medium) ... ok
+test_trait_only_match_is_medium_not_low (tests.integration.test_matching_explanations.MatchingEngineTests.test_trait_only_match_is_medium_not_low) ... ok
+
+----------------------------------------------------------------------
+Ran 344 tests in 640.023s
+
+OK
+Destroying test database for alias 'default' ('test_moraqebeman_db')...

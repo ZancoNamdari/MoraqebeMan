@@ -103,3 +103,12 @@ class AuditService:
 
     def mcdm_weights_updated(self, actor_id, consistency_ratio):
         return self.log_event(AuditEventType.MCDM_WEIGHTS_UPDATED, actor_id, None, consistency_ratio=consistency_ratio)
+
+    def agency_family_link_decided(self, actor_id, family_user_id, decision):
+        return self.log_event(AuditEventType.AGENCY_FAMILY_LINK_DECIDED, actor_id, family_user_id, decision=decision)
+
+    def agency_caregiver_link_decided(self, actor_id, caregiver_user_id, decision):
+        return self.log_event(AuditEventType.AGENCY_CAREGIVER_LINK_DECIDED, actor_id, caregiver_user_id, decision=decision)
+
+    def agency_supervisor_created(self, actor_id, supervisor_user_id, agency_id):
+        return self.log_event(AuditEventType.AGENCY_SUPERVISOR_CREATED, actor_id, supervisor_user_id, agency_id=agency_id)

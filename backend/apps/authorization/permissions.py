@@ -32,6 +32,29 @@ class IsAgency(BasePermission):
         return _has_role(request, UserRole.AGENCY)
 
 
+class IsAgencySupervisor(BasePermission):
+    """Agency staff (receptionist-like) — always scoped to exactly
+    one agency via apps.agencies.models.AgencySupervisor. This is
+    deliberately a DIFFERENT permission/role than the platform-wide
+    "Supervisor" Django group used in apps.caregivers.supervisor_views
+    — that one has no agency scoping at all."""
+    def has_permission(self, request, view):
+        return _has_role(request, UserRole.AGENCY_SUPERVISOR)
+
+
+class IsAgencyOrAgencySupervisor(BasePermission):
+    """Either the agency account itself, or one of its own
+    supervisors — the two roles that should be able to act "on behalf
+    of" a given agency (create caregivers/patients/other supervisors,
+    run agency-scoped matching). Per-agency scoping (does this
+    specific agency match the one this user belongs to) still needs
+    to be checked separately in the view/service — this permission
+    class only confirms the user is ONE of the two allowed role
+    types, not which agency they belong to."""
+    def has_permission(self, request, view):
+        return _has_role(request, UserRole.AGENCY, UserRole.AGENCY_SUPERVISOR)
+
+
 class IsFamily(BasePermission):
     def has_permission(self, request, view):
         return _has_role(request, UserRole.FAMILY)

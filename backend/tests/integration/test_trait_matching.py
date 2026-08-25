@@ -46,9 +46,9 @@ DEMANDING_PATIENT = {
     "religious_beliefs_priority": "strongly_agree", "new_treatment_openness": "none",
     "caregiver_as_family_member": "yes", "respectful_disagreement_acceptance": "reject",
     "privacy_comfort_with_caregiver": "no", "noise_smell_sensitivity": "very_high",
-    "meal_time_strictness": "very_high", "special_diet_preference": "yes",
-    "medication_timing_priority": "very_high", "accent_customs_annoyance": "very_much",
-    "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "very_high",
+    "meal_time_strictness": "very_strict", "special_diet_preference": "yes",
+    "medication_timing_priority": "very_strict", "accent_customs_annoyance": "very_much",
+    "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "very_willing",
 }
 
 

@@ -365,9 +365,9 @@ VALID_PATIENT_QUESTIONNAIRE = {
     "religious_beliefs_priority": "strongly_agree", "new_treatment_openness": "moderate",
     "caregiver_as_family_member": "yes", "respectful_disagreement_acceptance": "fully_accept",
     "privacy_comfort_with_caregiver": "yes", "noise_smell_sensitivity": "low",
-    "meal_time_strictness": "moderate", "special_diet_preference": "no",
-    "medication_timing_priority": "very_high", "accent_customs_annoyance": "not_at_all",
-    "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "moderate",
+    "meal_time_strictness": "moderately_strict", "special_diet_preference": "no",
+    "medication_timing_priority": "very_strict", "accent_customs_annoyance": "not_at_all",
+    "cultural_respect_expectation": "yes", "willingness_to_express_opinion": "somewhat_willing",
 }
 
 CAREGIVER_FLEX_ANSWERS = {

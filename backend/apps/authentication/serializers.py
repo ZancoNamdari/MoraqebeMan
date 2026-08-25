@@ -24,14 +24,17 @@ class RegisterSerializer(serializers.Serializer):
     )
     email = serializers.EmailField(required=False, allow_blank=True, default="")
     # Public self-registration is limited to non-privileged roles.
+    # AGENCY is a paying B2B account (contracts, billing, and the
+    # ability to approve/reject other people's join requests) — it
+    # must be created deliberately (Django admin, or a future
+    # supervisor-facing flow), never through this open endpoint.
     # SUPERUSER/ADMIN accounts are created via the admin panel or
-    # createsuperuser, never through this open endpoint.
+    # createsuperuser, never through this open endpoint either.
     role = serializers.ChoiceField(
         choices=[
             (UserRole.FAMILY, UserRole.FAMILY.label),
             (UserRole.PATIENT, UserRole.PATIENT.label),
             (UserRole.CAREGIVER, UserRole.CAREGIVER.label),
-            (UserRole.AGENCY, UserRole.AGENCY.label),
         ],
         default=UserRole.FAMILY,
     )

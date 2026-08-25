@@ -330,12 +330,81 @@ def rank_candidates_with_topsis(
         ranked.append(result)
 
     ranked.sort(
-        key=lambda item: (
-            item["mcdm_score"]
-            if item["mcdm_score"] is not None
-            else -1
-        ),
+        key=_ranking_sort_key,
         reverse=True,
     )
 
     return ranked
+
+
+def _ranking_sort_key(
+    item: dict,
+) -> tuple:
+    """
+    Primary sort is mcdm_score. Ties are broken using this project's
+    own matching spec's (SAS-4) tie-break order: specialization,
+    working hours, distance, cultural compatibility, lifestyle
+    compatibility. Language/dialect is deliberately not a separate
+    tie-break key — it's already one of the four traits inside
+    cultural_flexibility (see trait_matching.py's DIMENSION_TRAITS),
+    so a second, independent comparison on it here would double-count
+    the same signal rather than add a new one.
+
+    Specialization and working-hours scores come from
+    specialization.py (physical_condition_match_score,
+    shift_availability_score) — added specifically to close this
+    gap; they were previously unavailable anywhere in the pipeline.
+    """
+
+    mcdm_score = (
+        item["mcdm_score"]
+        if item["mcdm_score"] is not None
+        else -1
+    )
+
+    objective_criterion_scores = (
+        item.get("objective_criterion_scores") or {}
+    )
+
+    trait_dimension_scores = (
+        item.get("trait_dimension_scores") or {}
+    )
+
+    specialization_score = (
+        item.get("physical_condition_match_score")
+        if item.get("physical_condition_match_score") is not None
+        else -1
+    )
+
+    hours_score = (
+        item.get("shift_availability_score")
+        if item.get("shift_availability_score") is not None
+        else -1
+    )
+
+    location_score = (
+        objective_criterion_scores.get("location")
+        if objective_criterion_scores.get("location") is not None
+        else -1
+    )
+
+    cultural_score = (
+        trait_dimension_scores.get("cultural_ritual")
+        if trait_dimension_scores.get("cultural_ritual") is not None
+        else -1
+    )
+
+    lifestyle_score = (
+        trait_dimension_scores.get("lifestyle")
+        if trait_dimension_scores.get("lifestyle") is not None
+        else -1
+    )
+
+    return (
+        mcdm_score,
+        specialization_score,
+        hours_score,
+        location_score,
+        cultural_score,
+        lifestyle_score,
+    )
