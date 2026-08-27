@@ -59,7 +59,7 @@ export default function ReviewPage() {
 }
 
 function ReviewPageInner() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["admin", "superuser"])
   const router = useRouter()
   const searchParams = useSearchParams()
   const id = Number(searchParams.get("id"))

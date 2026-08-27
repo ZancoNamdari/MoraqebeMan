@@ -62,7 +62,7 @@ function pairsToMatrix(pairs: Record<string, number>): number[][] {
 }
 
 export default function MatchWeightsPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth(["admin", "superuser"])
   const router = useRouter()
 
   const [loading, setLoading] = useState(true)

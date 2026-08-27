@@ -20,7 +20,7 @@ const CONFIDENCE_CLASS: Record<string, string> = {
 }
 
 export default function AgencyPatientMatchPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor"])
   const router = useRouter()
   const params = useParams()
   const patientId = Number(params.id)

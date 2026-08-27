@@ -19,7 +19,7 @@ import { ROUTES } from "@/lib/routes"
 import type { PatientProfile } from "@/types/patient"
 
 export default function ProfilePage() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["patient"])
   const router = useRouter()
   const [profile, setProfile] = useState<PatientProfile | null>(null)
   const [loading, setLoading] = useState(true)

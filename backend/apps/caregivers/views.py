@@ -7,6 +7,7 @@ from .models import (
     CaregiverProfile,
     CaregiverReference,
     CaregiverServiceArea,
+    CaregiverStatus,
     IdentityProfile,
 )
 from .permissions import IsAdminOrSuperuser, IsCaregiver
@@ -255,3 +256,44 @@ class RejectCaregiverView(APIView):
         reason = request.data.get("reason", "")
         profile.reject(request.user, reason=reason)
         return Response({"detail": "پروفایل رد شد.", "status": profile.status, "rejection_reason": profile.rejection_reason})
+
+
+class BlacklistCaregiverView(APIView):
+    """
+    POST /api/caregivers/<user_id>/blacklist/  {"reason": "..."}
+    ADMIN/SUPERUSER only. Only meaningful for an already-APPROVED
+    caregiver — see CaregiverProfile.blacklist()'s own docstring for
+    why. Blacklisting an unapproved caregiver isn't rejected outright
+    here (still allowed) since a supervisor's own record-keeping
+    might legitimately need to flag someone mid-review too, but the
+    normal path is approved -> blacklisted.
+    """
+    permission_classes = [IsAdminOrSuperuser]
+
+    def post(self, request, user_id):
+        try:
+            profile = CaregiverProfile.objects.get(user_id=user_id)
+        except CaregiverProfile.DoesNotExist:
+            return Response({"detail": "پروفایل مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        reason = request.data.get("reason", "")
+        profile.blacklist(request.user, reason=reason)
+        return Response({"detail": "مراقب مسدود شد.", "status": profile.status, "blacklist_reason": profile.blacklist_reason})
+
+
+class UnblacklistCaregiverView(APIView):
+    """POST /api/caregivers/<user_id>/unblacklist/ — ADMIN/SUPERUSER
+    only. Reverses BlacklistCaregiverView, back to APPROVED."""
+    permission_classes = [IsAdminOrSuperuser]
+
+    def post(self, request, user_id):
+        try:
+            profile = CaregiverProfile.objects.get(user_id=user_id)
+        except CaregiverProfile.DoesNotExist:
+            return Response({"detail": "پروفایل مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        if profile.status != CaregiverStatus.SUSPENDED:
+            return Response({"detail": "این مراقب در حال حاضر مسدود نیست."}, status=status.HTTP_400_BAD_REQUEST)
+
+        profile.unblacklist(request.user)
+        return Response({"detail": "مسدودیت مراقب رفع شد.", "status": profile.status})

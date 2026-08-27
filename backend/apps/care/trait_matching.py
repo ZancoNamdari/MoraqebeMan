@@ -105,20 +105,35 @@ CFI_QUESTION_TRAITS = {
 def compute_trait_profile(
     profile_type: str,
     questionnaire,
+    mappings=None,
 ) -> dict:
     """
     Convert questionnaire answers into trait values.
 
     Raw answer options are never treated as scores.
     They are converted through QuestionTraitMapping.
+
+    mappings — optional pre-fetched QuestionTraitMapping rows for
+    this profile_type. QuestionTraitMapping is a static reference
+    table (built once by seed_trait_mappings, essentially never
+    changing during a single matching request) — without this
+    parameter, calling this function once per candidate (which is
+    exactly what happens for the caregiver side in
+    engine.py's per-candidate loop) re-runs the identical
+    .filter(profile_type=...) query for every single caregiver being
+    scored. A real, measured N+1: with ~1000 approved caregivers,
+    this was 1000 redundant identical queries per matching request.
+    Callers that only run this once (the patient side, computed a
+    single time outside any loop) can safely leave this as None.
     """
 
     if questionnaire is None:
         return {}
 
-    mappings = QuestionTraitMapping.objects.filter(
-        profile_type=profile_type,
-    )
+    if mappings is None:
+        mappings = QuestionTraitMapping.objects.filter(
+            profile_type=profile_type,
+        )
 
     by_field: dict[str, list] = {}
 
@@ -334,6 +349,7 @@ def compute_full_match(
     caregiver_questionnaire,
     weights: dict | None = None,
     patient_traits: dict | None = None,
+    caregiver_mappings=None,
 ) -> dict:
     """
     Full trait-based match.
@@ -344,6 +360,10 @@ def compute_full_match(
 
     This prevents a missing questionnaire from silently becoming
     a partial or assumed compatibility score.
+
+    caregiver_mappings — forwarded to compute_trait_profile() for
+    the caregiver side; see that function's own docstring for why
+    this exists (a real, measured N+1 fix, not a speculative one).
     """
 
     if (
@@ -370,6 +390,7 @@ def compute_full_match(
     caregiver_traits = compute_trait_profile(
         MatchingProfileSide.CAREGIVER,
         caregiver_questionnaire,
+        mappings=caregiver_mappings,
     )
 
     if not patient_traits or not caregiver_traits:

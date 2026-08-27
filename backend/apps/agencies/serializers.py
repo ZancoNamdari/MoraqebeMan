@@ -80,6 +80,30 @@ class AgencyDashboardSerializer(serializers.Serializer):
     pending_caregiver_requests = serializers.IntegerField()
 
 
+class CreateAgencySerializer(serializers.Serializer):
+    """
+    Used by PlatformAgencyListCreateView — SUPERUSER-only, creates a
+    real User(role=AGENCY) + AgencyProfile together, in one step.
+    Before this, the only way to get a new agency onto the platform
+    was the awkward two-step path of promoting some existing account
+    to AGENCY (via superuser-panel's role management) and then
+    waiting for that account to touch /api/agencies/me/ once to
+    auto-create its own profile — no actual "onboard a new B2B
+    customer" action existed anywhere. Same "creator enters someone
+    else's info, no password field" convention as every other
+    creation flow in this codebase.
+    """
+    company_name = serializers.CharField(max_length=200)
+    license_number = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    first_name = serializers.CharField(max_length=50)
+    last_name = serializers.CharField(max_length=50)
+    phone_number = serializers.RegexField(
+        regex=r"^09\d{9}$",
+        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
+    )
+    email = serializers.EmailField(required=False, allow_blank=True)
+
+
 class CreateAgencySupervisorSerializer(serializers.Serializer):
     """
     Same shape and reasoning as apps.caregivers.serializers's

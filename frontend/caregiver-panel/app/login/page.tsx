@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,12 +13,15 @@ type Mode = "phone" | "code"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [mode, setMode] = useState<Mode>("phone")
 
   const [phone, setPhone] = useState("")
   const [code, setCode] = useState("")
 
-  const [error, setError] = useState("")
+  const [error, setError] = useState(
+    searchParams.get("error") === "wrong_role" ? "این حساب دسترسی به این پنل را ندارد." : ""
+  )
   const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(false)
 

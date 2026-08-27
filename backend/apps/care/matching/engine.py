@@ -6,6 +6,7 @@ from apps.care.models import (
     AssignmentStatus,
     CaregiverAssignment,
     MatchingProfileSide,
+    QuestionTraitMapping,
 )
 from apps.care.trait_matching import (
     compute_full_match,
@@ -93,6 +94,7 @@ def _build_candidate(
     patient,
     patient_traits: dict,
     already_assigned_ids: set,
+    caregiver_mappings=None,
 ) -> dict | None:
     """
     Build the complete matching data for one caregiver.
@@ -163,6 +165,7 @@ def _build_candidate(
         patient_questionnaire=patient_questionnaire,
         caregiver_questionnaire=caregiver_questionnaire,
         patient_traits=patient_traits,
+        caregiver_mappings=caregiver_mappings,
     )
 
     # --------------------------------------------------------
@@ -450,6 +453,7 @@ def suggest_caregivers_for_patient(
         )
         .select_related(
             "user",
+            "user__caregiver_identity_profile",
             "work_preferences",
             "compatibility_questionnaire",
         )
@@ -476,6 +480,16 @@ def suggest_caregivers_for_patient(
         patient_questionnaire,
     )
 
+    # Fetched once here, reused for every candidate below — the
+    # actual N+1 fix. See compute_trait_profile's own docstring for
+    # the measured impact (was: one identical query per caregiver;
+    # now: one query total, regardless of candidate count).
+    caregiver_mappings = list(
+        QuestionTraitMapping.objects.filter(
+            profile_type=MatchingProfileSide.CAREGIVER,
+        )
+    )
+
     # --------------------------------------------------------
     # 5. Build candidates
     # --------------------------------------------------------
@@ -489,6 +503,7 @@ def suggest_caregivers_for_patient(
             patient=patient,
             patient_traits=patient_traits,
             already_assigned_ids=already_assigned_ids,
+            caregiver_mappings=caregiver_mappings,
         )
 
         if candidate is not None:

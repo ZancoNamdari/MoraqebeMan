@@ -11,7 +11,7 @@ import type { FamilyLink, PatientProfile } from "@/types/patient"
 import { ROUTES } from "@/lib/routes"
 
 export default function DashboardPage() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["patient"])
   const router = useRouter()
   const [profile, setProfile] = useState<PatientProfile | null>(null)
   const [pending, setPending] = useState<FamilyLink[]>([])

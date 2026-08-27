@@ -14,10 +14,18 @@ from .views import (
     JoinAgencyAsCaregiverView,
     JoinAgencyAsFamilyView,
     MyAgencyProfileView,
+    PlatformAgencyListCreateView,
     PlatformAnalyticsView,
 )
 
 urlpatterns = [
+    # Platform-wide agency management — SUPERUSER only. Placed first,
+    # and deliberately a bare root path (no /me/, no id) — it has to
+    # come before nothing else could collide with it since Django
+    # matches literal segments exactly, but keeping the "list all /
+    # onboard a new one" action visually first in this file too.
+    path("agencies/", PlatformAgencyListCreateView.as_view(), name="agencies-list-create"),
+
     # Agency-facing
     path("agencies/me/", MyAgencyProfileView.as_view(), name="agencies-me"),
     path("agencies/me/dashboard/", AgencyDashboardView.as_view(), name="agencies-dashboard"),

@@ -16,6 +16,8 @@ from .supervisor_views import (
 )
 from .views import (
     ApproveCaregiverView,
+    BlacklistCaregiverView,
+    UnblacklistCaregiverView,
     MyExperienceView,
     MyFullProfileView,
     MyIdentityProfileView,
@@ -38,6 +40,8 @@ urlpatterns = [
     path("caregivers/me/full/", MyFullProfileView.as_view(), name="my-full-profile"),
     path("caregivers/<int:user_id>/approve/", ApproveCaregiverView.as_view(), name="approve-caregiver"),
     path("caregivers/<int:user_id>/reject/", RejectCaregiverView.as_view(), name="reject-caregiver"),
+    path("caregivers/<int:user_id>/blacklist/", BlacklistCaregiverView.as_view(), name="blacklist-caregiver"),
+    path("caregivers/<int:user_id>/unblacklist/", UnblacklistCaregiverView.as_view(), name="unblacklist-caregiver"),
 
     # Supervisor bulk-data-entry dashboard — separate namespace,
     # separate permission (IsAdminOrSuperuser, not IsCaregiver)

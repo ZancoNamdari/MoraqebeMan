@@ -17,7 +17,7 @@ const CAREGIVER_STATUS_LABEL: Record<string, string> = {
 }
 
 export default function CaregiversPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor"])
   const router = useRouter()
 
   const [roster, setRoster] = useState<AgencyCaregiverLink[]>([])

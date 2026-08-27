@@ -14,7 +14,7 @@ import { ROUTES } from "@/lib/routes"
 import type { AgencySupervisor } from "@/types/agency_management"
 
 export default function SupervisorsPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor"])
   const router = useRouter()
 
   const [agencyId, setAgencyId] = useState<number | null>(null)

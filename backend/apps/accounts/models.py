@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager as DjangoUserManager
 from django.db import models
 from unidecode import unidecode
 import re
@@ -12,6 +12,25 @@ class UserRole(models.TextChoices):
     FAMILY = "family", "خانواده"
     PATIENT = "patient", "بیمار / سالمند"
     CAREGIVER = "caregiver", "مراقب"
+
+
+class UserManager(DjangoUserManager):
+    """
+    Only exists to fix one real gap: Django's built-in
+    createsuperuser command only knows about is_staff/is_superuser
+    (the framework's own permission flags) — it has no idea this
+    project also has its own `role` field driving every actual
+    permission check in the API and every panel's role-gate. Without
+    this override, `python manage.py createsuperuser` silently
+    produces an account with is_superuser=True but role="family" (the
+    field's default), which every panel then correctly — but
+    unhelpfully — rejects as "wrong role". This override makes the
+    two concepts agree for the one command that's supposed to create
+    a fully-privileged account.
+    """
+    def create_superuser(self, username=None, email=None, password=None, **extra_fields):
+        extra_fields.setdefault("role", UserRole.SUPERUSER)
+        return super().create_superuser(username, email, password, **extra_fields)
 
 
 class User(AbstractUser):
@@ -28,6 +47,7 @@ class User(AbstractUser):
         verbose_name_plural = "کاربران"
 
     REQUIRED_FIELDS = ["email", "phone_number"]
+    objects = UserManager()
 
     def generate_username(self):
         first = unidecode(self.first_name).lower()

@@ -5,17 +5,24 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { agencyService } from "@/services/agency.service"
 import { careService } from "@/services/care.service"
 import type { CaregiverAssignment } from "@/types/care"
 import { ROUTES } from "@/lib/routes"
 import { patientAvatar } from "@/lib/constants"
 
 export default function DashboardPage() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["caregiver"])
   const [patients, setPatients] = useState<CaregiverAssignment[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+
+  const [showJoinAgency, setShowJoinAgency] = useState(false)
+  const [agencyCode, setAgencyCode] = useState("")
+  const [joiningAgency, setJoiningAgency] = useState(false)
+  const [agencyMessage, setAgencyMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -23,6 +30,19 @@ export default function DashboardPage() {
   }, [user])
 
   if (authLoading) return null
+
+  async function handleJoinAgency() {
+    setJoiningAgency(true); setAgencyMessage(null)
+    try {
+      await agencyService.joinAsCaregiver(agencyCode.trim().toUpperCase())
+      setAgencyMessage({ kind: "success", text: "درخواست شما ثبت شد — پس از تأیید آژانس، به استخر مراقبان آن اضافه می‌شوید." })
+      setAgencyCode("")
+    } catch (err: any) {
+      setAgencyMessage({ kind: "error", text: err?.response?.data?.detail || "کد آژانس معتبر نیست." })
+    } finally {
+      setJoiningAgency(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50/60 via-background to-background">
@@ -42,6 +62,37 @@ export default function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-3xl space-y-5 p-4">
+        <Card className="border-pink-100">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div>
+              <p className="text-sm font-medium text-rose-900">عضویت در آژانس</p>
+              <p className="text-xs text-muted-foreground">اگر از طریق یک شرکت یا آژانس مراقبتی فعالیت می‌کنید، با کد آژانس درخواست عضویت دهید.</p>
+            </div>
+            <Button
+              size="sm" variant="outline"
+              className="border-pink-200 text-rose-700 hover:bg-pink-50"
+              onClick={() => setShowJoinAgency((v) => !v)}
+            >
+              {showJoinAgency ? "بستن" : "پیوستن با کد آژانس"}
+            </Button>
+          </CardContent>
+          {showJoinAgency && (
+            <CardContent className="border-t border-pink-100 pt-4">
+              {agencyMessage && (
+                <div className={`mb-2 rounded-md p-2 text-xs ${agencyMessage.kind === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>
+                  {agencyMessage.text}
+                </div>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                <Input placeholder="کد آژانس (مثلاً AGN-92K7XQ)" className="w-48" value={agencyCode} onChange={(e) => setAgencyCode(e.target.value)} dir="ltr" />
+                <Button size="sm" disabled={joiningAgency || !agencyCode} onClick={handleJoinAgency}>
+                  ارسال درخواست
+                </Button>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
         <div>
           <h2 className="text-xl font-bold text-rose-900">بیماران تحت مراقبت شما</h2>
           <p className="text-sm text-muted-foreground">برای ثبت گزارش مراقبت روی هر بیمار کلیک کنید</p>

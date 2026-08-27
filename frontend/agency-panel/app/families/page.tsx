@@ -11,7 +11,7 @@ import { ROUTES } from "@/lib/routes"
 import type { AgencyFamilyLink } from "@/types/agency"
 
 export default function FamiliesPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor"])
   const router = useRouter()
 
   const [roster, setRoster] = useState<AgencyFamilyLink[]>([])

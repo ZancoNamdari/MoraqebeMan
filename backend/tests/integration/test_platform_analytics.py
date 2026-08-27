@@ -77,6 +77,17 @@ class PlatformAnalyticsViewTests(BaseAPITestCase):
         self.assertEqual(rows["آژانس ب"]["approved_caregiver_count"], 1)
         self.assertEqual(rows["آژانس ب"]["patient_count"], 0)
 
+    def test_agency_row_created_at_is_json_serializable_string(self):
+        # Regression test for the same bug found and fixed in
+        # PlatformAgencyListCreateView — this view builds the exact
+        # same kind of raw hand-built dict (not through a serializer),
+        # with the same django_jalali created_at field, and had the
+        # identical latent crash, just never actually exercised by a
+        # real test run before now.
+        response = self.superuser_client.get("/api/agencies/analytics/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.data["agencies"][0]["created_at"], str)
+
     def test_agency_owner_cannot_access_analytics(self):
         client = APIClient()
         client.force_authenticate(self.agency_a.user)

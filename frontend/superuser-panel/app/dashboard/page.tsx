@@ -23,7 +23,7 @@ const ROLE_FILTER_OPTIONS: { value: UserRole | ""; label: string }[] = [
 ]
 
 export default function DashboardPage() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["superuser"])
   const router = useRouter()
 
   const [users, setUsers] = useState<ManagedUser[]>([])
@@ -72,6 +72,7 @@ export default function DashboardPage() {
         <div className="mx-auto flex max-w-3xl items-center justify-between p-4">
           <h1 className="font-bold text-rose-900">مدیریت کاربران و نقش‌ها</h1>
           <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.agencies)}>آژانس‌ها</Button>
             <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.analytics)}>تحلیل پلتفرم</Button>
             <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
           </div>

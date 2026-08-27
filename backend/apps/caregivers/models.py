@@ -108,7 +108,8 @@ class CaregiverProfile(models.Model):
         "accounts.User", on_delete=models.CASCADE, related_name="caregiver_profile", verbose_name="کاربر")
     slug = models.SlugField(max_length=220, blank=True,null=True,db_index=True, verbose_name="شناسه یکتا")
     status = models.CharField(
-        max_length=20, choices=CaregiverStatus.choices, default=CaregiverStatus.DRAFT, verbose_name="وضعیت ثبت‌ نام")
+        max_length=20, choices=CaregiverStatus.choices, default=CaregiverStatus.DRAFT,
+        db_index=True, verbose_name="وضعیت ثبت‌ نام")
     created_by = models.ForeignKey(
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="created_caregivers", verbose_name="ثبت‌شده توسط",
@@ -119,6 +120,10 @@ class CaregiverProfile(models.Model):
         related_name="approved_caregivers", verbose_name="تأییدشده توسط")
     approved_at = jmodels.jDateTimeField(null=True, blank=True, verbose_name="زمان تأیید")
     rejection_reason = models.TextField(blank=True, verbose_name="دلیل رد شدن")
+    blacklist_reason = models.TextField(
+        blank=True, verbose_name="دلیل مسدودسازی",
+        help_text="فقط وقتی status برابر suspended باشد معنا دارد — یک مراقب تأییدشده که بعداً مسدود شده، نه یک درخواست رد‌شده.",
+    )
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
@@ -182,6 +187,43 @@ class CaregiverProfile(models.Model):
         CaregiverApprovalLog.objects.create(
             caregiver=self, old_status=old_status, new_status=CaregiverStatus.REJECTED,
             performed_by=admin_user, note=reason,
+        )
+
+    def blacklist(self, admin_user, reason=""):
+        """
+        Sets status to SUSPENDED — an enum value that already existed
+        in CaregiverStatus but had no code path reaching it anywhere
+        in the platform until now. Deliberately reuses the exact same
+        status the matching pipeline's own hard filter
+        (apps.care.matching.waterfall) already excludes — a
+        blacklisted caregiver is automatically unmatchable, on both
+        the platform-wide and every agency-scoped matching endpoint,
+        with no separate blacklist-awareness needed anywhere else in
+        the codebase. Only meaningful for an already-APPROVED
+        caregiver — blacklisting is "this person WAS vetted and
+        allowed, now isn't", not a rejection of an application that
+        was never approved to begin with.
+        """
+        old_status = self.status
+        self.status = CaregiverStatus.SUSPENDED
+        self.blacklist_reason = reason
+        self.save(update_fields=["status", "blacklist_reason"])
+        CaregiverApprovalLog.objects.create(
+            caregiver=self, old_status=old_status, new_status=CaregiverStatus.SUSPENDED,
+            performed_by=admin_user, note=reason,
+        )
+
+    def unblacklist(self, admin_user):
+        """Reverses blacklist() — returns to APPROVED (not back
+        through a fresh review; blacklisting didn't erase the
+        original approval, it only suspended it)."""
+        old_status = self.status
+        self.status = CaregiverStatus.APPROVED
+        self.blacklist_reason = ""
+        self.save(update_fields=["status", "blacklist_reason"])
+        CaregiverApprovalLog.objects.create(
+            caregiver=self, old_status=old_status, new_status=CaregiverStatus.APPROVED,
+            performed_by=admin_user, note="رفع مسدودیت",
         )
 
     @property

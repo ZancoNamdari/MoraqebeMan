@@ -228,6 +228,7 @@ class SupervisorCaregiverFullProfileSerializer(CaregiverFullProfileSerializer):
     why."""
     status = serializers.CharField()
     rejection_reason = serializers.CharField(allow_blank=True)
+    blacklist_reason = serializers.CharField(allow_blank=True)
 
 
 # ============================================================

@@ -15,7 +15,7 @@ import { ROUTES } from "@/lib/routes"
 import type { CaregiverAssignment, CareLogEntry } from "@/types/care"
 
 export default function CarePage() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["patient"])
   const router = useRouter()
   const [team, setTeam] = useState<CaregiverAssignment[]>([])
   const [timeline, setTimeline] = useState<CareLogEntry[]>([])

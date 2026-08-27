@@ -16,7 +16,7 @@ import { patientService } from "@/services/patient.service"
 import { ROUTES } from "@/lib/routes"
 
 export default function NewPatientPage() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["family"])
   const router = useRouter()
 
   const [fullName, setFullName] = useState("")

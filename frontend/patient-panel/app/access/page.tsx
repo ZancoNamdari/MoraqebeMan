@@ -14,7 +14,7 @@ import { ROUTES } from "@/lib/routes"
 import type { AccessLevel, FamilyLink } from "@/types/patient"
 
 export default function AccessPage() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["patient"])
   const router = useRouter()
   const [links, setLinks] = useState<FamilyLink[]>([])
   const [pending, setPending] = useState<FamilyLink[]>([])

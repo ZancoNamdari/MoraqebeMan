@@ -3,4 +3,7 @@ export const PANEL_URLS = {
   patient: process.env.NEXT_PUBLIC_PATIENT_PANEL_URL || "http://localhost:3003",
   caregiver: process.env.NEXT_PUBLIC_CAREGIVER_PANEL_URL || "http://localhost:3002",
   supervisor: process.env.NEXT_PUBLIC_SUPERVISOR_PANEL_URL || "http://localhost:3000",
+  agency: process.env.NEXT_PUBLIC_AGENCY_PANEL_URL || "http://localhost:3004",
+  superuser: process.env.NEXT_PUBLIC_SUPERUSER_PANEL_URL || "http://localhost:3005",
+  admin: process.env.NEXT_PUBLIC_ADMIN_PANEL_URL || "http://localhost:3006",
 }

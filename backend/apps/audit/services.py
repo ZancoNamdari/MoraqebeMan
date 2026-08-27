@@ -112,3 +112,6 @@ class AuditService:
 
     def agency_supervisor_created(self, actor_id, supervisor_user_id, agency_id):
         return self.log_event(AuditEventType.AGENCY_SUPERVISOR_CREATED, actor_id, supervisor_user_id, agency_id=agency_id)
+
+    def agency_created(self, actor_id, agency_owner_user_id):
+        return self.log_event(AuditEventType.AGENCY_CREATED, actor_id, agency_owner_user_id)

@@ -24,7 +24,7 @@ export default function PatientDetailPage() {
 }
 
 function PatientDetailInner() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["caregiver"])
   const router = useRouter()
   const searchParams = useSearchParams()
   const patientId = Number(searchParams.get("id"))

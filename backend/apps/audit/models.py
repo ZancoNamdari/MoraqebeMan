@@ -29,6 +29,7 @@ class AuditEventType(models.TextChoices):
     AGENCY_FAMILY_LINK_DECIDED = "agency_family_link_decided", "تصمیم درباره درخواست پیوستن خانواده به آژانس"
     AGENCY_CAREGIVER_LINK_DECIDED = "agency_caregiver_link_decided", "تصمیم درباره درخواست پیوستن مراقب به آژانس"
     AGENCY_SUPERVISOR_CREATED = "agency_supervisor_created", "ایجاد سوپروایزر آژانس"
+    AGENCY_CREATED = "agency_created", "ایجاد آژانس توسط سوپریوزر"
 
 
 class AuditLog(models.Model):

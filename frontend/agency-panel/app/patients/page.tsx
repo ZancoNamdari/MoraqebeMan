@@ -21,7 +21,7 @@ const emptyForm = {
 }
 
 export default function PatientsPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor"])
   const router = useRouter()
 
   const [agencyId, setAgencyId] = useState<number | null>(null)

@@ -11,12 +11,13 @@ import { ChoiceSelect } from "@/components/forms/fields"
 import { RELATION_TYPE, patientAvatar } from "@/lib/constants"
 import { patientService } from "@/services/patient.service"
 import { familyService } from "@/services/family.service"
+import { agencyService } from "@/services/agency.service"
 import type { PatientListItem } from "@/types/patient"
 import type { FamilyProfile } from "@/types/family"
 import { ROUTES } from "@/lib/routes"
 
 export default function DashboardPage() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["family"])
   const router = useRouter()
   const [patients, setPatients] = useState<PatientListItem[]>([])
   const [family, setFamily] = useState<FamilyProfile | null>(null)
@@ -27,6 +28,11 @@ export default function DashboardPage() {
   const [relation, setRelation] = useState("")
   const [connecting, setConnecting] = useState(false)
   const [connectMessage, setConnectMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null)
+
+  const [showJoinAgency, setShowJoinAgency] = useState(false)
+  const [agencyCode, setAgencyCode] = useState("")
+  const [joiningAgency, setJoiningAgency] = useState(false)
+  const [agencyMessage, setAgencyMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -48,6 +54,19 @@ export default function DashboardPage() {
       setConnectMessage({ kind: "error", text: err?.response?.data?.detail || "کد بیمار معتبر نیست." })
     } finally {
       setConnecting(false)
+    }
+  }
+
+  async function handleJoinAgency() {
+    setJoiningAgency(true); setAgencyMessage(null)
+    try {
+      await agencyService.joinAsFamily(agencyCode.trim().toUpperCase())
+      setAgencyMessage({ kind: "success", text: "درخواست شما ثبت شد — پس از تأیید آژانس، به لیست عضوهای آن اضافه می‌شوید." })
+      setAgencyCode("")
+    } catch (err: any) {
+      setAgencyMessage({ kind: "error", text: err?.response?.data?.detail || "کد آژانس معتبر نیست." })
+    } finally {
+      setJoiningAgency(false)
     }
   }
 
@@ -103,6 +122,37 @@ export default function DashboardPage() {
             )}
           </Card>
         )}
+
+        <Card className="border-pink-100">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div>
+              <p className="text-sm font-medium text-rose-900">عضویت در آژانس</p>
+              <p className="text-xs text-muted-foreground">اگر خدمت شما از طریق یک شرکت یا آژانس مراقبتی تأمین می‌شود، با کد آژانس درخواست عضویت دهید.</p>
+            </div>
+            <Button
+              size="sm" variant="outline"
+              className="border-pink-200 text-rose-700 hover:bg-pink-50"
+              onClick={() => setShowJoinAgency((v) => !v)}
+            >
+              {showJoinAgency ? "بستن" : "پیوستن با کد آژانس"}
+            </Button>
+          </CardContent>
+          {showJoinAgency && (
+            <CardContent className="border-t border-pink-100 pt-4">
+              {agencyMessage && (
+                <div className={`mb-2 rounded-md p-2 text-xs ${agencyMessage.kind === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>
+                  {agencyMessage.text}
+                </div>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                <Input placeholder="کد آژانس (مثلاً AGN-92K7XQ)" className="w-48" value={agencyCode} onChange={(e) => setAgencyCode(e.target.value)} dir="ltr" />
+                <Button size="sm" disabled={joiningAgency || !agencyCode} onClick={handleJoinAgency}>
+                  ارسال درخواست
+                </Button>
+              </div>
+            </CardContent>
+          )}
+        </Card>
 
         <div className="flex items-center justify-between">
           <div>

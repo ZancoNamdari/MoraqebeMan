@@ -23,6 +23,7 @@ from .serializers import (
     AgencyFamilyLinkSerializer,
     AgencyProfileSerializer,
     AgencySupervisorSerializer,
+    CreateAgencySerializer,
     CreateAgencySupervisorSerializer,
     CreateFamilyForPatientSerializer,
     JoinAgencyByCodeSerializer,
@@ -570,7 +571,14 @@ class PlatformAnalyticsView(APIView):
                 "pending_caregiver_requests": agency.caregiver_links.filter(status=AgencyLinkStatus.PENDING).count(),
                 "approved_family_count": agency.family_links.filter(status=AgencyLinkStatus.APPROVED).count(),
                 "patient_count": agency.patient_links.filter(status=AgencyLinkStatus.APPROVED).count(),
-                "created_at": agency.created_at,
+                # .isoformat() explicitly — this is a raw dict, not
+                # passed through a serializer, so DRF's JSON renderer
+                # can't encode a django_jalali datetime object on its
+                # own (a real, reproduced bug: a POST response going
+                # through AgencyProfileSerializer worked fine, since
+                # DRF's serializer fields already handle datetime
+                # encoding; this hand-built dict bypassed that).
+                "created_at": agency.created_at.isoformat() if agency.created_at else None,
             })
 
         totals = {
@@ -583,3 +591,72 @@ class PlatformAnalyticsView(APIView):
         }
 
         return Response({"totals": totals, "agencies": agency_rows})
+
+
+# ---------------------------------------------------------------------
+# One-step agency onboarding — SUPERUSER only. Deliberately its own
+# view at the bare "agencies/" root, distinct from PlatformAnalyticsView
+# above (that one is a read-only aggregate; this one is the actual
+# management action of bringing a new B2B customer onto the platform).
+# ---------------------------------------------------------------------
+
+class PlatformAgencyListCreateView(APIView):
+    """
+    GET/POST /api/agencies/
+
+    GET: a simple management-facing list of every agency (not the
+    aggregate counts PlatformAnalyticsView returns — this is closer
+    to "which agencies exist and who owns each one").
+
+    POST: creates a brand-new agency in one step (see
+    CreateAgencySerializer's docstring for why this didn't exist
+    before and what it replaces).
+    """
+    permission_classes = [IsSuperuser]
+
+    def get(self, request):
+        agencies = AgencyProfile.objects.select_related("user").order_by("-created_at")
+        return Response([
+            {
+                "id": a.id,
+                "company_name": a.company_name,
+                "license_number": a.license_number,
+                "access_code": a.access_code,
+                "owner_phone_number": a.user.phone_number,
+                "owner_username": a.user.username,
+                # .isoformat() explicitly — same reason as
+                # PlatformAnalyticsView above: a raw hand-built dict,
+                # not run through a serializer, so DRF's JSON renderer
+                # can't encode a django_jalali datetime on its own.
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+            }
+            for a in agencies
+        ])
+
+    def post(self, request):
+        serializer = CreateAgencySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        if User.objects.filter(phone_number=data["phone_number"]).exists():
+            return Response({"detail": "این شماره تلفن قبلاً ثبت شده است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Same reasoning as every other "someone else's account"
+        # creation in this codebase — random password, never invented
+        # by the creator on the agency's behalf.
+        owner_user = User(
+            first_name=data["first_name"], last_name=data["last_name"],
+            phone_number=data["phone_number"], email=data.get("email", ""),
+            role=UserRole.AGENCY,
+        )
+        owner_user.set_password(get_random_string(32))
+        owner_user.save()
+
+        agency = AgencyProfile.objects.create(
+            user=owner_user,
+            company_name=data["company_name"],
+            license_number=data.get("license_number", ""),
+        )
+        audit.agency_created(request.user.id, owner_user.id)
+
+        return Response(AgencyProfileSerializer(agency).data, status=status.HTTP_201_CREATED)

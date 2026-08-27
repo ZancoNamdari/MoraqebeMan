@@ -13,7 +13,7 @@ import { ROUTES } from "@/lib/routes"
 import type { Questionnaire } from "@/types/patient"
 
 export default function QuestionnairePage() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["patient"])
   const router = useRouter()
   const [answers, setAnswers] = useState<Partial<Questionnaire>>({})
   const [loading, setLoading] = useState(true)

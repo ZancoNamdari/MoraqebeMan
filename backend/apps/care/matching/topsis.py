@@ -1,7 +1,36 @@
 from __future__ import annotations
 
-import math
 from typing import Sequence
+
+import numpy as np
+
+"""
+Vectorized with numpy — same public function names, signatures, and
+input/output types (plain Python lists in, plain Python lists/floats
+out) as before, specifically so nothing calling this module
+(apps.care.matching.mcdm) needs to change at all. Every validation
+check, every edge case (empty matrix, zero-denominator columns, zero
+total distance), and every exception type/message is preserved
+exactly — this is a vectorized rewrite of the same algorithm, not a
+different one.
+
+Why here specifically, not the per-candidate loop in engine.py: this
+is a small, pure, already-isolated numerical function with no Django
+ORM calls, no missing-data conditional branching (that's handled
+upstream in mcdm.py's build_candidate_matrix, which already
+redistributes weights for missing criteria before this function ever
+runs), and an existing, extensive test suite
+(tests.integration.test_mcdm's TOPSISRankingTests and
+MCDMIntegrationTests) that already verifies its exact numerical
+behavior — meaning correctness here can be verified against real,
+pre-existing tests, not new ones written to match whatever the
+rewrite happens to produce. The per-candidate loop in engine.py
+(waterfall filtering, JSON-list membership checks, Django attribute
+access) is real business logic that doesn't vectorize cleanly and
+would be a much larger, riskier rewrite — deliberately not attempted
+here without real profiling data first (see
+measure_matching_performance --profile).
+"""
 
 
 def normalize_matrix(
@@ -26,31 +55,13 @@ def normalize_matrix(
             "All TOPSIS rows must have equal length."
         )
 
-    normalized = [
-        [0.0] * column_count
-        for _ in matrix
-    ]
+    arr = np.array(matrix, dtype=float)
+    denominators = np.sqrt(np.sum(arr ** 2, axis=0))
 
-    for column in range(column_count):
+    with np.errstate(divide="ignore", invalid="ignore"):
+        normalized = np.where(denominators == 0, 0.0, arr / denominators)
 
-        denominator = math.sqrt(
-            sum(
-                row[column] ** 2
-                for row in matrix
-            )
-        )
-
-        for row_index in range(len(matrix)):
-
-            if denominator == 0:
-                normalized[row_index][column] = 0.0
-            else:
-                normalized[row_index][column] = (
-                    matrix[row_index][column]
-                    / denominator
-                )
-
-    return normalized
+    return normalized.tolist()
 
 
 def apply_weights(
@@ -79,13 +90,10 @@ def apply_weights(
             "Weights cannot be negative."
         )
 
-    return [
-        [
-            value * weights[column]
-            for column, value in enumerate(row)
-        ]
-        for row in normalized_matrix
-    ]
+    arr = np.array(normalized_matrix, dtype=float)
+    weights_arr = np.array(weights, dtype=float)
+
+    return (arr * weights_arr).tolist()
 
 
 def calculate_topsis(
@@ -125,84 +133,23 @@ def calculate_topsis(
             "All TOPSIS rows must have equal length."
         )
 
-    normalized = normalize_matrix(
-        matrix
-    )
+    normalized = normalize_matrix(matrix)
+    weighted = np.array(apply_weights(normalized, weights), dtype=float)
 
-    weighted = apply_weights(
-        normalized,
-        weights,
-    )
+    benefit_mask = np.array(benefit_criteria, dtype=bool)
 
-    positive_ideal = []
-    negative_ideal = []
+    column_max = weighted.max(axis=0)
+    column_min = weighted.min(axis=0)
 
-    for column in range(criterion_count):
+    positive_ideal = np.where(benefit_mask, column_max, column_min)
+    negative_ideal = np.where(benefit_mask, column_min, column_max)
 
-        values = [
-            row[column]
-            for row in weighted
-        ]
+    distance_positive = np.sqrt(np.sum((weighted - positive_ideal) ** 2, axis=1))
+    distance_negative = np.sqrt(np.sum((weighted - negative_ideal) ** 2, axis=1))
 
-        if benefit_criteria[column]:
+    denominator = distance_positive + distance_negative
 
-            positive_ideal.append(
-                max(values)
-            )
+    with np.errstate(divide="ignore", invalid="ignore"):
+        scores = np.where(denominator == 0, 1.0, distance_negative / denominator)
 
-            negative_ideal.append(
-                min(values)
-            )
-
-        else:
-
-            positive_ideal.append(
-                min(values)
-            )
-
-            negative_ideal.append(
-                max(values)
-            )
-
-    scores = []
-
-    for row in weighted:
-
-        distance_positive = math.sqrt(
-            sum(
-                (
-                    row[column]
-                    - positive_ideal[column]
-                ) ** 2
-                for column in range(criterion_count)
-            )
-        )
-
-        distance_negative = math.sqrt(
-            sum(
-                (
-                    row[column]
-                    - negative_ideal[column]
-                ) ** 2
-                for column in range(criterion_count)
-            )
-        )
-
-        denominator = (
-            distance_positive
-            + distance_negative
-        )
-
-        if denominator == 0:
-            score = 1.0
-        else:
-            score = (
-                distance_negative
-                / denominator
-            )
-
-        scores.append(
-            round(score, 6)
-        )
-
-    return scores
+    return [round(float(score), 6) for score in scores]

@@ -33,7 +33,7 @@ export default function PatientDetailPage() {
 }
 
 function PatientDetailInner() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["family"])
   const router = useRouter()
   const searchParams = useSearchParams()
   const id = Number(searchParams.get("id"))

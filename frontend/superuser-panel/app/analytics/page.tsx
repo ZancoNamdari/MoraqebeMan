@@ -11,7 +11,7 @@ import { ROUTES } from "@/lib/routes"
 import type { PlatformAnalytics } from "@/types/platform_analytics"
 
 export default function AnalyticsPage() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["superuser"])
   const router = useRouter()
 
   const [data, setData] = useState<PlatformAnalytics | null>(null)
@@ -35,6 +35,7 @@ export default function AnalyticsPage() {
           <h1 className="font-bold text-rose-900">تحلیل کل پلتفرم</h1>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>مدیریت کاربران</Button>
+            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.agencies)}>آژانس‌ها</Button>
             <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
           </div>
         </div>

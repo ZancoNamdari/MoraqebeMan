@@ -86,7 +86,7 @@ class AgencyFamilyLink(models.Model):
     """
     agency = models.ForeignKey(AgencyProfile, on_delete=models.CASCADE, related_name="family_links", verbose_name="آژانس")
     family = models.ForeignKey("families.FamilyProfile", on_delete=models.CASCADE, related_name="agency_links", verbose_name="خانواده")
-    status = models.CharField(max_length=20, choices=AgencyLinkStatus.choices, default=AgencyLinkStatus.PENDING, verbose_name="وضعیت")
+    status = models.CharField(max_length=20, choices=AgencyLinkStatus.choices, default=AgencyLinkStatus.PENDING, db_index=True, verbose_name="وضعیت")
     decided_by = models.ForeignKey(
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="decided_agency_family_links", verbose_name="تصمیم‌گیرنده",
@@ -113,7 +113,7 @@ class AgencyCaregiverLink(models.Model):
     """
     agency = models.ForeignKey(AgencyProfile, on_delete=models.CASCADE, related_name="caregiver_links", verbose_name="آژانس")
     caregiver = models.ForeignKey("caregivers.CaregiverProfile", on_delete=models.CASCADE, related_name="agency_links", verbose_name="مراقب")
-    status = models.CharField(max_length=20, choices=AgencyLinkStatus.choices, default=AgencyLinkStatus.PENDING, verbose_name="وضعیت")
+    status = models.CharField(max_length=20, choices=AgencyLinkStatus.choices, default=AgencyLinkStatus.PENDING, db_index=True, verbose_name="وضعیت")
     decided_by = models.ForeignKey(
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="decided_agency_caregiver_links", verbose_name="تصمیم‌گیرنده",
@@ -199,7 +199,7 @@ class AgencyPatientLink(models.Model):
     patient = models.ForeignKey(
         "families.PatientProfile", on_delete=models.CASCADE, related_name="agency_links", verbose_name="سالمند",
     )
-    status = models.CharField(max_length=20, choices=AgencyLinkStatus.choices, default=AgencyLinkStatus.APPROVED, verbose_name="وضعیت")
+    status = models.CharField(max_length=20, choices=AgencyLinkStatus.choices, default=AgencyLinkStatus.APPROVED, db_index=True, verbose_name="وضعیت")
     decided_by = models.ForeignKey(
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="decided_agency_patient_links", verbose_name="ثبت‌کننده",

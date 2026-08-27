@@ -19,6 +19,7 @@ LATEST value; the log is the actual history across edits by more than
 one supervisor over time).
 """
 from django.contrib.auth.hashers import make_password
+from django.db.models import Count
 from django.utils.crypto import get_random_string
 from rest_framework import status
 from rest_framework.response import Response
@@ -194,6 +195,7 @@ class SupervisorCaregiverFullProfileView(APIView):
             "is_approved": profile.status == "approved",
             "status": profile.status,
             "rejection_reason": profile.rejection_reason,
+            "blacklist_reason": profile.blacklist_reason,
             "identity": _get_identity_dict(user_id),
             "work_preferences": getattr(profile, "work_preferences", None),
             "service_areas": profile.service_areas.all(),
@@ -225,18 +227,40 @@ class SupervisorCaregiverListView(APIView):
             else:
                 caregivers = caregivers.filter(id__in=agency_caregiver_user_ids(agency))
 
+        # This used to run up to 6 separate queries PER ROW (a fresh
+        # CaregiverProfile lookup, an IdentityProfile .exists() check,
+        # three hasattr() calls that each silently trigger their own
+        # query on an unfetched reverse OneToOne, and a .count() on
+        # references) — a severe N+1, worse than the one found and
+        # fixed in the matching pipeline itself, on an endpoint used
+        # by both supervisor-panel and admin-panel's main dashboard
+        # list. At 1000 caregivers this was potentially 6000+ queries
+        # for one page load. Every one of those is now covered by a
+        # single JOIN (select_related) or a single aggregate query
+        # across all rows at once (annotate), regardless of row count.
+        caregivers = caregivers.select_related(
+            "caregiver_identity_profile",
+            "caregiver_profile",
+            "caregiver_profile__work_preferences",
+            "caregiver_profile__experience",
+            "caregiver_profile__skills",
+            "caregiver_profile__created_by",
+        ).annotate(
+            reference_count=Count("caregiver_profile__references", distinct=True),
+        )
+
         rows = []
         for user in caregivers:
-            profile = CaregiverProfile.objects.filter(user=user).first()
+            profile = getattr(user, "caregiver_profile", None)
             done = 0
-            if IdentityProfile.objects.filter(user=user).exists():
+            if getattr(user, "caregiver_identity_profile", None) is not None:
                 done += 1
             if profile:
-                if hasattr(profile, "work_preferences"):
+                if getattr(profile, "work_preferences", None) is not None:
                     done += 1
-                if hasattr(profile, "experience") and hasattr(profile, "skills"):
+                if getattr(profile, "experience", None) is not None and getattr(profile, "skills", None) is not None:
                     done += 1
-                if profile.references.count() >= 1:
+                if user.reference_count >= 1:
                     done += 1
             created_by_user = profile.created_by if profile else None
             rows.append({

@@ -13,7 +13,7 @@ import { ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
 export default function MatchPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth(["admin", "superuser"])
   const router = useRouter()
 
   const [patientCode, setPatientCode] = useState("")

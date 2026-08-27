@@ -14,7 +14,7 @@ import { ROUTES } from "@/lib/routes"
 import type { AgencyDashboard, AgencyProfile } from "@/types/agency"
 
 export default function DashboardPage() {
-  const { user, loading: authLoading, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth(["agency", "agency_supervisor"])
   const router = useRouter()
 
   const [profile, setProfile] = useState<AgencyProfile | null>(null)
