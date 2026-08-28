@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { AppHeader } from "@/components/layout/app-header"
 import { Field, ChoiceSelect } from "@/components/forms/fields"
 import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
@@ -55,24 +56,17 @@ export default function NewPatientPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/50 via-background to-background pb-24">
-      <header className="sticky top-0 z-10 border-b border-pink-100 bg-background/90 backdrop-blur">
-        <div className="mx-auto max-w-xl p-4">
-          <div className="flex items-center justify-between">
-            <h1 className="font-bold text-rose-900">افزودن سالمند جدید</h1>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-              <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-24">
+      <AppHeader title="افزودن سالمند جدید" maxWidth="max-w-xl">
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+        <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-xl space-y-4 p-4">
         <ErrorSummary errors={error} />
 
-        <Card className="border-pink-100">
-          <CardHeader><CardTitle className="text-rose-900">اطلاعات پایه</CardTitle></CardHeader>
+        <Card className="border-border">
+          <CardHeader><CardTitle className="text-foreground">اطلاعات پایه</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <Field label="نام و نام خانوادگی سالمند" required>
               <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -104,10 +98,10 @@ export default function NewPatientPage() {
         </p>
       </main>
 
-      <footer className="fixed inset-x-0 bottom-0 border-t border-pink-100 bg-background/95 backdrop-blur">
+      <footer className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 backdrop-blur">
         <div className="mx-auto max-w-xl p-3">
           <Button
-            className="w-full bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
+            className="w-full bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/15 hover:from-primary hover:to-primary"
             size="lg"
             disabled={saving || !fullName || !relation}
             onClick={handleSubmit}

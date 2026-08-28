@@ -202,7 +202,7 @@ class SuggestedCaregiversView(APIView):
         if not patient_code:
             return Response({"detail": "کد بیمار الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
 
-        patient = PatientProfile.objects.filter(access_code=patient_code).first()
+        patient = PatientProfile.objects.filter(access_code=patient_code).defer("created_at", "updated_at").first()
         if patient is None:
             return Response({"detail": "کد بیمار معتبر نیست."}, status=status.HTTP_404_NOT_FOUND)
 

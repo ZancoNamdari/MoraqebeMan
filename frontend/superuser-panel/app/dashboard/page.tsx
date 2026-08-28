@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
 import { userManagementService } from "@/services/user_management.service"
 import { ROLE_LABELS, type ManagedUser, type UserRole } from "@/types/user_management"
 import { ROUTES } from "@/lib/routes"
@@ -67,20 +68,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">مدیریت کاربران و نقش‌ها</h1>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.agencies)}>آژانس‌ها</Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.analytics)}>تحلیل پلتفرم</Button>
-            <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+      <AppHeader title="مدیریت کاربران و نقش‌ها">
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.agencies)}>آژانس‌ها</Button>
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.analytics)}>تحلیل پلتفرم</Button>
+        <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-3xl space-y-4 p-4">
-        <Card className="border-pink-100">
+        <Card className="border-border">
           <CardContent className="flex flex-wrap items-center gap-2 p-4">
             <Input
               placeholder="جست‌وجو با نام، نام کاربری یا شماره موبایل"
@@ -102,8 +98,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-pink-100">
-          <CardHeader><CardTitle className="text-rose-900">کاربران ({users.length})</CardTitle></CardHeader>
+        <Card className="border-border">
+          <CardHeader><CardTitle className="text-foreground">کاربران ({users.length})</CardTitle></CardHeader>
           <CardContent>
             {loading ? (
               <Skeleton className="h-64 w-full rounded-2xl" />
@@ -112,7 +108,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-2">
                 {users.map((u) => (
-                  <div key={u.id} className="rounded-lg border border-pink-100 bg-pink-50/40 p-3">
+                  <div key={u.id} className="rounded-lg border border-border bg-secondary/40 p-3">
                     <div className="flex items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-medium">
@@ -155,14 +151,14 @@ export default function DashboardPage() {
                           )}>
                             {ROLE_LABELS[u.role]}
                           </span>
-                          <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => setEditingId(u.id)}>
+                          <Button size="sm" variant="outline" className="border-border text-primary-strong hover:bg-secondary" onClick={() => setEditingId(u.id)}>
                             تغییر نقش
                           </Button>
                         </div>
                       )}
                     </div>
                     {error?.id === u.id && (
-                      <p className="mt-2 text-xs text-rose-600">{error.text}</p>
+                      <p className="mt-2 text-xs text-destructive">{error.text}</p>
                     )}
                   </div>
                 ))}

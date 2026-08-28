@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
 import { Field, ChoiceSelect, SelectWithOther, CheckboxGroup } from "@/components/forms/fields"
 import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
@@ -78,16 +79,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b border-pink-100 bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">اطلاعات پروفایل</h1>
-          <div className="flex gap-2">
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+      <AppHeader title="اطلاعات پروفایل" maxWidth="max-w-xl">
+        <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-              <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
+              <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
             </div>
-        </div>
-      </header>
+      </AppHeader>
 
       <main className="mx-auto max-w-xl space-y-4 p-4">
         {loading || !profile ? (
@@ -97,8 +95,8 @@ export default function ProfilePage() {
             <ErrorSummary errors={error} />
             {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{message}</div>}
 
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-rose-900">اطلاعات هویتی</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader><CardTitle className="text-foreground">اطلاعات هویتی</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <Field label="نام و نام خانوادگی" required>
                   <Input value={profile.full_name} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} />
@@ -152,13 +150,13 @@ export default function ProfilePage() {
 
             <div className="flex gap-2">
               <Button
-                className="flex-1 bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
+                className="flex-1 bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/15 hover:from-primary hover:to-primary"
                 size="lg" onClick={() => handleSave(false)} disabled={saving}
               >
                 {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
               </Button>
               <Button
-                variant="outline" className="flex-1 border-pink-200 text-rose-700 hover:bg-pink-50"
+                variant="outline" className="flex-1 border-border text-primary-strong hover:bg-secondary"
                 size="lg" onClick={() => handleSave(true)} disabled={saving}
               >
                 ذخیره و ادامه به پرسشنامه ←

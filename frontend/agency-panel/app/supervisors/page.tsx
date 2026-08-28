@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
 import { agencyService } from "@/services/agency.service"
 import { agencyManagementService } from "@/services/agency_management.service"
 import { ROUTES } from "@/lib/routes"
@@ -58,28 +59,25 @@ export default function SupervisorsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">سوپروایزرهای آژانس</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+      <AppHeader title="سوپروایزرهای آژانس" maxWidth="max-w-2xl">
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
-        <Card className="border-pink-100">
+        <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-rose-900">فهرست سوپروایزرها</CardTitle>
+            <CardTitle className="text-foreground">فهرست سوپروایزرها</CardTitle>
             {!showForm && (
               <Button size="sm" onClick={() => setShowForm(true)}>افزودن سوپروایزر</Button>
             )}
           </CardHeader>
           {showForm && (
-            <CardContent className="space-y-3 border-t border-pink-100 pt-4">
+            <CardContent className="space-y-3 border-t border-border pt-4">
               <p className="text-xs text-muted-foreground">
                 رمز عبور توسط خود سیستم ساخته می‌شود — سوپروایزر بعداً با شماره تلفن خودش رمز را بازیابی می‌کند.
               </p>
-              {error && <div className="rounded-md bg-rose-50 p-2 text-xs text-rose-700">{error}</div>}
+              {error && <div className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">{error}</div>}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="first_name">نام</Label>
@@ -115,7 +113,7 @@ export default function SupervisorsPage() {
         ) : (
           <div className="space-y-2">
             {supervisors.map((s) => (
-              <div key={s.id} className="rounded-lg border border-pink-100 bg-pink-50/40 p-3">
+              <div key={s.id} className="rounded-lg border border-border bg-secondary/40 p-3">
                 <p className="text-sm font-medium">{s.full_name}</p>
                 <p className="text-xs text-muted-foreground" dir="ltr">{s.phone_number}</p>
                 {s.created_by_username && (

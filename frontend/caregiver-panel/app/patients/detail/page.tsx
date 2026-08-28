@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
 import { Field, ChoiceSelect } from "@/components/forms/fields"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
@@ -71,19 +72,14 @@ function PatientDetailInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b border-pink-100 bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-xl items-center justify-between p-4">
-          <h1 className="flex items-center gap-2 font-bold text-rose-900">
-            <span className="text-lg">{patientAvatar(patientGender)}</span>
-            {patientName || "..."}
-          </h1>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-            <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+      <AppHeader
+        title={<span className="flex items-center gap-2"><span className="text-lg">{patientAvatar(patientGender)}</span>{patientName || "..."}</span>}
+        maxWidth="max-w-xl"
+      >
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+        <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-xl space-y-4 p-4">
         {loading ? (
@@ -92,8 +88,8 @@ function PatientDetailInner() {
           <>
             <ErrorSummary errors={error} />
 
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-rose-900">ثبت گزارش جدید</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader><CardTitle className="text-foreground">ثبت گزارش جدید</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <Field label="دسته گزارش" required>
                   <ChoiceSelect choices={CARE_LOG_CATEGORY} value={category} onChange={(v) => setCategory(v as CareLogCategory)} />
@@ -102,7 +98,7 @@ function PatientDetailInner() {
                   <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="مشاهدات، اقدامات انجام‌شده، یا هر نکته‌ای که خانواده باید بداند..." rows={4} />
                 </Field>
                 <Button
-                  className="w-full bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
+                  className="w-full bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/15 hover:from-primary hover:to-primary"
                   size="lg" disabled={saving || !note} onClick={handleSubmit}
                 >
                   {saving ? "در حال ثبت..." : "ثبت گزارش"}
@@ -110,19 +106,19 @@ function PatientDetailInner() {
               </CardContent>
             </Card>
 
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-rose-900">گزارش‌های قبلی شما</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader><CardTitle className="text-foreground">گزارش‌های قبلی شما</CardTitle></CardHeader>
               <CardContent>
                 {entries.length === 0 ? (
                   <p className="text-sm text-muted-foreground">هنوز گزارشی برای این بیمار ثبت نکرده‌اید.</p>
                 ) : (
                   <div className="space-y-3">
                     {entries.map((entry) => (
-                      <div key={entry.id} className="flex gap-3 border-r-2 border-pink-200 pr-3">
+                      <div key={entry.id} className="flex gap-3 border-r-2 border-border pr-3">
                         <span className="text-lg leading-none">{CARE_LOG_CATEGORY_ICON[entry.category] || "📝"}</span>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <p className="text-xs font-semibold text-rose-700">{CARE_LOG_CATEGORY_LABEL[entry.category] || entry.category}</p>
+                            <p className="text-xs font-semibold text-primary-strong">{CARE_LOG_CATEGORY_LABEL[entry.category] || entry.category}</p>
                             <p className="text-xs text-muted-foreground">{entry.created_at.slice(0, 16).replace("T", " — ")}</p>
                           </div>
                           <p className="text-sm">{entry.note}</p>

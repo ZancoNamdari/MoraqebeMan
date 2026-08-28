@@ -9,9 +9,9 @@ export function Field({
   return (
     <div className="space-y-1.5">
       <Label className="flex items-center gap-1.5">
-        <span className={required ? "font-bold text-rose-950" : ""}>{label}</span>
+        <span className={required ? "font-bold text-foreground" : ""}>{label}</span>
         {required && (
-          <span className="mr-1.5 rounded-full bg-pink-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
+          <span className="mr-1.5 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">
             الزامی
           </span>
         )}
@@ -50,7 +50,7 @@ export function CheckboxGroup({
         <label
           key={val}
           className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs ${
-            value.includes(val) ? "border-rose-400 bg-rose-50 text-rose-800" : "border-input text-muted-foreground"
+            value.includes(val) ? "border-primary/40 bg-secondary text-foreground" : "border-input text-muted-foreground"
           }`}
         >
           <input type="checkbox" className="ml-1.5 align-middle" checked={value.includes(val)} onChange={() => toggle(val)} />

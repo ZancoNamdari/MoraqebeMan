@@ -117,7 +117,7 @@ class CaregiverWorkPreferencesSerializer(serializers.ModelSerializer):
     def validate_terms_accepted(self, value):
         if value is not True:
             raise serializers.ValidationError(
-                "تکمیل فرم منوط به تأیید هر چهار مورد بخش «تأییدیه مسئولیت» است."
+                "تکمیل این فرم منوط به تأیید «شرایط و تعهدات عضویت و همکاری مراقبان» است."
             )
         return value
 
@@ -125,6 +125,45 @@ class CaregiverWorkPreferencesSerializer(serializers.ModelSerializer):
         from django.utils import timezone
         if attrs.get("terms_accepted"):
             attrs["terms_accepted_at"] = timezone.now()
+        return attrs
+
+
+class SupervisorCaregiverWorkPreferencesSerializer(CaregiverWorkPreferencesSerializer):
+    """
+    Used only by SupervisorWorkPreferencesView (a supervisor/agency/
+    admin filling this form out ON BEHALF OF a caregiver) — never by
+    the caregiver's own MyWorkPreferencesView.
+
+    Deliberately excludes terms_accepted / terms_accepted_at
+    entirely, per an explicit confirmed decision: accepting these
+    terms is framed in the legal text itself as the caregiver's own
+    personal electronic signature ("امضای الکترونیکی معتبر اینجانب"),
+    carrying the same legal force as a handwritten one — a category
+    of consent that isn't delegable the way recording someone's
+    ordinary profile data is, even though a supervisor legitimately
+    fills out everything else in this same form for literacy/
+    accessibility reasons. A caregiver's own acceptance is enforced
+    separately as an approval-blocking requirement — see
+    _missing_forms() in apps.caregivers.views.
+    """
+    class Meta(CaregiverWorkPreferencesSerializer.Meta):
+        fields = [f for f in CaregiverWorkPreferencesSerializer.Meta.fields if f not in ("terms_accepted", "terms_accepted_at")]
+        read_only_fields = [f for f in CaregiverWorkPreferencesSerializer.Meta.read_only_fields if f != "terms_accepted_at"]
+
+    def validate_terms_accepted(self, value):
+        # Overridden to a no-op — the parent's version requires True
+        # unconditionally, which would make it impossible for a
+        # supervisor to ever save this form at all now that the field
+        # is excluded from what they can submit in the first place.
+        return value
+
+    def validate(self, attrs):
+        # Deliberately skips the parent's terms_accepted_at-setting
+        # logic entirely — a supervisor submission can never set it,
+        # regardless of what a malicious or malformed request body
+        # might try to smuggle in, since the field isn't in `fields`
+        # for this serializer at all and DRF silently drops unknown
+        # input keys rather than erroring on them.
         return attrs
 
 

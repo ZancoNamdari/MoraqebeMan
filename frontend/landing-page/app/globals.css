@@ -2,82 +2,112 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Pastel pink theme — soft, warm, minimal, in the spirit of the
-   HonorCare-style structure this platform is modeled on. Same
-   Tailwind v4 @theme wiring already proven working in
-   supervisor-panel; only the color values change here. */
+/*
+ * مراقب من — Design System v3
+ * Structure inspired by honorcare.com (mission-driven, minimal, hexagon
+ * motif, generous whitespace) — brand color is a deliberate warm pink
+ * (#FFC5C5), not teal. See /docs/DESIGN_SYSTEM.md.
+ */
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.99 0.006 15);
-  --foreground: oklch(0.32 0.03 15);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.32 0.03 15);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.32 0.03 15);
-  --primary: oklch(0.72 0.11 8);
-  --primary-foreground: oklch(0.99 0.005 15);
-  --secondary: oklch(0.96 0.02 12);
-  --secondary-foreground: oklch(0.4 0.05 10);
-  --muted: oklch(0.96 0.015 12);
-  --muted-foreground: oklch(0.55 0.03 12);
-  --accent: oklch(0.94 0.03 10);
-  --accent-foreground: oklch(0.4 0.06 10);
-  --destructive: oklch(0.6 0.19 20);
-  --destructive-foreground: oklch(0.99 0.005 15);
-  --border: oklch(0.92 0.015 12);
-  --input: oklch(0.92 0.015 12);
-  --ring: oklch(0.75 0.09 10);
-  --sidebar: oklch(0.98 0.01 12);
-  --sidebar-foreground: oklch(0.4 0.04 12);
-  --sidebar-primary: oklch(0.72 0.11 8);
-  --sidebar-primary-foreground: oklch(0.99 0.005 15);
-  --sidebar-accent: oklch(0.94 0.03 10);
-  --sidebar-accent-foreground: oklch(0.4 0.06 10);
-  --sidebar-border: oklch(0.92 0.015 12);
-  --sidebar-ring: oklch(0.75 0.09 10);
+  --radius: 1rem;
+
+  --background: #FFFBFB;
+  --foreground: #3A2424;
+  --card: #FFFFFF;
+  --card-foreground: #3A2424;
+  --popover: #FFFFFF;
+  --popover-foreground: #3A2424;
+
+  --primary: #FFC5C5;
+  --primary-foreground: #6B2A2A;
+  /* Pastel primary reads as ~1.6:1 contrast on white — fine as a button
+     fill (paired with --primary-foreground) but unreadable as text/link/
+     icon color. --primary-strong is the same hue at a contrast-safe
+     depth (~5:1 on light backgrounds), used for text-primary-strong. */
+  --primary-strong: #C23B72;
+  --secondary: #FDE7E7;
+  --secondary-foreground: #7A3434;
+  --muted: #FBF0EF;
+  --muted-foreground: #8A6A6A;
+  --accent: #FFD9D9;
+  --accent-foreground: #6B2A2A;
+
+  --destructive: #C4453A;
+  --destructive-foreground: #FBF6F5;
+
+  --border: #F5D8D8;
+  --input: #F5D8D8;
+  --ring: #FF9E9E;
+
+  /* Dark, warm "footer" surface used for emphasis sections */
+  --deep: #241619;
+  --deep-foreground: #F5EAE9;
+  --deep-muted: #B89494;
+  --deep-border: #402226;
+
+  --sidebar: #FFF6F6;
+  --sidebar-foreground: #5C3A3A;
+  --sidebar-primary: #FFC5C5;
+  --sidebar-primary-foreground: #6B2A2A;
+  --sidebar-accent: #FFD9D9;
+  --sidebar-accent-foreground: #6B2A2A;
+  --sidebar-border: #F5D8D8;
+  --sidebar-ring: #FF9E9E;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, "IRANSans", "Vazirmatn", sans-serif;
+  font-family: var(--font-vazirmatn), -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, sans-serif;
 }
 
 .dark {
-  --background: oklch(0.22 0.02 15);
-  --foreground: oklch(0.96 0.01 12);
-  --card: oklch(0.27 0.025 12);
-  --card-foreground: oklch(0.96 0.01 12);
-  --popover: oklch(0.27 0.025 12);
-  --popover-foreground: oklch(0.96 0.01 12);
-  --primary: oklch(0.78 0.1 8);
-  --primary-foreground: oklch(0.2 0.02 12);
-  --secondary: oklch(0.32 0.03 12);
-  --secondary-foreground: oklch(0.96 0.01 12);
-  --muted: oklch(0.32 0.03 12);
-  --muted-foreground: oklch(0.72 0.02 12);
-  --accent: oklch(0.35 0.04 10);
-  --accent-foreground: oklch(0.96 0.01 12);
-  --destructive: oklch(0.65 0.18 20);
-  --destructive-foreground: oklch(0.96 0.01 12);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.7 0.08 10);
-  --sidebar: oklch(0.25 0.025 12);
-  --sidebar-foreground: oklch(0.9 0.01 12);
-  --sidebar-primary: oklch(0.78 0.1 8);
-  --sidebar-primary-foreground: oklch(0.2 0.02 12);
-  --sidebar-accent: oklch(0.35 0.04 10);
-  --sidebar-accent-foreground: oklch(0.96 0.01 12);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.7 0.08 10);
+  --background: #1A1214;
+  --foreground: #F5EAE9;
+  --card: #241A1C;
+  --card-foreground: #F5EAE9;
+  --popover: #241A1C;
+  --popover-foreground: #F5EAE9;
+
+  --primary: #FFADAD;
+  --primary-foreground: #2A1414;
+  /* Light pastel already reads well as text on this dark background, so
+     keep primary-strong equal to primary in dark mode. */
+  --primary-strong: #FFADAD;
+  --secondary: #33201F;
+  --secondary-foreground: #FFC5C5;
+  --muted: #2E1F20;
+  --muted-foreground: #B89494;
+  --accent: #3D2426;
+  --accent-foreground: #FFC5C5;
+
+  --destructive: #E0685D;
+  --destructive-foreground: #150A09;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #FFADAD;
+
+  --deep: #150E0F;
+  --deep-foreground: #F5EAE9;
+  --deep-muted: #A48787;
+  --deep-border: #402226;
+
+  --sidebar: #241A1C;
+  --sidebar-foreground: #EBDBDA;
+  --sidebar-primary: #FFADAD;
+  --sidebar-primary-foreground: #2A1414;
+  --sidebar-accent: #3D2426;
+  --sidebar-accent-foreground: #FFC5C5;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #FFADAD;
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 6px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -86,6 +116,7 @@ body {
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-strong: var(--primary-strong);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -97,6 +128,10 @@ body {
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-deep: var(--deep);
+  --color-deep-foreground: var(--deep-foreground);
+  --color-deep-muted: var(--deep-muted);
+  --color-deep-border: var(--deep-border);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -105,4 +140,27 @@ body {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* Hexagon motif — used as a faint repeating background on hero/emphasis
+   sections. Single SVG tile, tinted per-section so it adapts between the
+   light hero and the dark "deep" sections. */
+.hex-field {
+  position: relative;
+}
+.hex-field::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98' viewBox='0 0 56 98'%3E%3Cpath d='M28 0 56 16.3v32.7L28 65 0 49V16.3Z' fill='none' stroke='%23FF9E9E' stroke-opacity='0.3' stroke-width='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-position: center;
+  opacity: 1;
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent);
+  mask-image: linear-gradient(to bottom, black, transparent);
+}
+.dark .hex-field::before,
+.hex-field--on-deep::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98' viewBox='0 0 56 98'%3E%3Cpath d='M28 0 56 16.3v32.7L28 65 0 49V16.3Z' fill='none' stroke='%23FFC5C5' stroke-opacity='0.22' stroke-width='1'/%3E%3C/svg%3E");
 }

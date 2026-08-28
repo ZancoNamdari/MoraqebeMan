@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
 import { caregiverService } from "@/services/caregiver.service"
 import type { CaregiverListItem } from "@/types/caregiver"
 import { ROUTES } from "@/lib/routes"
@@ -22,7 +23,7 @@ const STATUS_DOT: Record<string, string> = {
   draft: "bg-slate-400",
   pending: "bg-amber-500",
   approved: "bg-emerald-500",
-  rejected: "bg-rose-500",
+  rejected: "bg-destructive",
   suspended: "bg-orange-500",
 }
 
@@ -30,7 +31,7 @@ const STATUS_TEXT: Record<string, string> = {
   draft: "text-slate-600",
   pending: "text-amber-700",
   approved: "text-emerald-700",
-  rejected: "text-rose-700",
+  rejected: "text-destructive",
   suspended: "text-orange-700",
 }
 
@@ -74,25 +75,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Top admin bar — solid color band, standard admin-panel pattern */}
-      <header className="bg-gradient-to-l from-brand-pink-strong to-rose-400 text-white shadow-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🤝</span>
-            <h1 className="text-base font-bold">پنل ناظر — مراقب من</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {user && <span className="text-sm text-pink-100">{user.username}</span>}
-            <Button size="sm" variant="secondary" onClick={logout}>خروج</Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+      <AppHeader title="پنل ناظر — مراقب من" maxWidth="max-w-6xl">
+        {user && <span className="text-sm text-muted-foreground">{user.username}</span>}
+        <Button size="sm" variant="outline" className="border-border text-primary-strong hover:bg-secondary" onClick={logout}>خروج</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-6xl space-y-4 p-4">
         {/* Summary strip — quick counts, admin-dashboard style */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <SummaryCard label="کل مراقبان" value={caregivers.length} color="bg-pink-50 text-rose-700 border-pink-100" />
+          <SummaryCard label="کل مراقبان" value={caregivers.length} color="bg-secondary text-primary-strong border-border" />
           <SummaryCard label="تکمیل‌شده" value={doneCount} color="bg-emerald-50 text-emerald-700 border-emerald-100" />
           <SummaryCard label="در حال تکمیل" value={caregivers.length - doneCount} color="bg-amber-50 text-amber-700 border-amber-100" />
           <SummaryCard label="تأییدشده" value={caregivers.filter((c) => c.status === "approved").length} color="bg-emerald-50 text-emerald-700 border-emerald-100" />
@@ -106,10 +98,10 @@ export default function DashboardPage() {
             placeholder="جستجو بر اساس نام یا شماره موبایل..."
             className="h-9 w-full max-w-xs rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
-          <Button className="bg-brand-pink hover:bg-brand-pink-strong" onClick={() => router.push(ROUTES.newCaregiver)}>
+          <Button className="bg-primary hover:bg-primary" onClick={() => router.push(ROUTES.newCaregiver)}>
             + افزودن مراقب جدید
           </Button>
-          <Button variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => router.push(ROUTES.match)}>
+          <Button variant="outline" className="border-border text-primary-strong hover:bg-secondary" onClick={() => router.push(ROUTES.match)}>
             پیشنهاد مراقب برای بیمار
           </Button>
         </div>
@@ -138,7 +130,7 @@ export default function DashboardPage() {
               </thead>
               <tbody className="divide-y">
                 {filtered.map((c, i) => (
-                  <tr key={c.user_id} className={cn("transition-colors hover:bg-pink-50/40", i % 2 === 1 && "bg-slate-50/50")}>
+                  <tr key={c.user_id} className={cn("transition-colors hover:bg-secondary/40", i % 2 === 1 && "bg-slate-50/50")}>
                     <td className="px-4 py-3 text-center font-medium text-slate-800">{c.full_name || "(بدون نام)"}</td>
                     <td className="px-4 py-3 text-center text-slate-600" dir="ltr">{c.phone_number}</td>
                     <td className="px-4 py-3 text-center">
@@ -153,7 +145,7 @@ export default function DashboardPage() {
                           <div
                             className={cn(
                               "h-full rounded-full",
-                              c.forms_completed === c.forms_total ? "bg-emerald-500" : "bg-brand-pink"
+                              c.forms_completed === c.forms_total ? "bg-emerald-500" : "bg-primary"
                             )}
                             style={{ width: `${(c.forms_completed / c.forms_total) * 100}%` }}
                           />
@@ -170,13 +162,13 @@ export default function DashboardPage() {
                           بررسی
                         </button>
                         <button
-                          className="rounded-md border border-pink-200 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-pink-50"
+                          className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-primary-strong hover:bg-secondary"
                           onClick={() => router.push(`${ROUTES.newCaregiver}?id=${c.user_id}`)}
                         >
                           ویرایش
                         </button>
                         <button
-                          className="rounded-md border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                          className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-primary-strong hover:bg-secondary disabled:opacity-50"
                           disabled={deletingId === c.user_id}
                           onClick={() => handleDelete(c)}
                         >

@@ -203,6 +203,14 @@ def _missing_forms(profile: CaregiverProfile, user_id: int) -> list[str]:
         missing.append("اطلاعات هویتی (فرم ۱)")
     if not hasattr(profile, "work_preferences"):
         missing.append("شرایط همکاری (فرم ۲)")
+    elif not profile.work_preferences.terms_accepted:
+        # A supervisor can fill out every other field in form 2 on the
+        # caregiver's behalf, but never this one (see
+        # SupervisorCaregiverWorkPreferencesSerializer) — so a
+        # caregiver whose profile was entirely supervisor-entered
+        # still can't be approved until they personally log into
+        # their own account and accept the terms themselves.
+        missing.append("پذیرش شرایط و تعهدات عضویت (باید توسط خود مراقب انجام شود)")
     if not hasattr(profile, "experience"):
         missing.append("سوابق کاری (فرم ۳)")
     if not hasattr(profile, "skills"):

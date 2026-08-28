@@ -28,10 +28,10 @@ export function StepIndicator({
               onClick={() => clickable && onNavigate(i)}
               className={cn(
                 "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-sm transition-all",
-                i < current && "bg-gradient-to-br from-brand-pink to-brand-mint-strong text-white",
-                i === current && "bg-gradient-to-br from-brand-pink to-brand-mint-strong text-white ring-4 ring-pink-200 scale-110",
+                i < current && "bg-gradient-to-br from-primary to-primary text-white",
+                i === current && "bg-gradient-to-br from-primary to-primary text-white ring-4 ring-primary/60 scale-110",
                 i > current && "bg-muted text-muted-foreground",
-                clickable && "cursor-pointer hover:ring-2 hover:ring-pink-300",
+                clickable && "cursor-pointer hover:ring-2 hover:ring-primary",
                 !clickable && "cursor-default"
               )}
               title={label}
@@ -42,7 +42,7 @@ export function StepIndicator({
               <div
                 className={cn(
                   "h-1 flex-1 rounded-full transition-colors",
-                  i < current ? "bg-gradient-to-l from-brand-pink to-brand-mint" : "bg-muted"
+                  i < current ? "bg-gradient-to-l from-primary to-primary/80" : "bg-muted"
                 )}
               />
             )}

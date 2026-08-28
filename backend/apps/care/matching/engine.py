@@ -457,6 +457,39 @@ def suggest_caregivers_for_patient(
             "work_preferences",
             "compatibility_questionnaire",
         )
+        .defer(
+            # Every one of these is a django_jalali field, converted
+            # to a jdatetime object on every single row fetch — and
+            # profiling a real matching request (measure_matching_
+            # performance --profile) showed this conversion chain
+            # (from_db_value -> parse_date -> jdatetime.fromgregorian
+            # -> _is_fa_locale -> locale.getlocale) dominating total
+            # request time, well above the actual scoring logic.
+            # Matching never reads any of these fields — status,
+            # accepted ranges, questionnaire answers, and service
+            # areas are what scoring actually touches, never a
+            # created_at/updated_at timestamp or a caregiver's own
+            # birth_date (age matching compares the PATIENT's age
+            # against the caregiver's stated accepted_age_ranges, not
+            # the caregiver's own age). Deferring means Django never
+            # even fetches the column, so the expensive conversion
+            # never runs at all for these — this is protected by the
+            # existing query-count regression tests
+            # (test_matching_query_performance.py): if any of these
+            # turn out to be read somewhere and this causes a
+            # per-instance re-fetch, those tests fail loudly.
+            "approved_at",
+            "created_at",
+            "updated_at",
+            "user__caregiver_identity_profile__birth_date",
+            "user__caregiver_identity_profile__created_at",
+            "user__caregiver_identity_profile__updated_at",
+            "work_preferences__terms_accepted_at",
+            "work_preferences__created_at",
+            "work_preferences__updated_at",
+            "compatibility_questionnaire__created_at",
+            "compatibility_questionnaire__updated_at",
+        )
         .prefetch_related(
             "service_areas",
         )

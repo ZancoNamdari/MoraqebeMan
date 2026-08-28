@@ -514,7 +514,7 @@ class AgencySuggestedCaregiversView(APIView):
 
         patient_link = AgencyPatientLink.objects.filter(
             agency=agency, patient_id=patient_id, status=AgencyLinkStatus.APPROVED,
-        ).select_related("patient").first()
+        ).select_related("patient").defer("patient__created_at", "patient__updated_at").first()
         if patient_link is None:
             return Response({"detail": "این سالمند متعلق به این آژانس نیست."}, status=status.HTTP_404_NOT_FOUND)
 

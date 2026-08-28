@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
 import { agencyService } from "@/services/agency.service"
 import { ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
@@ -50,13 +51,10 @@ export default function CaregiversPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">استخر مراقبان</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+      <AppHeader title="استخر مراقبان" maxWidth="max-w-2xl">
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
         {loading ? (
@@ -83,7 +81,7 @@ export default function CaregiversPage() {
                           تأیید
                         </Button>
                         <Button
-                          size="sm" variant="outline" className="border-rose-200 text-rose-700 hover:bg-rose-50"
+                          size="sm" variant="outline" className="border-border text-primary-strong hover:bg-secondary"
                           disabled={decidingId === r.id}
                           onClick={() => handleDecision(r.id, "reject")}
                         >
@@ -96,15 +94,15 @@ export default function CaregiversPage() {
               </Card>
             )}
 
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-rose-900">مراقبان استخر آژانس ({roster.length})</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader><CardTitle className="text-foreground">مراقبان استخر آژانس ({roster.length})</CardTitle></CardHeader>
               <CardContent>
                 {roster.length === 0 ? (
                   <p className="text-sm text-muted-foreground">هنوز هیچ مراقبی در استخر این آژانس نیست.</p>
                 ) : (
                   <div className="space-y-2">
                     {roster.map((r) => (
-                      <div key={r.id} className="rounded-lg border border-pink-100 bg-pink-50/50 p-3">
+                      <div key={r.id} className="rounded-lg border border-border bg-secondary/50 p-3">
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-medium">{r.caregiver_display_name}</p>
                           <span className={cn(

@@ -111,7 +111,7 @@ class Command(BaseCommand):
             "optimizing."
         ))
 
-
+    def _report(self, label, timings, threshold_seconds):
         timings_ms = sorted(t * 1000 for t in timings)
         p50 = statistics.median(timings_ms)
         p90 = timings_ms[int(len(timings_ms) * 0.90)] if len(timings_ms) > 1 else timings_ms[0]

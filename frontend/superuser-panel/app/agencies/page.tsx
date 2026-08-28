@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
 import { platformAgencyService } from "@/services/platform_agency.service"
 import { ROUTES } from "@/lib/routes"
 import type { PlatformAgencyListItem } from "@/types/platform_agency"
@@ -55,17 +56,14 @@ export default function AgenciesPage() {
   const canSubmit = form.company_name && form.first_name && form.last_name && form.phone_number
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">مدیریت آژانس‌ها</h1>
-          <div className="flex gap-2">
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+      <AppHeader title="مدیریت آژانس‌ها" maxWidth="max-w-2xl">
+        <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>کاربران</Button>
             <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.analytics)}>تحلیل پلتفرم</Button>
-            <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
+            <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
           </div>
-        </div>
-      </header>
+      </AppHeader>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
         {successNote && (
@@ -79,18 +77,18 @@ export default function AgenciesPage() {
           </div>
         )}
 
-        <Card className="border-pink-100">
+        <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-rose-900">فهرست آژانس‌ها ({agencies.length})</CardTitle>
+            <CardTitle className="text-foreground">فهرست آژانس‌ها ({agencies.length})</CardTitle>
             {!showForm && <Button size="sm" onClick={() => setShowForm(true)}>ایجاد آژانس جدید</Button>}
           </CardHeader>
 
           {showForm && (
-            <CardContent className="space-y-3 border-t border-pink-100 pt-4">
+            <CardContent className="space-y-3 border-t border-border pt-4">
               <p className="text-xs text-muted-foreground">
                 رمز عبور توسط خود سیستم ساخته می‌شود — آژانس بعداً با شماره تلفن خودش رمز را بازیابی می‌کند.
               </p>
-              {error && <div className="rounded-md bg-rose-50 p-2 text-xs text-rose-700">{error}</div>}
+              {error && <div className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">{error}</div>}
 
               <div className="space-y-1.5">
                 <Label htmlFor="company_name">نام شرکت/آژانس</Label>
@@ -101,8 +99,8 @@ export default function AgenciesPage() {
                 <Input id="license_number" value={form.license_number} onChange={(e) => setForm({ ...form, license_number: e.target.value })} />
               </div>
 
-              <div className="rounded-lg border border-pink-100 bg-pink-50/40 p-3">
-                <p className="mb-2 text-xs font-medium text-rose-800">اطلاعات تماس مالک حساب آژانس</p>
+              <div className="rounded-lg border border-border bg-secondary/40 p-3">
+                <p className="mb-2 text-xs font-medium text-foreground">اطلاعات تماس مالک حساب آژانس</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="first_name">نام</Label>
@@ -136,7 +134,7 @@ export default function AgenciesPage() {
         ) : (
           <div className="space-y-2">
             {agencies.map((a) => (
-              <div key={a.id} className="rounded-lg border border-pink-100 bg-pink-50/40 p-3">
+              <div key={a.id} className="rounded-lg border border-border bg-secondary/40 p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">{a.company_name}</p>
                   <p className="text-xs text-muted-foreground" dir="ltr">{a.access_code}</p>

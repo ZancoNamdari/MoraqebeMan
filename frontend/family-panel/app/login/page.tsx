@@ -74,14 +74,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-rose-50 via-pink-50 to-orange-50 p-4">
-      <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-pink-200/40 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -right-16 h-80 w-80 rounded-full bg-rose-200/40 blur-3xl" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-secondary via-background to-accent/30 p-4">
+      <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-accent/40 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -right-16 h-80 w-80 rounded-full bg-accent/40 blur-3xl" />
 
-      <Card className="relative w-full max-w-sm border-0 shadow-xl shadow-pink-200/50">
+      <Card className="relative w-full max-w-sm border-0 shadow-xl shadow-primary/15">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-300 to-rose-400 text-2xl shadow-lg shadow-pink-300/40">
-            🌸
+          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/80 to-primary shadow-lg shadow-primary/20">
+            <svg viewBox="0 0 40 46" className="h-7 w-7 text-primary-foreground" fill="currentColor" aria-hidden="true">
+              <path d="M20 1 38 12v22L20 45 2 34V12Z" />
+            </svg>
           </div>
           <CardTitle className="text-xl">مراقب من</CardTitle>
           <CardDescription>
@@ -92,7 +94,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           {message && <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 p-2.5 text-sm text-emerald-800">{message}</div>}
-          {error && <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 p-2.5 text-sm text-rose-700">{error}</div>}
+          {error && <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-sm text-destructive">{error}</div>}
 
           {mode === "login-phone" && (
             <form onSubmit={handleRequestCode} className="space-y-4">
@@ -100,10 +102,10 @@ export default function LoginPage() {
                 <Label htmlFor="phone">شماره موبایل</Label>
                 <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" required autoFocus />
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
+              <Button type="submit" className="w-full bg-gradient-to-l from-primary to-primary text-base font-medium shadow-md shadow-primary/20 hover:from-primary hover:to-primary" size="lg" disabled={loading}>
                 {loading ? "در حال ارسال..." : "ارسال کد ورود"}
               </Button>
-              <button type="button" onClick={() => { setMode("register"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("register"); setError(""); setMessage("") }} className="w-full text-center text-sm text-primary-strong hover:underline">
                 حساب ندارید؟ ثبت‌نام کنید
               </button>
             </form>
@@ -115,10 +117,10 @@ export default function LoginPage() {
                 <Label htmlFor="code">کد ۶ رقمی</Label>
                 <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} dir="ltr" inputMode="numeric" maxLength={6} required autoFocus />
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
+              <Button type="submit" className="w-full bg-gradient-to-l from-primary to-primary text-base font-medium shadow-md shadow-primary/20 hover:from-primary hover:to-primary" size="lg" disabled={loading}>
                 {loading ? "در حال ورود..." : "ورود"}
               </Button>
-              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage("") }} className="w-full text-center text-sm text-primary-strong hover:underline">
                 تغییر شماره موبایل
               </button>
             </form>
@@ -140,10 +142,10 @@ export default function LoginPage() {
                 <Label htmlFor="rphone">شماره موبایل</Label>
                 <Input id="rphone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" required />
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
+              <Button type="submit" className="w-full bg-gradient-to-l from-primary to-primary text-base font-medium shadow-md shadow-primary/20 hover:from-primary hover:to-primary" size="lg" disabled={loading}>
                 {loading ? "در حال ثبت‌نام..." : "ثبت‌نام"}
               </Button>
-              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage("") }} className="w-full text-center text-sm text-primary-strong hover:underline">
                 قبلاً ثبت‌نام کرده‌اید؟ وارد شوید
               </button>
             </form>

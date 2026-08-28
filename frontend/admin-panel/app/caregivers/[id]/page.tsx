@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
 import { cn } from "@/lib/utils"
 import { caregiverReviewService } from "@/services/caregiver_review.service"
 import { STATUS_LABEL, type CaregiverFullProfile } from "@/types/caregiver_review"
@@ -16,7 +17,7 @@ const STATUS_CLASS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-600",
   pending: "bg-amber-100 text-amber-800",
   approved: "bg-emerald-100 text-emerald-800",
-  rejected: "bg-rose-100 text-rose-800",
+  rejected: "bg-destructive/10 text-destructive",
   suspended: "bg-red-200 text-red-900",
 }
 
@@ -98,27 +99,24 @@ export default function CaregiverDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">بررسی پروفایل مراقب</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+      <AppHeader title="بررسی پروفایل مراقب" maxWidth="max-w-2xl">
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
         {loading ? (
           <Skeleton className="h-96 w-full rounded-2xl" />
         ) : !profile ? (
-          <p className="text-sm text-rose-700">پروفایل یافت نشد.</p>
+          <p className="text-sm text-primary-strong">پروفایل یافت نشد.</p>
         ) : (
           <>
             {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{message}</div>}
-            {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
+            {error && <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-            <Card className="border-pink-100">
+            <Card className="border-border">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-rose-900">
+                <CardTitle className="text-foreground">
                   {(profile.identity?.full_name as string) || `کاربر #${userId}`}
                 </CardTitle>
                 <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", STATUS_CLASS[profile.status])}>
@@ -127,7 +125,7 @@ export default function CaregiverDetailPage() {
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 {profile.rejection_reason && (
-                  <p className="text-rose-700">دلیل رد شدن: {profile.rejection_reason}</p>
+                  <p className="text-primary-strong">دلیل رد شدن: {profile.rejection_reason}</p>
                 )}
                 {profile.blacklist_reason && (
                   <p className="text-red-800">دلیل مسدودسازی: {profile.blacklist_reason}</p>
@@ -135,8 +133,8 @@ export default function CaregiverDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-sm text-rose-900">اطلاعات کامل ثبت‌شده</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader><CardTitle className="text-sm text-foreground">اطلاعات کامل ثبت‌شده</CardTitle></CardHeader>
               <CardContent>
                 <pre dir="ltr" className="max-h-96 overflow-auto rounded-lg bg-gray-50 p-3 text-[11px] leading-relaxed text-gray-700">
                   {JSON.stringify({
@@ -151,8 +149,8 @@ export default function CaregiverDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-sm text-rose-900">اقدامات</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader><CardTitle className="text-sm text-foreground">اقدامات</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 {reasonBox && (
                   <div className="space-y-2">
@@ -181,7 +179,7 @@ export default function CaregiverDetailPage() {
                       </Button>
                     )}
                     {profile.status !== "rejected" && profile.status !== "suspended" && (
-                      <Button size="sm" variant="outline" className="border-rose-200 text-rose-700 hover:bg-rose-50" onClick={() => setReasonBox("reject")}>
+                      <Button size="sm" variant="outline" className="border-border text-primary-strong hover:bg-secondary" onClick={() => setReasonBox("reject")}>
                         رد کردن
                       </Button>
                     )}

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
 import { platformAnalyticsService } from "@/services/platform_analytics.service"
 import { ROUTES } from "@/lib/routes"
 import type { PlatformAnalytics } from "@/types/platform_analytics"
@@ -29,23 +30,20 @@ export default function AnalyticsPage() {
   if (authLoading || !user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">تحلیل کل پلتفرم</h1>
-          <div className="flex gap-2">
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+      <AppHeader title="تحلیل کل پلتفرم" maxWidth="max-w-3xl">
+        <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>مدیریت کاربران</Button>
             <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.agencies)}>آژانس‌ها</Button>
-            <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
+            <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
           </div>
-        </div>
-      </header>
+      </AppHeader>
 
       <main className="mx-auto max-w-3xl space-y-4 p-4">
         {loading ? (
           <Skeleton className="h-64 w-full rounded-2xl" />
         ) : error ? (
-          <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
         ) : !data ? null : (
           <>
             <div className="grid grid-cols-3 gap-3">
@@ -57,22 +55,22 @@ export default function AnalyticsPage() {
                 { label: "سالمند", value: data.totals.patient_count },
                 { label: "خانواده", value: data.totals.family_count },
               ].map((item) => (
-                <div key={item.label} className="rounded-xl border border-pink-100 bg-white p-4 text-center">
-                  <p className="text-2xl font-bold text-rose-800">{item.value}</p>
+                <div key={item.label} className="rounded-xl border border-border bg-white p-4 text-center">
+                  <p className="text-2xl font-bold text-foreground">{item.value}</p>
                   <p className="text-xs text-muted-foreground">{item.label}</p>
                 </div>
               ))}
             </div>
 
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-rose-900">تفکیک بر اساس آژانس</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader><CardTitle className="text-foreground">تفکیک بر اساس آژانس</CardTitle></CardHeader>
               <CardContent>
                 {data.agencies.length === 0 ? (
                   <p className="text-sm text-muted-foreground">هنوز هیچ آژانسی ثبت نشده است.</p>
                 ) : (
                   <div className="space-y-2">
                     {data.agencies.map((a) => (
-                      <div key={a.id} className="rounded-lg border border-pink-100 bg-pink-50/40 p-3">
+                      <div key={a.id} className="rounded-lg border border-border bg-secondary/40 p-3">
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-medium">{a.company_name}</p>
                           <p className="text-xs text-muted-foreground" dir="ltr">{a.access_code}</p>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
 import { Input } from "@/components/ui/input"
 import { caregiverService } from "@/services/caregiver.service"
 import { assignmentService } from "@/services/assignment.service"
@@ -24,7 +25,7 @@ const STATUS_LABEL: Record<string, string> = {
 }
 const STATUS_CLASS: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700", pending: "bg-amber-100 text-amber-800",
-  approved: "bg-emerald-100 text-emerald-800", rejected: "bg-rose-100 text-rose-800",
+  approved: "bg-emerald-100 text-emerald-800", rejected: "bg-destructive/10 text-destructive",
   suspended: "bg-orange-100 text-orange-800",
 }
 
@@ -41,7 +42,7 @@ function Section({ icon, title, children }: { icon: string; title: string; child
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base text-rose-900">
+        <CardTitle className="flex items-center gap-2 text-base text-foreground">
           <span className="text-lg">{icon}</span> {title}
         </CardTitle>
       </CardHeader>
@@ -187,30 +188,30 @@ function ReviewPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between p-4">
-          <div>
-            <h1 className="font-bold">بررسی پروفایل — {name || "..."}</h1>
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+      <AppHeader
+        title={
+          <span className="flex flex-col items-start gap-1">
+            <span>بررسی پروفایل — {name || "..."}</span>
             {profile && (
-              <span className={cn("mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium", STATUS_CLASS[profile.status])}>
+              <span className={cn("inline-block rounded-full px-2 py-0.5 text-xs font-medium", STATUS_CLASS[profile.status])}>
                 {STATUS_LABEL[profile.status] || profile.status}
               </span>
             )}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => router.push(`${ROUTES.newCaregiver}?id=${id}`)}>ویرایش</Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به لیست</Button>
-            <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
-          </div>
-        </div>
-      </header>
+          </span>
+        }
+        maxWidth="max-w-3xl"
+      >
+        <Button variant="outline" size="sm" onClick={() => router.push(`${ROUTES.newCaregiver}?id=${id}`)}>ویرایش</Button>
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به لیست</Button>
+        <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-3xl space-y-4 p-4">
         {message && (
           <div className={cn(
             "rounded-lg border p-3 text-sm font-medium",
-            message.kind === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-rose-200 bg-rose-50 text-rose-800"
+            message.kind === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-destructive/30 bg-destructive/10 text-destructive"
           )}>
             {message.text}
           </div>
@@ -223,7 +224,7 @@ function ReviewPageInner() {
         ) : (
           <>
             {profile.status === "rejected" && profile.rejection_reason && (
-              <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+              <div className="rounded-lg border border-border bg-secondary p-3 text-sm text-foreground">
                 <strong>دلیل رد شدن:</strong> {profile.rejection_reason}
               </div>
             )}
@@ -318,7 +319,7 @@ function ReviewPageInner() {
                   ) : (
                     <div className="space-y-2">
                       {assignments.filter((a) => a.status === "active").map((a) => (
-                        <div key={a.id} className="flex items-center justify-between rounded-lg border border-pink-100 bg-pink-50/50 p-3">
+                        <div key={a.id} className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 p-3">
                           <div className="flex items-center gap-2">
                             <span className="text-lg">{patientAvatar(a.patient_gender)}</span>
                             <div>
@@ -326,7 +327,7 @@ function ReviewPageInner() {
                               <p className="text-xs text-muted-foreground">از تاریخ {a.assigned_at.slice(0, 10)}</p>
                             </div>
                           </div>
-                          <button className="text-xs text-rose-600 hover:underline" onClick={() => handleEndAssignment(a.id)}>
+                          <button className="text-xs text-primary-strong hover:underline" onClick={() => handleEndAssignment(a.id)}>
                             پایان تخصیص
                           </button>
                         </div>
@@ -334,12 +335,12 @@ function ReviewPageInner() {
                     </div>
                   )}
 
-                  <div className="space-y-2 rounded-lg border border-dashed border-pink-200 p-3">
+                  <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
                     <p className="text-xs font-medium text-muted-foreground">تخصیص به بیمار جدید با کد بیمار</p>
-                    {assignError && <p className="text-xs text-rose-600">{assignError}</p>}
+                    {assignError && <p className="text-xs text-destructive">{assignError}</p>}
                     <div className="flex flex-wrap gap-2">
                       <Input placeholder="کد بیمار (مثلاً ELD-7K4P9X)" className="w-48" value={patientCode} onChange={(e) => setPatientCode(e.target.value)} dir="ltr" />
-                      <Button variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" disabled={assigning || !patientCode} onClick={handleAssign}>
+                      <Button variant="outline" className="border-border text-primary-strong hover:bg-secondary" disabled={assigning || !patientCode} onClick={handleAssign}>
                         + تخصیص
                       </Button>
                     </div>
@@ -357,13 +358,13 @@ function ReviewPageInner() {
                     این پرسشنامه اختیاری است و در تأیید پروفایل مراقب تأثیری ندارد — فقط کیفیت پیشنهاد مراقب در بخش «تطابق» را بهبود می‌دهد.
                   </p>
                   {questionnaireMessage && (
-                    <div className={cn("rounded-md p-2 text-xs", questionnaireMessage.includes("خطا") ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-800")}>
+                    <div className={cn("rounded-md p-2 text-xs", questionnaireMessage.includes("خطا") ? "bg-destructive/10 text-destructive" : "bg-emerald-50 text-emerald-800")}>
                       {questionnaireMessage}
                     </div>
                   )}
                   {questionnaireScores && (
-                    <div className="rounded-lg bg-pink-50 p-3">
-                      <p className="text-sm font-semibold text-rose-900">امتیاز کلی انعطاف‌پذیری: {questionnaireScores.overall_flexibility_score}٪</p>
+                    <div className="rounded-lg bg-secondary p-3">
+                      <p className="text-sm font-semibold text-foreground">امتیاز کلی انعطاف‌پذیری: {questionnaireScores.overall_flexibility_score}٪</p>
                       <div className="mt-1 grid grid-cols-2 gap-1 text-xs text-muted-foreground sm:grid-cols-4">
                         {Object.entries(questionnaireScores.section_scores).map(([section, score]) => (
                           <span key={section}>{section}: {score}٪</span>
@@ -374,9 +375,9 @@ function ReviewPageInner() {
 
                   {CAREGIVER_QUESTIONNAIRE.map((section) => (
                     <div key={section.title} className="space-y-3">
-                      <p className="text-sm font-semibold text-rose-800">{section.title}</p>
+                      <p className="text-sm font-semibold text-foreground">{section.title}</p>
                       {section.questions.map((q) => (
-                        <div key={q.field} className="rounded-lg border border-pink-100 p-3">
+                        <div key={q.field} className="rounded-lg border border-border p-3">
                           <p className="mb-2 text-sm">{q.question}</p>
                           <div className="space-y-1.5">
                             {q.options.map((opt) => (
@@ -398,7 +399,7 @@ function ReviewPageInner() {
                   ))}
 
                   <Button
-                    className="w-full bg-brand-pink hover:bg-brand-pink-strong"
+                    className="w-full bg-primary hover:bg-primary"
                     disabled={questionnaireSaving || Object.keys(questionnaireAnswers).length < 16}
                     onClick={handleSaveQuestionnaire}
                   >
@@ -409,7 +410,7 @@ function ReviewPageInner() {
             </Section>
 
             {/* Decision actions */}
-            <Card className="border-pink-100">
+            <Card className="border-border">
               <CardContent className="space-y-3 p-4">
                 {showRejectBox ? (
                   <div className="space-y-2">
@@ -420,7 +421,7 @@ function ReviewPageInner() {
                     />
                     <div className="flex gap-2">
                       <Button variant="outline" onClick={() => setShowRejectBox(false)} disabled={busy}>انصراف</Button>
-                      <Button className="flex-1 bg-rose-600 hover:bg-rose-700" onClick={handleReject} disabled={busy}>
+                      <Button className="flex-1 bg-primary hover:bg-primary" onClick={handleReject} disabled={busy}>
                         {busy ? "..." : "ثبت رد شدن"}
                       </Button>
                     </div>
@@ -429,7 +430,7 @@ function ReviewPageInner() {
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      className="flex-1 border-rose-200 text-rose-700 hover:bg-rose-50"
+                      className="flex-1 border-border text-primary-strong hover:bg-secondary"
                       onClick={() => setShowRejectBox(true)}
                       disabled={busy || profile.status === "rejected"}
                     >

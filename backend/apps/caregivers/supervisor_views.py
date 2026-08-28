@@ -48,6 +48,7 @@ from .serializers import (
     CaregiverServiceAreaSerializer,
     CaregiverSkillsSerializer,
     CaregiverWorkPreferencesSerializer,
+    SupervisorCaregiverWorkPreferencesSerializer,
     CreateCaregiverSerializer,
     IdentityProfileSerializer,
     SupervisorCaregiverFullProfileSerializer,
@@ -368,7 +369,13 @@ class SupervisorWorkPreferencesView(APIView):
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         existing = getattr(profile, "work_preferences", None)
-        serializer = CaregiverWorkPreferencesSerializer(instance=existing, data=request.data)
+        # SupervisorCaregiverWorkPreferencesSerializer, not the plain
+        # one — a supervisor fills out every other field in this form
+        # on the caregiver's behalf, but terms_accepted is explicitly
+        # excluded from what's settable here per a confirmed decision:
+        # it's framed in the legal text as the caregiver's own
+        # personal electronic signature, not something delegable.
+        serializer = SupervisorCaregiverWorkPreferencesSerializer(instance=existing, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(profile=profile)
         audit.caregiver_updated(request.user.id, user_id, section="work_preferences")

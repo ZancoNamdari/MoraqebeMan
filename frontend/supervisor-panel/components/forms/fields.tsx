@@ -10,18 +10,18 @@ export function Field({
   label, required, error, children,
 }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
   return (
-    <div className={cn("space-y-1.5 rounded-lg", error && "ring-1 ring-rose-400/60 bg-rose-50/60 p-2.5")}>
+    <div className={cn("space-y-1.5 rounded-lg", error && "ring-1 ring-destructive/50 bg-destructive/5 p-2.5")}>
       <Label className="flex items-center gap-1.5">
-        <span className={cn(required && "font-bold text-rose-950")}>{label}</span>
+        <span className={cn(required && "font-bold text-foreground")}>{label}</span>
         {" "}
         {required && (
-          <span className="mr-1.5 rounded-full bg-pink-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
+          <span className="mr-1.5 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">
             الزامی
           </span>
         )}
       </Label>
       {children}
-      {error && <p className="text-xs font-medium text-rose-600">{error}</p>}
+      {error && <p className="text-xs font-medium text-destructive">{error}</p>}
     </div>
   )
 }
@@ -59,7 +59,7 @@ export function CheckboxGroup({
             className={cn(
               "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm transition-colors",
               checked
-                ? "border-pink-300 bg-pink-50 text-rose-900"
+                ? "border-primary/30 bg-secondary text-foreground"
                 : "border-transparent hover:bg-accent"
             )}
           >
@@ -97,7 +97,7 @@ export function YesNo({
         className={cn(
           "flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
           value === false
-            ? "border-rose-400 bg-rose-50 text-rose-800"
+            ? "border-primary/40 bg-secondary text-foreground"
             : "border-input text-muted-foreground hover:bg-accent"
         )}
       >

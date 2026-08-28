@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
 import { Field, ChoiceSelect, CheckboxGroup } from "@/components/forms/fields"
 import { agencyService } from "@/services/agency.service"
 import { agencyManagementService } from "@/services/agency_management.service"
@@ -78,13 +79,10 @@ export default function PatientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">سالمندهای آژانس</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+      <AppHeader title="سالمندهای آژانس" maxWidth="max-w-2xl">
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
         {successNote && (
@@ -99,15 +97,15 @@ export default function PatientsPage() {
           </div>
         )}
 
-        <Card className="border-pink-100">
+        <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-rose-900">فهرست سالمندها ({patients.length})</CardTitle>
+            <CardTitle className="text-foreground">فهرست سالمندها ({patients.length})</CardTitle>
             {!showForm && <Button size="sm" onClick={() => setShowForm(true)}>افزودن سالمند</Button>}
           </CardHeader>
 
           {showForm && (
-            <CardContent className="space-y-4 border-t border-pink-100 pt-4">
-              {error && <div className="rounded-md bg-rose-50 p-2 text-xs text-rose-700">{error}</div>}
+            <CardContent className="space-y-4 border-t border-border pt-4">
+              {error && <div className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">{error}</div>}
 
               <Field label="نحوه ثبت">
                 <div className="flex gap-2">
@@ -142,8 +140,8 @@ export default function PatientsPage() {
               </Field>
 
               {form.mode === "with_family" && (
-                <div className="space-y-3 rounded-lg border border-pink-100 bg-pink-50/40 p-3">
-                  <p className="text-xs font-medium text-rose-800">اطلاعات خانواده</p>
+                <div className="space-y-3 rounded-lg border border-border bg-secondary/40 p-3">
+                  <p className="text-xs font-medium text-foreground">اطلاعات خانواده</p>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="نام" required>
                       <Input value={form.family_first_name} onChange={(e) => setForm({ ...form, family_first_name: e.target.value })} />
@@ -182,12 +180,12 @@ export default function PatientsPage() {
         ) : (
           <div className="space-y-2">
             {patients.map((p) => (
-              <div key={p.id} className="flex items-center justify-between rounded-lg border border-pink-100 bg-pink-50/40 p-3">
+              <div key={p.id} className="flex items-center justify-between rounded-lg border border-border bg-secondary/40 p-3">
                 <div>
                   <p className="text-sm font-medium">{p.full_name}</p>
                   <p className="text-xs text-muted-foreground" dir="ltr">{p.access_code}</p>
                 </div>
-                <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => router.push(ROUTES.patientMatch(p.id))}>
+                <Button size="sm" variant="outline" className="border-border text-primary-strong hover:bg-secondary" onClick={() => router.push(ROUTES.patientMatch(p.id))}>
                   یافتن مراقب مناسب
                 </Button>
               </div>
