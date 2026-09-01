@@ -15,8 +15,12 @@ from .supervisor_views import (
     SupervisorWorkPreferencesView,
 )
 from .views import (
+    ApproveBlacklistAppealView,
     ApproveCaregiverView,
+    BlacklistAppealListView,
     BlacklistCaregiverView,
+    DenyBlacklistAppealView,
+    MyBlacklistAppealView,
     UnblacklistCaregiverView,
     MyExperienceView,
     MyFullProfileView,
@@ -38,10 +42,14 @@ urlpatterns = [
     path("caregivers/me/skills/", MySkillsView.as_view(), name="my-skills"),
     path("caregivers/me/references/", MyReferencesView.as_view(), name="my-references"),
     path("caregivers/me/full/", MyFullProfileView.as_view(), name="my-full-profile"),
+    path("caregivers/me/blacklist-appeal/", MyBlacklistAppealView.as_view(), name="my-blacklist-appeal"),
     path("caregivers/<int:user_id>/approve/", ApproveCaregiverView.as_view(), name="approve-caregiver"),
     path("caregivers/<int:user_id>/reject/", RejectCaregiverView.as_view(), name="reject-caregiver"),
     path("caregivers/<int:user_id>/blacklist/", BlacklistCaregiverView.as_view(), name="blacklist-caregiver"),
     path("caregivers/<int:user_id>/unblacklist/", UnblacklistCaregiverView.as_view(), name="unblacklist-caregiver"),
+    path("caregivers/blacklist-appeals/", BlacklistAppealListView.as_view(), name="blacklist-appeal-list"),
+    path("caregivers/blacklist-appeals/<int:appeal_id>/approve/", ApproveBlacklistAppealView.as_view(), name="blacklist-appeal-approve"),
+    path("caregivers/blacklist-appeals/<int:appeal_id>/deny/", DenyBlacklistAppealView.as_view(), name="blacklist-appeal-deny"),
 
     # Supervisor bulk-data-entry dashboard — separate namespace,
     # separate permission (IsAdminOrSuperuser, not IsCaregiver)

@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.core.cache import cache
 from tests.base import BaseAPITestCase
 from rest_framework.test import APIClient
@@ -23,6 +25,42 @@ class RegisterViewTests(BaseAPITestCase):
         self.assertIn("access", response.data["tokens"])
         self.assertIn("refresh", response.data["tokens"])
         self.assertEqual(response.data["user"]["role"], "family")
+
+    @patch("apps.authentication.services.send_welcome_notification")
+    def test_register_triggers_welcome_notification(self, mock_welcome):
+        """
+        Regression test for a real, previously-flagged gap: this task
+        had a working implementation but was never actually called
+        from anywhere — genuinely dead code. Confirms it's wired up
+        now, with the right user_id/phone_number.
+        """
+        response = self.client.post("/api/auth/register/", {
+            "first_name": "سارا", "last_name": "خانوادگی",
+            "username": "sara_welcome_test",
+            "password": "StrongPass123",
+            "phone_number": "09121234599",
+            "email": "sara2@example.com",
+            "role": "family",
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
+        mock_welcome.delay.assert_called_once()
+        called_args = mock_welcome.delay.call_args[0]
+        self.assertEqual(called_args[1], "09121234599")
+
+    @patch("apps.authentication.services.send_welcome_notification")
+    def test_registration_still_succeeds_if_welcome_notification_fails_to_queue(self, mock_welcome):
+        # Mirrors the exact same try/except pattern already used for
+        # the password-reset SMS trigger — a failure here must never
+        # block the actual registration.
+        mock_welcome.delay.side_effect = Exception("broker unavailable")
+        response = self.client.post("/api/auth/register/", {
+            "first_name": "رضا", "last_name": "خانوادگی",
+            "username": "reza_welcome_fail_test",
+            "password": "StrongPass123",
+            "phone_number": "09121234598",
+            "role": "family",
+        }, format="json")
+        self.assertEqual(response.status_code, 201)
 
     def test_register_without_username_auto_generates_one(self):
         # The whole point of User.generate_username(): a caregiver

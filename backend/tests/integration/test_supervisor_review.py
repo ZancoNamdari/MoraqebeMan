@@ -79,6 +79,19 @@ class SupervisorFullProfileReviewTests(TestCase):
         self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/skills/", {}, format="json")
         self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/references/", {"references": []}, format="json")
 
+        # Per an explicit product decision made after this test was
+        # originally written: a supervisor's own {"terms_accepted":
+        # True} above is now silently excluded — this can only ever
+        # be set from the caregiver's own account (see
+        # SupervisorCaregiverWorkPreferencesSerializer). Without this
+        # step, approval below would correctly still 400.
+        caregiver_user = User.objects.get(id=self.cg_id)
+        caregiver_token = SimpleJWTTokenIssuer().issue(caregiver_user)["access"]
+        caregiver_client = APIClient()
+        caregiver_client.credentials(HTTP_AUTHORIZATION=f"Bearer {caregiver_token}")
+        terms_response = caregiver_client.put("/api/caregivers/me/work-preferences/", {"terms_accepted": True}, format="json")
+        self.assertEqual(terms_response.status_code, 200)
+
         response = self.client.post(f"/api/caregivers/{self.cg_id}/approve/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["status"], "approved")

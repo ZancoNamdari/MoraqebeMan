@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AppHeader } from "@/components/layout/app-header"
 import { cn } from "@/lib/utils"
 import { caregiverReviewService } from "@/services/caregiver_review.service"
 import { STATUS_LABEL, type CaregiverListItem } from "@/types/caregiver_review"
@@ -26,7 +25,7 @@ const STATUS_CLASS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-600",
   pending: "bg-amber-100 text-amber-800",
   approved: "bg-emerald-100 text-emerald-800",
-  rejected: "bg-destructive/10 text-destructive",
+  rejected: "bg-rose-100 text-rose-800",
   suspended: "bg-red-200 text-red-900",
 }
 
@@ -55,10 +54,17 @@ export default function DashboardPage() {
   const pendingCount = caregivers.filter((c) => c.status === "pending").length
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
-      <AppHeader title="بررسی مراقبان">
-        <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
-      </AppHeader>
+    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
+      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+        <div className="mx-auto flex max-w-3xl items-center justify-between p-4">
+          <h1 className="font-bold text-rose-900">بررسی مراقبان</h1>
+          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.complaints)}>شکایات</Button>
+          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.patientNotes)}>یادداشت‌ها</Button>
+          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.auditLogs)}>تاریخچه</Button>
+          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.blacklistAppeals)}>درخواست‌های بازبینی</Button>
+          <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
+        </div>
+      </header>
 
       <main className="mx-auto max-w-3xl space-y-4 p-4">
         {pendingCount > 0 && (
@@ -67,7 +73,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <Card className="border-border">
+        <Card className="border-pink-100">
           <CardContent className="flex flex-wrap items-center gap-2 p-4">
             <Input
               placeholder="جست‌وجو با نام یا شماره موبایل"
@@ -87,8 +93,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border">
-          <CardHeader><CardTitle className="text-foreground">مراقبان ({filtered.length})</CardTitle></CardHeader>
+        <Card className="border-pink-100">
+          <CardHeader><CardTitle className="text-rose-900">مراقبان ({filtered.length})</CardTitle></CardHeader>
           <CardContent>
             {loading ? (
               <Skeleton className="h-64 w-full rounded-2xl" />
@@ -100,7 +106,7 @@ export default function DashboardPage() {
                   <button
                     key={c.user_id}
                     onClick={() => router.push(ROUTES.caregiverDetail(c.user_id))}
-                    className="flex w-full items-center justify-between rounded-lg border border-border bg-secondary/40 p-3 text-right transition-colors hover:bg-secondary"
+                    className="flex w-full items-center justify-between rounded-lg border border-pink-100 bg-pink-50/40 p-3 text-right transition-colors hover:bg-pink-50"
                   >
                     <div>
                       <p className="text-sm font-medium">{c.full_name}</p>

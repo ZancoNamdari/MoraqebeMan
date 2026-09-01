@@ -299,6 +299,21 @@ class SupervisorFullWizardFlowTests(TestCase):
         r6 = self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/references/", TWO_REFERENCES, format="json")
         self.assertEqual(r6.status_code, 201)
 
+        # Per an explicit product decision made after this test was
+        # originally written: accepting the platform's terms is the
+        # one thing a supervisor can never complete on a caregiver's
+        # behalf, since it's framed in the legal text itself as the
+        # caregiver's own personal electronic signature. A supervisor
+        # completing everything else is no longer sufficient by
+        # itself — the caregiver's own account has to take this one
+        # remaining step.
+        caregiver_user = User.objects.get(id=self.cg_id)
+        caregiver_token = SimpleJWTTokenIssuer().issue(caregiver_user)["access"]
+        caregiver_client = APIClient()
+        caregiver_client.credentials(HTTP_AUTHORIZATION=f"Bearer {caregiver_token}")
+        terms_response = caregiver_client.put("/api/caregivers/me/work-preferences/", dict(VALID_WORK_PREFS, terms_accepted=True), format="json")
+        self.assertEqual(terms_response.status_code, 200)
+
         progress = self.client.get(f"/api/supervisor/caregivers/{self.cg_id}/progress/")
         self.assertEqual(progress.status_code, 200)
         self.assertEqual(progress.data["missing"], [])

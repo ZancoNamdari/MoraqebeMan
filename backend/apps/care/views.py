@@ -354,3 +354,21 @@ class MCDMWeightConfigView(APIView):
             "is_default": False,
             "updated_at": config.updated_at,
         }, status=status.HTTP_201_CREATED)
+
+
+class CaregiverReviewsForStaffView(APIView):
+    """
+    GET /api/care/caregivers/<user_id>/reviews/ — ADMIN/SUPERUSER
+    only. Connects the review/rating system to the approval workflow,
+    same reasoning as the complaint-history connection built earlier:
+    an admin deciding whether to approve or blacklist a caregiver
+    should see actual quality signal from families/patients who've
+    experienced their care, not just formal complaints. Before this,
+    ratings only ever fed into matching scores — completely invisible
+    anywhere in the review/approval flow itself.
+    """
+    permission_classes = [IsAdminOrSuperuser]
+
+    def get(self, request, user_id):
+        reviews = CaregiverReview.objects.filter(caregiver__user_id=user_id).select_related("reviewer").order_by("-created_at")
+        return Response(CaregiverReviewSerializer(reviews, many=True).data)

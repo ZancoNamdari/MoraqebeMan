@@ -382,6 +382,64 @@ CAREGIVER_FLEX_ANSWERS = {
 }
 
 
+class CaregiverReviewsForStaffViewTests(TestCase):
+    """
+    GET /api/care/caregivers/<user_id>/reviews/ — connects the
+    review/rating system to the approval workflow. Before this,
+    ratings only ever fed into matching scores — invisible anywhere
+    in the actual staff review/approval flow, same class of gap as
+    the complaint-history connection built for the same page.
+    """
+
+    def setUp(self):
+        self.admin = _make_user("review_staff_admin", UserRole.ADMIN, "09100000092")
+        self.admin_client = _client_for(self.admin)
+
+        self.caregiver_user = _make_user("review_staff_cg", UserRole.CAREGIVER, "09121119001")
+        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user)
+
+        self.family_user = _make_user("review_staff_family", UserRole.FAMILY, "09121119002")
+        self.family_client = _client_for(self.family_user)
+        family = FamilyProfile.objects.create(user=self.family_user, display_name="خانواده")
+        self.patient = PatientProfile.objects.create(full_name="بیمار بازبینی")
+        from apps.families.models import FamilyPatientLink, LinkStatus
+        FamilyPatientLink.objects.create(family=family, patient=self.patient, relation="child", status=LinkStatus.APPROVED)
+
+        self.assignment = CaregiverAssignment.objects.create(caregiver=self.caregiver, patient=self.patient, assigned_by=self.admin)
+
+    def test_admin_can_see_reviews_for_a_caregiver(self):
+        self.family_client.post(f"/api/care/assignments/{self.assignment.id}/review/", {
+            "rating": 4, "comment": "کلی راضی بودیم",
+        }, format="json")
+
+        response = self.admin_client.get(f"/api/care/caregivers/{self.caregiver_user.id}/reviews/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["rating"], 4)
+        self.assertEqual(response.data[0]["comment"], "کلی راضی بودیم")
+
+    def test_no_reviews_returns_empty_list_not_error(self):
+        response = self.admin_client.get(f"/api/care/caregivers/{self.caregiver_user.id}/reviews/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, [])
+
+    def test_family_cannot_access_this_staff_endpoint(self):
+        response = self.family_client.get(f"/api/care/caregivers/{self.caregiver_user.id}/reviews/")
+        self.assertEqual(response.status_code, 403)
+
+    def test_unauthenticated_cannot_access(self):
+        from rest_framework.test import APIClient
+        client = APIClient()
+        response = client.get(f"/api/care/caregivers/{self.caregiver_user.id}/reviews/")
+        self.assertEqual(response.status_code, 401)
+
+    def test_superuser_can_also_access(self):
+        superuser = _make_user("review_staff_superuser", UserRole.SUPERUSER, "09100000093")
+        client = _client_for(superuser)
+        response = client.get(f"/api/care/caregivers/{self.caregiver_user.id}/reviews/")
+        self.assertEqual(response.status_code, 200)
+
+
 class PatientQuestionnaireForMatchingTests(TestCase):
     """Closes a real, necessary gap: until now only a patient's own
     family could see their compatibility questionnaire — a supervisor

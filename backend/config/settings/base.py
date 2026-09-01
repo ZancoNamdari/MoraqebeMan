@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "apps.locations",
     "apps.care",
     "apps.agencies",
+    "apps.reviews",
 ]
 
 MIDDLEWARE = [
@@ -91,7 +92,7 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -126,3 +127,5 @@ CACHES = {
 # is empty, so nothing here blocks development without real credentials.
 KAVENEGAR_API_KEY = env("KAVENEGAR_API_KEY", default="")
 KAVENEGAR_OTP_TEMPLATE = env("KAVENEGAR_OTP_TEMPLATE", default="verify")
+KAVENEGAR_PASSWORD_RESET_TEMPLATE = env("KAVENEGAR_PASSWORD_RESET_TEMPLATE", default="password-reset")
+KAVENEGAR_SENDER_NUMBER = env("KAVENEGAR_SENDER_NUMBER", default="")

@@ -9,7 +9,37 @@ from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, Collaboration
                       HouseholdSkill, ForeignLanguage, LocalLanguage,
                       PreviousWorkplace, SpecialConditionExperience, TrainingCourse, Gender)    
 from .models import (CaregiverWorkPreferences, CaregiverServiceArea, CaregiverExperience,
-                     CaregiverSkills, CaregiverReference, IdentityProfile, CaregiverCompatibilityQuestionnaire)
+                     CaregiverSkills, CaregiverReference, IdentityProfile, CaregiverCompatibilityQuestionnaire,
+                     BlacklistAppeal)
+
+
+class CreateBlacklistAppealSerializer(serializers.Serializer):
+    appeal_reason = serializers.CharField(max_length=2000)
+
+
+class BlacklistAppealSerializer(serializers.ModelSerializer):
+    caregiver_name = serializers.SerializerMethodField()
+    reviewer_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BlacklistAppeal
+        fields = [
+            "id", "caregiver_name", "appeal_reason", "status",
+            "reviewer_name", "review_note", "reviewed_at", "created_at",
+        ]
+
+    def get_caregiver_name(self, obj):
+        return obj.caregiver.display_name
+
+    def get_reviewer_name(self, obj):
+        if obj.reviewed_by is None:
+            return None
+        identity = getattr(obj.reviewed_by, "caregiver_identity_profile", None)
+        return (identity.full_name if identity else None) or obj.reviewed_by.username
+
+
+class ReviewBlacklistAppealSerializer(serializers.Serializer):
+    note = serializers.CharField(max_length=2000, required=False, allow_blank=True)
 
 
 class IdentityProfileSerializer(serializers.ModelSerializer):
@@ -250,8 +280,19 @@ class CaregiverFullProfileSerializer(serializers.Serializer):
     the view pulling it from apps.accounts.IdentityProfile and passing
     it in as plain dict context, not by this serializer querying
     another app's model directly.
+
+    status/rejection_reason/blacklist_reason added here after finding
+    a real, previously-hidden bug: the view's own data dict always
+    included "status", but this serializer never declared it as a
+    field — DRF silently drops undeclared dict keys rather than
+    erroring, so every caregiver checking their OWN profile got
+    is_approved=false for pending, rejected, AND suspended alike, with
+    no way to tell which, and no reason text ever exposed at all.
     """
     is_approved = serializers.BooleanField()
+    status = serializers.CharField()
+    rejection_reason = serializers.CharField(allow_blank=True)
+    blacklist_reason = serializers.CharField(allow_blank=True)
     identity = serializers.DictField(allow_null=True)
     work_preferences = CaregiverWorkPreferencesSerializer(allow_null=True)
     service_areas = CaregiverServiceAreaSerializer(many=True)
@@ -261,13 +302,15 @@ class CaregiverFullProfileSerializer(serializers.Serializer):
 
 
 class SupervisorCaregiverFullProfileSerializer(CaregiverFullProfileSerializer):
-    """Same nested shape as the caregiver's own /me/full/ view, plus
-    the fields a reviewer actually needs that a caregiver looking at
-    their own profile doesn't: the current status and, if rejected,
-    why."""
-    status = serializers.CharField()
-    rejection_reason = serializers.CharField(allow_blank=True)
-    blacklist_reason = serializers.CharField(allow_blank=True)
+    """
+    Identical shape to the caregiver's own /me/full/ view now that
+    status/rejection_reason/blacklist_reason live on the base class —
+    kept as its own named subclass (rather than deleted and replaced
+    with the base everywhere) so a reviewer-specific field can be
+    added here later without touching the caregiver-facing serializer
+    at all.
+    """
+    pass
 
 
 # ============================================================

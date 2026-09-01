@@ -4,6 +4,7 @@ from .views import (
     MyAssignedPatientsView,
     MyCareLogEntriesView,
     AssignmentReviewView,
+    CaregiverReviewsForStaffView,
     MCDMWeightConfigView,
     PatientCareTeamView,
     PatientCareTimelineView,
@@ -20,6 +21,7 @@ urlpatterns = [
     path("care/suggest-caregivers/", SuggestedCaregiversView.as_view(), name="care-suggest-caregivers"),
     path("care/patient-questionnaire/", PatientQuestionnaireForMatchingView.as_view(), name="care-patient-questionnaire"),
     path("care/mcdm-weights/", MCDMWeightConfigView.as_view(), name="care-mcdm-weights"),
+    path("care/caregivers/<int:user_id>/reviews/", CaregiverReviewsForStaffView.as_view(), name="care-caregiver-reviews"),
 
     # Family/patient-facing review action
     path("care/assignments/<int:assignment_id>/review/", AssignmentReviewView.as_view(), name="care-assignment-review"),

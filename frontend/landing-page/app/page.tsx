@@ -32,11 +32,11 @@ export default function LandingPage() {
             یک پلتفرم، سه طرف یک رابطهٔ مراقبت
           </span>
           <h1 className="mt-6 text-4xl font-extrabold leading-[1.2] text-foreground sm:text-5xl">
-            مراقبت از سالمندان، دیگر بر پایهٔ شانس نیست
+            مراقبت از سالمندان، با سازگاری واقعی
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            به‌جای انتخاب دستی از یک لیست، مراقب من بهترین مراقب را بر اساس سازگاری
-            واقعی — نه فقط دسترس‌بودن — به خانواده پیشنهاد می‌دهد؛ و مسیر مراقبت را از
+            مراقب من بهترین مراقب را بر اساس سازگاری
+            واقعی — نه فقط در دسترس‌بودن — به خانواده پیشنهاد می‌دهد؛ و مسیر مراقبت را از
             اولین معرفی تا گزارش روزانه، شفاف نگه می‌دارد.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -59,7 +59,7 @@ export default function LandingPage() {
           <h2 className="mt-4 text-2xl font-bold leading-relaxed text-deep-foreground sm:text-3xl">
             جمعیت ایران در حال سالمند شدن است — و بار مراقبت اغلب بی‌سروصدا روی دوش
             یک نفر در خانواده می‌افتد. ما معتقدیم انتخاب مراقب باید آگاهانه باشد، نه
-            اضطراری.
+            تصادفی.
           </h2>
           <p className="mt-5 text-base leading-relaxed text-deep-muted">
             مأموریت ما ساختن رابطه‌ای است که هم به سالمند کرامت و استقلال می‌دهد، هم به
@@ -105,10 +105,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-24">
           <div className="mx-auto max-w-xl text-center">
             <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
-              کدام‌یک از این‌ها هستید؟
+              مسیر ورود خود را انتخاب کنید
             </h2>
             <p className="mt-3 text-muted-foreground">
-              مسیر ورود متناسب با نقش شما را انتخاب کنید.
+              خانواده، مراقب، یا آژانس — هرکدام حساب مخصوص خودش را می‌سازد و مسیر متفاوتی دارد.
             </p>
           </div>
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -154,7 +154,7 @@ export default function LandingPage() {
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
           <a href={PANEL_URLS.supervisor} className="text-primary-strong hover:underline">پنل ناظر پلتفرم</a>
           <a href={PANEL_URLS.admin} className="text-primary-strong hover:underline">پنل ادمین</a>
-          <a href={PANEL_URLS.superuser} className="text-primary-strong hover:underline">پنل سوپریوزر</a>
+          {/* <a href={PANEL_URLS.superuser} className="text-primary-strong hover:underline">پنل سوپریوزر</a> */}
         </div>
       </section>
 

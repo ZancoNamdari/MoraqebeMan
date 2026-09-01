@@ -154,3 +154,20 @@ export function patientAvatar(gender: string | null | undefined): string {
   if (gender === "female") return "👵"
   return "🧓"
 }
+
+export const COMPLAINT_CATEGORY: Choice[] = [
+  ["service_quality", "کیفیت خدمات"],
+  ["behavior", "رفتار نامناسب"],
+  ["punctuality", "عدم رعایت زمان‌بندی"],
+  ["safety_concern", "نگرانی ایمنی"],
+  ["financial", "مسائل مالی"],
+  ["communication", "مشکل ارتباطی"],
+  ["other", "سایر"],
+]
+
+export const COMPLAINT_STATUS_LABEL: Record<string, string> = {
+  open: "باز",
+  under_review: "در حال بررسی",
+  resolved: "حل‌شده",
+  dismissed: "رد شده",
+}

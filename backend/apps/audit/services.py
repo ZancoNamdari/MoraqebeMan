@@ -115,3 +115,53 @@ class AuditService:
 
     def agency_created(self, actor_id, agency_owner_user_id):
         return self.log_event(AuditEventType.AGENCY_CREATED, actor_id, agency_owner_user_id)
+
+    def caregiver_approved(self, actor_id, caregiver_user_id):
+        return self.log_event(AuditEventType.CAREGIVER_APPROVED, actor_id, caregiver_user_id)
+
+    def caregiver_rejected(self, actor_id, caregiver_user_id, reason=""):
+        return self.log_event(AuditEventType.CAREGIVER_REJECTED, actor_id, caregiver_user_id, reason=reason)
+
+    def caregiver_blacklisted(self, actor_id, caregiver_user_id, reason=""):
+        return self.log_event(AuditEventType.CAREGIVER_BLACKLISTED, actor_id, caregiver_user_id, reason=reason)
+
+    def caregiver_unblacklisted(self, actor_id, caregiver_user_id):
+        return self.log_event(AuditEventType.CAREGIVER_UNBLACKLISTED, actor_id, caregiver_user_id)
+
+    def blacklist_appeal_submitted(self, caregiver_user_id):
+        # Same self-actor reasoning as terms_accepted — a caregiver's
+        # own appeal is inherently self-performed.
+        return self.log_event(AuditEventType.BLACKLIST_APPEAL_SUBMITTED, caregiver_user_id, caregiver_user_id)
+
+    def blacklist_appeal_denied(self, actor_id, caregiver_user_id):
+        return self.log_event(AuditEventType.BLACKLIST_APPEAL_DENIED, actor_id, caregiver_user_id)
+
+    def terms_accepted(self, caregiver_user_id):
+        # actor and target are deliberately the same id here — this is
+        # the one event on this whole platform that can only ever be
+        # self-performed (see the terms-delegation fix), so there's no
+        # separate "who did this to whom" to record.
+        return self.log_event(AuditEventType.TERMS_ACCEPTED, caregiver_user_id, caregiver_user_id)
+
+    # apps.reviews events — patient_id/complaint_id kept in metadata
+    # rather than as dedicated model fields, matching the existing
+    # pattern used throughout this service for patient-related events
+    # (patients frequently have no login of their own, so
+    # target_user_id can't always carry that identity).
+    def complaint_filed(self, actor_id, patient_id, complaint_id, category):
+        return self.log_event(AuditEventType.COMPLAINT_FILED, actor_id, None, patient_id=patient_id, complaint_id=complaint_id, category=category)
+
+    def complaint_under_review(self, actor_id, complaint_id):
+        return self.log_event(AuditEventType.COMPLAINT_UNDER_REVIEW, actor_id, None, complaint_id=complaint_id)
+
+    def complaint_resolved(self, actor_id, complaint_id):
+        return self.log_event(AuditEventType.COMPLAINT_RESOLVED, actor_id, None, complaint_id=complaint_id)
+
+    def complaint_dismissed(self, actor_id, complaint_id):
+        return self.log_event(AuditEventType.COMPLAINT_DISMISSED, actor_id, None, complaint_id=complaint_id)
+
+    def patient_note_created(self, actor_id, patient_id, note_id, flagged_urgent):
+        return self.log_event(AuditEventType.PATIENT_NOTE_CREATED, actor_id, None, patient_id=patient_id, note_id=note_id, flagged_urgent=flagged_urgent)
+
+    def patient_note_acknowledged(self, actor_id, note_id):
+        return self.log_event(AuditEventType.PATIENT_NOTE_ACKNOWLEDGED, actor_id, None, note_id=note_id)

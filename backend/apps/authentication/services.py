@@ -19,7 +19,7 @@ from apps.accounts.models import User, UserRole
 
 from .models import PasswordResetToken, PhoneOTP
 from .repositories import UserRepositoryInterface
-from .tasks import send_otp_sms, send_password_reset_sms
+from .tasks import send_otp_sms, send_password_reset_sms, send_welcome_notification
 
 logger = logging.getLogger("apps.authentication")
 
@@ -103,6 +103,21 @@ class AuthService:
         logger.info("New user registered: id=%s role=%s username=%s", user.id, user.role, user.username)
         if self._audit:
             self._audit.log_event("user_registered", actor_user_id=user.id, target_user_id=user.id)
+
+        # This task existed with a working (log-only) implementation
+        # but was never actually called from anywhere — genuinely
+        # dead code until now. Deliberately not upgraded to a real
+        # Kavenegar send in this same pass: unlike OTP/password-reset
+        # codes, a welcome message has no %token% to substitute, so
+        # it needs Kavenegar's separate plain /sms/send.json endpoint
+        # (arbitrary text), not the Verify Lookup API the other two
+        # tasks use — a genuinely different integration, scoped out
+        # here since it's not blocking real functionality the way the
+        # password-reset gap was.
+        try:
+            send_welcome_notification.delay(user.id, user.phone_number)
+        except Exception:
+            logger.exception("Failed to queue welcome notification for user_id=%s", user.id)
 
         tokens = self._tokens.issue(user)
         return user, tokens

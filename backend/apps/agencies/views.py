@@ -16,7 +16,7 @@ from apps.families.serializers import PatientProfileSerializer
 from apps.care.matching import suggest_caregivers_for_agency_patient
 
 from .models import AgencyCaregiverLink, AgencyFamilyLink, AgencyLinkStatus, AgencyPatientLink, AgencyProfile, AgencySupervisor
-from .tenancy import resolve_tenant_context
+from .tenancy import agency_caregiver_profile_ids, resolve_tenant_context
 from .serializers import (
     AgencyCaregiverLinkSerializer,
     AgencyDashboardSerializer,
@@ -660,3 +660,33 @@ class PlatformAgencyListCreateView(APIView):
         audit.agency_created(request.user.id, owner_user.id)
 
         return Response(AgencyProfileSerializer(agency).data, status=status.HTTP_201_CREATED)
+
+
+class AgencyComplaintsAboutOwnRosterView(APIView):
+    """
+    GET /api/agencies/<agency_id>/complaints/ — read-only visibility
+    into complaints filed about THIS agency's own approved caregiver
+    roster. Deliberately still no resolve/dismiss action here — that
+    stays platform-wide staff-only (see apps.reviews.views.
+    ComplaintListView's own docstring for why: an agency resolving
+    complaints about its own caregivers would be reviewing itself).
+    This is purely "does my roster have a problem I should know
+    about," not authority to act on it — closing a real gap found
+    after Complaint/CaregiverNoteAboutPatient shipped: an agency had
+    no way to see complaints about its own people at all.
+    """
+    permission_classes = [IsAgencyOwnerOrSupervisor]
+
+    def get(self, request, agency_id):
+        from apps.reviews.models import Complaint
+        from apps.reviews.serializers import ComplaintListItemSerializer
+
+        ctx = resolve_tenant_context(request, agency_id)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+
+        roster_ids = agency_caregiver_profile_ids(ctx.agency)
+        complaints = Complaint.objects.filter(about_caregiver_id__in=roster_ids).select_related(
+            "patient", "about_caregiver__user__caregiver_identity_profile", "filed_by",
+        )
+        return Response(ComplaintListItemSerializer(complaints, many=True).data)

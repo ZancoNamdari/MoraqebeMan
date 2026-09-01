@@ -3,4 +3,5 @@ export const ROUTES = {
   dashboard: "/dashboard",
   newPatient: "/patients/new",
   patientDetail: (id: number | string) => `/patients/detail?id=${id}`,
+  complaints: "/complaints",
 }

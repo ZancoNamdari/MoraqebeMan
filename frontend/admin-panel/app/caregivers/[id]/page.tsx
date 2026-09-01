@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AppHeader } from "@/components/layout/app-header"
 import { cn } from "@/lib/utils"
 import { caregiverReviewService } from "@/services/caregiver_review.service"
+import { complaintReviewService, type ComplaintListItem } from "@/services/complaint_review.service"
+import { caregiverReviewsService, type CaregiverReview } from "@/services/caregiver_reviews.service"
+import { COMPLAINT_STATUS_LABEL } from "@/lib/constants"
 import { STATUS_LABEL, type CaregiverFullProfile } from "@/types/caregiver_review"
 import { ROUTES } from "@/lib/routes"
 
@@ -17,7 +19,7 @@ const STATUS_CLASS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-600",
   pending: "bg-amber-100 text-amber-800",
   approved: "bg-emerald-100 text-emerald-800",
-  rejected: "bg-destructive/10 text-destructive",
+  rejected: "bg-rose-100 text-rose-800",
   suspended: "bg-red-200 text-red-900",
 }
 
@@ -34,6 +36,8 @@ export default function CaregiverDetailPage() {
   const [acting, setActing] = useState(false)
   const [reasonBox, setReasonBox] = useState<"reject" | "blacklist" | null>(null)
   const [reason, setReason] = useState("")
+  const [complaints, setComplaints] = useState<ComplaintListItem[]>([])
+  const [reviews, setReviews] = useState<CaregiverReview[]>([])
 
   function refresh() {
     return caregiverReviewService.fullProfile(userId).then(setProfile)
@@ -42,6 +46,12 @@ export default function CaregiverDetailPage() {
   useEffect(() => {
     if (!user || !userId) return
     refresh().catch(() => setError("دریافت پروفایل با خطا مواجه شد.")).finally(() => setLoading(false))
+    // Connects the complaint system to the review workflow — before
+    // this, an admin deciding whether to approve or blacklist a
+    // caregiver had no visibility into complaints filed about them
+    // at all, despite both features existing independently.
+    complaintReviewService.listAboutCaregiver(userId).then(setComplaints).catch(() => {})
+    caregiverReviewsService.list(userId).then(setReviews).catch(() => {})
   }, [user, userId])
 
   if (authLoading || !user) return null
@@ -99,24 +109,27 @@ export default function CaregiverDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
-      <AppHeader title="بررسی پروفایل مراقب" maxWidth="max-w-2xl">
-        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-      </AppHeader>
+    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
+      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
+          <h1 className="font-bold text-rose-900">بررسی پروفایل مراقب</h1>
+          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+        </div>
+      </header>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
         {loading ? (
           <Skeleton className="h-96 w-full rounded-2xl" />
         ) : !profile ? (
-          <p className="text-sm text-primary-strong">پروفایل یافت نشد.</p>
+          <p className="text-sm text-rose-700">پروفایل یافت نشد.</p>
         ) : (
           <>
             {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{message}</div>}
-            {error && <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+            {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
-            <Card className="border-border">
+            <Card className="border-pink-100">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-foreground">
+                <CardTitle className="text-rose-900">
                   {(profile.identity?.full_name as string) || `کاربر #${userId}`}
                 </CardTitle>
                 <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", STATUS_CLASS[profile.status])}>
@@ -125,7 +138,7 @@ export default function CaregiverDetailPage() {
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 {profile.rejection_reason && (
-                  <p className="text-primary-strong">دلیل رد شدن: {profile.rejection_reason}</p>
+                  <p className="text-rose-700">دلیل رد شدن: {profile.rejection_reason}</p>
                 )}
                 {profile.blacklist_reason && (
                   <p className="text-red-800">دلیل مسدودسازی: {profile.blacklist_reason}</p>
@@ -133,8 +146,52 @@ export default function CaregiverDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border">
-              <CardHeader><CardTitle className="text-sm text-foreground">اطلاعات کامل ثبت‌شده</CardTitle></CardHeader>
+            {complaints.length > 0 && (
+              <Card className={complaints.some((c) => c.status === "open" || c.status === "under_review") ? "border-amber-300" : "border-pink-100"}>
+                <CardHeader>
+                  <CardTitle className="text-sm text-rose-900">شکایات ثبت‌شده درباره این مراقب ({complaints.length})</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {complaints.map((c) => (
+                    <div key={c.id} className="flex items-center justify-between rounded-lg border border-pink-100 bg-pink-50/40 p-2.5 text-sm">
+                      <span>{c.patient_name || "—"}</span>
+                      <span className={cn(
+                        "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        c.status === "resolved" ? "bg-emerald-100 text-emerald-800"
+                          : c.status === "dismissed" ? "bg-gray-100 text-gray-600"
+                          : "bg-amber-100 text-amber-800",
+                      )}>
+                        {COMPLAINT_STATUS_LABEL[c.status]}
+                      </span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {reviews.length > 0 && (
+              <Card className="border-pink-100">
+                <CardHeader>
+                  <CardTitle className="text-sm text-rose-900">
+                    نظرات ثبت‌شده ({reviews.length}) — میانگین امتیاز: {(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)} از ۵
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {reviews.map((r) => (
+                    <div key={r.id} className="rounded-lg border border-pink-100 bg-pink-50/40 p-2.5 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                        <span className="text-xs text-muted-foreground">{r.reviewer_name || "—"}</span>
+                      </div>
+                      {r.comment && <p className="mt-1 text-xs text-muted-foreground">{r.comment}</p>}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="border-pink-100">
+              <CardHeader><CardTitle className="text-sm text-rose-900">اطلاعات کامل ثبت‌شده</CardTitle></CardHeader>
               <CardContent>
                 <pre dir="ltr" className="max-h-96 overflow-auto rounded-lg bg-gray-50 p-3 text-[11px] leading-relaxed text-gray-700">
                   {JSON.stringify({
@@ -149,8 +206,8 @@ export default function CaregiverDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border">
-              <CardHeader><CardTitle className="text-sm text-foreground">اقدامات</CardTitle></CardHeader>
+            <Card className="border-pink-100">
+              <CardHeader><CardTitle className="text-sm text-rose-900">اقدامات</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 {reasonBox && (
                   <div className="space-y-2">
@@ -179,7 +236,7 @@ export default function CaregiverDetailPage() {
                       </Button>
                     )}
                     {profile.status !== "rejected" && profile.status !== "suspended" && (
-                      <Button size="sm" variant="outline" className="border-border text-primary-strong hover:bg-secondary" onClick={() => setReasonBox("reject")}>
+                      <Button size="sm" variant="outline" className="border-rose-200 text-rose-700 hover:bg-rose-50" onClick={() => setReasonBox("reject")}>
                         رد کردن
                       </Button>
                     )}

@@ -6,4 +6,6 @@ export const ROUTES = {
   supervisors: "/supervisors",
   patients: "/patients",
   patientMatch: (patientId: number) => `/patients/${patientId}/match`,
+  complaints: "/complaints",
+  blacklistAppeals: "/blacklist-appeals",
 }

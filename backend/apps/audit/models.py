@@ -30,6 +30,19 @@ class AuditEventType(models.TextChoices):
     AGENCY_CAREGIVER_LINK_DECIDED = "agency_caregiver_link_decided", "تصمیم درباره درخواست پیوستن مراقب به آژانس"
     AGENCY_SUPERVISOR_CREATED = "agency_supervisor_created", "ایجاد سوپروایزر آژانس"
     AGENCY_CREATED = "agency_created", "ایجاد آژانس توسط سوپریوزر"
+    CAREGIVER_APPROVED = "caregiver_approved", "تأیید پروفایل مراقب"
+    CAREGIVER_REJECTED = "caregiver_rejected", "رد پروفایل مراقب"
+    CAREGIVER_BLACKLISTED = "caregiver_blacklisted", "مسدودسازی مراقب"
+    CAREGIVER_UNBLACKLISTED = "caregiver_unblacklisted", "رفع مسدودیت مراقب"
+    BLACKLIST_APPEAL_SUBMITTED = "blacklist_appeal_submitted", "ثبت درخواست بازبینی مسدودیت"
+    BLACKLIST_APPEAL_DENIED = "blacklist_appeal_denied", "رد درخواست بازبینی مسدودیت"
+    TERMS_ACCEPTED = "terms_accepted", "پذیرش شرایط و تعهدات"
+    COMPLAINT_FILED = "complaint_filed", "ثبت شکایت"
+    COMPLAINT_UNDER_REVIEW = "complaint_under_review", "شروع بررسی شکایت"
+    COMPLAINT_RESOLVED = "complaint_resolved", "حل شکایت"
+    COMPLAINT_DISMISSED = "complaint_dismissed", "رد شکایت"
+    PATIENT_NOTE_CREATED = "patient_note_created", "ثبت یادداشت مراقب درباره سالمند"
+    PATIENT_NOTE_ACKNOWLEDGED = "patient_note_acknowledged", "مشاهده یادداشت توسط تیم"
 
 
 class AuditLog(models.Model):

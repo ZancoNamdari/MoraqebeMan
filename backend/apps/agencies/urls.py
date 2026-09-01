@@ -4,6 +4,7 @@ from .views import (
     AgencyCaregiverRequestDecisionView,
     AgencyCaregiverRequestsView,
     AgencyCaregiverRosterView,
+    AgencyComplaintsAboutOwnRosterView,
     AgencyDashboardView,
     AgencyFamilyRequestDecisionView,
     AgencyFamilyRequestsView,
@@ -69,6 +70,11 @@ urlpatterns = [
         "agencies/<int:agency_id>/patients/<int:patient_id>/suggest-caregivers/",
         AgencySuggestedCaregiversView.as_view(), name="agencies-suggest-caregivers",
     ),
+
+    # Read-only visibility into complaints about this agency's own
+    # roster — no resolve/dismiss action, that stays platform-wide
+    # staff-only.
+    path("agencies/<int:agency_id>/complaints/", AgencyComplaintsAboutOwnRosterView.as_view(), name="agencies-own-complaints"),
 
     # Platform-wide analytics — SUPERUSER only, see PlatformAnalyticsView's
     # own docstring for why this isn't a fake "sees everything" agency.

@@ -217,6 +217,47 @@ class FullProfileAndApprovalTests(TestCase):
         self.assertEqual(len(data["references"]), 2)
         self.assertFalse(data["is_approved"])
 
+    def test_status_and_reasons_are_actually_returned_not_silently_dropped(self):
+        """
+        Regression test for a real, previously-hidden bug: the view's
+        own data dict always included "status", but
+        CaregiverFullProfileSerializer never declared it as a field —
+        DRF silently drops undeclared dict keys rather than erroring,
+        so every caregiver checking their OWN profile got
+        is_approved=false for pending, rejected, AND suspended alike,
+        with no way to tell which, and no reason text ever exposed.
+        """
+        response = self.client.get("/api/caregivers/me/full/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("status", response.data)
+        self.assertEqual(response.data["status"], "draft")
+        self.assertIn("rejection_reason", response.data)
+        self.assertIn("blacklist_reason", response.data)
+
+    def test_rejected_caregiver_sees_their_own_rejection_reason(self):
+        from apps.caregivers.models import CaregiverProfile
+        # setUp only creates the User, not a CaregiverProfile — that
+        # only gets auto-created as a side effect of hitting a real
+        # caregiver endpoint (see _get_or_create_profile). A plain
+        # .get() here was a real bug in this test itself: it assumed
+        # a profile already existed with nothing in setUp actually
+        # creating one.
+        profile, _ = CaregiverProfile.objects.get_or_create(user=self.caregiver_user)
+        profile.reject(self.caregiver_user, reason="مدارک هویتی ناقص بود.")
+
+        response = self.client.get("/api/caregivers/me/full/")
+        self.assertEqual(response.data["status"], "rejected")
+        self.assertEqual(response.data["rejection_reason"], "مدارک هویتی ناقص بود.")
+
+    def test_blacklisted_caregiver_sees_their_own_blacklist_reason(self):
+        from apps.caregivers.models import CaregiverProfile
+        profile, _ = CaregiverProfile.objects.get_or_create(user=self.caregiver_user)
+        profile.blacklist(self.caregiver_user, reason="شکایات مکرر خانواده‌ها.")
+
+        response = self.client.get("/api/caregivers/me/full/")
+        self.assertEqual(response.data["status"], "suspended")
+        self.assertEqual(response.data["blacklist_reason"], "شکایات مکرر خانواده‌ها.")
+
     def test_approval_returns_404_when_no_profile_exists_yet(self):
         # caregiver never submitted any form — no CaregiverProfile row exists
         _, su_token = make_authenticated_user("su_approve0", role=UserRole.SUPERUSER)

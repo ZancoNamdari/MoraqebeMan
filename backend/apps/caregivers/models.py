@@ -226,6 +226,21 @@ class CaregiverProfile(models.Model):
             performed_by=admin_user, note="رفع مسدودیت",
         )
 
+    def submit_blacklist_appeal(self, appeal_reason):
+        """
+        Only valid while actually suspended, and only one pending
+        appeal at a time — a caregiver whose appeal was denied has to
+        wait for that decision rather than immediately resubmit, and
+        one already pending can't be duplicated by repeated taps.
+        Raises ValueError on either violation; the view translates
+        this into a proper 400 response.
+        """
+        if self.status != CaregiverStatus.SUSPENDED:
+            raise ValueError("فقط حساب‌های مسدودشده می‌توانند درخواست بازبینی ثبت کنند.")
+        if self.blacklist_appeals.filter(status=BlacklistAppealStatus.PENDING).exists():
+            raise ValueError("شما در حال حاضر یک درخواست بازبینی در انتظار بررسی دارید.")
+        return BlacklistAppeal.objects.create(caregiver=self, appeal_reason=appeal_reason)
+
     @property
     def display_name(self):
         identity = getattr(
@@ -241,6 +256,61 @@ class CaregiverProfile(models.Model):
 
     def __str__(self):
         return self.display_name
+
+
+class BlacklistAppealStatus(models.TextChoices):
+    PENDING = "pending", "در انتظار بررسی"
+    APPROVED = "approved", "پذیرفته‌شده (رفع مسدودیت)"
+    DENIED = "denied", "رد شده"
+
+
+class BlacklistAppeal(models.Model):
+    """
+    A caregiver's own request to be reconsidered after being
+    blacklisted — per an explicit product decision, reviewable by
+    EITHER platform staff (admin/superuser, platform-wide) OR the
+    caregiver's own agency (owner/supervisor, only if that agency has
+    an approved link to this specific caregiver). This is
+    deliberately different from Complaint's review model, where only
+    platform staff can resolve — here, the agency that actually
+    manages this caregiver day-to-day is trusted to judge whether the
+    original reason has been addressed, by explicit choice, not an
+    oversight repeating the same reasoning used elsewhere.
+
+    Only one PENDING appeal can exist per caregiver at a time — see
+    CaregiverProfile.submit_blacklist_appeal() — so a rejected or
+    ignored caregiver can't spam repeated requests while one is still
+    open.
+    """
+    caregiver = models.ForeignKey(CaregiverProfile, on_delete=models.CASCADE, related_name="blacklist_appeals", verbose_name="مراقب")
+    appeal_reason = models.TextField(max_length=2000, verbose_name="توضیح مراقب برای درخواست بازبینی")
+    status = models.CharField(max_length=20, choices=BlacklistAppealStatus.choices, default=BlacklistAppealStatus.PENDING, db_index=True, verbose_name="وضعیت")
+    reviewed_by = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="blacklist_appeals_reviewed", verbose_name="بررسی‌شده توسط")
+    review_note = models.TextField(max_length=2000, blank=True, verbose_name="یادداشت بررسی")
+    reviewed_at = jmodels.jDateTimeField(null=True, blank=True, verbose_name="زمان بررسی")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت درخواست")
+
+    class Meta:
+        verbose_name = "درخواست بازبینی مسدودیت"
+        verbose_name_plural = "درخواست‌های بازبینی مسدودیت"
+        ordering = ["-created_at"]
+
+    def approve(self, reviewer, note=""):
+        from django.utils import timezone
+        self.status = BlacklistAppealStatus.APPROVED
+        self.reviewed_by = reviewer
+        self.review_note = note
+        self.reviewed_at = timezone.now()
+        self.save(update_fields=["status", "reviewed_by", "review_note", "reviewed_at"])
+        self.caregiver.unblacklist(reviewer)
+
+    def deny(self, reviewer, note=""):
+        from django.utils import timezone
+        self.status = BlacklistAppealStatus.DENIED
+        self.reviewed_by = reviewer
+        self.review_note = note
+        self.reviewed_at = timezone.now()
+        self.save(update_fields=["status", "reviewed_by", "review_note", "reviewed_at"])
 
 
 class CaregiverApprovalLog(models.Model):

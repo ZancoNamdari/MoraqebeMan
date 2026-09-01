@@ -1,0 +1,58 @@
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('audit', '0010_alter_auditlog_event_type'),
+    ]
+
+    operations = [
+        migrations.AlterField(
+            model_name='auditlog',
+            name='event_type',
+            field=models.CharField(choices=[
+                ('user_registered', 'ثبت\u200cنام کاربر'),
+                ('login_success', 'ورود موفق'),
+                ('login_failed', 'تلاش ورود ناموفق'),
+                ('login_locked', 'قفل\u200cشدن حساب پس از تلاش\u200cهای ناموفق'),
+                ('logout', 'خروج'),
+                ('role_changed', 'تغییر نقش کاربر'),
+                ('otp_requested', 'درخواست کد تأیید'),
+                ('otp_verified', 'تأیید موفق کد'),
+                ('otp_failed', 'تلاش ناموفق تأیید کد'),
+                ('password_reset_requested', 'درخواست بازیابی رمز عبور'),
+                ('password_reset_completed', 'تکمیل بازیابی رمز عبور'),
+                ('caregiver_created', 'ثبت مراقب توسط ناظر'),
+                ('caregiver_updated', 'ویرایش اطلاعات مراقب توسط ناظر'),
+                ('caregiver_deleted', 'حذف مراقب توسط ناظر'),
+                ('patient_created', 'ثبت بیمار'),
+                ('patient_updated', 'ویرایش اطلاعات بیمار'),
+                ('patient_deleted', 'حذف بیمار'),
+                ('family_link_added', 'افزودن دسترسی خانواده به بیمار'),
+                ('family_link_removed', 'حذف دسترسی خانواده از بیمار'),
+                ('caregiver_assigned', 'تخصیص مراقب به بیمار'),
+                ('caregiver_assignment_ended', 'پایان تخصیص مراقب'),
+                ('care_log_entry_created', 'ثبت گزارش مراقبت'),
+                ('caregiver_reviewed', 'ثبت نظر درباره مراقب'),
+                ('mcdm_weights_updated', 'به\u200cروزرسانی وزن\u200cهای تطابق'),
+                ('agency_family_link_decided', 'تصمیم درباره درخواست پیوستن خانواده به آژانس'),
+                ('agency_caregiver_link_decided', 'تصمیم درباره درخواست پیوستن مراقب به آژانس'),
+                ('agency_supervisor_created', 'ایجاد سوپروایزر آژانس'),
+                ('agency_created', 'ایجاد آژانس توسط سوپریوزر'),
+                ('caregiver_approved', 'تأیید پروفایل مراقب'),
+                ('caregiver_rejected', 'رد پروفایل مراقب'),
+                ('caregiver_blacklisted', 'مسدودسازی مراقب'),
+                ('caregiver_unblacklisted', 'رفع مسدودیت مراقب'),
+                ('blacklist_appeal_submitted', 'ثبت درخواست بازبینی مسدودیت'),
+                ('blacklist_appeal_denied', 'رد درخواست بازبینی مسدودیت'),
+                ('terms_accepted', 'پذیرش شرایط و تعهدات'),
+                ('complaint_filed', 'ثبت شکایت'),
+                ('complaint_under_review', 'شروع بررسی شکایت'),
+                ('complaint_resolved', 'حل شکایت'),
+                ('complaint_dismissed', 'رد شکایت'),
+                ('patient_note_created', 'ثبت یادداشت مراقب درباره سالمند'),
+                ('patient_note_acknowledged', 'مشاهده یادداشت توسط تیم'),
+            ], max_length=40),
+        ),
+    ]

@@ -36,6 +36,23 @@ export const GENDER: Choice[] = [
   ["male", "مرد"],
 ]
 
+export const COMPLAINT_CATEGORY_LABEL: Record<string, string> = {
+  service_quality: "کیفیت خدمات",
+  behavior: "رفتار نامناسب",
+  punctuality: "عدم رعایت زمان‌بندی",
+  safety_concern: "نگرانی ایمنی",
+  financial: "مسائل مالی",
+  communication: "مشکل ارتباطی",
+  other: "سایر",
+}
+
+export const COMPLAINT_STATUS_LABEL: Record<string, string> = {
+  open: "باز",
+  under_review: "در حال بررسی",
+  resolved: "حل‌شده",
+  dismissed: "رد شده",
+}
+
 export function labelForValue(choices: Choice[], value: string): string {
   return choices.find(([v]) => v === value)?.[1] || value
 }

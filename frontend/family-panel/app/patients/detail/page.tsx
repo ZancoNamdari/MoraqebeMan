@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AppHeader } from "@/components/layout/app-header"
 import { Field, ChoiceSelect, SelectWithOther, CheckboxGroup } from "@/components/forms/fields"
 import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
@@ -17,13 +16,14 @@ import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
 import { GUARDIANSHIP_STATUS, QUESTIONNAIRE_FIELDS, RELATION_TYPE, LANGUAGE_DIALECT, GENDER, PHYSICAL_CONDITION, NEEDED_SHIFT, CARE_LOG_CATEGORY_LABEL, CARE_LOG_CATEGORY_ICON, caregiverAvatar, labelForValue } from "@/lib/constants"
 import { patientService } from "@/services/patient.service"
 import { careService } from "@/services/care.service"
+import { auditHistoryService, type AuditLogEntry } from "@/services/audit_history.service"
 import { StarRating } from "@/components/forms/star-rating"
 import { ROUTES } from "@/lib/routes"
 import type { AccessLevel, FamilyLink, PatientListItem, Questionnaire } from "@/types/patient"
 import type { CaregiverAssignment, CareLogEntry } from "@/types/care"
 import { cn } from "@/lib/utils"
 
-type Tab = "info" | "questionnaire" | "access" | "care"
+type Tab = "info" | "questionnaire" | "access" | "care" | "history"
 
 export default function PatientDetailPage() {
   return (
@@ -84,30 +84,32 @@ function PatientDetailInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
-      <AppHeader
-        title={patient?.full_name || "..."}
-        maxWidth="max-w-xl"
-        subheader={
-          <div className="flex gap-1 rounded-full bg-secondary p-1">
-            {([["info", "اطلاعات"], ["questionnaire", "پرسشنامه سازگاری"], ["care", "تیم مراقبت"], ["access", "دسترسی خانواده"]] as [Tab, string][]).map(([key, label]) => (
+    <div className="min-h-screen bg-gradient-to-b from-rose-50/50 via-background to-background pb-10">
+      <header className="sticky top-0 z-10 border-b border-pink-100 bg-background/90 backdrop-blur">
+        <div className="mx-auto max-w-xl p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h1 className="font-bold text-rose-900">{patient?.full_name || "..."}</h1>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+              <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
+            </div>
+          </div>
+          <div className="flex gap-1 rounded-full bg-pink-50 p-1">
+            {([["info", "اطلاعات"], ["questionnaire", "پرسشنامه سازگاری"], ["care", "تیم مراقبت"], ["access", "دسترسی خانواده"], ["history", "تاریخچه"]] as [Tab, string][]).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
                 className={cn(
                   "flex-1 rounded-full py-1.5 text-xs font-medium transition-colors",
-                  tab === key ? "bg-white text-primary-strong shadow-sm" : "text-muted-foreground hover:text-primary-strong"
+                  tab === key ? "bg-white text-rose-700 shadow-sm" : "text-muted-foreground hover:text-rose-600"
                 )}
               >
                 {label}
               </button>
             ))}
           </div>
-        }
-      >
-        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-        <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
-      </AppHeader>
+        </div>
+      </header>
 
       <main className="mx-auto max-w-xl space-y-4 p-4">
         {loading || !patient ? (
@@ -123,6 +125,7 @@ function PatientDetailInner() {
             {tab === "questionnaire" && <QuestionnaireTab patientId={id} />}
             {tab === "care" && <CareTab patientId={id} />}
             {tab === "access" && <AccessTab patientId={id} patientCode={patient.access_code} />}
+            {tab === "history" && <HistoryTab patientId={id} />}
           </>
         )}
       </main>
@@ -141,8 +144,8 @@ function InfoTab({
 }) {
   return (
     <>
-      <Card className="border-border">
-        <CardHeader><CardTitle className="text-foreground">اطلاعات هویتی</CardTitle></CardHeader>
+      <Card className="border-pink-100">
+        <CardHeader><CardTitle className="text-rose-900">اطلاعات هویتی</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <Field label="نام و نام خانوادگی" required>
             <Input value={patient.full_name} onChange={(e) => setPatient({ ...patient, full_name: e.target.value })} />
@@ -196,12 +199,12 @@ function InfoTab({
 
       <div className="flex gap-2">
         <Button
-          className="flex-1 bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/15 hover:from-primary hover:to-primary"
+          className="flex-1 bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
           size="lg" onClick={onSave} disabled={saving}
         >
           {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
         </Button>
-        <Button variant="outline" className="border-border text-primary-strong hover:bg-secondary" onClick={onDelete}>
+        <Button variant="outline" className="border-rose-200 text-rose-700 hover:bg-rose-50" onClick={onDelete}>
           حذف
         </Button>
       </div>
@@ -238,8 +241,8 @@ function QuestionnaireTab({ patientId }: { patientId: number }) {
     <>
       {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{message}</div>}
       {axes.map((axis) => (
-        <Card key={axis} className="border-border">
-          <CardHeader><CardTitle className="text-sm text-foreground">{axis}</CardTitle></CardHeader>
+        <Card key={axis} className="border-pink-100">
+          <CardHeader><CardTitle className="text-sm text-rose-800">{axis}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             {QUESTIONNAIRE_FIELDS.filter((f) => f.axis === axis).map((f) => (
               <Field key={f.name} label={f.label}>
@@ -254,7 +257,7 @@ function QuestionnaireTab({ patientId }: { patientId: number }) {
         </Card>
       ))}
       <Button
-        className="w-full bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/15 hover:from-primary hover:to-primary"
+        className="w-full bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
         size="lg" onClick={handleSave} disabled={saving}
       >
         {saving ? "در حال ذخیره..." : "ذخیره پرسشنامه"}
@@ -323,10 +326,10 @@ function AccessTab({ patientId, patientCode }: { patientId: number; patientCode:
 
   return (
     <>
-      <Card className="border-border bg-gradient-to-l from-secondary to-secondary">
+      <Card className="border-pink-100 bg-gradient-to-l from-pink-50 to-rose-50">
         <CardContent className="p-4">
           <p className="text-xs text-muted-foreground">کد این بیمار — برای دعوت اعضای خانواده از سمت خودشان</p>
-          <p dir="ltr" className="text-left text-lg font-bold tracking-wider text-primary-strong">{patientCode}</p>
+          <p dir="ltr" className="text-left text-lg font-bold tracking-wider text-rose-700">{patientCode}</p>
         </CardContent>
       </Card>
 
@@ -342,7 +345,7 @@ function AccessTab({ patientId, patientCode }: { patientId: number; patientCode:
                 </div>
                 <div className="flex gap-2">
                   <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleDecision(l.id, "approve")}>تأیید</Button>
-                  <Button size="sm" variant="outline" className="border-border text-primary-strong hover:bg-secondary" onClick={() => handleDecision(l.id, "reject")}>رد</Button>
+                  <Button size="sm" variant="outline" className="border-rose-200 text-rose-700 hover:bg-rose-50" onClick={() => handleDecision(l.id, "reject")}>رد</Button>
                 </div>
               </div>
             ))}
@@ -350,12 +353,12 @@ function AccessTab({ patientId, patientCode }: { patientId: number; patientCode:
         </Card>
       )}
 
-      <Card className="border-border">
-        <CardHeader><CardTitle className="text-foreground">اعضای خانواده با دسترسی</CardTitle></CardHeader>
+      <Card className="border-pink-100">
+        <CardHeader><CardTitle className="text-rose-900">اعضای خانواده با دسترسی</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             {links.map((l) => (
-              <div key={l.id} className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 p-3">
+              <div key={l.id} className="flex items-center justify-between rounded-lg border border-pink-100 bg-pink-50/50 p-3">
                 <div>
                   <p className="text-sm font-medium">{l.family_display_name || l.family_phone_number}</p>
                   <p className="text-xs text-muted-foreground">
@@ -364,11 +367,11 @@ function AccessTab({ patientId, patientCode }: { patientId: number; patientCode:
                 </div>
                 <div className="flex gap-2">
                   {!l.is_primary_contact && (
-                    <button className="text-xs text-primary-strong hover:underline" onClick={() => handleMakePrimary(l.id)}>
+                    <button className="text-xs text-rose-600 hover:underline" onClick={() => handleMakePrimary(l.id)}>
                       تعیین به عنوان مخاطب اصلی
                     </button>
                   )}
-                  <button className="text-xs text-muted-foreground hover:text-primary-strong" onClick={() => handleRemove(l.id)}>
+                  <button className="text-xs text-muted-foreground hover:text-rose-600" onClick={() => handleRemove(l.id)}>
                     حذف دسترسی
                   </button>
                 </div>
@@ -376,9 +379,9 @@ function AccessTab({ patientId, patientCode }: { patientId: number; patientCode:
             ))}
           </div>
 
-          <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
+          <div className="space-y-2 rounded-lg border border-dashed border-pink-200 p-3">
             <p className="text-xs font-medium text-muted-foreground">افزودن عضو خانواده با کد عضویت او (باید قبلاً ثبت‌نام کرده باشد)</p>
-            {error && <p className="text-xs text-destructive">{error}</p>}
+            {error && <p className="text-xs text-rose-600">{error}</p>}
             <div className="flex flex-wrap gap-2">
               <Input placeholder="کد عضو (مثلاً FAM-92K7XQ)" className="w-44" value={familyCode} onChange={(e) => setFamilyCode(e.target.value)} dir="ltr" />
               <div className="w-28"><ChoiceSelect choices={RELATION_TYPE} value={relation} onChange={setRelation} placeholder="نسبت" /></div>
@@ -390,7 +393,7 @@ function AccessTab({ patientId, patientCode }: { patientId: number; patientCode:
                 <option value="full_access">دسترسی کامل</option>
                 <option value="view_only">فقط مشاهده</option>
               </select>
-              <Button variant="outline" className="border-border text-primary-strong hover:bg-secondary" disabled={busy || !familyCode || !relation} onClick={handleInvite}>
+              <Button variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" disabled={busy || !familyCode || !relation} onClick={handleInvite}>
                 + افزودن
               </Button>
             </div>
@@ -434,17 +437,17 @@ function CareTab({ patientId }: { patientId: number }) {
 
   return (
     <>
-      <Card className="border-border">
-        <CardHeader><CardTitle className="text-foreground">تیم مراقبت فعلی</CardTitle></CardHeader>
+      <Card className="border-pink-100">
+        <CardHeader><CardTitle className="text-rose-900">تیم مراقبت فعلی</CardTitle></CardHeader>
         <CardContent>
           {team.length === 0 ? (
             <p className="text-sm text-muted-foreground">هنوز مراقبی برای این سالمند تخصیص داده نشده است.</p>
           ) : (
             <div className="space-y-2">
               {team.map((a) => (
-                <div key={a.id} className="rounded-lg border border-border bg-secondary/50 p-3">
+                <div key={a.id} className="rounded-lg border border-pink-100 bg-pink-50/50 p-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-primary/70 text-sm">{caregiverAvatar(a.caregiver_gender)}</div>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-sm">{caregiverAvatar(a.caregiver_gender)}</div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">{a.caregiver_name}</p>
                       <p className="text-xs text-muted-foreground">
@@ -457,13 +460,13 @@ function CareTab({ patientId }: { patientId: number }) {
                     {reviewedIds.has(a.id) ? (
                       <span className="text-xs font-medium text-emerald-700">✓ نظر ثبت شد</span>
                     ) : reviewingId !== a.id && (
-                      <button className="text-xs text-primary-strong hover:underline" onClick={() => setReviewingId(a.id)}>
+                      <button className="text-xs text-rose-600 hover:underline" onClick={() => setReviewingId(a.id)}>
                         ثبت نظر
                       </button>
                     )}
                   </div>
                   {reviewingId === a.id && (
-                    <div className="mt-3 space-y-2 border-t border-border pt-3">
+                    <div className="mt-3 space-y-2 border-t border-pink-100 pt-3">
                       <StarRating value={reviewRating} onChange={setReviewRating} />
                       <Textarea
                         value={reviewComment} onChange={(e) => setReviewComment(e.target.value)}
@@ -486,19 +489,19 @@ function CareTab({ patientId }: { patientId: number }) {
         </CardContent>
       </Card>
 
-      <Card className="border-border">
-        <CardHeader><CardTitle className="text-foreground">جدول زمانی مراقبت</CardTitle></CardHeader>
+      <Card className="border-pink-100">
+        <CardHeader><CardTitle className="text-rose-900">جدول زمانی مراقبت</CardTitle></CardHeader>
         <CardContent>
           {timeline.length === 0 ? (
             <p className="text-sm text-muted-foreground">هنوز گزارشی ثبت نشده است.</p>
           ) : (
             <div className="space-y-3">
               {timeline.map((entry) => (
-                <div key={entry.id} className="flex gap-3 border-r-2 border-border pr-3">
+                <div key={entry.id} className="flex gap-3 border-r-2 border-pink-200 pr-3">
                   <span className="text-lg leading-none">{CARE_LOG_CATEGORY_ICON[entry.category] || "📝"}</span>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold text-primary-strong">{CARE_LOG_CATEGORY_LABEL[entry.category] || entry.category}</p>
+                      <p className="text-xs font-semibold text-rose-700">{CARE_LOG_CATEGORY_LABEL[entry.category] || entry.category}</p>
                       <p className="text-xs text-muted-foreground">{entry.created_at.slice(0, 16).replace("T", " — ")}</p>
                     </div>
                     <p className="text-sm">{entry.note}</p>
@@ -511,5 +514,71 @@ function CareTab({ patientId }: { patientId: number }) {
         </CardContent>
       </Card>
     </>
+  )
+}
+
+function HistoryTab({ patientId }: { patientId: number }) {
+  const [entries, setEntries] = useState<AuditLogEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
+
+  function refresh() {
+    setLoading(true)
+    return auditHistoryService
+      .forPatient(patientId, { start: startDate || undefined, end: endDate || undefined })
+      .then(setEntries)
+      .catch(() => setError("دریافت تاریخچه با خطا مواجه شد."))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    refresh()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientId])
+
+  return (
+    <Card className="border-pink-100">
+      <CardHeader>
+        <CardTitle className="text-rose-900">تاریخچه اقدامات</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          هر اقدام مهم روی پرونده این سالمند — اینکه چه کسی، چه کاری، در چه زمانی انجام داده.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-end gap-2">
+          <Field label="از تاریخ">
+            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          </Field>
+          <Field label="تا تاریخ">
+            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          </Field>
+          <Button size="sm" variant="outline" onClick={refresh}>اعمال فیلتر</Button>
+        </div>
+
+        {error && <div className="rounded-md bg-rose-50 p-2 text-xs text-rose-700">{error}</div>}
+
+        {loading ? (
+          <Skeleton className="h-64 w-full rounded-2xl" />
+        ) : entries.length === 0 ? (
+          <p className="text-sm text-muted-foreground">هنوز رویدادی برای این بازه ثبت نشده است.</p>
+        ) : (
+          <div className="space-y-2">
+            {entries.map((entry) => (
+              <div key={entry.id} className="rounded-lg border border-pink-100 bg-pink-50/40 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-rose-900">{entry.event_type_label}</span>
+                  <span className="text-xs text-muted-foreground">{entry.created_at.slice(0, 16).replace("T", " — ")}</span>
+                </div>
+                {entry.actor_name && (
+                  <p className="mt-1 text-xs text-muted-foreground">توسط: {entry.actor_name}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

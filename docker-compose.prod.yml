@@ -53,6 +53,13 @@ services:
     # می‌شود: gunicorn، نه manage.py runserver.
     environment:
       <<: *django-env
+    volumes:
+      # فایل‌های آپلودشده (فعلاً فقط فایل صوتی شکایات) باید در یک
+      # volume واقعی بمانند، نه فضای موقت کانتینر — بدون این، هر
+      # deploy یا restart باعث از دست رفتن فایل‌های آپلودشده کاربران
+      # می‌شد. همین volume به nginx هم داده می‌شود تا مستقیماً همان
+      # فایل‌ها را serve کند.
+      - media_data:/app/media
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 15s
@@ -84,6 +91,8 @@ services:
         NEXT_PUBLIC_PATIENT_PANEL_URL: ${PATIENT_PANEL_URL}
         NEXT_PUBLIC_CAREGIVER_PANEL_URL: ${CAREGIVER_PANEL_URL}
         NEXT_PUBLIC_SUPERVISOR_PANEL_URL: ${SUPERVISOR_PANEL_URL}
+        NEXT_PUBLIC_AGENCY_PANEL_URL: ${AGENCY_PANEL_URL}
+        NEXT_PUBLIC_SUPERUSER_PANEL_URL: ${SUPERUSER_PANEL_URL}
     restart: unless-stopped
 
   family_panel:
@@ -122,6 +131,24 @@ services:
     depends_on:
       - backend
 
+  agency_panel:
+    build:
+      context: ./frontend/agency-panel
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  superuser_panel:
+    build:
+      context: ./frontend/superuser-panel
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
@@ -131,6 +158,7 @@ services:
       # docs/DEPLOYMENT.md را ببینید.
     volumes:
       - ./gateway/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - media_data:/app/media:ro
     depends_on:
       - backend
       - landing_page
@@ -138,6 +166,9 @@ services:
       - patient_panel
       - caregiver_panel
       - supervisor_panel
+      - agency_panel
+      - superuser_panel
 
 volumes:
   pg_data:
+  media_data:
