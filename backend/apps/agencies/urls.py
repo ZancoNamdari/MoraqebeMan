@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     AgencyCaregiverRequestDecisionView,
     AgencyCaregiverRequestsView,
+    AgencyCandidateTrackingView,
     AgencyCaregiverRosterView,
     AgencyComplaintsAboutOwnRosterView,
     AgencyDashboardView,
@@ -41,6 +42,7 @@ urlpatterns = [
         AgencyFamilyRequestDecisionView.as_view(), {"decision": "reject"}, name="agencies-family-request-reject",
     ),
     path("agencies/me/caregivers/", AgencyCaregiverRosterView.as_view(), name="agencies-caregiver-roster"),
+    path("agencies/me/candidates/", AgencyCandidateTrackingView.as_view(), name="agencies-candidate-tracking"),
     path("agencies/me/caregivers/requests/", AgencyCaregiverRequestsView.as_view(), name="agencies-caregiver-requests"),
     path(
         "agencies/me/caregivers/requests/<int:link_id>/approve/",

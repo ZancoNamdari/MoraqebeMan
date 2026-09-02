@@ -16,6 +16,7 @@ from .models import (
 from .permissions import IsAdminOrSuperuser, IsCaregiver
 from .serializers import (
     BlacklistAppealSerializer,
+    CandidateTrackingSerializer,
     CaregiverExperienceSerializer,
     CaregiverFullProfileSerializer,
     CaregiverReferenceListSerializer,
@@ -25,6 +26,8 @@ from .serializers import (
     CaregiverWorkPreferencesSerializer,
     CreateBlacklistAppealSerializer,
     IdentityProfileSerializer,
+    RecordInterviewSerializer,
+    RequestMoreDocumentsSerializer,
     ReviewBlacklistAppealSerializer,
 )
 
@@ -38,7 +41,15 @@ def _get_identity_dict(user_id: int) -> dict | None:
     profile = IdentityProfile.objects.filter(user_id=user_id).first()
     if profile is None:
         return None
-    return IdentityProfileSerializer(profile).data
+    data = IdentityProfileSerializer(profile).data
+    # national_id lives on User, not IdentityProfile (needed there at
+    # registration time before Form 1 exists) — merged in here so
+    # every caller of this dict (the caregiver's own /me/full/ view,
+    # the supervisor full-profile view, and the agency resume view)
+    # gets it in one place rather than three separate call sites each
+    # needing to remember to fetch it separately.
+    data["national_id"] = profile.user.national_id
+    return data
 
 
 class MyIdentityProfileView(APIView):
@@ -203,6 +214,7 @@ class MyFullProfileView(APIView):
             "status": profile.status,
             "rejection_reason": profile.rejection_reason,
             "blacklist_reason": profile.blacklist_reason,
+            "needs_more_docs_note": profile.needs_more_docs_note,
             "identity": _get_identity_dict(request.user.id),
             "work_preferences": getattr(profile, "work_preferences", None),
             "service_areas": profile.service_areas.all(),
@@ -356,6 +368,23 @@ def _agency_has_link_to_caregiver(agency, caregiver_profile):
     ).exists()
 
 
+def _agency_has_any_link_to_caregiver(agency, caregiver_profile):
+    """
+    Broader than _agency_has_link_to_caregiver above (approved-only,
+    used for blacklist appeals) — candidate tracking (interviews,
+    requesting more documents) happens WHILE a candidate is still
+    being vetted, before their AgencyCaregiverLink is necessarily
+    approved. Kept as a separate function rather than loosening the
+    existing one, since blacklist-appeal review should stay
+    deliberately scoped to an agency's confirmed, current roster.
+    """
+    from apps.agencies.models import AgencyCaregiverLink, AgencyLinkStatus
+    return AgencyCaregiverLink.objects.filter(
+        agency=agency, caregiver=caregiver_profile,
+        status__in=[AgencyLinkStatus.PENDING, AgencyLinkStatus.APPROVED],
+    ).exists()
+
+
 class MyBlacklistAppealView(APIView):
     """
     GET  /api/caregivers/me/blacklist-appeal/ — my own appeal history.
@@ -464,3 +493,111 @@ class DenyBlacklistAppealView(APIView):
         appeal.deny(request.user, note=serializer.validated_data.get("note", ""))
         audit.blacklist_appeal_denied(request.user.id, appeal.caregiver.user_id)
         return Response(BlacklistAppealSerializer(appeal).data)
+
+
+def _get_candidate_with_tracking_permission(request, user_id):
+    """
+    Shared by the three candidate-tracking action views below —
+    admin/superuser (platform-wide) OR the caregiver's own agency
+    (owner or supervisor), where "own agency" here means ANY link
+    status including pending — see
+    _agency_has_any_link_to_caregiver's own docstring for why this is
+    deliberately broader than the blacklist-appeal permission.
+    """
+    profile = CaregiverProfile.objects.filter(user_id=user_id).select_related("user").first()
+    if profile is None:
+        return None, Response({"detail": "پروفایل مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+    if IsAdminOrSuperuser().has_permission(request, None):
+        return profile, None
+
+    agency = _resolve_agency_for_user(request.user)
+    if agency is None or not _agency_has_any_link_to_caregiver(agency, profile):
+        return None, Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+    return profile, None
+
+
+class RecordInterviewView(APIView):
+    """POST /api/caregivers/<user_id>/record-interview/"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        profile, error = _get_candidate_with_tracking_permission(request, user_id)
+        if error:
+            return error
+        serializer = RecordInterviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile.record_interview(
+            request.user,
+            score=serializer.validated_data.get("score"),
+            interview_date=serializer.validated_data.get("interview_date"),
+            note=serializer.validated_data.get("note", ""),
+        )
+        audit.caregiver_interview_recorded(request.user.id, user_id)
+        return Response(CandidateTrackingSerializer(profile).data)
+
+
+class RequestMoreDocumentsView(APIView):
+    """POST /api/caregivers/<user_id>/request-more-documents/"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        profile, error = _get_candidate_with_tracking_permission(request, user_id)
+        if error:
+            return error
+        serializer = RequestMoreDocumentsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            profile.request_more_documents(request.user, note=serializer.validated_data["note"])
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        audit.caregiver_needs_more_documents(request.user.id, user_id)
+        return Response(CandidateTrackingSerializer(profile).data)
+
+
+class MarkReadyForReviewView(APIView):
+    """POST /api/caregivers/<user_id>/mark-ready-for-review/"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        profile, error = _get_candidate_with_tracking_permission(request, user_id)
+        if error:
+            return error
+        try:
+            profile.mark_ready_for_review(request.user)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(CandidateTrackingSerializer(profile).data)
+
+
+class CandidateResumeView(APIView):
+    """
+    GET /api/caregivers/<user_id>/resume/ — the "مشاهده رزومه" action
+    on the agency candidate table. Reuses the exact same dual-track
+    permission as the other candidate-tracking actions (admin/
+    superuser, or the caregiver's own agency at any link status), and
+    the same full-profile shape already built for supervisors — a
+    resume view is fundamentally the same read as
+    SupervisorCaregiverFullProfileView, just reachable from a
+    different permission path and a different URL namespace.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        from .serializers import SupervisorCaregiverFullProfileSerializer
+        profile, error = _get_candidate_with_tracking_permission(request, user_id)
+        if error:
+            return error
+        data = {
+            "is_approved": profile.status == CaregiverStatus.APPROVED,
+            "status": profile.status,
+            "rejection_reason": profile.rejection_reason,
+            "blacklist_reason": profile.blacklist_reason,
+            "identity": _get_identity_dict(user_id),
+            "work_preferences": getattr(profile, "work_preferences", None),
+            "service_areas": profile.service_areas.all(),
+            "experience": getattr(profile, "experience", None),
+            "skills": getattr(profile, "skills", None),
+            "references": profile.references.all(),
+        }
+        return Response(SupervisorCaregiverFullProfileSerializer(data).data)

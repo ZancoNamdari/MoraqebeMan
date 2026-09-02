@@ -259,6 +259,34 @@ class AgencyCaregiverRosterView(APIView):
         return Response(AgencyCaregiverLinkSerializer(links, many=True).data)
 
 
+class AgencyCandidateTrackingView(APIView):
+    """
+    GET /api/agencies/me/candidates/ — every caregiver linked to this
+    agency at ANY link status (pending or approved), with the full
+    interview/notes tracking data. Deliberately broader than
+    AgencyCaregiverRosterView above (approved-only) — this mirrors a
+    real spreadsheet an agency was already keeping manually to track
+    candidates through their own vetting process, which starts well
+    before a candidate is actually approved onto the roster.
+    """
+    permission_classes = [IsAgencyOwnerOrSupervisor]
+
+    def get(self, request):
+        from apps.caregivers.serializers import CandidateTrackingSerializer
+        agency = _resolve_my_agency(request)
+        if agency is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        links = agency.caregiver_links.filter(
+            status__in=[AgencyLinkStatus.PENDING, AgencyLinkStatus.APPROVED],
+        ).select_related(
+            "caregiver__user__caregiver_identity_profile__city",
+            "caregiver__experience",
+            "caregiver__interviewed_by__caregiver_identity_profile",
+        )
+        candidates = [link.caregiver for link in links]
+        return Response(CandidateTrackingSerializer(candidates, many=True).data)
+
+
 class AgencyCaregiverRequestsView(APIView):
     """GET /api/agencies/me/caregivers/requests/ — pending requests.
     Available to the agency owner or any of its supervisors."""

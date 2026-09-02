@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
 from django_jalali.db import models as jmodels
 from django.utils.text import slugify
@@ -98,6 +99,7 @@ class IdentityProfile(models.Model):
 class CaregiverStatus(models.TextChoices):
     DRAFT = "draft", "پیش‌نویس"
     PENDING = "pending", "در انتظار بررسی"
+    NEEDS_MORE_DOCS = "needs_more_docs", "نیاز به مدارک بیشتر"
     APPROVED = "approved", "تأیید شده"
     REJECTED = "rejected", "رد شده"
     SUSPENDED = "suspended", "تعلیق شده"
@@ -123,6 +125,30 @@ class CaregiverProfile(models.Model):
     blacklist_reason = models.TextField(
         blank=True, verbose_name="دلیل مسدودسازی",
         help_text="فقط وقتی status برابر suspended باشد معنا دارد — یک مراقب تأییدشده که بعداً مسدود شده، نه یک درخواست رد‌شده.",
+    )
+
+    # Candidate-tracking fields — added for agency-side interview
+    # tracking, matching a real spreadsheet workflow an agency was
+    # already running manually outside the platform. Kept directly on
+    # CaregiverProfile rather than a separate model since a candidate
+    # only ever has one active interview record at a time in this
+    # workflow, not a history of many.
+    interview_score = models.PositiveSmallIntegerField(
+        null=True, blank=True, verbose_name="امتیاز مصاحبه",
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
+    interview_date = jmodels.jDateField(null=True, blank=True, verbose_name="تاریخ مصاحبه")
+    interviewed_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="interviewed_caregivers", verbose_name="مصاحبه‌کننده",
+    )
+    staff_notes = models.TextField(
+        blank=True, max_length=1000, verbose_name="یادداشت‌های داخلی",
+        help_text="یادداشت آزاد تیم بررسی یا آژانس درباره این مراقب — برای پیگیری داخلی، نه نمایش عمومی.",
+    )
+    needs_more_docs_note = models.TextField(
+        blank=True, max_length=1000, verbose_name="توضیح مدارک مورد نیاز",
+        help_text="وقتی وضعیت روی «نیاز به مدارک بیشتر» است، این متن مشخص می‌کند چه چیزی از مراقب خواسته شده — به خود مراقب نشان داده می‌شود.",
     )
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
@@ -240,6 +266,60 @@ class CaregiverProfile(models.Model):
         if self.blacklist_appeals.filter(status=BlacklistAppealStatus.PENDING).exists():
             raise ValueError("شما در حال حاضر یک درخواست بازبینی در انتظار بررسی دارید.")
         return BlacklistAppeal.objects.create(caregiver=self, appeal_reason=appeal_reason)
+
+    def record_interview(self, staff_user, score=None, interview_date=None, note=""):
+        """
+        Records an interview result without changing status — a
+        candidate can be interviewed while still pending, and staff
+        may want to log the score before making a final call.
+        Overwrites any previous interview record on this profile:
+        this workflow tracks one active interview, not a history of
+        several.
+        """
+        self.interview_score = score
+        self.interview_date = interview_date
+        self.interviewed_by = staff_user
+        if note:
+            self.staff_notes = note
+        self.save(update_fields=["interview_score", "interview_date", "interviewed_by", "staff_notes"])
+
+    def request_more_documents(self, staff_user, note):
+        """
+        Only valid from PENDING — a candidate already approved,
+        rejected, or suspended has a more specific, final status that
+        this shouldn't override. note is shown directly to the
+        caregiver (see needs_more_docs_note), so it should say what's
+        actually missing, not just "incomplete."
+        """
+        if self.status != CaregiverStatus.PENDING:
+            raise ValueError("فقط پروفایل در انتظار بررسی را می‌توان به این وضعیت برد.")
+        old_status = self.status
+        self.status = CaregiverStatus.NEEDS_MORE_DOCS
+        self.needs_more_docs_note = note
+        self.save(update_fields=["status", "needs_more_docs_note"])
+        CaregiverApprovalLog.objects.create(
+            caregiver=self, old_status=old_status, new_status=CaregiverStatus.NEEDS_MORE_DOCS,
+            performed_by=staff_user, note=note,
+        )
+
+    def mark_ready_for_review(self, staff_user):
+        """
+        Reverses request_more_documents() once the caregiver has
+        actually resubmitted something — deliberately a manual staff
+        action rather than an automatic trigger tied to profile edits,
+        since a caregiver saving an unrelated field shouldn't silently
+        put them back in the review queue before they're ready.
+        """
+        if self.status != CaregiverStatus.NEEDS_MORE_DOCS:
+            raise ValueError("فقط پروفایل در وضعیت «نیاز به مدارک بیشتر» را می‌توان به بررسی بازگرداند.")
+        old_status = self.status
+        self.status = CaregiverStatus.PENDING
+        self.needs_more_docs_note = ""
+        self.save(update_fields=["status", "needs_more_docs_note"])
+        CaregiverApprovalLog.objects.create(
+            caregiver=self, old_status=old_status, new_status=CaregiverStatus.PENDING,
+            performed_by=staff_user, note="مدارک تکمیلی دریافت شد",
+        )
 
     @property
     def display_name(self):

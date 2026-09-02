@@ -18,6 +18,8 @@ x-django-env: &django-env
   REDIS_URL: redis://redis:6379/0
   KAVENEGAR_API_KEY: ${KAVENEGAR_API_KEY:-}
   KAVENEGAR_OTP_TEMPLATE: ${KAVENEGAR_OTP_TEMPLATE:-verify}
+  KAVENEGAR_PASSWORD_RESET_TEMPLATE: ${KAVENEGAR_PASSWORD_RESET_TEMPLATE:-password-reset}
+  KAVENEGAR_SENDER_NUMBER: ${KAVENEGAR_SENDER_NUMBER:-}
 
 services:
   postgres:
@@ -92,6 +94,7 @@ services:
         NEXT_PUBLIC_CAREGIVER_PANEL_URL: ${CAREGIVER_PANEL_URL}
         NEXT_PUBLIC_SUPERVISOR_PANEL_URL: ${SUPERVISOR_PANEL_URL}
         NEXT_PUBLIC_AGENCY_PANEL_URL: ${AGENCY_PANEL_URL}
+        NEXT_PUBLIC_ADMIN_PANEL_URL: ${ADMIN_PANEL_URL}
         NEXT_PUBLIC_SUPERUSER_PANEL_URL: ${SUPERUSER_PANEL_URL}
     restart: unless-stopped
 
@@ -140,6 +143,15 @@ services:
     depends_on:
       - backend
 
+  admin_panel:
+    build:
+      context: ./frontend/admin-panel
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
   superuser_panel:
     build:
       context: ./frontend/superuser-panel
@@ -167,6 +179,7 @@ services:
       - caregiver_panel
       - supervisor_panel
       - agency_panel
+      - admin_panel
       - superuser_panel
 
 volumes:

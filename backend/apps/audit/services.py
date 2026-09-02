@@ -136,6 +136,12 @@ class AuditService:
     def blacklist_appeal_denied(self, actor_id, caregiver_user_id):
         return self.log_event(AuditEventType.BLACKLIST_APPEAL_DENIED, actor_id, caregiver_user_id)
 
+    def caregiver_interview_recorded(self, actor_id, caregiver_user_id):
+        return self.log_event(AuditEventType.CAREGIVER_INTERVIEW_RECORDED, actor_id, caregiver_user_id)
+
+    def caregiver_needs_more_documents(self, actor_id, caregiver_user_id):
+        return self.log_event(AuditEventType.CAREGIVER_NEEDS_MORE_DOCUMENTS, actor_id, caregiver_user_id)
+
     def terms_accepted(self, caregiver_user_id):
         # actor and target are deliberately the same id here — this is
         # the one event on this whole platform that can only ever be

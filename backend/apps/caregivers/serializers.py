@@ -42,6 +42,53 @@ class ReviewBlacklistAppealSerializer(serializers.Serializer):
     note = serializers.CharField(max_length=2000, required=False, allow_blank=True)
 
 
+class RecordInterviewSerializer(serializers.Serializer):
+    score = serializers.IntegerField(min_value=0, max_value=100, required=False, allow_null=True)
+    interview_date = JalaliDateField(required=False, allow_null=True)
+    note = serializers.CharField(max_length=1000, required=False, allow_blank=True)
+
+
+class RequestMoreDocumentsSerializer(serializers.Serializer):
+    note = serializers.CharField(max_length=1000)
+
+
+class CandidateTrackingSerializer(serializers.Serializer):
+    """
+    One row of the agency's candidate-tracking table — mirrors a real
+    spreadsheet an agency was already keeping manually outside the
+    platform, now backed by actual platform data plus the new
+    interview/notes fields.
+    """
+    user_id = serializers.IntegerField(source="user.id")
+    full_name = serializers.CharField(source="display_name")
+    national_id = serializers.CharField(source="user.national_id", default=None)
+    phone_number = serializers.CharField(source="user.phone_number")
+    city = serializers.SerializerMethodField()
+    registered_at = serializers.DateTimeField(source="created_at")
+    experience_level = serializers.SerializerMethodField()
+    status = serializers.CharField()
+    status_label = serializers.CharField(source="get_status_display")
+    interview_score = serializers.IntegerField(allow_null=True)
+    interview_date = JalaliDateField(allow_null=True)
+    interviewer_name = serializers.SerializerMethodField()
+    staff_notes = serializers.CharField()
+    needs_more_docs_note = serializers.CharField()
+
+    def get_city(self, obj):
+        identity = getattr(obj.user, "caregiver_identity_profile", None)
+        return identity.city.name if identity and identity.city else None
+
+    def get_experience_level(self, obj):
+        experience = getattr(obj, "experience", None)
+        return experience.elderly_care_experience if experience else None
+
+    def get_interviewer_name(self, obj):
+        if obj.interviewed_by is None:
+            return None
+        identity = getattr(obj.interviewed_by, "caregiver_identity_profile", None)
+        return (identity.full_name if identity else None) or obj.interviewed_by.username
+
+
 class IdentityProfileSerializer(serializers.ModelSerializer):
     birth_date = JalaliDateField(required=False, allow_null=True)
     # first_name/last_name live on User now (needed there for username
@@ -293,6 +340,7 @@ class CaregiverFullProfileSerializer(serializers.Serializer):
     status = serializers.CharField()
     rejection_reason = serializers.CharField(allow_blank=True)
     blacklist_reason = serializers.CharField(allow_blank=True)
+    needs_more_docs_note = serializers.CharField(allow_blank=True)
     identity = serializers.DictField(allow_null=True)
     work_preferences = CaregiverWorkPreferencesSerializer(allow_null=True)
     service_areas = CaregiverServiceAreaSerializer(many=True)

@@ -4,6 +4,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import UserRole
 from tests.factories.auth_helpers import make_authenticated_user
+from tests.factories.user_factory import make_user
 
 VALID_WORK_PREFS = {
     "collaboration_types": ["daily", "night"],
@@ -258,6 +259,24 @@ class FullProfileAndApprovalTests(TestCase):
         self.assertEqual(response.data["status"], "suspended")
         self.assertEqual(response.data["blacklist_reason"], "شکایات مکرر خانواده‌ها.")
 
+    def test_caregiver_needing_more_documents_sees_the_actual_note(self):
+        """
+        Same class of bug as the two tests above — a new tracking
+        field added to the model needs to actually be declared on
+        this serializer AND passed through by the view's own dict,
+        or it silently never reaches the caregiver at all.
+        """
+        from apps.caregivers.models import CaregiverProfile, CaregiverStatus
+        admin = make_user("needs_docs_admin", role=UserRole.ADMIN, phone_number="09100025030")
+        profile, _ = CaregiverProfile.objects.get_or_create(user=self.caregiver_user, defaults={"status": CaregiverStatus.PENDING})
+        profile.status = CaregiverStatus.PENDING
+        profile.save()
+        profile.request_more_documents(admin, note="لطفاً کارت پایان خدمت را ارسال کنید")
+
+        response = self.client.get("/api/caregivers/me/full/")
+        self.assertEqual(response.data["status"], "needs_more_docs")
+        self.assertEqual(response.data["needs_more_docs_note"], "لطفاً کارت پایان خدمت را ارسال کنید")
+
     def test_approval_returns_404_when_no_profile_exists_yet(self):
         # caregiver never submitted any form — no CaregiverProfile row exists
         _, su_token = make_authenticated_user("su_approve0", role=UserRole.SUPERUSER)
@@ -293,6 +312,23 @@ class FullProfileAndApprovalTests(TestCase):
         response = approver.post(f"/api/caregivers/{self.caregiver_user.id}/approve/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["status"], "approved")
+
+    def test_full_profile_identity_includes_national_id_from_user(self):
+        """
+        Regression test for a real gap caught while building the
+        caregiver's own profile overview page: national_id lives on
+        User, not IdentityProfile (needed there at registration time
+        before Form 1 exists) — _get_identity_dict has to explicitly
+        merge it in, or every consumer (this endpoint, the supervisor
+        full-profile view, and the agency resume view) silently shows
+        nothing for it.
+        """
+        self.caregiver_user.national_id = "1234567890"
+        self.caregiver_user.save()
+        self.client.put("/api/caregivers/me/identity/", VALID_IDENTITY, format="json")
+
+        response = self.client.get("/api/caregivers/me/full/")
+        self.assertEqual(response.data["identity"]["national_id"], "1234567890")
 
     def test_non_admin_cannot_approve(self):
         self._complete_all_forms_except_identity()

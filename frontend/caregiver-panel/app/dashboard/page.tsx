@@ -75,6 +75,15 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         )}
+        {profileStatus?.status === "needs_more_docs" && (
+          <Card className="border-purple-200 bg-purple-50">
+            <CardContent className="p-4 text-sm text-purple-900">
+              <p className="font-medium">برای ادامه بررسی، مدارک تکمیلی لازم است.</p>
+              {profileStatus.needs_more_docs_note && <p className="mt-1">{profileStatus.needs_more_docs_note}</p>}
+              <p className="mt-1 text-xs">پس از ارسال مدارک، با تیم مراقب من تماس بگیرید تا بررسی ادامه یابد.</p>
+            </CardContent>
+          </Card>
+        )}
         {profileStatus?.status === "rejected" && (
           <Card className="border-rose-200 bg-rose-50">
             <CardContent className="p-4 text-sm text-rose-900">
@@ -151,6 +160,14 @@ export default function DashboardPage() {
             <p className="text-sm text-rose-900">معرف‌ها (اختیاری)</p>
             <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => router.push(ROUTES.references)}>
               مشاهده / ویرایش
+            </Button>
+          </CardContent>
+        </Card>
+        <Card className="border-pink-100">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <p className="text-sm text-rose-900">پروفایل کامل من</p>
+            <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => router.push(ROUTES.myProfile)}>
+              مشاهده پروفایل
             </Button>
           </CardContent>
         </Card>

@@ -2,9 +2,10 @@ import { api } from "./api"
 
 export interface MyFullProfileStatus {
   is_approved: boolean
-  status: "draft" | "pending" | "approved" | "rejected" | "suspended"
+  status: "draft" | "pending" | "needs_more_docs" | "approved" | "rejected" | "suspended"
   rejection_reason: string
   blacklist_reason: string
+  needs_more_docs_note: string
 }
 
 export const myProfileStatusService = {

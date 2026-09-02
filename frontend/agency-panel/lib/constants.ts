@@ -53,6 +53,13 @@ export const COMPLAINT_STATUS_LABEL: Record<string, string> = {
   dismissed: "رد شده",
 }
 
+export const EXPERIENCE_RANGE: Choice[] = [
+  ["none", "ندارم"],
+  ["under_1_year", "کمتر از ۱ سال"],
+  ["1_to_5_years", "بین ۱ تا ۵ سال"],
+  ["over_5_years", "بیش از ۵ سال"],
+]
+
 export function labelForValue(choices: Choice[], value: string): string {
   return choices.find(([v]) => v === value)?.[1] || value
 }

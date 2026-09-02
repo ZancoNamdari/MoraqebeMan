@@ -1,0 +1,52 @@
+# Used ONLY for the initial IP-based test, before a domain is set up.
+# Layers on top of docker-compose.prod.yml via `-f` — never modifies
+# it. Adds direct host-port mappings so each panel is reachable at
+# http://<server-ip>:<port> without nginx's subdomain-based routing,
+# which can't work without real domain names to route by.
+#
+# Port numbers deliberately match the same convention already used in
+# local development (see docs/PLATFORM_USAGE_GUIDE.md), so nothing
+# new to memorize once you're used to the dev setup.
+#
+# Usage (note: nginx is deliberately NOT started here — see the
+# deployment walkthrough for why):
+#   docker compose -f docker-compose.prod.yml -f docker-compose.ip-test.yml \
+#     --env-file .env up -d --build backend backend_worker postgres redis \
+#     landing_page family_panel caregiver_panel admin_panel
+
+services:
+  backend:
+    ports:
+      - "8000:8000"
+
+  landing_page:
+    ports:
+      - "3007:3000"
+
+  family_panel:
+    ports:
+      - "3001:3000"
+
+  patient_panel:
+    ports:
+      - "3003:3000"
+
+  caregiver_panel:
+    ports:
+      - "3002:3000"
+
+  supervisor_panel:
+    ports:
+      - "3000:3000"
+
+  agency_panel:
+    ports:
+      - "3004:3000"
+
+  admin_panel:
+    ports:
+      - "3006:3000"
+
+  superuser_panel:
+    ports:
+      - "3005:3000"

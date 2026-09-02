@@ -11,4 +11,5 @@ export const ROUTES = {
   references: "/profile/references",
   history: "/history",
   blacklistAppeal: "/blacklist-appeal",
+  myProfile: "/my-profile",
 }

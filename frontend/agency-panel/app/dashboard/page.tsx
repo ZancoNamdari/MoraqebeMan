@@ -147,6 +147,10 @@ export default function DashboardPage() {
                 <p className="text-sm font-medium text-rose-800">درخواست‌های بازبینی مسدودیت</p>
                 <p className="text-xs text-muted-foreground">بررسی درخواست رفع مسدودیت مراقبان شما</p>
               </button>
+              <button onClick={() => router.push(ROUTES.candidates)} className="rounded-xl border border-pink-100 bg-white p-4 text-right transition-colors hover:bg-pink-50/60">
+                <p className="text-sm font-medium text-rose-800">بانک اطلاعات مراقبان</p>
+                <p className="text-xs text-muted-foreground">پیگیری مصاحبه و وضعیت کاندیداها</p>
+              </button>
             </div>
           </>
         )}
