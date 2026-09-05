@@ -36,6 +36,9 @@ services:
       - "3002:3000"
 
   supervisor_panel:
+    build:
+      args:
+        NEXT_PUBLIC_BASE_PATH: /supervisor
     ports:
       - "3000:3000"
 
@@ -50,3 +53,24 @@ services:
   superuser_panel:
     ports:
       - "3005:3000"
+
+  # Path-based routing on port 80 for the no-domain phase — see
+  # gateway/nginx.ip-test.conf's own header comment for the full
+  # reasoning and how this differs from the subdomain-based
+  # gateway/nginx.prod.conf used once a real domain exists. Named
+  # distinctly from docker-compose.prod.yml's own "nginx" service
+  # deliberately — reusing that name here would have made Docker
+  # Compose MERGE the two services' volumes lists (confirmed: YAML
+  # sequences merge by appending, not replacing), mounting two
+  # different config files to the same container path at once. Only
+  # ever start this one, never the base "nginx" service, while in
+  # this no-domain phase — starting both would fight over port 80.
+  nginx_ip_test:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./gateway/nginx.ip-test.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - supervisor_panel

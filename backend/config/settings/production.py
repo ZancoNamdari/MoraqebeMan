@@ -17,9 +17,20 @@ CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS")
 # header and trick Django into treating a plain HTTP request as secure.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# Genuine, real production (behind nginx with real SSL certs) should
+# never set SECURE_SSL_REDIRECT=false — the default here stays True
+# for exactly that reason. The one legitimate exception is the
+# temporary IP-only test phase (docker-compose.ip-test.yml), which
+# exposes the backend directly with no nginx and no SSL in front of
+# it at all: forcing an HTTPS redirect there sends the browser to a
+# port that was never listening, breaking every single API call
+# behind an innocuous-looking 301 — this is a real outage this
+# caused, not a hypothetical one. Set SECURE_SSL_REDIRECT=false in
+# .env only for that IP-test phase, and unset (or back to true) the
+# moment a real domain and certs are in place.
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
+SESSION_COOKIE_SECURE = env.bool("SECURE_SSL_REDIRECT", default=True)
+CSRF_COOKIE_SECURE = env.bool("SECURE_SSL_REDIRECT", default=True)
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True

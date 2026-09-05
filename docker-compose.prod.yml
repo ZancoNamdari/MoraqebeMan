@@ -20,6 +20,11 @@ x-django-env: &django-env
   KAVENEGAR_OTP_TEMPLATE: ${KAVENEGAR_OTP_TEMPLATE:-verify}
   KAVENEGAR_PASSWORD_RESET_TEMPLATE: ${KAVENEGAR_PASSWORD_RESET_TEMPLATE:-password-reset}
   KAVENEGAR_SENDER_NUMBER: ${KAVENEGAR_SENDER_NUMBER:-}
+  # Only meaningful for the temporary no-SSL IP-test phase — see the
+  # comment above SECURE_SSL_REDIRECT in config/settings/production.py
+  # for the full story. Defaults to true (secure) so real production,
+  # which never sets this in .env, is completely unaffected.
+  SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:-true}
 
 services:
   postgres:
@@ -130,6 +135,11 @@ services:
       context: ./frontend/supervisor-panel
       args:
         NEXT_PUBLIC_API_URL: ${API_URL}
+        # Empty by default — real subdomain-based production mounts
+        # this app at the root of its own subdomain. Overridden in
+        # docker-compose.ip-test.yml only, for the temporary
+        # path-based routing this no-domain phase needs.
+        NEXT_PUBLIC_BASE_PATH: ""
     restart: unless-stopped
     depends_on:
       - backend

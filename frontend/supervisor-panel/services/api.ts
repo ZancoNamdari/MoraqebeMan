@@ -4,6 +4,15 @@ import axios from "axios"
 // Falls back to localhost:8000, matching docker-compose's backend port.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
+// Must match next.config.ts's basePath exactly — used below because
+// window.location operates on the real browser URL, which Next.js's
+// own basePath handling does NOT auto-prefix (that only applies to
+// next/link and next/navigation calls). Without this, comparing
+// against a bare "/login" would never match once this app is mounted
+// under a path prefix, and redirecting to a bare "/login" would send
+// the browser to a URL that doesn't exist under this routing setup.
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || ""
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
@@ -29,8 +38,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && typeof window !== "undefined") {
       window.localStorage.removeItem("access_token")
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login"
+      if (window.location.pathname !== `${BASE_PATH}/login`) {
+        window.location.href = `${BASE_PATH}/login`
       }
     }
     return Promise.reject(error)
