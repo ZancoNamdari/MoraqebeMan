@@ -38,6 +38,7 @@ export default function CandidatesPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [scoreDraft, setScoreDraft] = useState("")
   const [dateDraft, setDateDraft] = useState("")
   const [noteDraft, setNoteDraft] = useState("")
@@ -46,6 +47,12 @@ export default function CandidatesPage() {
   const [error, setError] = useState("")
   const [resume, setResume] = useState<CandidateResume | null>(null)
   const [resumeLoading, setResumeLoading] = useState(false)
+  const [editingFields, setEditingFields] = useState(false)
+  const [editFirstName, setEditFirstName] = useState("")
+  const [editLastName, setEditLastName] = useState("")
+  const [editNationalId, setEditNationalId] = useState("")
+  const [editPhone, setEditPhone] = useState("")
+  const [savingFields, setSavingFields] = useState(false)
 
   function refresh() {
     setLoading(true)
@@ -65,6 +72,13 @@ export default function CandidatesPage() {
     return acc
   }, {} as Record<string, number>)
 
+  const filteredCandidates = statusFilter ? candidates.filter((c) => c.status === statusFilter) : candidates
+
+  function toggleFilter(status: string) {
+    setStatusFilter((current) => (current === status ? null : status))
+    setExpandedId(null)
+  }
+
   const scoredCandidates = candidates.filter((c) => c.interview_score !== null)
   const averageScore = scoredCandidates.length > 0
     ? Math.round(scoredCandidates.reduce((sum, c) => sum + (c.interview_score || 0), 0) / scoredCandidates.length)
@@ -74,6 +88,34 @@ export default function CandidatesPage() {
   function resetDrafts() {
     setScoreDraft(""); setDateDraft(""); setNoteDraft(""); setDocsNoteDraft("")
     setResume(null)
+    setEditingFields(false)
+  }
+
+  function startEditingFields(c: Candidate) {
+    setEditFirstName(c.first_name)
+    setEditLastName(c.last_name)
+    setEditNationalId(c.national_id || "")
+    setEditPhone(c.phone_number)
+    setEditingFields(true)
+    setError("")
+  }
+
+  async function handleSaveFields(userId: number) {
+    setSavingFields(true); setError("")
+    try {
+      await candidateTrackingService.editFields(userId, {
+        first_name: editFirstName,
+        last_name: editLastName,
+        national_id: editNationalId,
+        phone_number: editPhone,
+      })
+      setEditingFields(false)
+      await refresh()
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "ذخیره تغییرات با خطا مواجه شد.")
+    } finally {
+      setSavingFields(false)
+    }
   }
 
   async function handleViewResume(userId: number) {
@@ -144,27 +186,33 @@ export default function CandidatesPage() {
         {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <Card className="border-pink-100 shadow-sm"><CardContent className="p-4 text-center">
+          <button onClick={() => toggleFilter("")} className={`rounded-2xl border border-pink-100 bg-white p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === null ? "ring-2 ring-rose-400" : ""}`}>
             <p className="text-3xl font-bold text-rose-900">{toPersianDigits(candidates.length)}</p>
             <p className="mt-1 text-xs font-medium text-muted-foreground">تعداد کل</p>
-          </CardContent></Card>
-          <Card className="border-emerald-100 bg-emerald-50/40 shadow-sm"><CardContent className="p-4 text-center">
+          </button>
+          <button onClick={() => toggleFilter("approved")} className={`rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "approved" ? "ring-2 ring-emerald-500" : ""}`}>
             <p className="text-3xl font-bold text-emerald-700">{toPersianDigits(counts.approved || 0)}</p>
             <p className="mt-1 text-xs font-medium text-emerald-800/70">تأیید شده</p>
-          </CardContent></Card>
-          <Card className="border-amber-100 bg-amber-50/40 shadow-sm"><CardContent className="p-4 text-center">
+          </button>
+          <button onClick={() => toggleFilter("pending")} className={`rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "pending" ? "ring-2 ring-amber-500" : ""}`}>
             <p className="text-3xl font-bold text-amber-700">{toPersianDigits(counts.pending || 0)}</p>
             <p className="mt-1 text-xs font-medium text-amber-800/70">در حال بررسی</p>
-          </CardContent></Card>
-          <Card className="border-purple-100 bg-purple-50/40 shadow-sm"><CardContent className="p-4 text-center">
+          </button>
+          <button onClick={() => toggleFilter("needs_more_docs")} className={`rounded-2xl border border-purple-100 bg-purple-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "needs_more_docs" ? "ring-2 ring-purple-500" : ""}`}>
             <p className="text-3xl font-bold text-purple-700">{toPersianDigits(counts.needs_more_docs || 0)}</p>
             <p className="mt-1 text-xs font-medium text-purple-800/70">نیاز به مدارک</p>
-          </CardContent></Card>
-          <Card className="border-rose-100 bg-rose-50/40 shadow-sm"><CardContent className="p-4 text-center">
+          </button>
+          <button onClick={() => toggleFilter("rejected")} className={`rounded-2xl border border-rose-100 bg-rose-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "rejected" ? "ring-2 ring-rose-500" : ""}`}>
             <p className="text-3xl font-bold text-rose-700">{toPersianDigits(counts.rejected || 0)}</p>
             <p className="mt-1 text-xs font-medium text-rose-800/70">رد شده</p>
-          </CardContent></Card>
+          </button>
         </div>
+        {statusFilter && (
+          <p className="px-1 text-xs text-muted-foreground">
+            نمایش فقط مراقبان با وضعیت «{STATUS_LABEL_FA[statusFilter]}» —{" "}
+            <button className="font-medium text-rose-700 underline" onClick={() => setStatusFilter(null)}>نمایش همه</button>
+          </p>
+        )}
 
         {candidates.length > 0 && (
           <Card className="border-pink-100">
@@ -176,33 +224,42 @@ export default function CandidatesPage() {
         )}
 
         <Card className="border-pink-100">
-          <CardHeader><CardTitle className="text-rose-900">لیست مراقبان ({toPersianDigits(candidates.length)})</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-rose-900">لیست مراقبان ({toPersianDigits(filteredCandidates.length)})</CardTitle></CardHeader>
           <CardContent>
             {loading ? (
               <Skeleton className="h-96 w-full rounded-2xl" />
             ) : candidates.length === 0 ? (
               <p className="text-sm text-muted-foreground">هنوز مراقبی به این آژانس متصل نشده است.</p>
+            ) : filteredCandidates.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                مراقبی با این وضعیت یافت نشد. <button className="font-medium text-rose-700 underline" onClick={() => setStatusFilter(null)}>نمایش همه</button>
+              </p>
             ) : (
               <div className="overflow-x-auto rounded-xl border border-pink-100">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-pink-100 bg-pink-50/70 text-xs font-semibold text-rose-900">
                       <th className="p-3 text-right">نام</th>
+                      <th className="p-3 text-right">کد ملی</th>
                       <th className="p-3 text-right">تلفن</th>
                       <th className="p-3 text-right">شهر</th>
                       <th className="p-3 text-right">تجربه</th>
                       <th className="p-3 text-center">تاریخ ثبت‌نام</th>
                       <th className="p-3 text-center">وضعیت</th>
                       <th className="p-3 text-center">امتیاز مصاحبه</th>
+                      <th className="p-3 text-center">تاریخ مصاحبه</th>
+                      <th className="p-3 text-right">یادداشت</th>
+                      <th className="p-3 text-center">ویرایش</th>
                       <th className="p-3 text-center">جزئیات</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {candidates.map((c, index) => (
+                    {filteredCandidates.map((c, index) => (
                       <Fragment key={c.user_id}>
                         <tr className={`border-b border-pink-50 transition-colors last:border-0 hover:bg-pink-50/60 ${index % 2 === 1 ? "bg-pink-50/20" : ""}`}>
                           <td className="p-3 text-right font-medium text-rose-950">{c.full_name}</td>
-                          <td className="p-3 text-right text-muted-foreground" dir="ltr">{c.phone_number}</td>
+                          <td className="p-3 text-right text-muted-foreground" dir="ltr">{c.national_id ? toPersianDigits(c.national_id) : "—"}</td>
+                          <td className="p-3 text-right text-muted-foreground" dir="ltr">{toPersianDigits(c.phone_number)}</td>
                           <td className="p-3 text-right text-muted-foreground">{c.city || "—"}</td>
                           <td className="p-3 text-right text-muted-foreground">{c.experience_level ? labelForValue(EXPERIENCE_RANGE, c.experience_level) : "—"}</td>
                           <td className="p-3 text-center text-muted-foreground">{c.registered_at ? toPersianDigits(c.registered_at.slice(0, 10)) : "—"}</td>
@@ -212,6 +269,13 @@ export default function CandidatesPage() {
                             </span>
                           </td>
                           <td className="p-3 text-center font-semibold text-rose-900">{c.interview_score !== null ? toPersianDigits(c.interview_score) : "—"}</td>
+                          <td className="p-3 text-center text-muted-foreground">{c.interview_date ? toPersianDigits(c.interview_date) : "—"}</td>
+                          <td className="max-w-[160px] truncate p-3 text-right text-muted-foreground" title={c.staff_notes || undefined}>{c.staff_notes || "—"}</td>
+                          <td className="p-3 text-center">
+                            <Button size="sm" variant="outline" onClick={() => { setExpandedId(c.user_id); resetDrafts(); startEditingFields(c) }}>
+                              ویرایش
+                            </Button>
+                          </td>
                           <td className="p-3 text-center">
                             <Button size="sm" variant="outline" onClick={() => { setExpandedId(expandedId === c.user_id ? null : c.user_id); resetDrafts() }}>
                               {expandedId === c.user_id ? "بستن" : "جزئیات"}
@@ -220,7 +284,7 @@ export default function CandidatesPage() {
                         </tr>
                         {expandedId === c.user_id && (
                           <tr>
-                            <td colSpan={8} className="bg-pink-50/40 p-4">
+                            <td colSpan={12} className="bg-pink-50/40 p-4">
                               <div className="grid gap-4 sm:grid-cols-3">
                                 <div className="space-y-2">
                                   <p className="text-xs font-medium text-rose-900">ثبت نتیجه مصاحبه</p>
@@ -260,6 +324,38 @@ export default function CandidatesPage() {
                                   </Button>
                                 </div>
                               </div>
+                              {editingFields && (
+                                <div className="mt-4 border-t border-pink-100 pt-4">
+                                  <p className="mb-2 text-xs font-medium text-rose-900">ویرایش اطلاعات مراقب</p>
+                                  <p className="mb-3 text-xs text-amber-700">
+                                    این اطلاعات، مشخصات شخصی خود مراقب است — هر تغییری با نام شما در تاریخچه ثبت می‌شود.
+                                  </p>
+                                  <div className="grid gap-3 sm:grid-cols-2">
+                                    <div className="space-y-1">
+                                      <label className="text-xs text-muted-foreground">نام</label>
+                                      <input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="w-full rounded-md border border-input bg-background p-2 text-sm" />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-xs text-muted-foreground">نام خانوادگی</label>
+                                      <input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="w-full rounded-md border border-input bg-background p-2 text-sm" />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-xs text-muted-foreground">کد ملی</label>
+                                      <input value={editNationalId} onChange={(e) => setEditNationalId(e.target.value)} dir="ltr" className="w-full rounded-md border border-input bg-background p-2 text-sm" />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-xs text-muted-foreground">تلفن</label>
+                                      <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} dir="ltr" className="w-full rounded-md border border-input bg-background p-2 text-sm" />
+                                    </div>
+                                  </div>
+                                  <div className="mt-3 flex gap-2">
+                                    <Button size="sm" disabled={savingFields} onClick={() => handleSaveFields(c.user_id)}>
+                                      {savingFields ? "در حال ذخیره..." : "ذخیره تغییرات"}
+                                    </Button>
+                                    <Button size="sm" variant="ghost" onClick={() => setEditingFields(false)}>انصراف</Button>
+                                  </div>
+                                </div>
+                              )}
                               {resume && (
                                 <div className="mt-4 border-t border-pink-100 pt-4">
                                   <ResumeView resume={resume} />
@@ -361,7 +457,7 @@ function ResumeView({ resume }: { resume: CandidateResume }) {
         {identity ? (
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {identity.full_name && <p>نام: {identity.full_name}</p>}
-            {identity.national_id && <p>کد ملی: {identity.national_id}</p>}
+            {identity.national_id && <p>کد ملی: {toPersianDigits(identity.national_id)}</p>}
           </div>
         ) : <p className="text-xs text-muted-foreground">ثبت نشده</p>}
       </div>
@@ -406,7 +502,7 @@ function ResumeView({ resume }: { resume: CandidateResume }) {
         ) : (
           <div className="space-y-1">
             {resume.references.map((ref) => (
-              <p key={ref.id} className="text-xs text-muted-foreground">{ref.full_name} — {ref.occupation} ({ref.phone_number})</p>
+              <p key={ref.id} className="text-xs text-muted-foreground">{ref.full_name} — {ref.occupation} ({toPersianDigits(ref.phone_number)})</p>
             ))}
           </div>
         )}

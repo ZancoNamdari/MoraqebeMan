@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.accounts.models import User
-from apps.accounts.jalali_fields import JalaliDateField
+from apps.accounts.jalali_fields import JalaliDateField, JalaliDateTimeField
 
 from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, CollaborationType,
                       OfferedService, ServiceLocation, Shift, Weekday, CommuteMethod,
@@ -52,6 +52,23 @@ class RequestMoreDocumentsSerializer(serializers.Serializer):
     note = serializers.CharField(max_length=1000)
 
 
+class EditCandidateFieldsSerializer(serializers.Serializer):
+    """
+    Every field here maps to apps.accounts.models.User, not
+    CaregiverProfile or IdentityProfile — this deliberately lets an
+    agency correct a caregiver's own personal identifying data. Every
+    field is optional so a PATCH can touch just one field at a time;
+    validated_data will only contain what was actually sent.
+    """
+    first_name = serializers.CharField(max_length=50, required=False)
+    last_name = serializers.CharField(max_length=50, required=False)
+    national_id = serializers.CharField(max_length=10, required=False, allow_blank=True)
+    phone_number = serializers.RegexField(
+        regex=r"^09\d{9}$", required=False,
+        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
+    )
+
+
 class CandidateTrackingSerializer(serializers.Serializer):
     """
     One row of the agency's candidate-tracking table — mirrors a real
@@ -61,10 +78,12 @@ class CandidateTrackingSerializer(serializers.Serializer):
     """
     user_id = serializers.IntegerField(source="user.id")
     full_name = serializers.CharField(source="display_name")
+    first_name = serializers.CharField(source="user.first_name")
+    last_name = serializers.CharField(source="user.last_name")
     national_id = serializers.CharField(source="user.national_id", default=None)
     phone_number = serializers.CharField(source="user.phone_number")
     city = serializers.SerializerMethodField()
-    registered_at = serializers.DateTimeField(source="created_at")
+    registered_at = JalaliDateTimeField(source="created_at")
     experience_level = serializers.SerializerMethodField()
     status = serializers.CharField()
     status_label = serializers.CharField(source="get_status_display")

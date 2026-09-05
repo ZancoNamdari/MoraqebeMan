@@ -166,6 +166,38 @@ class AgencyDashboardTests(BaseAPITestCase):
         self.assertEqual(response.data["pending_family_requests"], 0)
         self.assertEqual(response.data["approved_caregiver_count"], 0)
         self.assertEqual(response.data["pending_caregiver_requests"], 0)
+        self.assertEqual(response.data["open_complaints_count"], 0)
+        self.assertEqual(response.data["pending_appeals_count"], 0)
+        self.assertEqual(response.data["candidates_needing_docs_count"], 0)
+
+    def test_dashboard_surfaces_needs_attention_counts(self):
+        """
+        Regression coverage for the three counts added so an agency
+        owner can see urgent items at a glance on the dashboard,
+        instead of clicking into every section to find out whether
+        anything needs attention. candidates_needing_docs_count
+        specifically has to use an any-status link, not the
+        approved-only roster helper — a candidate stuck in "needs
+        more docs" is by definition not yet approved.
+        """
+        from apps.agencies.models import AgencyCaregiverLink, AgencyLinkStatus
+        from apps.caregivers.models import BlacklistAppeal, CaregiverProfile, CaregiverStatus
+        from apps.reviews.models import Complaint, ComplaintCategory
+
+        approved_cg_user = make_user("dash_cg_approved", role=UserRole.CAREGIVER, phone_number="09121194010")
+        approved_cg = CaregiverProfile.objects.create(user=approved_cg_user, status=CaregiverStatus.APPROVED)
+        AgencyCaregiverLink.objects.create(agency=AgencyProfile.objects.get(user=self.agency_user), caregiver=approved_cg, status=AgencyLinkStatus.APPROVED)
+        Complaint.objects.create(about_caregiver=approved_cg, filed_by=self.agency_user, category=ComplaintCategory.SAFETY_CONCERN, description="تست")
+        BlacklistAppeal.objects.create(caregiver=approved_cg, appeal_reason="تست")
+
+        pending_cg_user = make_user("dash_cg_needs_docs", role=UserRole.CAREGIVER, phone_number="09121194011")
+        pending_cg = CaregiverProfile.objects.create(user=pending_cg_user, status=CaregiverStatus.NEEDS_MORE_DOCS)
+        AgencyCaregiverLink.objects.create(agency=AgencyProfile.objects.get(user=self.agency_user), caregiver=pending_cg, status=AgencyLinkStatus.PENDING)
+
+        response = self.agency_client.get("/api/agencies/me/dashboard/")
+        self.assertEqual(response.data["open_complaints_count"], 1)
+        self.assertEqual(response.data["pending_appeals_count"], 1)
+        self.assertEqual(response.data["candidates_needing_docs_count"], 1)
 
     def test_dashboard_reflects_pending_and_approved_counts(self):
         family_user = make_user("dash_family", role=UserRole.FAMILY, phone_number="09121194001")

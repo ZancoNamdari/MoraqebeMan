@@ -2,13 +2,13 @@ const PERSIAN_DIGITS = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "�
 
 /**
  * Converts Western digits (0-9) in a string or number to Persian
- * digits (۰-۹) for display. Deliberately NOT applied to phone numbers
- * or national IDs — those stay in Western digits, matching common
- * practice in Persian production software, since they're values a
- * person might copy into a dialer or another system that expects
- * Western digits. Apply this to counts, percentages, scores, and
- * dates shown to the user, not to values they might need to reuse
- * elsewhere.
+ * digits (۰-۹) for display — applied broadly across this panel
+ * (counts, percentages, scores, dates, phone numbers, national IDs)
+ * per explicit product direction. An earlier version of this utility
+ * deliberately excluded phone numbers and national IDs, matching a
+ * common convention in Persian software of keeping copyable/dialable
+ * values in Western digits — that exclusion was removed after direct
+ * feedback that consistency across the whole panel matters more here.
  */
 export function toPersianDigits(input: string | number): string {
   return String(input).replace(/[0-9]/g, (d) => PERSIAN_DIGITS[Number(d)])

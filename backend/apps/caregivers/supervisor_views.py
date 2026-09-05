@@ -197,6 +197,7 @@ class SupervisorCaregiverFullProfileView(APIView):
             "status": profile.status,
             "rejection_reason": profile.rejection_reason,
             "blacklist_reason": profile.blacklist_reason,
+            "needs_more_docs_note": profile.needs_more_docs_note,
             "identity": _get_identity_dict(user_id),
             "work_preferences": getattr(profile, "work_preferences", None),
             "service_areas": profile.service_areas.all(),

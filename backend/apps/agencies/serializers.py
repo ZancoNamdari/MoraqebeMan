@@ -78,6 +78,9 @@ class AgencyDashboardSerializer(serializers.Serializer):
     pending_family_requests = serializers.IntegerField()
     approved_caregiver_count = serializers.IntegerField()
     pending_caregiver_requests = serializers.IntegerField()
+    open_complaints_count = serializers.IntegerField()
+    pending_appeals_count = serializers.IntegerField()
+    candidates_needing_docs_count = serializers.IntegerField()
 
 
 class CreateAgencySerializer(serializers.Serializer):

@@ -50,6 +50,22 @@ class SupervisorFullProfileReviewTests(TestCase):
         self.assertIsNone(response.data["identity"])
         self.assertFalse(response.data["is_approved"])
 
+    def test_full_profile_includes_needs_more_docs_note(self):
+        """
+        Regression test for a real bug: needs_more_docs_note was added
+        to CaregiverFullProfileSerializer during separate work, but
+        this view builds its own dict independently and wasn't
+        updated to match — a KeyError the serializer surfaces as a
+        500, not a missing/blank field, so this endpoint was fully
+        broken until fixed. This exact test (an earlier, simpler
+        version of it) already existed and would have caught this
+        immediately — it just wasn't re-run after the field was added
+        elsewhere.
+        """
+        response = self.client.get(f"/api/supervisor/caregivers/{self.cg_id}/full/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("needs_more_docs_note", response.data)
+
     def test_full_profile_reflects_saved_data(self):
         self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/identity/", VALID_IDENTITY, format="json")
         self.client.put(f"/api/supervisor/caregivers/{self.cg_id}/work-preferences/", VALID_WORK_PREFS, format="json")

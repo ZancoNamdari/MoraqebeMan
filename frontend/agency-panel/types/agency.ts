@@ -37,4 +37,7 @@ export interface AgencyDashboard {
   pending_family_requests: number
   approved_caregiver_count: number
   pending_caregiver_requests: number
+  open_complaints_count: number
+  pending_appeals_count: number
+  candidates_needing_docs_count: number
 }

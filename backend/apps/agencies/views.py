@@ -118,6 +118,19 @@ class AgencyDashboardView(APIView):
         agency = _resolve_my_agency(request)
         if agency is None:
             return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+
+        from apps.caregivers.models import BlacklistAppeal, BlacklistAppealStatus, CaregiverProfile, CaregiverStatus
+        from apps.reviews.models import Complaint, ComplaintStatus
+
+        # Two different scopes, deliberately: complaints/appeals only
+        # make sense for caregivers actually approved onto the
+        # roster, but a caregiver stuck in "needs more docs" is BY
+        # DEFINITION not yet approved — agency_caregiver_profile_ids()
+        # is approved-only, so it would always undercount that one to
+        # zero. Any-status is needed there specifically.
+        approved_roster_ids = agency_caregiver_profile_ids(agency)
+        any_link_ids = agency.caregiver_links.values_list("caregiver_id", flat=True)
+
         data = {
             "company_name": agency.company_name,
             "access_code": agency.access_code,
@@ -125,6 +138,19 @@ class AgencyDashboardView(APIView):
             "pending_family_requests": agency.family_links.filter(status=AgencyLinkStatus.PENDING).count(),
             "approved_caregiver_count": agency.caregiver_links.filter(status=AgencyLinkStatus.APPROVED).count(),
             "pending_caregiver_requests": agency.caregiver_links.filter(status=AgencyLinkStatus.PENDING).count(),
+            # "Needs attention" counts — added so the dashboard can
+            # actually surface urgent items at a glance instead of an
+            # agency owner having to click into every section to find
+            # out whether anything needs their attention right now.
+            "open_complaints_count": Complaint.objects.filter(
+                about_caregiver_id__in=approved_roster_ids, status__in=[ComplaintStatus.OPEN, ComplaintStatus.UNDER_REVIEW],
+            ).count(),
+            "pending_appeals_count": BlacklistAppeal.objects.filter(
+                caregiver_id__in=approved_roster_ids, status=BlacklistAppealStatus.PENDING,
+            ).count(),
+            "candidates_needing_docs_count": CaregiverProfile.objects.filter(
+                id__in=any_link_ids, status=CaregiverStatus.NEEDS_MORE_DOCS,
+            ).count(),
         }
         return Response(AgencyDashboardSerializer(data).data)
 

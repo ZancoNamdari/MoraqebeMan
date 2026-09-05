@@ -6,6 +6,7 @@ export interface MyFullProfileStatus {
   rejection_reason: string
   blacklist_reason: string
   needs_more_docs_note: string
+  identity: { full_name?: string } | null
 }
 
 export const myProfileStatusService = {

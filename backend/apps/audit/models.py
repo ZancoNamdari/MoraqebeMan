@@ -38,6 +38,7 @@ class AuditEventType(models.TextChoices):
     BLACKLIST_APPEAL_DENIED = "blacklist_appeal_denied", "رد درخواست بازبینی مسدودیت"
     CAREGIVER_INTERVIEW_RECORDED = "caregiver_interview_recorded", "ثبت نتیجه مصاحبه مراقب"
     CAREGIVER_NEEDS_MORE_DOCUMENTS = "caregiver_needs_more_documents", "درخواست مدارک تکمیلی از مراقب"
+    CANDIDATE_FIELD_EDITED = "candidate_field_edited", "ویرایش اطلاعات مراقب توسط آژانس"
     TERMS_ACCEPTED = "terms_accepted", "پذیرش شرایط و تعهدات"
     COMPLAINT_FILED = "complaint_filed", "ثبت شکایت"
     COMPLAINT_UNDER_REVIEW = "complaint_under_review", "شروع بررسی شکایت"

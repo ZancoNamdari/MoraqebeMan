@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -25,6 +26,7 @@ from .serializers import (
     CaregiverSkillsSerializer,
     CaregiverWorkPreferencesSerializer,
     CreateBlacklistAppealSerializer,
+    EditCandidateFieldsSerializer,
     IdentityProfileSerializer,
     RecordInterviewSerializer,
     RequestMoreDocumentsSerializer,
@@ -593,6 +595,7 @@ class CandidateResumeView(APIView):
             "status": profile.status,
             "rejection_reason": profile.rejection_reason,
             "blacklist_reason": profile.blacklist_reason,
+            "needs_more_docs_note": profile.needs_more_docs_note,
             "identity": _get_identity_dict(user_id),
             "work_preferences": getattr(profile, "work_preferences", None),
             "service_areas": profile.service_areas.all(),
@@ -601,3 +604,50 @@ class CandidateResumeView(APIView):
             "references": profile.references.all(),
         }
         return Response(SupervisorCaregiverFullProfileSerializer(data).data)
+
+
+class EditCandidateFieldsView(APIView):
+    """
+    PATCH /api/caregivers/<user_id>/edit-fields/ — the row-level edit
+    action on the agency candidate table. Deliberately edits the
+    caregiver's own personal identifying data (name, national ID,
+    phone number) on explicit product direction — an agency correcting
+    a typo or outdated phone number on behalf of a caregiver on their
+    roster is the intended use. Every change is individually logged
+    with actor, old value, and new value, since this is exactly the
+    kind of action that needs a clear accountability trail: it's one
+    party editing another person's identifying information.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, user_id):
+        profile, error = _get_candidate_with_tracking_permission(request, user_id)
+        if error:
+            return error
+
+        serializer = EditCandidateFieldsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = profile.user
+        changes = []
+        for field, new_value in serializer.validated_data.items():
+            old_value = getattr(user, field)
+            if old_value != new_value:
+                changes.append((field, old_value, new_value))
+                setattr(user, field, new_value)
+
+        if changes:
+            try:
+                user.save()
+            except IntegrityError:
+                return Response(
+                    {"detail": "این شماره تلفن یا کد ملی قبلاً برای کاربر دیگری ثبت شده است."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            for field, old_value, new_value in changes:
+                audit.candidate_field_edited(
+                    request.user.id, user_id, field=field,
+                    old_value=old_value or "", new_value=new_value,
+                )
+
+        return Response(CandidateTrackingSerializer(profile).data)

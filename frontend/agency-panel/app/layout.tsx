@@ -1,17 +1,19 @@
 import type { Metadata } from "next"
-import { Vazirmatn } from "next/font/google"
+import { Cairo } from "next/font/google"
 import "./globals.css"
 
 // Self-hosted via next/font/google — downloaded and served from this
 // app's own domain at build time, not fetched from Google at runtime.
-// Matches the platform's own design-system requirement for this
-// font; found missing here (and in every other panel) during a
-// visual-polish pass — globals.css already listed "Vazirmatn" in its
-// font-family fallback stack, but with no actual font file ever
-// loaded, browsers silently skipped that name and fell back to
-// whatever generic system font each OS happened to have, which is
-// exactly the inconsistent, unpolished look this fixes.
-const vazirmatn = Vazirmatn({
+// Third font tried here: Vazirmatn (rejected on sight), then Noto
+// Sans Arabic (too generic-feeling), now Cairo — explicitly asked for
+// something stylistically close to Yekan Bakh's clean, geometric,
+// monoline character but genuinely free. Cairo is tagged "Geometric
+// Sans" by font catalogers, is on Google Fonts under an OFL license,
+// and its own Google Fonts description confirms explicit Farsi
+// glyph support, not just Arabic. IRANSans and Yekan Bakh themselves
+// remain commercially licensed and unavailable through
+// next/font/google or any font host reachable from this environment.
+const cairo = Cairo({
   subsets: ["arabic"],
   variable: "--font-vazirmatn",
   display: "swap",
@@ -24,7 +26,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fa" dir="rtl" className={vazirmatn.variable}>
+    <html lang="fa" dir="rtl" className={cairo.variable}>
       <body className="antialiased min-h-screen bg-background">{children}</body>
     </html>
   )

@@ -142,6 +142,12 @@ class AuditService:
     def caregiver_needs_more_documents(self, actor_id, caregiver_user_id):
         return self.log_event(AuditEventType.CAREGIVER_NEEDS_MORE_DOCUMENTS, actor_id, caregiver_user_id)
 
+    def candidate_field_edited(self, actor_id, caregiver_user_id, field, old_value, new_value):
+        return self.log_event(
+            AuditEventType.CANDIDATE_FIELD_EDITED, actor_id, caregiver_user_id,
+            field=field, old_value=old_value, new_value=new_value,
+        )
+
     def terms_accepted(self, caregiver_user_id):
         # actor and target are deliberately the same id here — this is
         # the one event on this whole platform that can only ever be

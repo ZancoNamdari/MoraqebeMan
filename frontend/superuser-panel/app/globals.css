@@ -2,57 +2,40 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * مراقب من — Design System v3
- * Structure inspired by honorcare.com (mission-driven, minimal, hexagon
- * motif, generous whitespace) — brand color is a deliberate warm pink
- * (#FFC5C5), not teal. See /docs/DESIGN_SYSTEM.md.
- */
 :root {
-  --radius: 1rem;
-
+  --radius: 0.625rem;
+  /* Brand colors — exact hex as specified, not an oklch approximation. */
+  --brand-pink: #FFC5C5;
+  --brand-mint: #D9F0E1;
+  --brand-pink-strong: #FF9E9E;
+  --brand-mint-strong: #B8E0C7;
   --background: #FFFBFB;
-  --foreground: #3A2424;
-  --card: #FFFFFF;
-  --card-foreground: #3A2424;
-  --popover: #FFFFFF;
-  --popover-foreground: #3A2424;
-
+  --foreground: #4a2f2f;
+  --card: #ffffff;
+  --card-foreground: #4a2f2f;
+  --popover: #ffffff;
+  --popover-foreground: #4a2f2f;
   --primary: #FFC5C5;
-  --primary-foreground: #6B2A2A;
-  /* Pastel primary reads as ~1.6:1 contrast on white — fine as a button
-     fill (paired with --primary-foreground) but unreadable as text/link/
-     icon color. --primary-strong is the same hue at a contrast-safe
-     depth (~5:1 on light backgrounds), used for text-primary-strong. */
-  --primary-strong: #C23B72;
-  --secondary: #FDE7E7;
-  --secondary-foreground: #7A3434;
-  --muted: #FBF0EF;
-  --muted-foreground: #8A6A6A;
-  --accent: #FFD9D9;
-  --accent-foreground: #6B2A2A;
-
-  --destructive: #C4453A;
-  --destructive-foreground: #FBF6F5;
-
-  --border: #F5D8D8;
-  --input: #F5D8D8;
-  --ring: #FF9E9E;
-
-  /* Dark, warm "footer" surface used for emphasis sections */
-  --deep: #241619;
-  --deep-foreground: #F5EAE9;
-  --deep-muted: #B89494;
-  --deep-border: #402226;
-
-  --sidebar: #FFF6F6;
-  --sidebar-foreground: #5C3A3A;
-  --sidebar-primary: #FFC5C5;
-  --sidebar-primary-foreground: #6B2A2A;
-  --sidebar-accent: #FFD9D9;
-  --sidebar-accent-foreground: #6B2A2A;
-  --sidebar-border: #F5D8D8;
-  --sidebar-ring: #FF9E9E;
+  --primary-foreground: #5c2626;
+  --secondary: #D9F0E1;
+  --secondary-foreground: #1f4a34;
+  --muted: #FDEDED;
+  --muted-foreground: #8a6a6a;
+  --accent: #D9F0E1;
+  --accent-foreground: #1f4a34;
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: #FADADA;
+  --input: #FADADA;
+  --ring: #FFC5C5;
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 91%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
 body {
@@ -62,52 +45,44 @@ body {
 }
 
 .dark {
-  --background: #1A1214;
-  --foreground: #F5EAE9;
-  --card: #241A1C;
-  --card-foreground: #F5EAE9;
-  --popover: #241A1C;
-  --popover-foreground: #F5EAE9;
-
-  --primary: #FFADAD;
-  --primary-foreground: #2A1414;
-  /* Light pastel already reads well as text on this dark background, so
-     keep primary-strong equal to primary in dark mode. */
-  --primary-strong: #FFADAD;
-  --secondary: #33201F;
-  --secondary-foreground: #FFC5C5;
-  --muted: #2E1F20;
-  --muted-foreground: #B89494;
-  --accent: #3D2426;
-  --accent-foreground: #FFC5C5;
-
-  --destructive: #E0685D;
-  --destructive-foreground: #150A09;
-
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.14);
-  --ring: #FFADAD;
-
-  --deep: #150E0F;
-  --deep-foreground: #F5EAE9;
-  --deep-muted: #A48787;
-  --deep-border: #402226;
-
-  --sidebar: #241A1C;
-  --sidebar-foreground: #EBDBDA;
-  --sidebar-primary: #FFADAD;
-  --sidebar-primary-foreground: #2A1414;
-  --sidebar-accent: #3D2426;
-  --sidebar-accent-foreground: #FFC5C5;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #FFADAD;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --sidebar: hsl(240 5.9% 10%);
+  --sidebar-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-border: hsl(240 3.7% 15.9%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 6px);
-  --radius-md: calc(var(--radius) - 4px);
+  --color-brand-pink: var(--brand-pink);
+  --color-brand-mint: var(--brand-mint);
+  --color-brand-pink-strong: var(--brand-pink-strong);
+  --color-brand-mint-strong: var(--brand-mint-strong);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 6px);
+  --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -116,7 +91,6 @@ body {
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-primary-strong: var(--primary-strong);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -128,10 +102,6 @@ body {
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-deep: var(--deep);
-  --color-deep-foreground: var(--deep-foreground);
-  --color-deep-muted: var(--deep-muted);
-  --color-deep-border: var(--deep-border);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -140,27 +110,4 @@ body {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-}
-
-/* Hexagon motif — used as a faint repeating background on hero/emphasis
-   sections. Single SVG tile, tinted per-section so it adapts between the
-   light hero and the dark "deep" sections. */
-.hex-field {
-  position: relative;
-}
-.hex-field::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98' viewBox='0 0 56 98'%3E%3Cpath d='M28 0 56 16.3v32.7L28 65 0 49V16.3Z' fill='none' stroke='%23FF9E9E' stroke-opacity='0.3' stroke-width='1'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-position: center;
-  opacity: 1;
-  -webkit-mask-image: linear-gradient(to bottom, black, transparent);
-  mask-image: linear-gradient(to bottom, black, transparent);
-}
-.dark .hex-field::before,
-.hex-field--on-deep::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98' viewBox='0 0 56 98'%3E%3Cpath d='M28 0 56 16.3v32.7L28 65 0 49V16.3Z' fill='none' stroke='%23FFC5C5' stroke-opacity='0.22' stroke-width='1'/%3E%3C/svg%3E");
 }

@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import {
+  Building2, Users, HeartHandshake, UserCog, AlertTriangle,
+  ShieldQuestionMark, ClipboardList, Copy, Pencil, Check,
+} from "lucide-react"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,9 +13,55 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { agencyService } from "@/services/agency.service"
-import { authService } from "@/services/auth.service"
 import { ROUTES } from "@/lib/routes"
+import { toPersianDigits } from "@/lib/persian_digits"
 import type { AgencyDashboard, AgencyProfile } from "@/types/agency"
+
+function StatCard({ icon: Icon, count, label, pendingCount, colorClass, onClick }: {
+  icon: React.ElementType; count: number; label: string; pendingCount?: number; colorClass: string; onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-start gap-2 rounded-2xl border border-pink-100 bg-white p-4 text-right shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${colorClass}`}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <p className="text-2xl font-bold text-rose-950">{toPersianDigits(count)}</p>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      {pendingCount !== undefined && pendingCount > 0 && (
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+          {toPersianDigits(pendingCount)} درخواست در انتظار
+        </span>
+      )}
+    </button>
+  )
+}
+
+function ActionCard({ icon: Icon, title, description, badge, onClick }: {
+  icon: React.ElementType; title: string; description: string; badge?: number; onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="relative flex items-start gap-3 rounded-2xl border border-pink-100 bg-white p-4 text-right shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-rose-700">
+        <Icon className="h-5 w-5" />
+      </span>
+      <span className="flex-1">
+        <span className="block text-sm font-semibold text-rose-900">{title}</span>
+        <span className="mt-0.5 block text-xs text-muted-foreground">{description}</span>
+      </span>
+      {badge !== undefined && badge > 0 && (
+        <span className="absolute -top-2 -left-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-bold text-white">
+          {toPersianDigits(badge)}
+        </span>
+      )}
+    </button>
+  )
+}
 
 export default function DashboardPage() {
   const { user, loading: authLoading, logout } = useAuth(["agency", "agency_supervisor"])
@@ -24,6 +74,7 @@ export default function DashboardPage() {
   const [companyName, setCompanyName] = useState("")
   const [licenseNumber, setLicenseNumber] = useState("")
   const [saving, setSaving] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   function refresh() {
     return Promise.all([agencyService.me(), agencyService.dashboard()]).then(([p, d]) => {
@@ -52,26 +103,76 @@ export default function DashboardPage() {
     }
   }
 
+  function handleCopyCode() {
+    if (!profile) return
+    navigator.clipboard.writeText(profile.access_code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const needsAttentionCount = dashboard
+    ? dashboard.open_complaints_count + dashboard.pending_appeals_count + dashboard.candidates_needing_docs_count
+    : 0
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
       <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">پنل آژانس</h1>
+        <div className="mx-auto flex max-w-4xl items-center justify-between p-4">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-700">
+              <Building2 className="h-5 w-5" />
+            </span>
+            <div>
+              <h1 className="text-sm font-bold text-rose-900">{profile?.company_name || "پنل آژانس"}</h1>
+              <p className="text-[11px] text-muted-foreground">مراقب من — پنل آژانس</p>
+            </div>
+          </div>
           <Button variant="ghost" size="sm" className="text-rose-600" onClick={logout}>خروج</Button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-4 p-4">
+      <main className="mx-auto max-w-4xl space-y-5 p-4">
         {loading || !profile || !dashboard ? (
-          <Skeleton className="h-64 w-full rounded-2xl" />
+          <div className="space-y-4">
+            <Skeleton className="h-28 w-full rounded-2xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+          </div>
         ) : (
           <>
+            {needsAttentionCount > 0 && (
+              <Card className="border-amber-300 bg-amber-50">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <AlertTriangle className="h-5 w-5 shrink-0 text-amber-700" />
+                  <p className="text-sm text-amber-900">
+                    <span className="font-bold">{toPersianDigits(needsAttentionCount)} مورد</span> نیاز به رسیدگی دارد —
+                    شامل شکایات باز، درخواست‌های بازبینی، و کاندیداهای در انتظار مدارک.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard
+                icon={HeartHandshake} count={dashboard.approved_family_count} label="خانواده عضو"
+                pendingCount={dashboard.pending_family_requests}
+                colorClass="bg-rose-50 text-rose-700"
+                onClick={() => router.push(ROUTES.families)}
+              />
+              <StatCard
+                icon={Users} count={dashboard.approved_caregiver_count} label="مراقب عضو"
+                pendingCount={dashboard.pending_caregiver_requests}
+                colorClass="bg-pink-50 text-pink-700"
+                onClick={() => router.push(ROUTES.caregivers)}
+              />
+            </div>
+
             <Card className="border-pink-100">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-rose-900">اطلاعات آژانس</CardTitle>
+                <CardTitle className="text-base text-rose-900">اطلاعات آژانس</CardTitle>
                 {!editing && (
-                  <Button variant="outline" size="sm" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => setEditing(true)}>
-                    ویرایش
+                  <Button variant="outline" size="sm" className="gap-1.5 border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => setEditing(true)}>
+                    <Pencil className="h-3.5 w-3.5" /> ویرایش
                   </Button>
                 )}
               </CardHeader>
@@ -96,61 +197,57 @@ export default function DashboardPage() {
                 ) : (
                   <>
                     <p className="text-sm"><span className="text-muted-foreground">نام شرکت: </span>{profile.company_name || "—"}</p>
-                    <p className="text-sm"><span className="text-muted-foreground">شماره مجوز: </span>{profile.license_number || "—"}</p>
+                    <p className="text-sm"><span className="text-muted-foreground">شماره مجوز: </span>{profile.license_number ? toPersianDigits(profile.license_number) : "—"}</p>
                   </>
                 )}
+
+                <div className="flex items-center justify-between rounded-xl bg-gradient-to-l from-pink-50 to-rose-50 p-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">کد عضویت آژانس</p>
+                    <p dir="ltr" className="text-left text-lg font-bold tracking-wider text-rose-700">{profile.access_code}</p>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-1.5 border-pink-200 bg-white text-rose-700 hover:bg-pink-50" onClick={handleCopyCode}>
+                    {copied ? <><Check className="h-3.5 w-3.5" /> کپی شد</> : <><Copy className="h-3.5 w-3.5" /> کپی</>}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
-            <Card className="border-pink-100 bg-gradient-to-l from-pink-50 to-rose-50">
-              <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">
-                  کد عضویت آژانس — این کد را در اختیار خانواده‌ها و مراقبانی که می‌خواهند به این آژانس بپیوندند قرار دهید
-                </p>
-                <p dir="ltr" className="text-left text-lg font-bold tracking-wider text-rose-700">{profile.access_code}</p>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => router.push(ROUTES.families)} className="rounded-xl border border-pink-100 bg-white p-4 text-right transition-colors hover:bg-pink-50/60">
-                <p className="text-2xl font-bold text-rose-800">{dashboard.approved_family_count}</p>
-                <p className="text-xs text-muted-foreground">خانواده عضو</p>
-                {dashboard.pending_family_requests > 0 && (
-                  <p className="mt-1 text-xs font-medium text-amber-700">{dashboard.pending_family_requests} درخواست در انتظار</p>
+            <div>
+              <h2 className="mb-2 px-1 text-sm font-semibold text-rose-900">افراد</h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <ActionCard
+                  icon={HeartHandshake} title="سالمندها" description="افزودن سالمند و یافتن مراقب مناسب"
+                  onClick={() => router.push(ROUTES.patients)}
+                />
+                {user.role === "agency" && (
+                  <ActionCard
+                    icon={UserCog} title="سوپروایزرها" description="افزودن کارشناس برای ثبت اطلاعات"
+                    onClick={() => router.push(ROUTES.supervisors)}
+                  />
                 )}
-              </button>
-              <button onClick={() => router.push(ROUTES.caregivers)} className="rounded-xl border border-pink-100 bg-white p-4 text-right transition-colors hover:bg-pink-50/60">
-                <p className="text-2xl font-bold text-rose-800">{dashboard.approved_caregiver_count}</p>
-                <p className="text-xs text-muted-foreground">مراقب در استخر</p>
-                {dashboard.pending_caregiver_requests > 0 && (
-                  <p className="mt-1 text-xs font-medium text-amber-700">{dashboard.pending_caregiver_requests} درخواست در انتظار</p>
-                )}
-              </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => router.push(ROUTES.patients)} className="rounded-xl border border-pink-100 bg-white p-4 text-right transition-colors hover:bg-pink-50/60">
-                <p className="text-sm font-medium text-rose-800">سالمندها</p>
-                <p className="text-xs text-muted-foreground">افزودن سالمند و یافتن مراقب مناسب</p>
-              </button>
-              {user.role === "agency" && (
-                <button onClick={() => router.push(ROUTES.supervisors)} className="rounded-xl border border-pink-100 bg-white p-4 text-right transition-colors hover:bg-pink-50/60">
-                  <p className="text-sm font-medium text-rose-800">سوپروایزرها</p>
-                  <p className="text-xs text-muted-foreground">افزودن کارشناس برای ثبت اطلاعات</p>
-                </button>
-              )}
-              <button onClick={() => router.push(ROUTES.complaints)} className="rounded-xl border border-pink-100 bg-white p-4 text-right transition-colors hover:bg-pink-50/60">
-                <p className="text-sm font-medium text-rose-800">شکایات</p>
-                <p className="text-xs text-muted-foreground">مشاهده شکایات درباره مراقبان شما</p>
-              </button>
-              <button onClick={() => router.push(ROUTES.blacklistAppeals)} className="rounded-xl border border-pink-100 bg-white p-4 text-right transition-colors hover:bg-pink-50/60">
-                <p className="text-sm font-medium text-rose-800">درخواست‌های بازبینی مسدودیت</p>
-                <p className="text-xs text-muted-foreground">بررسی درخواست رفع مسدودیت مراقبان شما</p>
-              </button>
-              <button onClick={() => router.push(ROUTES.candidates)} className="rounded-xl border border-pink-100 bg-white p-4 text-right transition-colors hover:bg-pink-50/60">
-                <p className="text-sm font-medium text-rose-800">بانک اطلاعات مراقبان</p>
-                <p className="text-xs text-muted-foreground">پیگیری مصاحبه و وضعیت کاندیداها</p>
-              </button>
+            <div>
+              <h2 className="mb-2 px-1 text-sm font-semibold text-rose-900">رسیدگی و بررسی</h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <ActionCard
+                  icon={AlertTriangle} title="شکایات" description="مشاهده شکایات درباره مراقبان شما"
+                  badge={dashboard.open_complaints_count}
+                  onClick={() => router.push(ROUTES.complaints)}
+                />
+                <ActionCard
+                  icon={ShieldQuestionMark} title="درخواست‌های بازبینی مسدودیت" description="بررسی درخواست رفع مسدودیت مراقبان شما"
+                  badge={dashboard.pending_appeals_count}
+                  onClick={() => router.push(ROUTES.blacklistAppeals)}
+                />
+                <ActionCard
+                  icon={ClipboardList} title="بانک اطلاعات مراقبان" description="پیگیری مصاحبه و وضعیت کاندیداها"
+                  badge={dashboard.candidates_needing_docs_count}
+                  onClick={() => router.push(ROUTES.candidates)}
+                />
+              </div>
             </div>
           </>
         )}

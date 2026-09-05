@@ -3,10 +3,12 @@ import { api } from "./api"
 export interface Candidate {
   user_id: number
   full_name: string
+  first_name: string
+  last_name: string
   national_id: string | null
   phone_number: string
   city: string | null
-  registered_at: string
+  registered_at: string  // real Jalali datetime string from the backend ("1405-06-14 10:30:00"), not Gregorian
   experience_level: string | null
   status: "draft" | "pending" | "needs_more_docs" | "approved" | "rejected" | "suspended"
   status_label: string
@@ -76,6 +78,11 @@ export const candidateTrackingService = {
 
   async markReadyForReview(userId: number): Promise<Candidate> {
     const { data } = await api.post(`/api/caregivers/${userId}/mark-ready-for-review/`)
+    return data
+  },
+
+  async editFields(userId: number, payload: { first_name?: string; last_name?: string; national_id?: string; phone_number?: string }): Promise<Candidate> {
+    const { data } = await api.patch(`/api/caregivers/${userId}/edit-fields/`, payload)
     return data
   },
 

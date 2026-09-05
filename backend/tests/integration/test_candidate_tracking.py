@@ -176,6 +176,33 @@ class AgencyCandidateTrackingViewTests(BaseAPITestCase):
         self.assertIn("interview_score", row)
         self.assertIn("staff_notes", row)
 
+    def test_registered_at_is_a_real_jalali_string_not_gregorian(self):
+        """
+        Regression test for real, direct feedback: this field was
+        originally a plain Gregorian DateTimeField with only its
+        digits swapped to Persian numerals on the frontend — still
+        the wrong calendar, just with the wrong glyphs. Fixed by
+        switching to the same JalaliDateTimeField already trusted
+        elsewhere in this backend, rather than attempting the
+        Gregorian-to-Jalali conversion in JavaScript.
+        """
+        response = self.agency_client.get("/api/agencies/me/candidates/")
+        row = next(c for c in response.data if c["user_id"] == self.pending_profile.user_id)
+        # A real Jalali year is always in the 13xx/14xx range — a
+        # Gregorian year leaking through would be in the 19xx/20xx
+        # range, immediately failing this rather than silently passing.
+        jalali_year = int(row["registered_at"][:4])
+        self.assertGreater(jalali_year, 1300)
+        self.assertLess(jalali_year, 1500)
+        # Cross-checked directly against the same jdatetime library the
+        # rest of this backend already relies on, not just a plausible
+        # range check. created_at is already a jdatetime.datetime
+        # object at the Python level (that's the entire point of
+        # jDateTimeField), so no conversion is needed here — just
+        # format it the same way and compare.
+        expected = self.pending_profile.created_at.strftime("%Y-%m-%d")
+        self.assertEqual(row["registered_at"][:10], expected)
+
     def test_unauthenticated_cannot_access(self):
         client = APIClient()
         response = client.get("/api/agencies/me/candidates/")
@@ -240,4 +267,110 @@ class CandidateResumeViewTests(BaseAPITestCase):
     def test_unauthenticated_cannot_view_resume(self):
         client = APIClient()
         response = client.get(f"/api/caregivers/{self.caregiver_user.id}/resume/")
+        self.assertEqual(response.status_code, 401)
+
+
+class EditCandidateFieldsTests(BaseAPITestCase):
+    def setUp(self):
+        self.admin = make_user("editfields_admin", role=UserRole.ADMIN, phone_number="09100025050")
+        self.admin_client = APIClient()
+        self.admin_client.force_authenticate(self.admin)
+
+        self.agency = AgencyProfile.objects.create(
+            user=make_user("editfields_agency", role=UserRole.AGENCY, phone_number="09100025051"),
+            company_name="آژانس تست ویرایش",
+        )
+        self.agency_client = APIClient()
+        self.agency_client.force_authenticate(self.agency.user)
+
+        self.unrelated_agency = AgencyProfile.objects.create(
+            user=make_user("editfields_unrelated", role=UserRole.AGENCY, phone_number="09100025052"),
+            company_name="آژانس بی‌ربط",
+        )
+        self.unrelated_client = APIClient()
+        self.unrelated_client.force_authenticate(self.unrelated_agency.user)
+
+        self.caregiver_user = make_user(
+            "editfields_caregiver", role=UserRole.CAREGIVER, phone_number="09100025053",
+        )
+        self.caregiver_user.first_name = "سارا"
+        self.caregiver_user.last_name = "قدیمی"
+        self.caregiver_user.save()
+        self.profile = CaregiverProfile.objects.create(user=self.caregiver_user, status=CaregiverStatus.PENDING)
+        AgencyCaregiverLink.objects.create(agency=self.agency, caregiver=self.profile, status=AgencyLinkStatus.PENDING)
+
+    def test_admin_can_edit_name(self):
+        response = self.admin_client.patch(f"/api/caregivers/{self.caregiver_user.id}/edit-fields/", {
+            "first_name": "سارا", "last_name": "جدید",
+        }, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.caregiver_user.refresh_from_db()
+        self.assertEqual(self.caregiver_user.last_name, "جدید")
+
+    def test_agency_with_pending_link_can_edit_phone(self):
+        response = self.agency_client.patch(f"/api/caregivers/{self.caregiver_user.id}/edit-fields/", {
+            "phone_number": "09121234599",
+        }, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.caregiver_user.refresh_from_db()
+        self.assertEqual(self.caregiver_user.phone_number, "09121234599")
+
+    def test_unrelated_agency_cannot_edit(self):
+        response = self.unrelated_client.patch(f"/api/caregivers/{self.caregiver_user.id}/edit-fields/", {
+            "first_name": "دستکاری",
+        }, format="json")
+        self.assertEqual(response.status_code, 403)
+
+    def test_invalid_phone_format_rejected(self):
+        response = self.admin_client.patch(f"/api/caregivers/{self.caregiver_user.id}/edit-fields/", {
+            "phone_number": "12345",
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_duplicate_phone_number_rejected_cleanly(self):
+        """A 400 with a clear message, not a raw 500 IntegrityError —
+        this is a real, likely-to-happen case (agency mistypes a
+        number that already belongs to someone else on the platform)."""
+        other_user = make_user("editfields_other", role=UserRole.CAREGIVER, phone_number="09121234500")
+        response = self.admin_client.patch(f"/api/caregivers/{self.caregiver_user.id}/edit-fields/", {
+            "phone_number": other_user.phone_number,
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_duplicate_national_id_rejected_cleanly(self):
+        other_user = make_user("editfields_other_nid", role=UserRole.CAREGIVER, phone_number="09100025054")
+        other_user.national_id = "1112223334"
+        other_user.save()
+        response = self.admin_client.patch(f"/api/caregivers/{self.caregiver_user.id}/edit-fields/", {
+            "national_id": "1112223334",
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_edit_is_logged_with_old_and_new_value(self):
+        self.admin_client.patch(f"/api/caregivers/{self.caregiver_user.id}/edit-fields/", {
+            "last_name": "بروزشده",
+        }, format="json")
+        from apps.audit.models import AuditLog
+        entry = AuditLog.objects.filter(
+            event_type="candidate_field_edited", actor_user_id=self.admin.id, target_user_id=self.caregiver_user.id,
+        ).first()
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.metadata["field"], "last_name")
+        self.assertEqual(entry.metadata["old_value"], "قدیمی")
+        self.assertEqual(entry.metadata["new_value"], "بروزشده")
+
+    def test_no_op_edit_creates_no_log_entry(self):
+        """Sending the same value that's already there shouldn't spam
+        the audit log with a meaningless "changed from X to X" entry."""
+        from apps.audit.models import AuditLog
+        self.admin_client.patch(f"/api/caregivers/{self.caregiver_user.id}/edit-fields/", {
+            "first_name": "سارا",
+        }, format="json")
+        self.assertFalse(AuditLog.objects.filter(event_type="candidate_field_edited").exists())
+
+    def test_unauthenticated_cannot_edit(self):
+        client = APIClient()
+        response = client.patch(f"/api/caregivers/{self.caregiver_user.id}/edit-fields/", {
+            "first_name": "x",
+        }, format="json")
         self.assertEqual(response.status_code, 401)
