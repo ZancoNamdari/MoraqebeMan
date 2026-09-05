@@ -1,19 +1,16 @@
 import type { Metadata } from "next"
-import { Cairo } from "next/font/google"
+import { Vazirmatn } from "next/font/google"
 import "./globals.css"
 
 // Self-hosted via next/font/google — downloaded and served from this
 // app's own domain at build time, not fetched from Google at runtime.
-// Third font tried here: Vazirmatn (rejected on sight), then Noto
-// Sans Arabic (too generic-feeling), now Cairo — explicitly asked for
-// something stylistically close to Yekan Bakh's clean, geometric,
-// monoline character but genuinely free. Cairo is tagged "Geometric
-// Sans" by font catalogers, is on Google Fonts under an OFL license,
-// and its own Google Fonts description confirms explicit Farsi
-// glyph support, not just Arabic. IRANSans and Yekan Bakh themselves
-// remain commercially licensed and unavailable through
-// next/font/google or any font host reachable from this environment.
-const cairo = Cairo({
+// Landed back here after actually trying Noto Sans Arabic and Cairo
+// too, then showing all four real candidates (plus IBM Plex Sans
+// Arabic, Tajawal, Rubik) rendered side by side with real Persian
+// sample text — Vazirmatn won on sight. Also genuinely the most
+// widely-used Persian web font in practice (19M+ users, used by
+// Telegram), not just a subjective pick.
+const vazirmatn = Vazirmatn({
   subsets: ["arabic"],
   variable: "--font-vazirmatn",
   display: "swap",
@@ -26,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fa" dir="rtl" className={cairo.variable}>
+    <html lang="fa" dir="rtl" className={vazirmatn.variable}>
       <body className="antialiased min-h-screen bg-background">{children}</body>
     </html>
   )
