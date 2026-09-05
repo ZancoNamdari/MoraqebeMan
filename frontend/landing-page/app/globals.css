@@ -54,7 +54,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, "IRANSans", "Vazirmatn", sans-serif;
+  font-family: var(--font-vazirmatn), -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, sans-serif;
 }
 
 .dark {

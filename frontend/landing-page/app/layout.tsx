@@ -2,8 +2,14 @@ import type { Metadata } from "next"
 import { Vazirmatn } from "next/font/google"
 import "./globals.css"
 
+// Self-hosted via next/font/google — same fix already applied to
+// every other panel; this one was missed in that earlier pass.
+// globals.css already listed "Vazirmatn" in its font-family fallback
+// stack with no font ever actually loaded, so browsers were silently
+// falling back to generic system fonts here specifically, even after
+// every other panel was fixed.
 const vazirmatn = Vazirmatn({
-  subsets: ["arabic", "latin"],
+  subsets: ["arabic"],
   variable: "--font-vazirmatn",
   display: "swap",
 })
