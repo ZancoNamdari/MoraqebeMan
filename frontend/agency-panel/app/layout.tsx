@@ -1,17 +1,18 @@
 import type { Metadata } from "next"
-import { Vazirmatn } from "next/font/google"
+import { IBM_Plex_Sans_Arabic } from "next/font/google"
 import "./globals.css"
 
 // Self-hosted via next/font/google — downloaded and served from this
 // app's own domain at build time, not fetched from Google at runtime.
-// Landed back here after actually trying Noto Sans Arabic and Cairo
-// too, then showing all four real candidates (plus IBM Plex Sans
-// Arabic, Tajawal, Rubik) rendered side by side with real Persian
-// sample text — Vazirmatn won on sight. Also genuinely the most
-// widely-used Persian web font in practice (19M+ users, used by
-// Telegram), not just a subjective pick.
-const vazirmatn = Vazirmatn({
+// Fourth font tried here: Vazirmatn was actually chosen after a
+// side-by-side comparison of four real candidates, deployed, then
+// rejected again after being seen in the full app rather than a small
+// comparison card — a genuinely different context that can change how
+// a font reads. IBM Plex Sans Arabic won a second, four-way visual
+// comparison against the other candidates from round one.
+const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-vazirmatn",
   display: "swap",
 })
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fa" dir="rtl" className={vazirmatn.variable}>
+    <html lang="fa" dir="rtl" className={ibmPlexSansArabic.variable}>
       <body className="antialiased min-h-screen bg-background">{children}</body>
     </html>
   )
