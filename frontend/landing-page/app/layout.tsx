@@ -14,8 +14,12 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   display: "swap",
 })
 
+// Title shortened to just the brand name per explicit request — the
+// full tagline was too long for a browser tab. description is
+// untouched since that's for search engines / link previews, not the
+// visible tab title, and wasn't part of the complaint.
 export const metadata: Metadata = {
-  title: "مراقب من — پلتفرم مراقبت خانوادگی از سالمندان",
+  title: "مراقب من",
   description: "خانواده و بیمار حساب‌های جداگانه دارند، به‌صورت امن به هم متصل می‌شوند، و مراقبان حرفه‌ای گزارش مراقبت ثبت می‌کنند — همه در یک جا.",
 }
 
