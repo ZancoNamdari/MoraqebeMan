@@ -14,8 +14,12 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   display: "swap",
 })
 
+// Title order deliberately consistent across every panel (panel name
+// first, brand last) — every panel except landing-page follows this,
+// since landing-page is the platform's own homepage rather than a
+// sub-tool within it.
 export const metadata: Metadata = {
-  title: "مراقب من — پنل سوپریوزر",
+  title: "پنل سوپریوزر — مراقب من",
   description: "مدیریت سراسری کاربران و نقش‌ها",
 }
 
