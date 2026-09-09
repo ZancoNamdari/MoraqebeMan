@@ -1,0 +1,20 @@
+services:
+  nginx_supervisor:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./gateway/nginx.supervisor.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+    depends_on:
+      - supervisor_panel
+      - agency_panel
+      - family_panel
+      - patient_panel
+      - caregiver_panel
+      - admin_panel
+      - superuser_panel
+      - landing_page

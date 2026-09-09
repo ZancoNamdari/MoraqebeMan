@@ -1,15 +1,15 @@
 import type { Metadata } from "next"
-import { Vazirmatn } from "next/font/google"
+import { IBM_Plex_Sans_Arabic } from "next/font/google"
 import "./globals.css"
 
-// Self-hosted via next/font/google — same fix already applied to
-// every other panel; this one was missed in that earlier pass.
-// globals.css already listed "Vazirmatn" in its font-family fallback
-// stack with no font ever actually loaded, so browsers were silently
-// falling back to generic system fonts here specifically, even after
-// every other panel was fixed.
-const vazirmatn = Vazirmatn({
+// Self-hosted via next/font/google — downloaded and served from this
+// app's own domain at build time, not fetched from Google at runtime.
+// Switched from Vazirmatn to IBM Plex Sans Arabic to match the final
+// font chosen for agency-panel, for platform-wide visual consistency
+// across every panel.
+const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-vazirmatn",
   display: "swap",
 })
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fa" dir="rtl" className={vazirmatn.variable}>
+    <html lang="fa" dir="rtl" className={ibmPlexSansArabic.variable}>
       <body className="antialiased min-h-screen bg-background">{children}</body>
     </html>
   )
