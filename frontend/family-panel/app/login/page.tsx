@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -12,6 +12,11 @@ import { ROUTES } from "@/lib/routes"
 import { extractErrorMessage } from "@/lib/errors"
 
 type Mode = "register" | "login-phone" | "login-code"
+
+// Matches backend/apps/authentication/models.py's PhoneOTP.VALID_MINUTES
+// exactly — confirmed directly rather than guessed, since a countdown
+// showing the wrong duration would be actively misleading.
+const OTP_VALID_SECONDS = 5 * 60
 
 export default function LoginPage() {
   return (
@@ -36,6 +41,22 @@ function LoginForm() {
   )
   const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(false)
+  const [secondsLeft, setSecondsLeft] = useState(0)
+
+  // Ticks down once per second only while the code-entry step is
+  // showing — resets to the full duration each time a fresh code is
+  // actually sent, not just when this step is entered.
+  useEffect(() => {
+    if (mode !== "login-code" || secondsLeft <= 0) return
+    const id = setInterval(() => setSecondsLeft((s) => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(id)
+  }, [mode, secondsLeft])
+
+  function formatTime(totalSeconds: number) {
+    const m = Math.floor(totalSeconds / 60)
+    const s = totalSeconds % 60
+    return `${m}:${s.toString().padStart(2, "0")}`
+  }
 
   async function handleRequestCode(e: React.FormEvent) {
     e.preventDefault()
@@ -43,6 +64,7 @@ function LoginForm() {
     try {
       await authService.requestOtpLogin(phone)
       setMode("login-code")
+      setSecondsLeft(OTP_VALID_SECONDS)
       setMessage("کد ورود برای شماره شما پیامک شد.")
     } catch (err: any) {
       setError(extractErrorMessage(err, "درخواست با خطا مواجه شد. دوباره تلاش کنید."))
@@ -59,6 +81,19 @@ function LoginForm() {
       router.push(ROUTES.dashboard)
     } catch (err: any) {
       setError(extractErrorMessage(err, "کد نادرست است."))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleResendCode() {
+    setError(""); setMessage(""); setLoading(true)
+    try {
+      await authService.requestOtpLogin(phone)
+      setSecondsLeft(OTP_VALID_SECONDS)
+      setMessage("کد جدید برای شماره شما پیامک شد.")
+    } catch (err: any) {
+      setError(extractErrorMessage(err, "درخواست با خطا مواجه شد. دوباره تلاش کنید."))
     } finally {
       setLoading(false)
     }
@@ -124,10 +159,26 @@ function LoginForm() {
                 <Label htmlFor="code">کد ۶ رقمی</Label>
                 <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} dir="ltr" inputMode="numeric" maxLength={6} required autoFocus />
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
+
+              {secondsLeft > 0 ? (
+                <p className="text-center text-sm text-muted-foreground">
+                  اعتبار کد تا <span dir="ltr" className="font-medium tabular-nums">{formatTime(secondsLeft)}</span> دیگر
+                </p>
+              ) : (
+                <p className="text-center text-sm text-rose-600">کد منقضی شده — یک کد جدید درخواست کنید.</p>
+              )}
+
+              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading || secondsLeft <= 0}>
                 {loading ? "در حال ورود..." : "ورود"}
               </Button>
-              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
+
+              {secondsLeft <= 0 && (
+                <Button type="button" variant="outline" className="w-full" onClick={handleResendCode} disabled={loading}>
+                  ارسال دوباره کد
+                </Button>
+              )}
+
+              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage(""); setSecondsLeft(0) }} className="w-full text-center text-sm text-rose-600 hover:underline">
                 تغییر شماره موبایل
               </button>
             </form>
