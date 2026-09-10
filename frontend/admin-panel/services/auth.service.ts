@@ -22,4 +22,20 @@ export const authService = {
     if (typeof window === "undefined") return false
     return Boolean(window.localStorage.getItem("access_token"))
   },
+
+  // The reset token is a real 32-character alphanumeric string sent
+  // as plain SMS text (not a clickable link) — confirmed directly
+  // against backend/apps/authentication/tasks.py rather than assumed,
+  // since a link-based flow would need a completely different UI.
+  async requestPasswordReset(phoneNumber: string) {
+    await api.post("/api/auth/password-reset/", { phone_number: phoneNumber })
+  },
+
+  async confirmPasswordReset(phoneNumber: string, token: string, newPassword: string) {
+    await api.post("/api/auth/password-reset/confirm/", {
+      phone_number: phoneNumber,
+      token,
+      new_password: newPassword,
+    })
+  },
 }
