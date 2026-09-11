@@ -1,64 +1,55 @@
-# مراقب من (Moraqeb-e Man)
+# MoraqebeMan (مراقب من)
 
-پلتفرم واسط بین خانواده سالمند، بیمار، و مراقب — مدل کسب‌وکار B2B (فروش به آژانس‌های مراقبتی).
+An eldercare platform connecting families, elderly patients, professional caregivers, and care agencies — live at [moraqebman.ir](https://moraqebman.ir).
 
-## معماری
+## What this is
 
-فاز ۱: **مونولیت ماژولار** (نه میکروسرویس) — یک پروژه جنگو واحد در `backend/`، به‌دلیل هزینه عملیاتی پایین‌تر برای فاز راه‌اندازی استارتاپ. مسیر مهاجرت تدریجی به میکروسرویس در فازهای بعدی مستند شده.
+Families and patients register separately, connect securely, and get matched with vetted caregivers. Agencies manage their own roster of caregivers and clients through a dedicated panel. Platform staff review and approve caregiver applications before they go live.
 
-پشته فنی: Django + DRF + PostgreSQL + Redis (کش و Celery broker) + Celery + Docker + Nginx. فرانت‌اند: React + Next.js (mobile-first، PWA).
+## Architecture
 
-## ساختار ریپازیتوری
+- **Backend**: Django + Django REST Framework, one monolithic project (`backend/`) rather than microservices — chosen for lower operational overhead at this stage. PostgreSQL for data, Redis for caching and as the Celery broker, Celery for background jobs (SMS, notifications).
+- **Frontend**: 8 separate Next.js applications, one per user type, each with its own subdomain:
+  - `moraqebman.ir` — public landing page
+  - `family.moraqebman.ir`, `patient.moraqebman.ir`, `caregiver.moraqebman.ir` — OTP-based login
+  - `agency.moraqebman.ir`, `admin.moraqebman.ir`, `superuser.moraqebman.ir`, `supervisor.moraqebman.ir` — password-based login
+- **Infrastructure**: Docker Compose, nginx as reverse proxy with per-subdomain SSL (Let's Encrypt), hosted on a single VPS.
+
+## Repository structure
 
 ```
 moraqebeman/
-├── backend/          # پروژه جنگو (مونولیت) — همه منطق سرور
-│   └── apps/
-│       ├── accounts/        # هویت، شش نقش (SUPERUSER/ADMIN/AGENCY/FAMILY/PATIENT/CAREGIVER)
-│       ├── authentication/  # ثبت‌نام، ورود، JWT، OTP، بازیابی رمز
-│       ├── authorization/   # تغییر نقش (فقط SUPERUSER)
-│       ├── audit/           # ثبت رویدادهای امنیتی
-│       └── families/        # پروفایل خانواده، پروفایل بیمار (۲ تب)، پرسشنامه سازگاری
-├── frontend/         # (برنامه‌ریزی‌شده — Next.js، هنوز ساخته نشده)
-├── gateway/          # پیکربندی Nginx
-└── docker-compose.yml
+├── backend/          # Django project — all server-side logic
+│   └── apps/         # accounts, authentication, agencies, caregivers,
+│                      # families, care, reviews, audit, authorization
+├── frontend/         # 8 Next.js apps — one per panel (see above)
+├── gateway/          # nginx configs
+└── docker-compose*.yml
 ```
 
-## مستندات تکمیلی
+## Documentation
 
-- [`docs/MATCHING.md`](docs/MATCHING.md) — سیستم تطابق مراقب و بیمار: معماری، هر دو پرسشنامه سازگاری به‌طور کامل، فرمول امتیازدهی، مرجع API، و محدودیت‌های شناخته‌شده.
-- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — راهنمای کامل استقرار پروداکشن: چه چیزهایی لازم دارید (سرور، دامنه، حساب کاوه‌نگار)، تنظیم DNS، Docker Compose، SSL، و عملیات پس از استقرار.
+Deeper technical detail lives in `docs/` rather than here:
 
-## اجرا
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — production deployment guide
+- [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) — shared UI/design conventions across panels
+- [`docs/MATCHING.md`](docs/MATCHING.md) — caregiver-patient matching system
+- [`docs/PLATFORM_USAGE_GUIDE.md`](docs/PLATFORM_USAGE_GUIDE.md) — how each panel is used
+- [`DEPLOY_REMAINING_PANELS.md`](DEPLOY_REMAINING_PANELS.md) — step-by-step reference for adding a new subdomain/panel to production
+
+## Running locally
 
 ```bash
-cp .env.example .env   # در صورت نیاز، مقادیر واقعی را جایگزین کنید
+cp .env.example .env
 docker compose up --build
 ```
 
-- بک‌اند: `http://localhost:8000`
-- مستندات API (خودکار، از drf-spectacular): `http://localhost:8000/api/docs/`
-- بررسی سلامت: `http://localhost:8000/health/`
+- Backend: `http://localhost:8000`
+- API docs (auto-generated): `http://localhost:8000/api/docs/`
+- Health check: `http://localhost:8000/health/`
 
-ساخت اولین حساب مدیر:
-```bash
-docker compose exec backend python manage.py create_admin
-```
-(نام کاربری/رمز پیش‌فرض: `admin` / `Admin@12345` — با `--username`/`--password` قابل تغییر)
-
-## تست
+## Tests
 
 ```bash
 docker compose exec backend python manage.py test tests
 ```
-۶۰ تست خودکار، شامل احراز هویت، OTP، بازیابی رمز، تغییر نقش، و پروفایل خانواده/بیمار.
-
-## وضعیت فعلی
-
-| وضعیت | ماژول |
-|---|---|
-| ✅ کامل، تست‌شده | accounts, authentication, authorization, audit, families |
-| ⏳ فقط طراحی‌شده | agencies, caregivers, matching, search, booking, messaging, reviews, notifications, finance, analytics, content |
-| ⏳ ساخته نشده | frontend (Next.js) |
-
-جزئیات کامل معماری، فازبندی، و فرم‌های ثبت‌نام در سند معماری پروژه (خارج از این ریپازیتوری) آمده است.
