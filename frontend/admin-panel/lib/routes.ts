@@ -7,4 +7,7 @@ export const ROUTES = {
   patientNotes: "/patient-notes",
   auditLogs: "/audit-logs",
   blacklistAppeals: "/blacklist-appeals",
+  articles: "/articles",
+  articleNew: "/articles/new",
+  articleDetail: (id: number) => `/articles/${id}`,
 }
