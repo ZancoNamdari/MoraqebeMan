@@ -10,4 +10,5 @@ export const ROUTES = {
   articles: "/articles",
   articleNew: "/articles/new",
   articleDetail: (id: number) => `/articles/${id}`,
+  analytics: "/analytics",
 }

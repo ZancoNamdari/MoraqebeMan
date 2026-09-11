@@ -11,19 +11,26 @@ FROM node:22-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# landing-page is a Server Component with no client-side API calls at
-# all (unlike the other four panels) — its NEXT_PUBLIC_* variables are
-# just the four panel URLs it links to, but still get baked into the
-# server-rendered HTML at build time the same way, so still need
-# --build-arg, not a runtime environment variable.
+# landing-page is mostly a Server Component with no client-side API
+# calls — except this analytics beacon, added specifically for visit
+# tracking, which is why NEXT_PUBLIC_API_URL is now needed here too,
+# unlike before.
 ARG NEXT_PUBLIC_FAMILY_PANEL_URL
 ARG NEXT_PUBLIC_PATIENT_PANEL_URL
 ARG NEXT_PUBLIC_CAREGIVER_PANEL_URL
 ARG NEXT_PUBLIC_SUPERVISOR_PANEL_URL
+ARG NEXT_PUBLIC_AGENCY_PANEL_URL
+ARG NEXT_PUBLIC_ADMIN_PANEL_URL
+ARG NEXT_PUBLIC_SUPERUSER_PANEL_URL
+ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_FAMILY_PANEL_URL=${NEXT_PUBLIC_FAMILY_PANEL_URL}
 ENV NEXT_PUBLIC_PATIENT_PANEL_URL=${NEXT_PUBLIC_PATIENT_PANEL_URL}
 ENV NEXT_PUBLIC_CAREGIVER_PANEL_URL=${NEXT_PUBLIC_CAREGIVER_PANEL_URL}
 ENV NEXT_PUBLIC_SUPERVISOR_PANEL_URL=${NEXT_PUBLIC_SUPERVISOR_PANEL_URL}
+ENV NEXT_PUBLIC_AGENCY_PANEL_URL=${NEXT_PUBLIC_AGENCY_PANEL_URL}
+ENV NEXT_PUBLIC_ADMIN_PANEL_URL=${NEXT_PUBLIC_ADMIN_PANEL_URL}
+ENV NEXT_PUBLIC_SUPERUSER_PANEL_URL=${NEXT_PUBLIC_SUPERUSER_PANEL_URL}
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN npm run build
 
 # ---------- runner ----------

@@ -10,9 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { articlesService, type ArticleDetail } from "@/services/articles.service"
 import { ROUTES } from "@/lib/routes"
+import { Sidebar } from "@/components/layout/sidebar"
 
 export default function ArticleDetailPage() {
-  const { user, loading: authLoading } = useAuth(["admin", "superuser"])
+  const { user, loading: authLoading, logout } = useAuth(["admin", "superuser"])
   const router = useRouter()
   const params = useParams()
   const articleId = Number(params.id)
@@ -64,6 +65,21 @@ export default function ArticleDetailPage() {
     }
   }
 
+  async function handleToggleFeature() {
+    if (!article) return
+    setSaving(true); setError("")
+    try {
+      const updated = article.is_featured
+        ? await articlesService.unfeature(article.id)
+        : await articlesService.feature(article.id)
+      setArticle(updated)
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "این عملیات با خطا مواجه شد.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function handleDelete() {
     if (!article) return
     if (!confirm("این مقاله برای همیشه حذف می‌شود. مطمئن هستید؟")) return
@@ -78,67 +94,81 @@ export default function ArticleDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">ویرایش مقاله</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.articles)}>بازگشت</Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background">
+      <Sidebar onLogout={logout} />
 
-      <main className="mx-auto max-w-2xl space-y-4 p-4">
-        {loading || !article ? (
-          <Skeleton className="h-96 w-full rounded-2xl" />
-        ) : (
-          <Card className="border-pink-100">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-rose-900">
-                {article.is_published ? "منتشرشده" : "پیش‌نویس"}
-              </CardTitle>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" disabled={saving} onClick={handleTogglePublish}>
-                  {article.is_published ? "لغو انتشار" : "انتشار"}
+      <div className="sm:mr-64">
+        <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+          <div className="flex items-center justify-between p-4 sm:px-6">
+            <h1 className="font-bold text-rose-900">ویرایش مقاله</h1>
+            <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.articles)}>بازگشت</Button>
+          </div>
+        </header>
+
+        <main className="p-4 sm:p-6">
+          {loading || !article ? (
+            <Skeleton className="mx-auto h-96 max-w-2xl w-full rounded-2xl" />
+          ) : (
+            <Card className="mx-auto max-w-2xl border-pink-100">
+              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+                <CardTitle className="text-rose-900">
+                  {article.is_published ? "منتشرشده" : "پیش‌نویس"}
+                  {article.is_featured && " — در صفحه اصلی"}
+                </CardTitle>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" disabled={saving} onClick={handleTogglePublish}>
+                    {article.is_published ? "لغو انتشار" : "انتشار"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={saving || !article.is_published}
+                    onClick={handleToggleFeature}
+                    title={!article.is_published ? "ابتدا مقاله را منتشر کنید" : undefined}
+                  >
+                    {article.is_featured ? "حذف از صفحه اصلی" : "نمایش در صفحه اصلی"}
+                  </Button>
+                  <Button size="sm" variant="destructive" disabled={saving} onClick={handleDelete}>
+                    حذف
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {error && <div className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">{error}</div>}
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="title">عنوان</Label>
+                  <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="summary">خلاصه</Label>
+                  <Input id="summary" value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={300} />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="body">متن کامل مقاله</Label>
+                  <textarea
+                    id="body"
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    rows={14}
+                    className="w-full rounded-md border border-input bg-background p-3 text-sm leading-relaxed"
+                  />
+                </div>
+
+                <Button
+                  disabled={saving || !title.trim() || !summary.trim() || !body.trim()}
+                  onClick={handleSave}
+                  className="w-full"
+                >
+                  {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
                 </Button>
-                <Button size="sm" variant="destructive" disabled={saving} onClick={handleDelete}>
-                  حذف
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {error && <div className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">{error}</div>}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="title">عنوان</Label>
-                <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="summary">خلاصه</Label>
-                <Input id="summary" value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={300} />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="body">متن کامل مقاله</Label>
-                <textarea
-                  id="body"
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  rows={14}
-                  className="w-full rounded-md border border-input bg-background p-3 text-sm leading-relaxed"
-                />
-              </div>
-
-              <Button
-                disabled={saving || !title.trim() || !summary.trim() || !body.trim()}
-                onClick={handleSave}
-                className="w-full"
-              >
-                {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </main>
+              </CardContent>
+            </Card>
+          )}
+        </main>
+      </div>
     </div>
   )
 }
