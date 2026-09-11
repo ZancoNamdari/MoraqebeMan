@@ -158,6 +158,39 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Articles — modeled directly on Honor's own "Where our thoughts
+          lead" section (honorcare.com), which sits in this exact same
+          position just before their footer. Placeholder titles only —
+          real article content and links come later; the 3 titles here
+          are sample copy to be replaced, not live posts. */}
+      <section className="border-t border-border/70 bg-muted/40">
+        <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-28">
+          <div className="mx-auto max-w-xl text-center">
+            <h2 className="text-2xl font-bold text-foreground sm:text-3xl">افکار ما به کجا می‌رسد</h2>
+            <p className="mt-3 text-muted-foreground">
+              مقالاتی از تیم مراقب من، دربارهٔ مراقبت، سالمندی، و مسیری که در پیش گرفته‌ایم.
+            </p>
+          </div>
+          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
+            <ArticleCard
+              title="چرا سازگاری واقعی، مهم‌تر از فقط در دسترس بودن است"
+              accentFrom="from-primary/30"
+              accentTo="to-primary/5"
+            />
+            <ArticleCard
+              title="کرامت سالمند در خانه‌اش — نه فقط خدمات‌رسانی"
+              accentFrom="from-accent/40"
+              accentTo="to-accent/5"
+            />
+            <ArticleCard
+              title="داستان یک خانواده: از نگرانی تا آرامش خاطر"
+              accentFrom="from-secondary"
+              accentTo="to-secondary/10"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-deep-border bg-deep">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -219,5 +252,28 @@ function Step({ number, title, description }: { number: string; title: string; d
       <h4 className="font-semibold text-foreground">{title}</h4>
       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{description}</p>
     </div>
+  )
+}
+
+// Placeholder article card — image area is a soft gradient + hex
+// watermark (matching the platform's own visual motif) rather than a
+// hotlinked stock photo, since real article images/content come
+// later. "خواندن مقاله" (Read Article) label mirrors Honor's own
+// pattern of labeling the card before the headline.
+function ArticleCard({
+  title, accentFrom, accentTo,
+}: { title: string; accentFrom: string; accentTo: string }) {
+  return (
+    <a href="#" className="group block" onClick={(e) => e.preventDefault()}>
+      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition duration-200 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-primary/10">
+        <div className={`relative flex h-40 items-center justify-center overflow-hidden bg-gradient-to-br ${accentFrom} ${accentTo}`}>
+          <HexIcon className="h-16 w-16 text-foreground/20" />
+        </div>
+        <div className="flex flex-1 flex-col gap-2 p-5">
+          <span className="text-xs font-semibold text-primary-strong">خواندن مقاله</span>
+          <h3 className="font-bold leading-relaxed text-foreground">{title}</h3>
+        </div>
+      </div>
+    </a>
   )
 }

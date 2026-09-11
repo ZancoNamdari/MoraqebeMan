@@ -1,4 +1,4 @@
-# MoraqebeMan (مراقب من)
+# MoraqebeMan 
 
 An eldercare platform connecting families, elderly patients, professional caregivers, and care agencies — live at [moraqebman.ir](https://moraqebman.ir).
 
@@ -36,20 +36,3 @@ Deeper technical detail lives in `docs/` rather than here:
 - [`docs/MATCHING.md`](docs/MATCHING.md) — caregiver-patient matching system
 - [`docs/PLATFORM_USAGE_GUIDE.md`](docs/PLATFORM_USAGE_GUIDE.md) — how each panel is used
 - [`DEPLOY_REMAINING_PANELS.md`](DEPLOY_REMAINING_PANELS.md) — step-by-step reference for adding a new subdomain/panel to production
-
-## Running locally
-
-```bash
-cp .env.example .env
-docker compose up --build
-```
-
-- Backend: `http://localhost:8000`
-- API docs (auto-generated): `http://localhost:8000/api/docs/`
-- Health check: `http://localhost:8000/health/`
-
-## Tests
-
-```bash
-docker compose exec backend python manage.py test tests
-```
