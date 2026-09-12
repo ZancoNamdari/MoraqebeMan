@@ -245,6 +245,7 @@ class SpecialConditionExperience(models.TextChoices):
     SEVERE_OSTEOPOROSIS = "severe_osteoporosis", "پوکی استخوان شدید"
     CANCER = "cancer", "سرطان"
     HOSPITAL_CARE = "hospital_care", "مراقبت بیمارستانی"
+    DIAPER_DEPENDENT = "diaper_dependent", "پوشکی"
     NONE = "none", "هیچ‌کدام"
 
 class EducationLevel(models.TextChoices):
@@ -355,3 +356,14 @@ class AcquaintanceDuration(models.TextChoices):
     UNDER_1_YEAR = "under_1_year", "کمتر از ۱ سال"
     ONE_TO_5_YEARS = "1_to_5_years", "بین ۱ تا ۵ سال"
     OVER_5_YEARS = "over_5_years", "بیش از ۵ سال (مدت زمان زیادی)"
+
+
+class NightStayUntil(models.TextChoices):
+    """New question, added alongside the existing shift checkboxes —
+    "how late can you stay at night" is a finer-grained, free-standing
+    question that doesn't fit as just another SHIFT checkbox option,
+    since it's a single choice (a latest-time), not a multi-select."""
+    UP_TO_10PM = "up_to_10pm", "تا ۱۰ شب"
+    UP_TO_MIDNIGHT = "up_to_midnight", "تا ۱۲ شب"
+    UP_TO_2AM = "up_to_2am", "تا ۲ بامداد"
+    UNTIL_MORNING = "until_morning", "تا صبح"

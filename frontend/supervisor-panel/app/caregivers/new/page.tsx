@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -52,7 +52,7 @@ const EMPTY_WORK_PREFS: WorkPreferencesFormData = {
   accepted_age_ranges: [], offered_services: [], accepted_physical_conditions: [], lifting_capacity: "",
   service_locations: [], max_commute_time: "", available_days: [], available_shifts: [],
   commute_methods: [], smoking_status: "", pets_ok: null, holiday_work_ok: null, overnight_stay_ok: null,
-  terms_accepted: false,
+  terms_accepted: false, night_stay_until: "", has_night_time_limit: null, additional_notes: "",
 }
 
 const EMPTY_EXPERIENCE: ExperienceFormData = {
@@ -243,6 +243,42 @@ function NewCaregiverWizardInner() {
     }
   }
 
+  // Enter-to-advance keyboard navigation, requested explicitly so the
+  // whole wizard can be driven without a mouse. advanceRef is
+  // refreshed on every render (not just when `step` changes) so it
+  // always closes over the LATEST field values — without this, typing
+  // into a field then pressing Enter could submit stale, empty data
+  // captured from whenever the step was first entered. The listener
+  // itself is attached exactly once (empty dependency array) purely
+  // for efficiency; it always calls through the ref, never a stale
+  // closure directly.
+  const advanceRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    advanceRef.current = () => {
+      if (saving) return
+      if (step === 0) handleStep0()
+      else if (step === 1) handleStep1()
+      else if (step === 2) handleStep2()
+      else if (step === 3) handleStep3()
+      else if (step === 4) handleStep4()
+      else if (step === 5) handleStep5()
+    }
+  })
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Enter") return
+      const target = e.target as HTMLElement
+      // Textareas need Enter to insert a real newline — advancing the
+      // whole step on Enter there would make multi-line notes unusable.
+      if (target.tagName === "TEXTAREA") return
+      e.preventDefault()
+      advanceRef.current()
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
+
   function handleSkipQuestionnaire() {
     setDone(true)
   }
@@ -380,6 +416,8 @@ function NewCaregiverWizardInner() {
               <Field label="حداکثر زمان رفت‌وآمد"><ChoiceSelect choices={C.MAX_COMMUTE_TIME} value={workPrefs.max_commute_time} onChange={(v) => setWorkPrefs({ ...workPrefs, max_commute_time: v })} /></Field>
               <Field label="روزهای کاری"><CheckboxGroup choices={C.WEEKDAY} value={workPrefs.available_days} onChange={(v) => setWorkPrefs({ ...workPrefs, available_days: v })} /></Field>
               <Field label="شیفت‌های کاری (شبانه‌روزی با بقیه هم‌زمان انتخاب نشود)" error={fieldErrors.available_shifts}><CheckboxGroup choices={C.SHIFT} value={workPrefs.available_shifts} onChange={(v) => setWorkPrefs({ ...workPrefs, available_shifts: v })} /></Field>
+              <Field label="شب تا ساعت چند می‌توانید بمانید؟"><ChoiceSelect choices={C.NIGHT_STAY_UNTIL} value={workPrefs.night_stay_until} onChange={(v) => setWorkPrefs({ ...workPrefs, night_stay_until: v })} /></Field>
+              <Field label="آیا برای ماندن در شب محدودیت زمانی دارید؟"><YesNo value={workPrefs.has_night_time_limit} onChange={(v) => setWorkPrefs({ ...workPrefs, has_night_time_limit: v })} /></Field>
               <Field label="روش رفت‌وآمد"><CheckboxGroup choices={C.COMMUTE_METHOD} value={workPrefs.commute_methods} onChange={(v) => setWorkPrefs({ ...workPrefs, commute_methods: v })} /></Field>
               <Field label="وضعیت استعمال دخانیات"><ChoiceSelect choices={C.SMOKING_STATUS} value={workPrefs.smoking_status} onChange={(v) => setWorkPrefs({ ...workPrefs, smoking_status: v })} /></Field>
               <Field label="پذیرش حیوان خانگی در محل کار"><YesNo value={workPrefs.pets_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, pets_ok: v })} /></Field>
@@ -420,7 +458,9 @@ function NewCaregiverWizardInner() {
                 </Button>
               </div>
 
-              <Field label="پذیرش قوانین و مسئولیت اطلاعات" required error={fieldErrors.terms_accepted}>
+              <Field label="توضیحات تکمیلی (اختیاری)"><Textarea value={workPrefs.additional_notes} onChange={(e) => setWorkPrefs({ ...workPrefs, additional_notes: e.target.value })} /></Field>
+
+<Field label="پذیرش قوانین و مسئولیت اطلاعات" required error={fieldErrors.terms_accepted}>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={workPrefs.terms_accepted} onChange={(e) => setWorkPrefs({ ...workPrefs, terms_accepted: e.target.checked })} className="accent-primary" />
                   اطلاعات فوق تأیید و مسئولیت صحت آن پذیرفته می‌شود.
@@ -510,25 +550,25 @@ function NewCaregiverWizardInner() {
 
         {step === 5 && (
           <div className="space-y-4">
-            <p className="rounded-lg border border-dashed border-border bg-secondary/40 p-3 text-sm text-muted-foreground">
+            <p className="rounded-lg border border-dashed border-border bg-secondary/40 p-3 text-base text-muted-foreground">
               این پرسشنامه اختیاری است — تکمیل آن در تأیید یا رد پروفایل مراقب تأثیری ندارد، فقط کیفیت پیشنهاد مراقب در بخش «تطابق» را بهبود می‌دهد. هر زمان می‌توانید آن را رد کنید و بعداً از صفحه بررسی مراقب تکمیل کنید.
             </p>
             {CAREGIVER_QUESTIONNAIRE.map((section) => (
               <Card key={section.title}>
-                <CardHeader><CardTitle className="text-sm text-foreground">{section.title}</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg text-foreground">{section.title}</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   {section.questions.map((q) => (
                     <div key={q.field} className="rounded-lg border border-border p-3">
-                      <p className="mb-2 text-sm">{q.question}</p>
+                      <p className="mb-3 text-base font-medium">{q.question}</p>
                       <div className="space-y-1.5">
                         {q.options.map((opt) => (
-                          <label key={opt.value} className="flex cursor-pointer items-start gap-2 text-xs">
+                          <label key={opt.value} className="flex cursor-pointer items-start gap-2.5 text-sm">
                             <input
                               type="radio"
                               name={q.field}
                               checked={questionnaireAnswers[q.field] === opt.value}
                               onChange={() => setQuestionnaireAnswers((prev) => ({ ...prev, [q.field]: opt.value }))}
-                              className="mt-0.5"
+                              className="mt-0.5 h-4 w-4"
                             />
                             <span>{opt.text}</span>
                           </label>

@@ -194,7 +194,7 @@ class CaregiverWorkPreferencesSerializer(serializers.ModelSerializer):
             "accepted_physical_conditions", "lifting_capacity", "service_locations",
             "max_commute_time", "available_days", "available_shifts", "commute_methods",
             "smoking_status", "pets_ok", "holiday_work_ok", "overnight_stay_ok",
-            "terms_accepted", "terms_accepted_at", "created_at", "updated_at",
+            "terms_accepted", "terms_accepted_at", "night_stay_until", "has_night_time_limit", "additional_notes", "created_at", "updated_at",
         ]
         read_only_fields = ["terms_accepted_at", "created_at", "updated_at"]
 

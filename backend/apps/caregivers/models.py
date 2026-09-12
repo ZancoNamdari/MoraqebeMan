@@ -19,6 +19,7 @@ from .choices import (
     MaritalStatus,
     MaxCommuteTime,
     MilitaryStatus,
+    NightStayUntil,
     PatientsCaredForCount,
     PhysicalAbility,
     ReferenceRelationType,
@@ -439,6 +440,9 @@ class CaregiverWorkPreferences(models.Model):
     overnight_stay_ok = models.BooleanField(null=True, blank=True,default=False, verbose_name="اقامت شبانه")
     terms_accepted = models.BooleanField(default=False,verbose_name="پذیرش قوانین")
     terms_accepted_at = jmodels.jDateTimeField(null=True,blank=True,verbose_name="زمان پذیرش قوانین")
+    night_stay_until = models.CharField(max_length=20, choices=NightStayUntil.choices, blank=True, verbose_name="حداکثر زمان ماندن در شب")
+    has_night_time_limit = models.BooleanField(null=True, blank=True, default=None, verbose_name="محدودیت زمانی برای شب دارد")
+    additional_notes = models.TextField(blank=True, max_length=500, verbose_name="توضیحات تکمیلی")
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")

@@ -226,6 +226,13 @@ export const PATIENTS_CARED_FOR_COUNT: Choice[] = [
   ["over_20", "بیش از ۲۰ نفر"],
 ]
 
+export const NIGHT_STAY_UNTIL: Choice[] = [
+  ["up_to_10pm", "تا ۱۰ شب"],
+  ["up_to_midnight", "تا ۱۲ شب"],
+  ["up_to_2am", "تا ۲ بامداد"],
+  ["until_morning", "تا صبح"],
+]
+
 export const SPECIAL_CONDITION_EXPERIENCE: Choice[] = [
   ["alzheimers", "آلزایمر"],
   ["dementia", "زوال عقل"],
@@ -238,6 +245,7 @@ export const SPECIAL_CONDITION_EXPERIENCE: Choice[] = [
   ["severe_osteoporosis", "پوکی استخوان شدید"],
   ["cancer", "سرطان"],
   ["hospital_care", "مراقبت بیمارستانی"],
+  ["diaper_dependent", "پوشکی"],
   ["none", "هیچ‌کدام"],
 ]
 

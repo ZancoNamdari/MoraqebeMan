@@ -64,6 +64,9 @@ export interface WorkPreferencesFormData {
   holiday_work_ok: boolean | null
   overnight_stay_ok: boolean | null
   terms_accepted: boolean
+  night_stay_until: string
+  has_night_time_limit: boolean | null
+  additional_notes: string
 }
 
 export interface ServiceArea {
