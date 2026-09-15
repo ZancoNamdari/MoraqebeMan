@@ -127,6 +127,7 @@ class CaregiverProfile(models.Model):
         blank=True, verbose_name="دلیل مسدودسازی",
         help_text="فقط وقتی status برابر suspended باشد معنا دارد — یک مراقب تأییدشده که بعداً مسدود شده، نه یک درخواست رد‌شده.",
     )
+    serves_all_areas = models.BooleanField(default=False, verbose_name="پوشش تمام مناطق", help_text="اگر فعال باشد، این مراقب محدود به مناطق خدماتی ثبت‌شده نیست و برای تمام مناطق در نظر گرفته می‌شود.")
 
     # Candidate-tracking fields — added for agency-side interview
     # tracking, matching a real spreadsheet workflow an agency was

@@ -52,7 +52,7 @@ const EMPTY_WORK_PREFS: WorkPreferencesFormData = {
   accepted_age_ranges: [], offered_services: [], accepted_physical_conditions: [], lifting_capacity: "",
   service_locations: [], max_commute_time: "", available_days: [], available_shifts: [],
   commute_methods: [], smoking_status: "", pets_ok: null, holiday_work_ok: null, overnight_stay_ok: null,
-  terms_accepted: false, night_stay_until: "", has_night_time_limit: null, additional_notes: "",
+  terms_accepted: false, night_stay_until: "", has_night_time_limit: null, additional_notes: "", serves_all_areas: false,
 }
 
 const EMPTY_EXPERIENCE: ExperienceFormData = {
@@ -166,10 +166,32 @@ function NewCaregiverWizardInner() {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key !== "Enter") return
       const target = e.target as HTMLElement
-      // Textareas need Enter to insert a real newline — advancing the
-      // whole step on Enter there would make multi-line notes unusable.
+      // Textareas need Enter to insert a real newline — this never
+      // changes regardless of what else Enter does elsewhere.
       if (target.tagName === "TEXTAREA") return
       e.preventDefault()
+
+      // Smart "next field" behavior, requested explicitly: Enter on
+      // any field moves focus to the next focusable field within the
+      // CURRENT step (like Tab, but via Enter) — dates and dropdowns
+      // included. Only once there's no next field left in this step
+      // does Enter fall back to actually advancing to the next step,
+      // which is what the ref-based advanceRef call below still
+      // does exactly as before.
+      const main = document.querySelector("main")
+      if (main) {
+        const focusable = Array.from(
+          main.querySelectorAll<HTMLElement>(
+            'input:not([type="hidden"]), select, [tabindex="0"]'
+          )
+        ).filter((el) => !el.hasAttribute("disabled"))
+        const currentIndex = focusable.indexOf(target)
+        if (currentIndex !== -1 && currentIndex < focusable.length - 1) {
+          focusable[currentIndex + 1].focus()
+          return
+        }
+      }
+
       advanceRef.current()
     }
     window.addEventListener("keydown", handleKeyDown)
@@ -317,7 +339,7 @@ function NewCaregiverWizardInner() {
     <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background">
       <AppHeader
         title={caregiverName || "مراقب جدید"}
-        maxWidth="max-w-2xl"
+        maxWidth="max-w-5xl"
         subheader={
           <>
             <StepIndicator steps={STEPS} current={step} onNavigate={setStep} canNavigate={!!caregiverId} />
@@ -329,7 +351,7 @@ function NewCaregiverWizardInner() {
         <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
       </AppHeader>
 
-      <main className="mx-auto max-w-2xl space-y-4 p-4 pb-28">
+      <main className="mx-auto max-w-5xl space-y-4 p-4 pb-28">
         <ErrorSummary errors={error} />
 
         {step === 0 && (
@@ -411,9 +433,10 @@ function NewCaregiverWizardInner() {
               <Field label="بازه سنی سالمند"><CheckboxGroup choices={C.ACCEPTED_AGE_RANGE} value={workPrefs.accepted_age_ranges} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_age_ranges: v })} /></Field>
               <Field label="خدمات قابل ارائه"><CheckboxGroup choices={C.OFFERED_SERVICE} value={workPrefs.offered_services} onChange={(v) => setWorkPrefs({ ...workPrefs, offered_services: v })} /></Field>
               <Field label="شرایط جسمانی سالمند قابل پذیرش"><CheckboxGroup choices={C.ACCEPTED_PHYSICAL_CONDITION} value={workPrefs.accepted_physical_conditions} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_physical_conditions: v })} /></Field>
-              <Field label="توانایی جابجایی"><ChoiceSelect choices={C.LIFTING_CAPACITY} value={workPrefs.lifting_capacity} onChange={(v) => setWorkPrefs({ ...workPrefs, lifting_capacity: v })} /></Field>
               <Field label="محل ارائه خدمت"><CheckboxGroup choices={C.SERVICE_LOCATION} value={workPrefs.service_locations} onChange={(v) => setWorkPrefs({ ...workPrefs, service_locations: v })} /></Field>
-              <Field label="حداکثر زمان رفت‌وآمد"><ChoiceSelect choices={C.MAX_COMMUTE_TIME} value={workPrefs.max_commute_time} onChange={(v) => setWorkPrefs({ ...workPrefs, max_commute_time: v })} /></Field>
+              {(workPrefs.collaboration_types.includes("daily") || workPrefs.collaboration_types.includes("short_term")) && (
+                <Field label="حداکثر زمان رفت‌وآمد"><ChoiceSelect choices={C.MAX_COMMUTE_TIME} value={workPrefs.max_commute_time} onChange={(v) => setWorkPrefs({ ...workPrefs, max_commute_time: v })} /></Field>
+              )}
               <Field label="روزهای کاری"><CheckboxGroup choices={C.WEEKDAY} value={workPrefs.available_days} onChange={(v) => setWorkPrefs({ ...workPrefs, available_days: v })} /></Field>
               <Field label="شیفت‌های کاری (شبانه‌روزی با بقیه هم‌زمان انتخاب نشود)" error={fieldErrors.available_shifts}><CheckboxGroup choices={C.SHIFT} value={workPrefs.available_shifts} onChange={(v) => setWorkPrefs({ ...workPrefs, available_shifts: v })} /></Field>
               <Field label="شب تا ساعت چند می‌توانید بمانید؟"><ChoiceSelect choices={C.NIGHT_STAY_UNTIL} value={workPrefs.night_stay_until} onChange={(v) => setWorkPrefs({ ...workPrefs, night_stay_until: v })} /></Field>
@@ -426,6 +449,17 @@ function NewCaregiverWizardInner() {
 
               <div className="rounded-md border p-3">
                 <p className="mb-2 text-sm font-medium">مناطق خدماتی</p>
+                <label className="mb-3 flex cursor-pointer items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={workPrefs.serves_all_areas}
+                    onChange={(e) => setWorkPrefs({ ...workPrefs, serves_all_areas: e.target.checked })}
+                    className="accent-primary"
+                  />
+                  همه مناطق / فرقی نداره
+                </label>
+                {!workPrefs.serves_all_areas && (
+                <>
                 <div className="mb-3 space-y-2">
                   {areas.map((a, i) => (
                     <div key={a.id ?? i} className="flex items-center justify-between rounded bg-muted p-2 text-sm">
@@ -456,6 +490,8 @@ function NewCaregiverWizardInner() {
                 <Button type="button" variant="outline" className="mt-2" onClick={handleAddArea} disabled={!newArea.province || !newArea.city}>
                   + افزودن این منطقه
                 </Button>
+                </>
+                )}
               </div>
 
               <Field label="توضیحات تکمیلی (اختیاری)"><Textarea value={workPrefs.additional_notes} onChange={(e) => setWorkPrefs({ ...workPrefs, additional_notes: e.target.value })} /></Field>
@@ -477,8 +513,17 @@ function NewCaregiverWizardInner() {
               <SectionHeading>سوابق کاری</SectionHeading>
               <Field label="سابقه مراقبت از سالمند"><ChoiceSelect choices={C.EXPERIENCE_RANGE} value={experience.elderly_care_experience} onChange={(v) => setExperience({ ...experience, elderly_care_experience: v })} /></Field>
               <Field label="سابقه سایر مشاغل خدماتی"><ChoiceSelect choices={C.EXPERIENCE_RANGE} value={experience.other_services_experience} onChange={(v) => setExperience({ ...experience, other_services_experience: v })} /></Field>
-              <Field label="محل‌های سابق فعالیت"><CheckboxGroup choices={C.PREVIOUS_WORKPLACE} value={experience.previous_workplaces} onChange={(v) => setExperience({ ...experience, previous_workplaces: v })} /></Field>
-              <Field label="تعداد سالمندان تحت مراقبت تاکنون"><ChoiceSelect choices={C.PATIENTS_CARED_FOR_COUNT} value={experience.patients_cared_for_count} onChange={(v) => setExperience({ ...experience, patients_cared_for_count: v })} /></Field>
+              {experience.elderly_care_experience !== "none" && (
+                <>
+                  <Field label="محل‌های سابق فعالیت"><CheckboxGroup choices={C.PREVIOUS_WORKPLACE} value={experience.previous_workplaces} onChange={(v) => setExperience({ ...experience, previous_workplaces: v })} /></Field>
+                  {experience.previous_workplaces.includes("other") && (
+                    <Field label="توضیح سایر محل فعالیت">
+                      <Input value={experience.additional_notes} onChange={(e) => setExperience({ ...experience, additional_notes: e.target.value })} />
+                    </Field>
+                  )}
+                  <Field label="تعداد سالمندان تحت مراقبت تاکنون"><ChoiceSelect choices={C.PATIENTS_CARED_FOR_COUNT} value={experience.patients_cared_for_count} onChange={(v) => setExperience({ ...experience, patients_cared_for_count: v })} /></Field>
+                </>
+              )}
               <Field label="تجربه شرایط خاص"><CheckboxGroup choices={C.SPECIAL_CONDITION_EXPERIENCE} value={experience.special_conditions_experience} onChange={(v) => setExperience({ ...experience, special_conditions_experience: v })} /></Field>
               <Field label="سابقه همکاری شبانه‌روزی (مقیم)"><YesNo value={experience.live_in_experience} onChange={(v) => setExperience({ ...experience, live_in_experience: v })} /></Field>
               <Field label="سابقه مراقبت از زوج سالمند"><YesNo value={experience.couple_care_experience} onChange={(v) => setExperience({ ...experience, couple_care_experience: v })} /></Field>
@@ -490,13 +535,15 @@ function NewCaregiverWizardInner() {
               <SectionHeading>مهارت‌ها و آموزش‌ها</SectionHeading>
               <Field label="سطح تحصیلات"><ChoiceSelect choices={C.EDUCATION_LEVEL} value={skills.education_level} onChange={(v) => setSkills({ ...skills, education_level: v })} /></Field>
               <Field label="رشته تحصیلی"><Input value={skills.field_of_study} onChange={(e) => setSkills({ ...skills, field_of_study: e.target.value })} /></Field>
+              {skills.education_level !== "diploma" && skills.education_level !== "under_diploma" && (
+                <Field label="زبان خارجی"><CheckboxGroup choices={C.FOREIGN_LANGUAGE} value={skills.foreign_languages} onChange={(v) => setSkills({ ...skills, foreign_languages: v })} /></Field>
+              )}
               <Field label="دوره‌های آموزشی گذرانده‌شده"><CheckboxGroup choices={C.TRAINING_COURSE} value={skills.training_courses} onChange={(v) => setSkills({ ...skills, training_courses: v })} /></Field>
               <Field label="مهارت‌های ارتباطی"><CheckboxGroup choices={C.COMMUNICATION_SKILL} value={skills.communication_skills} onChange={(v) => setSkills({ ...skills, communication_skills: v })} /></Field>
               <Field label="مهارت‌های مراقبتی"><CheckboxGroup choices={C.CAREGIVING_SKILL} value={skills.caregiving_skills} onChange={(v) => setSkills({ ...skills, caregiving_skills: v })} /></Field>
               <Field label="توانایی جسمی"><ChoiceSelect choices={C.PHYSICAL_ABILITY} value={skills.physical_ability} onChange={(v) => setSkills({ ...skills, physical_ability: v })} /></Field>
               <Field label="توانایی جابجایی سالمند"><CheckboxGroup choices={C.MOBILITY_ASSISTANCE_ABILITY} value={skills.mobility_assistance_ability} onChange={(v) => setSkills({ ...skills, mobility_assistance_ability: v })} /></Field>
               <Field label="مهارت‌های خانگی"><CheckboxGroup choices={C.HOUSEHOLD_SKILL} value={skills.household_skills} onChange={(v) => setSkills({ ...skills, household_skills: v })} /></Field>
-              <Field label="زبان خارجی"><CheckboxGroup choices={C.FOREIGN_LANGUAGE} value={skills.foreign_languages} onChange={(v) => setSkills({ ...skills, foreign_languages: v })} /></Field>
               <Field label="زبان محلی"><CheckboxGroup choices={C.LOCAL_LANGUAGE} value={skills.local_languages} onChange={(v) => setSkills({ ...skills, local_languages: v })} /></Field>
               <Field label="گواهینامه رانندگی"><YesNo value={skills.has_driving_license} onChange={(v) => setSkills({ ...skills, has_driving_license: v })} /></Field>
               <Field label="مهارت کار با تلفن هوشمند"><YesNo value={skills.can_use_smartphone} onChange={(v) => setSkills({ ...skills, can_use_smartphone: v })} /></Field>
@@ -584,7 +631,7 @@ function NewCaregiverWizardInner() {
       </main>
 
       <footer className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl gap-2 p-3">
+        <div className="mx-auto flex max-w-5xl gap-2 p-3">
           {step > 0 && (
             <Button variant="outline" size="lg" onClick={() => setStep(step - 1)} disabled={saving}>
               مرحله قبل

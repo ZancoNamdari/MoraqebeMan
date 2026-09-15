@@ -363,7 +363,14 @@ class SupervisorWorkPreferencesView(APIView):
         prefs = getattr(profile, "work_preferences", None)
         if prefs is None:
             return Response({"detail": "این بخش هنوز تکمیل نشده است."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(CaregiverWorkPreferencesSerializer(prefs).data)
+        data = CaregiverWorkPreferencesSerializer(prefs).data
+        # serves_all_areas lives on CaregiverProfile, not
+        # CaregiverWorkPreferences — added here manually rather than
+        # via the serializer since it genuinely belongs to a
+        # different model (a caregiver-level flag, not tied to any
+        # specific work-preferences record).
+        data["serves_all_areas"] = profile.serves_all_areas
+        return Response(data)
 
     def put(self, request, user_id):
         profile = _get_target_profile(request, user_id)
@@ -379,8 +386,15 @@ class SupervisorWorkPreferencesView(APIView):
         serializer = SupervisorCaregiverWorkPreferencesSerializer(instance=existing, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(profile=profile)
+
+        if "serves_all_areas" in request.data:
+            profile.serves_all_areas = bool(request.data["serves_all_areas"])
+            profile.save(update_fields=["serves_all_areas"])
+
         audit.caregiver_updated(request.user.id, user_id, section="work_preferences")
-        return Response(serializer.data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
+        data = serializer.data
+        data["serves_all_areas"] = profile.serves_all_areas
+        return Response(data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
 
 
 class SupervisorCompatibilityQuestionnaireView(APIView):

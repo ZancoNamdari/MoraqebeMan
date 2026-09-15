@@ -212,10 +212,10 @@ export const EXPERIENCE_RANGE: Choice[] = [
 export const PREVIOUS_WORKPLACE: Choice[] = [
   ["patient_home", "منزل سالمند"],
   ["hospital", "بیمارستان"],
-  ["nursing_home", "خانه سالمندان"],
   ["rehab_center", "مرکز توانبخشی"],
-  ["care_company", "شرکت خدمات مراقبتی"],
   ["family_member_care", "نگهداری از عضو خانواده"],
+  ["cleaning_services", "خدمات نظافت"],
+  ["other", "سایر"],
 ]
 
 export const PATIENTS_CARED_FOR_COUNT: Choice[] = [

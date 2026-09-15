@@ -67,6 +67,7 @@ export interface WorkPreferencesFormData {
   night_stay_until: string
   has_night_time_limit: boolean | null
   additional_notes: string
+  serves_all_areas: boolean
 }
 
 export interface ServiceArea {

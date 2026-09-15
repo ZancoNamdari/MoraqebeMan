@@ -219,10 +219,10 @@ class ExperienceRange(models.TextChoices):
 class PreviousWorkplace(models.TextChoices):
     PATIENT_HOME = "patient_home", "منزل سالمند"
     HOSPITAL = "hospital", "بیمارستان"
-    NURSING_HOME = "nursing_home", "خانه سالمندان"
     REHAB_CENTER = "rehab_center", "مرکز توانبخشی"
-    CARE_COMPANY = "care_company", "شرکت خدمات مراقبتی"
     FAMILY_MEMBER_CARE = "family_member_care", "نگهداری از عضو خانواده"
+    CLEANING_SERVICES = "cleaning_services", "خدمات نظافت"
+    OTHER = "other", "سایر"
 
 
 class PatientsCaredForCount(models.TextChoices):
