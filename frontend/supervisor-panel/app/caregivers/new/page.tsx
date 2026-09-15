@@ -140,6 +140,42 @@ function NewCaregiverWizardInner() {
     setStep(1)
   }, [caregiverId])
 
+  // Enter-to-advance keyboard navigation, requested explicitly so the
+  // whole wizard can be driven without a mouse. advanceRef is
+  // refreshed on every render (not just when `step` changes) so it
+  // always closes over the LATEST field values — without this, typing
+  // into a field then pressing Enter could submit stale, empty data
+  // captured from whenever the step was first entered. The listener
+  // itself is attached exactly once (empty dependency array) purely
+  // for efficiency; it always calls through the ref, never a stale
+  // closure directly.
+  const advanceRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    advanceRef.current = () => {
+      if (saving) return
+      if (step === 0) handleStep0()
+      else if (step === 1) handleStep1()
+      else if (step === 2) handleStep2()
+      else if (step === 3) handleStep3()
+      else if (step === 4) handleStep4()
+      else if (step === 5) handleStep5()
+    }
+  })
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Enter") return
+      const target = e.target as HTMLElement
+      // Textareas need Enter to insert a real newline — advancing the
+      // whole step on Enter there would make multi-line notes unusable.
+      if (target.tagName === "TEXTAREA") return
+      e.preventDefault()
+      advanceRef.current()
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
+
   if (authLoading) return null
 
   function showErrors(err: any, fallback: string) {
@@ -242,42 +278,6 @@ function NewCaregiverWizardInner() {
       setSaving(false)
     }
   }
-
-  // Enter-to-advance keyboard navigation, requested explicitly so the
-  // whole wizard can be driven without a mouse. advanceRef is
-  // refreshed on every render (not just when `step` changes) so it
-  // always closes over the LATEST field values — without this, typing
-  // into a field then pressing Enter could submit stale, empty data
-  // captured from whenever the step was first entered. The listener
-  // itself is attached exactly once (empty dependency array) purely
-  // for efficiency; it always calls through the ref, never a stale
-  // closure directly.
-  const advanceRef = useRef<() => void>(() => {})
-  useEffect(() => {
-    advanceRef.current = () => {
-      if (saving) return
-      if (step === 0) handleStep0()
-      else if (step === 1) handleStep1()
-      else if (step === 2) handleStep2()
-      else if (step === 3) handleStep3()
-      else if (step === 4) handleStep4()
-      else if (step === 5) handleStep5()
-    }
-  })
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key !== "Enter") return
-      const target = e.target as HTMLElement
-      // Textareas need Enter to insert a real newline — advancing the
-      // whole step on Enter there would make multi-line notes unusable.
-      if (target.tagName === "TEXTAREA") return
-      e.preventDefault()
-      advanceRef.current()
-    }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
 
   function handleSkipQuestionnaire() {
     setDone(true)
