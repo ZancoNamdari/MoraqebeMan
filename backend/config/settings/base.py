@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     "apps.care",
     "apps.agencies",
     "apps.reviews",
+    "apps.content",
+    "apps.analytics",
 ]
 
 MIDDLEWARE = [
