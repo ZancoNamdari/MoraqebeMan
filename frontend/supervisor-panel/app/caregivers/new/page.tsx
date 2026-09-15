@@ -602,14 +602,14 @@ function NewCaregiverWizardInner() {
             </p>
             {CAREGIVER_QUESTIONNAIRE.map((section) => (
               <Card key={section.title}>
-                <CardHeader><CardTitle className="text-lg text-foreground">{section.title}</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-xl text-foreground">{section.title}</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   {section.questions.map((q) => (
                     <div key={q.field} className="rounded-lg border border-border p-3">
-                      <p className="mb-3 text-base font-medium">{q.question}</p>
+                      <p className="mb-4 text-lg font-medium">{q.question}</p>
                       <div className="space-y-1.5">
                         {q.options.map((opt) => (
-                          <label key={opt.value} className="flex cursor-pointer items-start gap-2.5 text-sm">
+                          <label key={opt.value} className="flex cursor-pointer items-start gap-3 text-base">
                             <input
                               type="radio"
                               name={q.field}
