@@ -16,10 +16,10 @@ import { cn } from "@/lib/utils"
 import { ROUTES } from "@/lib/routes"
 
 /**
- * Persistent RTL sidebar for agency-panel — same pattern already
- * built for admin-panel, adapted to this panel's own routes and the
- * agency/agency_supervisor role distinction (supervisors management
- * is owner-only, so that link is conditionally included).
+ * Persistent RTL sidebar for agency-panel — professional blue/slate
+ * palette, matching the platform-wide shift away from the consumer-
+ * facing pastel pink theme, since this panel is sold directly to
+ * agency owners evaluating it as a paid business tool.
  *
  * `onLogout` and `isOwner` are passed in from the page rendering
  * this, rather than this component calling useAuth itself — the
@@ -42,12 +42,12 @@ export function Sidebar({ onLogout, isOwner }: { onLogout: () => void; isOwner: 
   ]
 
   return (
-    <aside className="fixed inset-y-0 right-0 z-30 hidden w-64 flex-col border-l border-pink-100 bg-white sm:flex">
-      <div className="flex items-center gap-2.5 border-b border-pink-100 px-5 py-5">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-700">
+    <aside className="fixed inset-y-0 right-0 z-30 hidden w-64 flex-col border-l border-slate-200 bg-white sm:flex">
+      <div className="flex items-center gap-2.5 border-b border-slate-200 px-5 py-5">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
           <Building2 className="h-5 w-5" />
         </span>
-        <span className="text-sm font-bold text-rose-900">پنل آژانس — مراقب من</span>
+        <span className="text-sm font-bold text-slate-900">پنل آژانس — مراقب من</span>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
@@ -64,8 +64,8 @@ export function Sidebar({ onLogout, isOwner }: { onLogout: () => void; isOwner: 
               className={cn(
                 "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-rose-100 text-rose-700"
-                  : "text-muted-foreground hover:bg-pink-50 hover:text-rose-900"
+                  ? "bg-blue-100 text-blue-700"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -75,10 +75,10 @@ export function Sidebar({ onLogout, isOwner }: { onLogout: () => void; isOwner: 
         })}
       </nav>
 
-      <div className="border-t border-pink-100 p-3">
+      <div className="border-t border-slate-200 p-3">
         <button
           onClick={onLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           خروج

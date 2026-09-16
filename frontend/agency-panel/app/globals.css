@@ -3,31 +3,37 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.625rem;
-  /* Brand colors — exact hex as specified, not an oklch approximation. */
-  --brand-pink: #FFC5C5;
-  --brand-mint: #D9F0E1;
-  --brand-pink-strong: #FF9E9E;
-  --brand-mint-strong: #B8E0C7;
-  --background: #FFFBFB;
-  --foreground: #4a2f2f;
+  --radius: 0.5rem;
+  /* Professional B2B palette — deep blue conveys trust/credibility
+     for agency owners evaluating this as a paid business tool,
+     replacing the previous consumer-facing pastel pink theme.
+     Variable NAMES are kept identical to before (brand-pink,
+     brand-mint, etc.) so every existing component that already
+     references these tokens updates automatically — only the actual
+     color values change here. */
+  --brand-pink: #2563EB;
+  --brand-mint: #E2E8F0;
+  --brand-pink-strong: #1E40AF;
+  --brand-mint-strong: #64748B;
+  --background: #F8FAFC;
+  --foreground: #1E293B;
   --card: #ffffff;
-  --card-foreground: #4a2f2f;
+  --card-foreground: #1E293B;
   --popover: #ffffff;
-  --popover-foreground: #4a2f2f;
-  --primary: #FFC5C5;
-  --primary-foreground: #5c2626;
-  --secondary: #D9F0E1;
-  --secondary-foreground: #1f4a34;
-  --muted: #FDEDED;
-  --muted-foreground: #8a6a6a;
-  --accent: #D9F0E1;
-  --accent-foreground: #1f4a34;
+  --popover-foreground: #1E293B;
+  --primary: #2563EB;
+  --primary-foreground: #ffffff;
+  --secondary: #E2E8F0;
+  --secondary-foreground: #1E293B;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #E2E8F0;
+  --accent-foreground: #1E293B;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: #FADADA;
-  --input: #FADADA;
-  --ring: #FFC5C5;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #2563EB;
   --sidebar: hsl(0 0% 98%);
   --sidebar-foreground: hsl(240 5.3% 26.1%);
   --sidebar-primary: hsl(240 5.9% 10%);
