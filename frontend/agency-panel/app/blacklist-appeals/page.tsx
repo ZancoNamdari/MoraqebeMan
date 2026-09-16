@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { blacklistAppealReviewService, type BlacklistAppeal } from "@/services/blacklist_appeal_review.service"
 import { ROUTES } from "@/lib/routes"
+import { Sidebar } from "@/components/layout/sidebar"
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "در انتظار بررسی",
@@ -22,7 +23,7 @@ const STATUS_CLASS: Record<string, string> = {
 }
 
 export default function BlacklistAppealsPage() {
-  const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor"])
+  const { user, loading: authLoading, logout } = useAuth(["agency", "agency_supervisor"])
   const router = useRouter()
 
   const [appeals, setAppeals] = useState<BlacklistAppeal[]>([])
@@ -71,7 +72,11 @@ export default function BlacklistAppealsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl space-y-4 p-4">
+      <div className="min-h-screen bg-slate-50">
+      <Sidebar onLogout={logout} isOwner={user.role === "agency"} />
+
+      <div className="sm:mr-64">
+        <main className="mx-auto max-w-2xl space-y-4 p-4">
         {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
         <Card className="border-pink-100">
@@ -139,6 +144,8 @@ export default function BlacklistAppealsPage() {
           </CardContent>
         </Card>
       </main>
+      </div>
+    </div>
     </div>
   )
 }

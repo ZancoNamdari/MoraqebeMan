@@ -14,6 +14,7 @@ import { agencyManagementService } from "@/services/agency_management.service"
 import { PHYSICAL_CONDITION, NEEDED_SHIFT, RELATION_TYPE, GENDER } from "@/lib/constants"
 import { ROUTES } from "@/lib/routes"
 import type { AgencyPatient } from "@/types/agency_management"
+import { Sidebar } from "@/components/layout/sidebar"
 
 const emptyForm = {
   mode: "standalone" as "standalone" | "with_family",
@@ -22,7 +23,7 @@ const emptyForm = {
 }
 
 export default function PatientsPage() {
-  const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor"])
+  const { user, loading: authLoading, logout } = useAuth(["agency", "agency_supervisor"])
   const router = useRouter()
 
   const [agencyId, setAgencyId] = useState<number | null>(null)
@@ -84,7 +85,11 @@ export default function PatientsPage() {
         <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
       </AppHeader>
 
-      <main className="mx-auto max-w-2xl space-y-4 p-4">
+      <div className="min-h-screen bg-slate-50">
+      <Sidebar onLogout={logout} isOwner={user.role === "agency"} />
+
+      <div className="sm:mr-64">
+        <main className="mx-auto max-w-2xl space-y-4 p-4">
         {successNote && (
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
             <p>سالمند ثبت شد — کد سالمند: <span dir="ltr" className="font-mono">{successNote.accessCode}</span></p>
@@ -193,6 +198,8 @@ export default function PatientsPage() {
           </div>
         )}
       </main>
+      </div>
+    </div>
     </div>
   )
 }

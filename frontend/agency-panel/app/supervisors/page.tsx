@@ -13,9 +13,10 @@ import { agencyService } from "@/services/agency.service"
 import { agencyManagementService } from "@/services/agency_management.service"
 import { ROUTES } from "@/lib/routes"
 import type { AgencySupervisor } from "@/types/agency_management"
+import { Sidebar } from "@/components/layout/sidebar"
 
 export default function SupervisorsPage() {
-  const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor"])
+  const { user, loading: authLoading, logout } = useAuth(["agency", "agency_supervisor"])
   const router = useRouter()
 
   const [agencyId, setAgencyId] = useState<number | null>(null)
@@ -64,7 +65,11 @@ export default function SupervisorsPage() {
         <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
       </AppHeader>
 
-      <main className="mx-auto max-w-2xl space-y-4 p-4">
+      <div className="min-h-screen bg-slate-50">
+      <Sidebar onLogout={logout} isOwner={user.role === "agency"} />
+
+      <div className="sm:mr-64">
+        <main className="mx-auto max-w-2xl space-y-4 p-4">
         <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-foreground">فهرست سوپروایزرها</CardTitle>
@@ -124,6 +129,8 @@ export default function SupervisorsPage() {
           </div>
         )}
       </main>
+      </div>
+    </div>
     </div>
   )
 }

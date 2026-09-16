@@ -10,6 +10,7 @@ import { candidateTrackingService, type Candidate, type CandidateResume } from "
 import { EXPERIENCE_RANGE, labelForValue } from "@/lib/constants"
 import { toPersianDigits } from "@/lib/persian_digits"
 import { ROUTES } from "@/lib/routes"
+import { Sidebar } from "@/components/layout/sidebar"
 
 const STATUS_CLASS: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -32,7 +33,7 @@ const STATUS_HEX: Record<string, string> = {
 }
 
 export default function CandidatesPage() {
-  const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor"])
+  const { user, loading: authLoading, logout } = useAuth(["agency", "agency_supervisor"])
   const router = useRouter()
 
   const [candidates, setCandidates] = useState<Candidate[]>([])
@@ -182,7 +183,11 @@ export default function CandidatesPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-4 p-4">
+      <div className="min-h-screen bg-slate-50">
+      <Sidebar onLogout={logout} isOwner={user.role === "agency"} />
+
+      <div className="sm:mr-64">
+        <main className="mx-auto max-w-5xl space-y-4 p-4">
         {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -393,6 +398,8 @@ export default function CandidatesPage() {
           </Card>
         )}
       </main>
+      </div>
+    </div>
     </div>
   )
 }

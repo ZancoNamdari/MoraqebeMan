@@ -11,6 +11,7 @@ import { agencyComplaintsService, type ComplaintListItem } from "@/services/agen
 import { COMPLAINT_CATEGORY_LABEL, COMPLAINT_STATUS_LABEL } from "@/lib/constants"
 import { ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
+import { Sidebar } from "@/components/layout/sidebar"
 
 const STATUS_CLASS: Record<string, string> = {
   open: "bg-amber-100 text-amber-800",
@@ -20,7 +21,7 @@ const STATUS_CLASS: Record<string, string> = {
 }
 
 export default function AgencyComplaintsPage() {
-  const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor"])
+  const { user, loading: authLoading, logout } = useAuth(["agency", "agency_supervisor"])
   const router = useRouter()
 
   const [complaints, setComplaints] = useState<ComplaintListItem[]>([])
@@ -49,7 +50,11 @@ export default function AgencyComplaintsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl space-y-4 p-4">
+      <div className="min-h-screen bg-slate-50">
+      <Sidebar onLogout={logout} isOwner={user.role === "agency"} />
+
+      <div className="sm:mr-64">
+        <main className="mx-auto max-w-2xl space-y-4 p-4">
         <p className="text-xs text-muted-foreground">
           این فهرست فقط جهت اطلاع است — رسیدگی و تصمیم‌گیری درباره شکایات توسط تیم مراقب من انجام می‌شود.
         </p>
@@ -89,6 +94,8 @@ export default function AgencyComplaintsPage() {
           </CardContent>
         </Card>
       </main>
+      </div>
+    </div>
     </div>
   )
 }
