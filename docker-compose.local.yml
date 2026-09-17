@@ -1,0 +1,11 @@
+services:
+  backend:
+    ports:
+      - "8000:8000"
+    environment:
+      SECURE_SSL_REDIRECT: "false"
+
+  supervisor_panel:
+    build:
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000

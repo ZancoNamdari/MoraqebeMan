@@ -140,10 +140,11 @@ services:
         # docker-compose.ip-test.yml only, for the temporary
         # path-based routing this no-domain phase needs.
         NEXT_PUBLIC_BASE_PATH: ""
+    ports:
+      - "3000:3000"
     restart: unless-stopped
     depends_on:
       - backend
-
   agency_panel:
     build:
       context: ./frontend/agency-panel

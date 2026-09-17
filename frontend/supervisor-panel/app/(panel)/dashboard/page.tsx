@@ -36,7 +36,7 @@ const STATUS_TEXT: Record<string, string> = {
 }
 
 export default function DashboardPage() {
-  const { user, loading: authLoading, logout } = useAuth(["admin", "superuser"])
+  const { user, loading: authLoading, logout } = useAuth(["agency_supervisor"])
   const router = useRouter()
   const [caregivers, setCaregivers] = useState<CaregiverListItem[]>([])
   const [loading, setLoading] = useState(true)

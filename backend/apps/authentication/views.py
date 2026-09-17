@@ -6,7 +6,11 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.models import User
-from apps.accounts.serializers import UserSerializer
+from apps.accounts.serializers import (
+    ChangePasswordSerializer,
+    ProfileUpdateSerializer,
+    UserSerializer,
+)
 from apps.audit.services import AuditService
 
 from .lockout import LoginAttemptGuard
@@ -128,6 +132,22 @@ class MeView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {"detail": "رمز عبور با موفقیت تغییر کرد."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class OTPLoginRequestView(APIView):
