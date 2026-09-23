@@ -72,6 +72,22 @@ class Gender(models.TextChoices):
     MALE = "male", "مرد"
 
 
+class PatientPipelineStatus(models.TextChoices):
+    """The agency-side service pipeline a patient moves through,
+    shown as a Kanban board in agency-panel. Deliberately separate
+    from PatientProfile's own onboarding-form completeness (which
+    this platform tracks elsewhere) — this is an operational/sales
+    pipeline concept specific to how an agency actually works a
+    given patient's case day to day, not a data-completeness gate."""
+    REGISTRATION = "registration", "ثبت‌نام ورود"
+    PHONE_COORDINATION = "phone_coordination", "هماهنگی تلفنی"
+    DISPATCHED = "dispatched", "اعزام"
+    CAREGIVER_CONFIRMED = "caregiver_confirmed", "تایید پرستار"
+    FIRST_WEEK_FOLLOWUP = "first_week_followup", "هفته اول: پیگیری اولیه"
+    CONTRACT_CONFIRMED = "contract_confirmed", "قرارداد بسته و تایید شده"
+    EXPIRED = "expired", "منقضی‌ها"
+
+
 class PatientPhysicalCondition(models.TextChoices):
     """Same duplication convention as Gender above — mirrors
     apps.caregivers.choices.AcceptedPhysicalCondition's values
@@ -135,6 +151,11 @@ class PatientProfile(models.Model):
     )
 
     full_name = models.CharField(max_length=150, help_text="نام و نام خانوادگی سالمند")
+    pipeline_status = models.CharField(
+        max_length=30, choices=PatientPipelineStatus.choices,
+        default=PatientPipelineStatus.REGISTRATION, db_index=True,
+        verbose_name="مرحله کاریز خدمت",
+    )
     gender = models.CharField(max_length=10, choices=Gender.choices, blank=True, help_text="جنسیت")
     father_name = models.CharField(max_length=150, blank=True, help_text="نام پدر")
     birth_date = jmodels.jDateField(null=True, blank=True, help_text="تاریخ تولد")

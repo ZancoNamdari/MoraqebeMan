@@ -1,0 +1,196 @@
+{% extends "admin_base.html" %}
+{% block title %}پزشکان — پنل مدیریت{% endblock %}
+{% block page_title %}مدیریت صفحات پزشکان{% endblock %}
+
+{% block content %}
+<div class="admin-filter-bar">
+  <button class="admin-filter-chip active" data-status="all" onclick="filterDoctors('all', this)">همه</button>
+  <button class="admin-filter-chip" data-status="pending" onclick="filterDoctors('pending', this)">در انتظار تأیید</button>
+  <button class="admin-filter-chip" data-status="active" onclick="filterDoctors('active', this)">فعال</button>
+  <button class="admin-filter-chip" data-status="inactive" onclick="filterDoctors('inactive', this)">غیرفعال</button>
+  <input class="admin-search" id="doctor-search" placeholder="جست‌وجو بر اساس نام، شماره نظام پزشکی..." oninput="onDoctorSearch(this.value)" />
+</div>
+
+<div class="admin-card" style="padding:0;overflow-x:auto;">
+  <table class="admin-table">
+    <thead>
+      <tr><th>نام پزشک</th><th>مالک</th><th>مطب متصل</th><th>شهر</th><th>وضعیت</th><th>تکمیل اطلاعات</th><th></th></tr>
+    </thead>
+    <tbody id="doctors-body"></tbody>
+  </table>
+  <div id="doctors-empty" style="display:none;" class="admin-empty"><i class="bi bi-person-badge"></i>پزشکی یافت نشد</div>
+</div>
+
+<div style="display:flex;justify-content:center;margin-top:16px;">
+  <button class="admin-btn admin-btn-outline" id="btn-load-more-doctors" style="display:none;" onclick="loadDoctors(false)">نمایش بیشتر</button>
+</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal-overlay" id="modal-doctor-detail" onclick="if(event.target===this) closeModal('modal-doctor-detail')">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-title">جزئیات پزشک</div>
+    <div id="doctor-detail-content"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStatus = new URLSearchParams(location.search).get('status') || 'all';
+let currentSearch  = '';
+let nextPageUrl    = null;
+let allDoctors       = [];
+let searchDebounce  = null;
+
+async function loadDoctors(reset = true) {
+  const body  = document.getElementById('doctors-body');
+  const empty = document.getElementById('doctors-empty');
+  const loadMoreBtn = document.getElementById('btn-load-more-doctors');
+
+  const url = reset ? new URL(`${API}/admin-panel/doctors/`) : new URL(nextPageUrl);
+  if (reset) {
+    if (currentStatus !== 'all') url.searchParams.set('status', currentStatus);
+    if (currentSearch) url.searchParams.set('search', currentSearch);
+  }
+
+  try {
+    const res  = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    const data = await res.json();
+    const results = data.results || data;
+    nextPageUrl = data.next || null;
+    allDoctors = reset ? results : allDoctors.concat(results);
+
+    if (!allDoctors.length) {
+      body.innerHTML = '';
+      empty.innerHTML = '<i class="bi bi-person-badge"></i>پزشکی یافت نشد';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      renderDoctors(allDoctors);
+    }
+    loadMoreBtn.style.display = nextPageUrl ? 'inline-flex' : 'none';
+  } catch {
+    body.innerHTML = '';
+    empty.innerHTML = '<i class="bi bi-exclamation-circle"></i>مشکلی در بارگذاری پیش آمد';
+    empty.style.display = 'block';
+  }
+}
+
+function renderDoctors(list) {
+  const statusCfg = {
+    pending:  { label:'در انتظار تأیید', bg:'#FEF3C7', color:'#92400E' },
+    active:   { label:'فعال',            bg:'var(--primary-light)', color:'var(--primary-dark)' },
+    inactive: { label:'غیرفعال',          bg:'#FEE2E2', color:'#991B1B' },
+  };
+  document.getElementById('doctors-body').innerHTML = list.map(d => {
+    const cfg = statusCfg[d.status] || statusCfg.pending;
+    return `
+      <tr style="cursor:pointer;" onclick="openDoctorDetail(${d.id})">
+        <td style="font-weight:700;">${d.full_name}</td>
+        <td style="direction:ltr;text-align:right;">${d.owner_phone || ''}</td>
+        <td>${d.clinic_name || '— مستقل —'}</td>
+        <td>${d.city || '—'}</td>
+        <td><span class="admin-badge" style="background:${cfg.bg};color:${cfg.color};">${cfg.label}</span></td>
+        <td>${d.is_complete
+          ? '<span class="admin-badge" style="background:var(--primary-light);color:var(--primary-dark);">کامل</span>'
+          : '<span class="admin-badge" style="background:#FEE2E2;color:#991B1B;">ناقص</span>'}</td>
+        <td><button class="admin-btn admin-btn-outline admin-btn-sm" onclick="event.stopPropagation();openDoctorDetail(${d.id})">مشاهده</button></td>
+      </tr>`;
+  }).join('');
+}
+
+function filterDoctors(status, btn) {
+  document.querySelectorAll('.admin-filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  currentStatus = status;
+  loadDoctors(true);
+}
+
+function onDoctorSearch(val) {
+  currentSearch = val.trim();
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => loadDoctors(true), 350);
+}
+
+async function openDoctorDetail(id) {
+  const content = document.getElementById('doctor-detail-content');
+  content.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">در حال بارگذاری...</p>';
+  openModal('modal-doctor-detail');
+
+  try {
+    const res = await fetch(`${API}/admin-panel/doctors/${id}/`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    const d = await res.json();
+    renderDoctorDetail(d);
+  } catch {
+    content.innerHTML = '<p style="color:var(--error);font-size:13px;">مشکلی در بارگذاری جزئیات پیش آمد</p>';
+  }
+}
+
+function renderDoctorDetail(d) {
+  const statusLabel = { pending:'در انتظار تأیید', active:'فعال', inactive:'غیرفعال' }[d.status] || d.status;
+  const isComplete = !!(d.city && d.address);
+
+  document.getElementById('doctor-detail-content').innerHTML = `
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px;">${d.full_name}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">وضعیت فعلی: <b>${statusLabel}</b></div>
+      <div style="font-size:12.5px;line-height:2;">
+        <div><i class="bi bi-person"></i> مالک: <span style="direction:ltr;display:inline-block;">${d.owner_phone || ''}</span></div>
+        <div><i class="bi bi-card-heading"></i> کد نظام پزشکی: ${d.medical_license_no || '—'}</div>
+        <div><i class="bi bi-hospital"></i> مطب متصل: ${d.clinic_name || '— مستقل —'}</div>
+        <div><i class="bi bi-geo-alt"></i> ${d.city || '—'} ${d.address ? '— ' + d.address : ''}</div>
+        <div><i class="bi bi-telephone"></i> ${d.phone || '—'}</div>
+        ${d.bio ? `<div style="margin-top:6px;">${d.bio}</div>` : ''}
+      </div>
+      ${!isComplete ? `<div style="margin-top:10px;font-size:11.5px;color:#991B1B;background:#FEE2E2;padding:8px;border-radius:6px;"><i class="bi bi-exclamation-triangle"></i> این پزشک شهر یا آدرس ندارد و قابل تأیید نیست</div>` : ''}
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${d.status !== 'active' ? `<button class="admin-btn admin-btn-primary" id="btn-approve-doctor" onclick="doctorAction(${d.id}, 'approve')" ${!isComplete ? 'disabled title="اطلاعات ناقص است"' : ''}>تأیید صفحه</button>` : ''}
+      ${d.status !== 'inactive' ? `<button class="admin-btn admin-btn-danger" id="btn-reject-doctor" onclick="doctorAction(${d.id}, '${d.status === 'pending' ? 'reject' : 'deactivate'}')">${d.status === 'pending' ? 'رد درخواست' : 'غیرفعال‌سازی'}</button>` : ''}
+      <button class="admin-btn admin-btn-danger" onclick="deleteDoctor(${d.id})" style="margin-right:auto;">حذف صفحه</button>
+    </div>
+  `;
+}
+
+async function doctorAction(id, action) {
+  const btn = document.getElementById(action === 'approve' ? 'btn-approve-doctor' : 'btn-reject-doctor');
+  setLoading(btn, true, 'در حال ثبت...');
+  try {
+    const res  = await fetch(`${API}/admin-panel/doctors/${id}/action/`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'خطا در ثبت عملیات'); return; }
+    showToast(action === 'approve' ? 'صفحه پزشک تأیید شد ✓' : 'وضعیت به‌روزرسانی شد');
+    renderDoctorDetail(data);
+    loadDoctors(true);
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, action === 'approve' ? 'تأیید صفحه' : 'رد درخواست');
+  }
+}
+
+async function deleteDoctor(id) {
+  if (!confirm('این صفحه پزشک برای همیشه حذف می‌شود. ادامه می‌دهید؟')) return;
+  try {
+    const res = await fetch(`${API}/admin-panel/doctors/${id}/`, { method: 'DELETE', headers: authHeaders() });
+    if (!res.ok) throw new Error();
+    showToast('حذف شد');
+    closeModal('modal-doctor-detail');
+    loadDoctors(true);
+  } catch {
+    showToast('مشکلی در حذف پیش آمد');
+  }
+}
+
+loadDoctors(true);
+document.querySelectorAll('.admin-filter-chip').forEach(chip => {
+  chip.classList.toggle('active', chip.dataset.status === currentStatus);
+});
+</script>
+{% endblock %}

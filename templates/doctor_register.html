@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}زیباپلاس — ثبت‌نام پزشک{% endblock %}
+
+{% block content_class %}{% endblock %}
+
+{% block content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg);">
+  <div style="width:100%;max-width:400px;">
+
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="width:72px;height:72px;background:var(--primary-light);border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:32px;">👨‍⚕️</div>
+      <h1 style="font-size:22px;font-weight:700;margin-bottom:6px;">ساخت صفحه پزشک</h1>
+      <p style="font-size:13px;color:var(--text-muted);">صفحه اختصاصی خودتان را در زیباپلاس بسازید</p>
+    </div>
+
+    <div id="step-1" style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;">
+
+      <div class="input-group-custom">
+        <label>نام و نام خانوادگی</label>
+        <input class="input-custom" type="text" id="reg-fullname" placeholder="دکتر علی محمدی" />
+      </div>
+
+      <div class="input-group-custom">
+        <label>شماره موبایل</label>
+        <input class="input-custom" type="tel" id="reg-phone" placeholder="09xxxxxxxxx" maxlength="11" />
+      </div>
+
+      <div class="input-group-custom">
+        <label>شماره نظام پزشکی</label>
+        <input class="input-custom" type="text" id="reg-license" placeholder="مثلاً: ۱۲۳۴۵۶" />
+      </div>
+
+      <div class="input-group-custom">
+        <label>تخصص</label>
+        <input class="input-custom" type="text" id="reg-specialty" placeholder="مثلاً: پوست و مو" />
+      </div>
+
+      <div class="input-group-custom">
+        <label>شرح خدمات</label>
+        <textarea class="input-custom" id="reg-bio" rows="3" placeholder="توضیح کوتاهی درباره خودتان و خدماتتان بنویسید..."></textarea>
+      </div>
+
+      <div class="input-group-custom">
+        <label>شهر</label>
+        <input class="input-custom" type="text" id="reg-city" placeholder="مثلاً: تهران" />
+      </div>
+
+      <div class="input-group-custom">
+        <label>آدرس مطب/محل ویزیت</label>
+        <textarea class="input-custom" id="reg-address" rows="2" placeholder="آدرس دقیق برای نمایش به بیماران..."></textarea>
+      </div>
+
+      <div class="input-group-custom">
+        <label>عکس پزشک</label>
+        <input class="input-custom" type="file" id="reg-photo" accept="image/*" />
+      </div>
+
+      <div class="input-group-custom">
+        <label>پیج اینستاگرام (اختیاری)</label>
+        <input class="input-custom" type="text" id="reg-instagram" placeholder="بدون @" style="direction:ltr;text-align:left;" />
+      </div>
+      <div class="input-group-custom">
+        <label>آیدی روبیکا (اختیاری)</label>
+        <input class="input-custom" type="text" id="reg-rubika" style="direction:ltr;text-align:left;" />
+      </div>
+      <div class="input-group-custom">
+        <label>آیدی بله (اختیاری)</label>
+        <input class="input-custom" type="text" id="reg-bale" style="direction:ltr;text-align:left;" />
+      </div>
+
+      <div class="input-group-custom">
+        <label>اتصال به یک مطب موجود (اختیاری)</label>
+        <select class="input-custom" id="reg-clinic">
+          <option value="">— بدون اتصال به مطب، صفحه کاملاً مستقل —</option>
+        </select>
+        <p style="font-size:11px;color:var(--text-light);margin-top:4px;">اگر در یک مطب هم فعالیت می‌کنید، می‌توانید صفحه‌تان را به آن مطب وصل کنید</p>
+      </div>
+
+      <div style="display:flex;align-items:start;gap:10px;margin:18px 0;">
+        <input type="checkbox" id="reg-terms" style="margin-top:3px;" />
+        <label for="reg-terms" style="font-size:12px;color:var(--text-muted);font-weight:400;cursor:pointer;">
+          <a href="/terms/" style="color:var(--primary);">قوانین و مقررات</a> پلتفرم را مطالعه کرده و می‌پذیرم
+        </label>
+      </div>
+
+      <button class="btn-primary" id="btn-register" onclick="submitRegistration()">ثبت‌نام و دریافت کد تأیید</button>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div id="step-2" style="display:none;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;">
+      <div style="text-align:center;margin-bottom:20px;">
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">کد تأیید ارسال شده به</p>
+        <p style="font-size:16px;font-weight:700;direction:ltr;" id="reg-otp-phone"></p>
+      </div>
+      <div class="otp-inputs" style="margin-bottom:20px;">
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+      </div>
+      <button class="btn-primary" id="btn-verify-reg" onclick="verifyRegistration()">تأیید نهایی</button>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div id="step-3" style="display:none;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 24px;text-align:center;">
+      <div style="font-size:56px;margin-bottom:16px;">⏳</div>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:10px;">درخواست شما ثبت شد</h3>
+      <p style="font-size:13px;color:var(--text-muted);line-height:1.8;margin-bottom:20px;">
+        تیم ما درخواست شما را بررسی می‌کند. پس از تأیید، می‌توانید صفحه خود را تکمیل کنید.
+      </p>
+      <a href="/login/" class="btn-outline" style="display:block;text-decoration:none;">بازگشت به صفحه ورود</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let regPhone = '';
+
+function loadClinicOptions() {
+  const select = document.getElementById('reg-clinic');
+  fetch(`${API}/clinics/`)
+    .then(r => r.json())
+    .then(data => {
+      const clinics = data.results || data;
+      select.innerHTML = '<option value="">— بدون اتصال به مطب، صفحه کاملاً مستقل —</option>' +
+        clinics.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    })
+    .catch(() => {});
+}
+loadClinicOptions();
+
+function submitRegistration() {
+  const fullName    = document.getElementById('reg-fullname').value.trim();
+  const phone        = document.getElementById('reg-phone').value.trim();
+  const license      = document.getElementById('reg-license').value.trim();
+  const specialty    = document.getElementById('reg-specialty').value.trim();
+  const bio           = document.getElementById('reg-bio').value.trim();
+  const city           = document.getElementById('reg-city').value.trim();
+  const address        = document.getElementById('reg-address').value.trim();
+  const photo           = document.getElementById('reg-photo').files[0];
+  const instagram       = document.getElementById('reg-instagram').value.trim();
+  const rubika           = document.getElementById('reg-rubika').value.trim();
+  const bale               = document.getElementById('reg-bale').value.trim();
+  const clinicId           = document.getElementById('reg-clinic').value;
+  const terms              = document.getElementById('reg-terms').checked;
+
+  if (!fullName) { showToast('نام و نام خانوادگی را وارد کنید'); return; }
+  if (!phone.match(/^09[0-9]{9}$/)) { showToast('شماره موبایل معتبر نیست'); return; }
+  if (!license) { showToast('شماره نظام پزشکی الزامی است'); return; }
+  if (!city) { showToast('شهر را وارد کنید'); return; }
+  if (!address) { showToast('آدرس را وارد کنید'); return; }
+  if (!photo) { showToast('عکس پزشک را انتخاب کنید'); return; }
+  if (!terms) { showToast('باید قوانین را بپذیرید'); return; }
+
+  regPhone = phone;
+  const btn = document.getElementById('btn-register');
+  setLoading(btn, true, 'در حال ثبت...');
+
+  const formData = new FormData();
+  formData.append('full_name', fullName);
+  formData.append('phone_number', phone);
+  formData.append('medical_license_no', license);
+  formData.append('specialty', specialty);
+  formData.append('bio', bio);
+  formData.append('city', city);
+  formData.append('address', address);
+  formData.append('photo', photo);
+  formData.append('instagram', instagram);
+  formData.append('rubika', rubika);
+  formData.append('bale', bale);
+  if (clinicId) formData.append('clinic_id', clinicId);
+
+  fetch(`${API}/doctor/register/`, { method: 'POST', body: formData })
+  .then(async res => {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'خطا در ثبت‌نام');
+    return fetch(`${API}/auth/send-otp/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone_number: phone })
+    });
+  })
+  .then(() => {
+    document.getElementById('reg-otp-phone').textContent = phone;
+    document.getElementById('step-1').style.display = 'none';
+    document.getElementById('step-2').style.display = 'block';
+    setupOTPInputs(verifyRegistration);
+    showToast('کد تأیید ارسال شد ✓');
+  })
+  .catch((err) => showToast(err.message || 'خطا در ثبت‌نام، دوباره تلاش کنید'))
+  .finally(() => setLoading(btn, false, 'ثبت‌نام و دریافت کد تأیید'));
+}
+
+function verifyRegistration() {
+  const inputs = document.querySelectorAll('.otp-input');
+  const code   = Array.from(inputs).map(i => i.value).join('');
+  if (code.length !== 6) { showToast('کد ۶ رقمی را کامل وارد کنید'); return; }
+
+  const btn = document.getElementById('btn-verify-reg');
+  setLoading(btn, true, 'در حال بررسی...');
+
+  fetch(`${API}/auth/verify-otp/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone_number: regPhone, code })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.tokens) {
+      document.getElementById('step-2').style.display = 'none';
+      document.getElementById('step-3').style.display = 'block';
+    } else {
+      showToast('کد اشتباه یا منقضی شده');
+    }
+  })
+  .catch(() => showToast('خطا در ارتباط با سرور'))
+  .finally(() => setLoading(btn, false, 'تأیید نهایی'));
+}
+</script>
+{% endblock %}

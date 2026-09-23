@@ -24,7 +24,7 @@ export const authService = {
     email?: string
     phone_number?: string
   }) {
-    const response = await api.patch("/api/auth/me/", data)
+    const response = await api.patch("/api/auth/profile/", data)
     return response.data
   },
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { Users, CheckCircle2, Clock, ShieldCheck } from "lucide-react"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -35,8 +36,24 @@ const STATUS_TEXT: Record<string, string> = {
   suspended: "text-orange-700",
 }
 
+function StatCard({
+  icon: Icon, count, label, colorClass,
+}: { icon: React.ElementType; count: number; label: string; colorClass: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border bg-white p-4 shadow-sm">
+      <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", colorClass)}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <div>
+        <p className="text-2xl font-bold text-slate-900">{count}</p>
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
-  const { user, loading: authLoading, logout } = useAuth(["agency_supervisor"])
+  const { user, loading: authLoading } = useAuth(["admin", "superuser"])
   const router = useRouter()
   const [caregivers, setCaregivers] = useState<CaregiverListItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -76,18 +93,15 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
-      <AppHeader title="پنل ناظر — مراقب من" maxWidth="max-w-6xl">
-        {user && <span className="text-sm text-muted-foreground">{user.username}</span>}
-        <Button size="sm" variant="outline" className="border-border text-primary-strong hover:bg-secondary" onClick={logout}>خروج</Button>
-      </AppHeader>
+      <AppHeader title="پنل ناظر — مراقب من" maxWidth="max-w-6xl" />
 
       <main className="mx-auto max-w-6xl space-y-4 p-4">
-        {/* Summary strip — quick counts, admin-dashboard style */}
+        {/* Summary strip — icon-based stat cards, matching agency-panel's structural pattern */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <SummaryCard label="کل مراقبان" value={caregivers.length} color="bg-secondary text-primary-strong border-border" />
-          <SummaryCard label="تکمیل‌شده" value={doneCount} color="bg-emerald-50 text-emerald-700 border-emerald-100" />
-          <SummaryCard label="در حال تکمیل" value={caregivers.length - doneCount} color="bg-amber-50 text-amber-700 border-amber-100" />
-          <SummaryCard label="تأییدشده" value={caregivers.filter((c) => c.status === "approved").length} color="bg-emerald-50 text-emerald-700 border-emerald-100" />
+          <StatCard icon={Users} count={caregivers.length} label="کل مراقبان" colorClass="bg-secondary text-primary-strong" />
+          <StatCard icon={CheckCircle2} count={doneCount} label="تکمیل‌شده" colorClass="bg-emerald-50 text-emerald-700" />
+          <StatCard icon={Clock} count={caregivers.length - doneCount} label="در حال تکمیل" colorClass="bg-amber-50 text-amber-700" />
+          <StatCard icon={ShieldCheck} count={caregivers.filter((c) => c.status === "approved").length} label="تأییدشده" colorClass="bg-emerald-50 text-emerald-700" />
         </div>
 
         {/* Toolbar */}
@@ -186,15 +200,6 @@ export default function DashboardPage() {
           )}
         </div>
       </main>
-    </div>
-  )
-}
-
-function SummaryCard({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className={cn("rounded-lg border p-3 text-center", color)}>
-      <p className="text-2xl font-bold">{value}</p>
-      <p className="text-xs font-medium opacity-80">{label}</p>
     </div>
   )
 }

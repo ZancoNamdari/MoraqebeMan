@@ -111,3 +111,24 @@ body {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+
+/* Sidebar nav scrollbar — hidden by default, only appears on hover
+   or while actively scrolling, so the sidebar doesn't look
+   inconsistent between pages whose content height differs enough
+   to occasionally trigger a scrollbar and others that never do. */
+.sidebar-nav::-webkit-scrollbar {
+  width: 0px;
+}
+.sidebar-nav:hover::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+.sidebar-nav {
+  scrollbar-width: none;
+}
+.sidebar-nav:hover {
+  scrollbar-width: thin;
+}

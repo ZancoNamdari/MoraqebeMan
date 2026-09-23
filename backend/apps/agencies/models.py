@@ -167,6 +167,43 @@ class AgencySupervisor(models.Model):
         return f"{self.user.username} — سوپروایزر {self.agency}"
 
 
+class AgencyAdmin(models.Model):
+    """
+    The lowest tier of agency staff, reporting to exactly one specific
+    AgencySupervisor (assigned at creation time by the agency owner/
+    manager — never self-selected, and never reassignable by the
+    admin or supervisor themselves). Deliberately its own model
+    rather than a boolean flag on AgencySupervisor, since an admin
+    and a supervisor are genuinely different roles with different
+    scoping rules for the patient Kanban board: an admin sees only
+    their own created records, their supervisor sees their own PLUS
+    every admin reporting to them, and the agency owner sees all of
+    it across every supervisor.
+    """
+    user = models.OneToOneField(
+        "accounts.User", on_delete=models.CASCADE, related_name="agency_admin_profile", verbose_name="کاربر",
+    )
+    agency = models.ForeignKey(
+        AgencyProfile, on_delete=models.CASCADE, related_name="admins", verbose_name="آژانس",
+    )
+    supervisor = models.ForeignKey(
+        AgencySupervisor, on_delete=models.CASCADE, related_name="admins", verbose_name="سوپروایزر مسئول",
+        help_text="سوپروایزری که این ادمین مستقیماً زیر نظر او کار می‌کند.",
+    )
+    created_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="created_agency_admins", verbose_name="ایجادکننده",
+    )
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+
+    class Meta:
+        verbose_name = "ادمین آژانس"
+        verbose_name_plural = "ادمین‌های آژانس"
+
+    def __str__(self):
+        return f"{self.user.username} — ادمین {self.agency} (زیر نظر {self.supervisor.user.username})"
+
+
 class AgencyPatientLink(models.Model):
     """
     Direct agency↔patient relationship — exists specifically so an

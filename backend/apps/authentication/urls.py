@@ -3,6 +3,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
     ChangePasswordView,
+    UpdateProfileView,
     LoginView,
     LogoutView,
     MeView,
@@ -28,6 +29,11 @@ urlpatterns = [
         ChangePasswordView.as_view(),
         name="change-password",
     ),    
+    path(
+        "profile/",
+        UpdateProfileView.as_view(),
+        name="update-profile",
+    ),
     path("otp/request/", RequestOTPView.as_view(), name="otp-request"),
     path("otp/verify/", VerifyOTPView.as_view(), name="otp-verify"),
     path("password-reset/", PasswordResetRequestView.as_view(), name="password-reset-request"),

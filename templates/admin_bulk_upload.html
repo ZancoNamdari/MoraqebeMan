@@ -1,0 +1,148 @@
+{% extends "admin_base.html" %}
+{% block title %}آپلود دسته‌جمعی — پنل مدیریت{% endblock %}
+{% block page_title %}آپلود دسته‌جمعی نمونه‌کار (Explore){% endblock %}
+
+{% block content %}
+<div class="admin-card">
+  <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:18px;line-height:1.9;">
+    <i class="bi bi-info-circle text-primary"></i>
+    عکس یا ویدیوهای این دسته را یک‌جا انتخاب کن (تا صدها فایل هم‌زمان). همه با نوع محتوای انتخاب‌شده و برای مطبی که مشخص می‌کنی ثبت می‌شوند و بلافاصله در صفحه Explore نمایش داده می‌شوند (نیازی به تأیید جداگانه نیست چون خودت داری آپلود می‌کنی).
+  </p>
+
+  <div class="admin-input-group" style="margin-bottom:16px;">
+    <label>مطب</label>
+    <select class="admin-input" id="bulk-clinic-select"><option value="">در حال بارگذاری...</option></select>
+  </div>
+
+  <div class="admin-input-group" style="margin-bottom:16px;">
+    <label>نوع محتوا (برای همه فایل‌های این دسته یکسان است)</label>
+    <select class="admin-input" id="bulk-media-type">
+      <option value="image">عکس</option>
+      <option value="video_short">ویدیوی کوتاه (ریلز)</option>
+      <option value="video_long">ویدیوی بلند</option>
+    </select>
+  </div>
+
+  <div class="admin-input-group" style="margin-bottom:16px;">
+    <label>انتخاب فایل‌ها</label>
+    <input class="admin-input" type="file" id="bulk-files-input" multiple accept="image/*,video/*" onchange="onBulkFilesSelected()" />
+    <p id="bulk-files-summary" style="font-size:11.5px;color:var(--text-light);margin-top:6px;"></p>
+  </div>
+
+  <button class="admin-btn admin-btn-primary" id="btn-bulk-upload" onclick="startBulkUpload()" style="width:100%;" disabled>
+    آپلود همه
+  </button>
+
+  <div id="bulk-progress-wrap" style="display:none;margin-top:18px;">
+    <div style="background:var(--bg);border-radius:8px;height:10px;overflow:hidden;">
+      <div id="bulk-progress-bar" style="background:var(--primary);height:100%;width:0%;transition:width .2s;"></div>
+    </div>
+    <p id="bulk-progress-text" style="font-size:12px;color:var(--text-muted);margin-top:8px;text-align:center;"></p>
+  </div>
+
+  <div id="bulk-result-wrap" style="display:none;margin-top:16px;padding:14px;border-radius:8px;"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const BATCH_SIZE = 15; // تعداد فایل در هر درخواست - برای جلوگیری از یک درخواست بیش‌ازحد بزرگ
+let selectedFiles = [];
+
+async function loadClinicsForSelect() {
+  const select = document.getElementById('bulk-clinic-select');
+  try {
+    const res = await fetch(`${API}/admin-panel/clinics/?status=active`, { headers: authHeaders() });
+    const data = await res.json();
+    const clinics = data.results || data;
+    select.innerHTML = '<option value="">انتخاب کنید...</option>' + clinics.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  } catch {
+    select.innerHTML = '<option value="">خطا در بارگذاری - صفحه را رفرش کنید</option>';
+  }
+}
+loadClinicsForSelect();
+
+function onBulkFilesSelected() {
+  selectedFiles = Array.from(document.getElementById('bulk-files-input').files);
+  const summary = document.getElementById('bulk-files-summary');
+  const btn = document.getElementById('btn-bulk-upload');
+
+  if (!selectedFiles.length) {
+    summary.textContent = '';
+    btn.disabled = true;
+    return;
+  }
+  const totalMB = (selectedFiles.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024)).toFixed(1);
+  summary.textContent = `${toPersianDigits(selectedFiles.length)} فایل انتخاب شد — حجم کل تقریبی: ${toPersianDigits(totalMB)} مگابایت`;
+  btn.disabled = false;
+}
+
+async function startBulkUpload() {
+  const clinicId  = document.getElementById('bulk-clinic-select').value;
+  const mediaType = document.getElementById('bulk-media-type').value;
+  if (!clinicId) { showToast('یک مطب انتخاب کنید'); return; }
+  if (!selectedFiles.length) { showToast('فایلی انتخاب نشده'); return; }
+
+  const btn = document.getElementById('btn-bulk-upload');
+  btn.disabled = true;
+  document.getElementById('bulk-progress-wrap').style.display = 'block';
+  document.getElementById('bulk-result-wrap').style.display = 'none';
+
+  const batches = [];
+  for (let i = 0; i < selectedFiles.length; i += BATCH_SIZE) {
+    batches.push(selectedFiles.slice(i, i + BATCH_SIZE));
+  }
+
+  let totalCreated = 0;
+  const allErrors = [];
+
+  for (let b = 0; b < batches.length; b++) {
+    const formData = new FormData();
+    formData.append('clinic_id', clinicId);
+    formData.append('media_type', mediaType);
+    batches[b].forEach(f => formData.append('files', f));
+
+    try {
+      const res = await fetch(`${API}/admin-panel/portfolio/bulk-upload/`, {
+        method: 'POST',
+        headers: { 'Authorization': authHeaders()['Authorization'] },
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        totalCreated += data.created || 0;
+        if (data.errors && data.errors.length) allErrors.push(...data.errors);
+      } else {
+        allErrors.push(data.error || `دسته ${b + 1}: خطای نامشخص`);
+      }
+    } catch {
+      allErrors.push(`دسته ${b + 1}: مشکل در ارتباط با سرور`);
+    }
+
+    const doneCount = Math.min((b + 1) * BATCH_SIZE, selectedFiles.length);
+    const pct = Math.round((doneCount / selectedFiles.length) * 100);
+    document.getElementById('bulk-progress-bar').style.width = pct + '%';
+    document.getElementById('bulk-progress-text').textContent =
+      `در حال آپلود... ${toPersianDigits(doneCount)} از ${toPersianDigits(selectedFiles.length)}`;
+  }
+
+  document.getElementById('bulk-progress-text').textContent = 'تمام شد ✓';
+  const resultWrap = document.getElementById('bulk-result-wrap');
+  resultWrap.style.display = 'block';
+  if (allErrors.length) {
+    resultWrap.style.background = '#FEF3C7';
+    resultWrap.innerHTML = `
+      <p style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:6px;">${toPersianDigits(totalCreated)} فایل با موفقیت آپلود شد، ${toPersianDigits(allErrors.length)} مورد خطا داشت:</p>
+      <div style="font-size:11.5px;color:#92400E;max-height:150px;overflow-y:auto;">${allErrors.map(e => `<div>${e}</div>`).join('')}</div>`;
+  } else {
+    resultWrap.style.background = 'var(--primary-light)';
+    resultWrap.innerHTML = `<p style="font-size:13px;font-weight:700;color:var(--primary-dark);">✓ همه ${toPersianDigits(totalCreated)} فایل با موفقیت در Explore ثبت شد</p>`;
+  }
+
+  btn.disabled = false;
+  document.getElementById('bulk-files-input').value = '';
+  selectedFiles = [];
+  document.getElementById('bulk-files-summary').textContent = '';
+}
+</script>
+{% endblock %}

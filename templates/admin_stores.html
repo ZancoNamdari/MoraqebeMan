@@ -1,0 +1,195 @@
+{% extends "admin_base.html" %}
+{% block title %}فروشگاه‌ها — پنل مدیریت{% endblock %}
+{% block page_title %}مدیریت فروشگاه‌ها{% endblock %}
+
+{% block content %}
+<div class="admin-filter-bar">
+  <button class="admin-filter-chip active" data-status="all" onclick="filterStores('all', this)">همه</button>
+  <button class="admin-filter-chip" data-status="pending" onclick="filterStores('pending', this)">در انتظار تأیید</button>
+  <button class="admin-filter-chip" data-status="active" onclick="filterStores('active', this)">فعال</button>
+  <button class="admin-filter-chip" data-status="inactive" onclick="filterStores('inactive', this)">غیرفعال</button>
+  <input class="admin-search" id="store-search" placeholder="جست‌وجو..." oninput="onStoreSearch(this.value)" />
+</div>
+
+<div class="admin-card" style="padding:0;overflow-x:auto;">
+  <table class="admin-table">
+    <thead>
+      <tr><th>نام فروشگاه</th><th>مالک</th><th>نوع</th><th>شهر</th><th>وضعیت</th><th>تکمیل اطلاعات</th><th></th></tr>
+    </thead>
+    <tbody id="stores-body"></tbody>
+  </table>
+  <div id="stores-empty" style="display:none;" class="admin-empty"><i class="bi bi-shop"></i>فروشگاهی یافت نشد</div>
+</div>
+
+<div style="display:flex;justify-content:center;margin-top:16px;">
+  <button class="admin-btn admin-btn-outline" id="btn-load-more-stores" style="display:none;" onclick="loadStores(false)">نمایش بیشتر</button>
+</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal-overlay" id="modal-store-detail" onclick="if(event.target===this) closeModal('modal-store-detail')">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-title">جزئیات فروشگاه</div>
+    <div id="store-detail-content"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStatus = new URLSearchParams(location.search).get('status') || 'all';
+let currentSearch  = '';
+let nextPageUrl    = null;
+let allStores       = [];
+let searchDebounce  = null;
+
+async function loadStores(reset = true) {
+  const body  = document.getElementById('stores-body');
+  const empty = document.getElementById('stores-empty');
+  const loadMoreBtn = document.getElementById('btn-load-more-stores');
+
+  const url = reset ? new URL(`${API}/admin-panel/stores/`) : new URL(nextPageUrl);
+  if (reset) {
+    if (currentStatus !== 'all') url.searchParams.set('status', currentStatus);
+    if (currentSearch) url.searchParams.set('search', currentSearch);
+  }
+
+  try {
+    const res  = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    const data = await res.json();
+    const results = data.results || data;
+    nextPageUrl = data.next || null;
+    allStores = reset ? results : allStores.concat(results);
+
+    if (!allStores.length) {
+      body.innerHTML = '';
+      empty.innerHTML = '<i class="bi bi-shop"></i>فروشگاهی یافت نشد';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      renderStores(allStores);
+    }
+    loadMoreBtn.style.display = nextPageUrl ? 'inline-flex' : 'none';
+  } catch {
+    body.innerHTML = '';
+    empty.innerHTML = '<i class="bi bi-exclamation-circle"></i>مشکلی در بارگذاری پیش آمد';
+    empty.style.display = 'block';
+  }
+}
+
+function renderStores(list) {
+  const statusCfg = {
+    pending:  { label:'در انتظار تأیید', bg:'#FEF3C7', color:'#92400E' },
+    active:   { label:'فعال',            bg:'var(--primary-light)', color:'var(--primary-dark)' },
+    inactive: { label:'غیرفعال',          bg:'#FEE2E2', color:'#991B1B' },
+  };
+  document.getElementById('stores-body').innerHTML = list.map(s => {
+    const cfg = statusCfg[s.status] || statusCfg.pending;
+    return `
+      <tr style="cursor:pointer;" onclick="openStoreDetail(${s.id})">
+        <td style="font-weight:700;">${s.name}</td>
+        <td>${s.owner_name || '—'}<br><span style="color:var(--text-muted);font-size:11px;direction:ltr;display:inline-block;">${s.owner_phone || ''}</span></td>
+        <td>${s.category_name || '—'}</td>
+        <td>${s.city || '—'}</td>
+        <td><span class="admin-badge" style="background:${cfg.bg};color:${cfg.color};">${cfg.label}</span></td>
+        <td>${s.is_complete
+          ? '<span class="admin-badge" style="background:var(--primary-light);color:var(--primary-dark);">کامل</span>'
+          : '<span class="admin-badge" style="background:#FEE2E2;color:#991B1B;">ناقص</span>'}</td>
+        <td><button class="admin-btn admin-btn-outline admin-btn-sm" onclick="event.stopPropagation();openStoreDetail(${s.id})">مشاهده</button></td>
+      </tr>`;
+  }).join('');
+}
+
+function filterStores(status, btn) {
+  document.querySelectorAll('.admin-filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  currentStatus = status;
+  loadStores(true);
+}
+
+function onStoreSearch(val) {
+  currentSearch = val.trim();
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => loadStores(true), 350);
+}
+
+async function openStoreDetail(id) {
+  const content = document.getElementById('store-detail-content');
+  content.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">در حال بارگذاری...</p>';
+  openModal('modal-store-detail');
+
+  try {
+    const res = await fetch(`${API}/admin-panel/stores/${id}/`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    const s = await res.json();
+    renderStoreDetail(s);
+  } catch {
+    content.innerHTML = '<p style="color:var(--error);font-size:13px;">مشکلی در بارگذاری جزئیات این فروشگاه پیش آمد</p>';
+  }
+}
+
+function renderStoreDetail(s) {
+  const statusLabel = { pending:'در انتظار تأیید', active:'فعال', inactive:'غیرفعال' }[s.status] || s.status;
+  const isComplete = !!(s.city && s.address);
+
+  document.getElementById('store-detail-content').innerHTML = `
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px;">${s.name}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">وضعیت فعلی: <b>${statusLabel}</b></div>
+      <div style="font-size:12.5px;line-height:2;">
+        <div><i class="bi bi-person"></i> ${s.owner_name || '—'} — <span style="direction:ltr;display:inline-block;">${s.owner_phone || ''}</span></div>
+        <div><i class="bi bi-tag"></i> ${s.category_name || 'نوع فروشگاه انتخاب نشده'}</div>
+        <div><i class="bi bi-geo-alt"></i> ${s.city || '—'} ${s.address ? '— ' + s.address : ''}</div>
+        <div><i class="bi bi-telephone"></i> ${s.phone || '—'}</div>
+        ${s.description ? `<div style="margin-top:6px;">${s.description}</div>` : ''}
+      </div>
+      ${!isComplete ? `<div style="margin-top:10px;font-size:11.5px;color:#991B1B;background:#FEE2E2;padding:8px;border-radius:6px;"><i class="bi bi-exclamation-triangle"></i> این فروشگاه شهر یا آدرس ندارد و قابل تأیید نیست</div>` : ''}
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${s.status !== 'active' ? `<button class="admin-btn admin-btn-primary" id="btn-approve-store" onclick="storeAction(${s.id}, 'approve')" ${!isComplete ? 'disabled title="اطلاعات ناقص است"' : ''}>تأیید فروشگاه</button>` : ''}
+      ${s.status !== 'inactive' ? `<button class="admin-btn admin-btn-danger" id="btn-reject-store" onclick="storeAction(${s.id}, '${s.status === 'pending' ? 'reject' : 'deactivate'}')">${s.status === 'pending' ? 'رد درخواست' : 'غیرفعال‌سازی'}</button>` : ''}
+      <button class="admin-btn admin-btn-danger" id="btn-delete-store" onclick="deleteStore(${s.id})" style="margin-right:auto;">حذف فروشگاه</button>
+    </div>
+  `;
+}
+
+async function storeAction(id, action) {
+  const btn = document.getElementById(action === 'approve' ? 'btn-approve-store' : 'btn-reject-store');
+  setLoading(btn, true, 'در حال ثبت...');
+  try {
+    const res  = await fetch(`${API}/admin-panel/stores/${id}/action/`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'خطا در ثبت عملیات'); return; }
+    showToast(action === 'approve' ? 'فروشگاه تأیید شد ✓' : 'وضعیت فروشگاه به‌روزرسانی شد');
+    renderStoreDetail(data);
+    loadStores(true);
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, action === 'approve' ? 'تأیید فروشگاه' : 'رد درخواست');
+  }
+}
+
+async function deleteStore(id) {
+  if (!confirm('این فروشگاه برای همیشه حذف می‌شود، همراه با تمام محصولات و سفارش‌های مرتبط. ادامه می‌دهید؟')) return;
+  try {
+    const res = await fetch(`${API}/admin-panel/stores/${id}/`, { method: 'DELETE', headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    showToast('فروشگاه حذف شد');
+    closeModal('modal-store-detail');
+    loadStores(true);
+  } catch {
+    showToast('مشکلی در حذف پیش آمد');
+  }
+}
+
+loadStores(true);
+document.querySelectorAll('.admin-filter-chip').forEach(chip => {
+  chip.classList.toggle('active', chip.dataset.status === currentStatus);
+});
+</script>
+{% endblock %}

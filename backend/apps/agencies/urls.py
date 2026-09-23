@@ -10,7 +10,9 @@ from .views import (
     AgencyFamilyRequestDecisionView,
     AgencyFamilyRequestsView,
     AgencyFamilyRosterView,
+    AgencyAdminListCreateView,
     AgencyPatientListCreateView,
+    AgencyPatientPipelineStatusView,
     AgencySuggestedCaregiversView,
     AgencySupervisorListCreateView,
     JoinAgencyAsCaregiverView,
@@ -61,10 +63,15 @@ urlpatterns = [
     # since a superuser needs to create a supervisor for an agency
     # that isn't their own.
     path("agencies/<int:agency_id>/supervisors/", AgencySupervisorListCreateView.as_view(), name="agencies-supervisors"),
+    path("agencies/<int:agency_id>/admins/", AgencyAdminListCreateView.as_view(), name="agencies-admins"),
 
     # Agency-scoped patient creation — agency, its own supervisors, or
     # a superuser.
     path("agencies/<int:agency_id>/patients/", AgencyPatientListCreateView.as_view(), name="agencies-patients"),
+    path(
+        "agencies/<int:agency_id>/patients/<int:patient_id>/pipeline-status/",
+        AgencyPatientPipelineStatusView.as_view(), name="agencies-patient-pipeline-status",
+    ),
 
     # Agency-scoped matching — candidates restricted to this agency's
     # own approved caregiver roster.

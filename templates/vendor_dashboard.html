@@ -1,0 +1,844 @@
+{% extends "base.html" %}
+{% block title %}زیباپلاس — پنل مطب{% endblock %}
+
+{% block navbar %}
+<nav class="navbar-custom">
+  <button class="back-btn" onclick="window.location.href='/profile/'"><i class="bi bi-arrow-right"></i></button>
+  <span class="navbar-title">پنل مطب</span>
+  <a href="/notifications/" class="nav-icon-btn" style="text-decoration:none;position:relative;">
+    <i class="bi bi-bell"></i>
+    <span id="notif-badge" style="display:none;position:absolute;top:2px;left:2px;background:var(--error);color:white;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;align-items:center;justify-content:center;padding:0 3px;"></span>
+  </a>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="px-page pt-3">
+
+  <!-- انتخاب مطب (در صورت داشتن چند مطب) -->
+  <div id="clinic-selector-wrap" style="display:none;margin-bottom:16px;">
+    <div style="display:flex;gap:8px;align-items:center;">
+      <select class="input-custom" id="clinic-selector" style="flex:1;" onchange="onClinicSelected(this.value)"></select>
+      <button class="btn-outline btn-sm" style="width:auto;white-space:nowrap;" onclick="openAddClinicModal()"><i class="bi bi-plus-lg"></i> مطب جدید</button>
+    </div>
+  </div>
+
+  <!-- وضعیت تایید -->
+  <div id="approval-banner" style="display:none;border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;align-items:center;gap:12px;">
+    <div id="approval-banner-icon" style="font-size:24px;"></div>
+    <div id="approval-banner-text" style="font-size:13px;"></div>
+  </div>
+
+  <a href="/commission-requests/" style="display:flex;align-items:center;gap:10px;background:var(--gold-light);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;text-decoration:none;color:inherit;">
+    <i class="bi bi-people-fill" style="color:var(--gold);font-size:16px;"></i>
+    <span style="flex:1;font-size:12.5px;font-weight:600;">درخواست کمیسیون جدید بده یا تأیید کن</span>
+    <i class="bi bi-chevron-left" style="font-size:13px;color:var(--text-light);"></i>
+  </a>
+
+  <!-- تب‌ها -->
+  <div style="display:flex;gap:4px;background:var(--bg);border-radius:var(--radius-sm);padding:4px;margin-bottom:20px;overflow-x:auto;">
+    <button class="vendor-tab active" onclick="switchVendorTab('bookings', this)">رزروها</button>
+    <button class="vendor-tab" onclick="switchVendorTab('requests', this)">درخواست‌های مشاوره</button>
+    <button class="vendor-tab" onclick="switchVendorTab('profile', this)">پروفایل</button>
+    <button class="vendor-tab" onclick="switchVendorTab('services', this)">خدمات</button>
+    <button class="vendor-tab" onclick="switchVendorTab('portfolio', this)">نمونه‌کار</button>
+  </div>
+
+  <!-- رزروها (نوبت‌های واقعی مشتریان) -->
+  <div id="vendor-tab-bookings" class="vendor-pane">
+    <div style="display:flex;gap:4px;margin-bottom:16px;overflow-x:auto;">
+      <button class="req-filter active" data-status="all" onclick="filterBookingsVendor('all', this)">همه</button>
+      <button class="req-filter" data-status="pending" onclick="filterBookingsVendor('pending', this)">در انتظار</button>
+      <button class="req-filter" data-status="confirmed" onclick="filterBookingsVendor('confirmed', this)">تأیید شده</button>
+      <button class="req-filter" data-status="completed" onclick="filterBookingsVendor('completed', this)">انجام شده</button>
+      <button class="req-filter" data-status="rejected" onclick="filterBookingsVendor('rejected', this)">رد شده</button>
+      <button class="req-filter" data-status="cancelled" onclick="filterBookingsVendor('cancelled', this)">لغو شده</button>
+    </div>
+    <div id="vendor-bookings-list"></div>
+  </div>
+
+  <!-- درخواست‌های مشاوره -->
+  <div id="vendor-tab-requests" class="vendor-pane" style="display:none;">
+    <div style="display:flex;gap:4px;margin-bottom:16px;">
+      <button class="req-filter active" onclick="filterReqs('all', this)">همه</button>
+      <button class="req-filter" onclick="filterReqs('pending', this)">جدید</button>
+      <button class="req-filter" onclick="filterReqs('visit_scheduled', this)">ویزیت‌شده</button>
+    </div>
+    <div id="requests-list"></div>
+  </div>
+
+  <!-- پروفایل -->
+  <div id="vendor-tab-profile" class="vendor-pane" style="display:none;">
+    <div class="input-group-custom">
+      <label>نام مطب</label>
+      <input class="input-custom" type="text" id="profile-clinic-name" />
+    </div>
+    <div class="input-group-custom">
+      <label>نوع کسب‌وکار</label>
+      <select class="input-custom" id="profile-category">
+        <option value="">در حال بارگذاری...</option>
+      </select>
+      <p style="font-size:11px;color:var(--text-light);margin-top:4px;">فهرست خدمات قابل انتخاب در تب «خدمات» بر اساس همین مورد نمایش داده می‌شود</p>
+    </div>
+    <div class="input-group-custom">
+      <label>توضیحات</label>
+      <textarea class="input-custom" id="profile-description" rows="3" placeholder="توضیح کوتاهی درباره مطب..."></textarea>
+    </div>
+    <div class="input-group-custom">
+      <label>شهر</label>
+      <input class="input-custom" type="text" id="profile-city" placeholder="تهران" />
+    </div>
+    <div class="input-group-custom">
+      <label>آدرس کامل</label>
+      <textarea class="input-custom" id="profile-address" rows="2" placeholder="آدرس دقیق مطب..."></textarea>
+    </div>
+    <div class="input-group-custom">
+      <label>شماره تماس</label>
+      <input class="input-custom" type="tel" id="profile-phone" />
+    </div>
+    <button class="btn-primary" id="btn-save-profile" onclick="saveVendorProfile()">ذخیره تغییرات</button>
+  </div>
+
+  <!-- خدمات -->
+  <div id="vendor-tab-services" class="vendor-pane" style="display:none;">
+    <button class="btn-outline btn-sm" style="width:auto;margin-bottom:16px;" onclick="openAddServiceModal()">
+      <i class="bi bi-plus-lg"></i> افزودن سرویس جدید
+    </button>
+    <div id="vendor-services-list"></div>
+  </div>
+
+  <!-- نمونه‌کار -->
+  <div id="vendor-tab-portfolio" class="vendor-pane" style="display:none;">
+    <button class="btn-outline btn-sm" style="width:auto;margin-bottom:16px;" onclick="openModal('modal-add-portfolio')">
+      <i class="bi bi-plus-lg"></i> افزودن نمونه‌کار
+    </button>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;" id="vendor-portfolio-grid"></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block bottom_nav %}{% endblock %}
+
+{% block modals %}
+<!-- Modal افزودن مطب جدید -->
+<div class="modal-overlay" id="modal-add-clinic" onclick="closeModal('modal-add-clinic')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">افزودن مطب جدید</div>
+    <div class="input-group-custom"><label>نام مطب</label><input class="input-custom" id="new-clinic-name" /></div>
+    <div class="input-group-custom">
+      <label>نوع کسب‌وکار</label>
+      <select class="input-custom" id="new-clinic-category"><option value="">در حال بارگذاری...</option></select>
+    </div>
+    <div class="input-group-custom"><label>شهر</label><input class="input-custom" id="new-clinic-city" /></div>
+    <div class="input-group-custom"><label>آدرس</label><textarea class="input-custom" id="new-clinic-address" rows="2"></textarea></div>
+    <div class="input-group-custom"><label>توضیحات (اختیاری)</label><textarea class="input-custom" id="new-clinic-description" rows="2"></textarea></div>
+    <div class="input-group-custom"><label>تصویر مطب</label><input class="input-custom" type="file" id="new-clinic-image" accept="image/*" /></div>
+    <div class="input-group-custom"><label>تصویر کاور</label><input class="input-custom" type="file" id="new-clinic-cover" accept="image/*" /></div>
+    <button class="btn-primary" id="btn-save-new-clinic" onclick="saveNewClinic()">ثبت مطب جدید</button>
+  </div>
+</div>
+
+<!-- Modal جزئیات رزرو -->
+<div class="modal-overlay" id="modal-booking-detail" onclick="closeModal('modal-booking-detail')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">جزئیات رزرو</div>
+    <div id="booking-detail-content"></div>
+  </div>
+</div>
+
+<!-- Modal جزئیات درخواست -->
+<div class="modal-overlay" id="modal-request-detail" onclick="closeModal('modal-request-detail')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">جزئیات درخواست مشاوره</div>
+    <div id="request-detail-content"></div>
+  </div>
+</div>
+
+<!-- Modal افزودن سرویس -->
+<div class="modal-overlay" id="modal-add-service" onclick="closeModal('modal-add-service')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">افزودن سرویس جدید</div>
+
+    <div style="display:flex;gap:4px;background:var(--bg);border-radius:var(--radius-sm);padding:4px;margin-bottom:16px;">
+      <button class="vendor-tab active" id="service-mode-standard-btn" style="flex:1;" onclick="switchServiceMode('standard')">از فهرست استاندارد</button>
+      <button class="vendor-tab" id="service-mode-custom-btn" style="flex:1;" onclick="switchServiceMode('custom')">سرویس دلخواه</button>
+    </div>
+
+    <!-- حالت انتخاب از فهرست استاندارد -->
+    <div id="service-mode-standard">
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+        بر اساس نوع کسب‌وکار مطب شما (<span id="service-options-category-name">—</span>)، از فهرست زیر سرویس‌هایی که ارائه می‌دهید را انتخاب کنید.
+      </p>
+      <div id="service-options-list" style="max-height:280px;overflow-y:auto;margin-bottom:16px;">
+        <p style="font-size:12px;color:var(--text-muted);">در حال بارگذاری فهرست...</p>
+      </div>
+      <button class="btn-primary" id="btn-add-selected-services" onclick="addSelectedServices()">افزودن سرویس‌های انتخاب‌شده</button>
+    </div>
+
+    <!-- حالت سرویس دلخواه -->
+    <div id="service-mode-custom" style="display:none;">
+      <div class="input-group-custom"><label>نام سرویس</label><input class="input-custom" type="text" id="new-service-name" placeholder="مثلاً: بوتاکس" /></div>
+      <div class="input-group-custom"><label>قیمت (تومان)</label><input class="input-custom" type="number" id="new-service-price" placeholder="500000" /></div>
+      <div class="input-group-custom"><label>مدت زمان (دقیقه)</label><input class="input-custom" type="number" id="new-service-duration" placeholder="60" /></div>
+      <button class="btn-primary" id="btn-add-service" onclick="addService()">افزودن</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal افزودن نمونه‌کار -->
+<div class="modal-overlay" id="modal-add-portfolio" onclick="closeModal('modal-add-portfolio')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">افزودن نمونه‌کار</div>
+    <div class="input-group-custom">
+      <label>نوع محتوا</label>
+      <select class="input-custom" id="new-portfolio-type">
+        <option value="image">عکس قبل/بعد</option>
+        <option value="video_short">ویدیو کوتاه (ریلز)</option>
+        <option value="video_long">ویدیو بلند</option>
+      </select>
+    </div>
+    <div class="input-group-custom"><label>کپشن</label><input class="input-custom" type="text" id="new-portfolio-caption" placeholder="توضیح کوتاه..." /></div>
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;font-size:12px;color:var(--text-muted);margin-bottom:16px;">
+      <i class="bi bi-info-circle"></i> پس از ثبت، نمونه‌کار شما برای بررسی نهایی به ادمین ارسال می‌شود.
+    </div>
+    <button class="btn-primary" id="btn-add-portfolio" onclick="addPortfolio()">ثبت نمونه‌کار</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.vendor-tab { flex-shrink:0; padding:8px 16px; border:none; border-radius:6px; font-size:13px; cursor:pointer; background:transparent; color:var(--text-muted); font-weight:500; white-space:nowrap; transition:all 0.15s; }
+.vendor-tab.active { background:var(--white); color:var(--text-main); font-weight:700; box-shadow:var(--shadow-sm); }
+.req-filter { padding:6px 14px; border:1px solid var(--border); border-radius:999px; font-size:12px; background:var(--white); color:var(--text-muted); cursor:pointer; }
+.req-filter.active { background:var(--primary); color:white; border-color:var(--primary); }
+.vendor-request-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; cursor:pointer; }
+.vendor-service-row { display:flex; align-items:center; justify-content:space-between; background:var(--white); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:8px; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+requireAuth();
+
+const statusConfig = {
+  pending:           { label:'جدید',                color:'#92400E', bg:'#FEF3C7' },
+  reviewing:         { label:'در حال بررسی',         color:'#1D4ED8', bg:'#DBEAFE' },
+  approved:          { label:'تأیید شد',              color:'#0F6E56', bg:'var(--primary-light)' },
+  rejected:          { label:'رد شده',                color:'#991B1B', bg:'#FEE2E2' },
+  visit_scheduled:    { label:'ویزیت زمان‌بندی شد',     color:'#1D4ED8', bg:'#DBEAFE' },
+  visited:            { label:'ویزیت شده',             color:'#0F6E56', bg:'var(--primary-light)' },
+  surgery_scheduled:  { label:'عمل زمان‌بندی شد',       color:'#7C3AED', bg:'#EDE9FE' },
+  completed:          { label:'انجام شده',              color:'#6B7280', bg:'#F3F4F6' },
+  cancelled:          { label:'لغو شده',                color:'#991B1B', bg:'#FEE2E2' },
+};
+
+let currentClinic     = null;
+let allRequests        = [];
+let allVendorBookings  = [];
+
+let myClinics = [];
+
+async function loadDashboard() {
+  try {
+    const res  = await fetch(`${API}/clinics/mine/`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    myClinics = await res.json();
+  } catch {
+    document.getElementById('vendor-bookings-list').innerHTML =
+      `<div class="empty-state"><i class="bi bi-exclamation-circle"></i><h4>مشکلی در بارگذاری اطلاعات مطب پیش آمد</h4><p>لطفاً صفحه را رفرش کنید</p></div>`;
+    return;
+  }
+
+  if (!myClinics.length) {
+    document.getElementById('vendor-bookings-list').innerHTML =
+      `<div class="empty-state"><i class="bi bi-hospital"></i><h4>هنوز مطبی ثبت نکرده‌اید</h4></div>`;
+    return;
+  }
+
+  const selectorWrap = document.getElementById('clinic-selector-wrap');
+  const selector      = document.getElementById('clinic-selector');
+  selectorWrap.style.display = myClinics.length > 1 ? 'block' : 'none';
+  selector.innerHTML = myClinics.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+  await loadClinicData(myClinics[0].id);
+}
+
+async function loadClinicData(clinicId) {
+  try {
+    const res = await fetch(`${API}/vendor/profile/?clinic_id=${clinicId}`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    currentClinic = await res.json();
+  } catch {
+    showToast('مشکلی در بارگذاری این مطب پیش آمد');
+    return;
+  }
+
+  document.getElementById('clinic-selector').value = clinicId;
+  showApprovalBanner(currentClinic.status);
+
+  fillProfileForm();
+  renderServices();
+  renderPortfolio();
+  loadVendorBookings('all');
+  loadRequests();
+}
+
+function onClinicSelected(clinicId) {
+  loadClinicData(Number(clinicId));
+}
+
+async function openAddClinicModal() {
+  document.getElementById('new-clinic-name').value = '';
+  document.getElementById('new-clinic-city').value = '';
+  document.getElementById('new-clinic-address').value = '';
+  document.getElementById('new-clinic-description').value = '';
+  document.getElementById('new-clinic-image').value = '';
+  document.getElementById('new-clinic-cover').value = '';
+  const select = document.getElementById('new-clinic-category');
+  const cats = await getCategoriesForSelect();
+  select.innerHTML = '<option value="">— بدون نوع کسب‌وکار —</option>' + cats.map(c => `<option value="${c.id}">${c.icon || ''} ${c.name}</option>`).join('');
+  openModal('modal-add-clinic');
+}
+
+async function saveNewClinic() {
+  const name        = document.getElementById('new-clinic-name').value.trim();
+  const categoryId  = document.getElementById('new-clinic-category').value;
+  const city         = document.getElementById('new-clinic-city').value.trim();
+  const address       = document.getElementById('new-clinic-address').value.trim();
+  const description   = document.getElementById('new-clinic-description').value.trim();
+  const clinicImage   = document.getElementById('new-clinic-image').files[0];
+  const coverImage    = document.getElementById('new-clinic-cover').files[0];
+
+  if (!name || !city || !address) { showToast('نام، شهر و آدرس الزامی هستند'); return; }
+  if (!clinicImage || !coverImage) { showToast('تصویر مطب و تصویر کاور هر دو الزامی هستند'); return; }
+
+  const btn = document.getElementById('btn-save-new-clinic');
+  setLoading(btn, true, 'در حال ثبت...');
+
+  const formData = new FormData();
+  formData.append('clinic_name', name);
+  formData.append('category_id', categoryId);
+  formData.append('city', city);
+  formData.append('address', address);
+  formData.append('description', description);
+  formData.append('clinic_image', clinicImage);
+  formData.append('cover_image', coverImage);
+
+  try {
+    const res  = await fetch(`${API}/vendor/clinics/add/`, {
+      method: 'POST',
+      headers: { 'Authorization': authHeaders()['Authorization'] },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const firstError = Object.values(data)[0];
+      showToast(Array.isArray(firstError) ? firstError[0] : (data.error || 'خطا در ثبت مطب'));
+      return;
+    }
+    showToast('مطب جدید ثبت شد ✓ در انتظار تأیید ادمین است');
+    closeModal('modal-add-clinic');
+    await loadDashboard();
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, 'ثبت مطب جدید');
+  }
+}
+
+function showApprovalBanner(status) {
+  const banner = document.getElementById('approval-banner');
+  const icon    = document.getElementById('approval-banner-icon');
+  const text    = document.getElementById('approval-banner-text');
+
+  const configs = {
+    pending:  { icon: '⏳', bg: 'var(--gold-light)', border: '#F5DEB3', color: '#92400E',
+                msg: 'مطب شما در انتظار تأیید ادمین است. تا تأیید نهایی امکان دریافت سرویس وجود ندارد.' },
+    inactive: { icon: '⛔', bg: '#FEE2E2', border: '#FCA5A5', color: '#991B1B',
+                msg: 'مطب شما غیرفعال شده است. برای اطلاع از دلیل و رفع مشکل با پشتیبانی تماس بگیرید.' },
+  };
+
+  const cfg = configs[status];
+  if (!cfg) {
+    // status === 'active' یا وضعیت نامشخص → مطب فعال و آماده دریافت سرویس است، بنری نمایش داده نمی‌شود
+    banner.style.display = 'none';
+    return;
+  }
+
+  banner.style.display     = 'flex';
+  banner.style.background  = cfg.bg;
+  banner.style.border      = `1px solid ${cfg.border}`;
+  icon.textContent          = cfg.icon;
+  text.textContent          = cfg.msg;
+  text.style.color          = cfg.color;
+}
+
+function fillProfileForm() {
+  document.getElementById('profile-clinic-name').value  = currentClinic.name || '';
+  document.getElementById('profile-description').value  = currentClinic.description || '';
+  document.getElementById('profile-city').value          = currentClinic.city || '';
+  document.getElementById('profile-address').value       = currentClinic.address || '';
+  document.getElementById('profile-phone').value          = currentClinic.phone || '';
+  loadProfileCategoryOptions();
+}
+
+async function loadProfileCategoryOptions() {
+  const select = document.getElementById('profile-category');
+  try {
+    const res = await fetch(`${API}/categories/`);
+    const categories = await res.json();
+    const currentId = currentClinic?.category?.id;
+    select.innerHTML = '<option value="">— انتخاب نشده —</option>' +
+      categories.map(c => `<option value="${c.id}" ${c.id === currentId ? 'selected' : ''}>${c.name}</option>`).join('');
+  } catch {
+    select.innerHTML = '<option value="">خطا در بارگذاری فهرست</option>';
+  }
+}
+
+function switchVendorTab(name, btn) {
+  document.querySelectorAll('.vendor-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.vendor-pane').forEach(p => p.style.display = 'none');
+  document.getElementById(`vendor-tab-${name}`).style.display = 'block';
+}
+
+/* ── BOOKINGS (رزروهای واقعی مشتریان) ── */
+async function loadVendorBookings(statusFilter) {
+  const el = document.getElementById('vendor-bookings-list');
+  try {
+    const url = new URL(`${API}/bookings/clinic/`);
+    if (statusFilter && statusFilter !== 'all') url.searchParams.set('status', statusFilter);
+    url.searchParams.set('clinic_id', currentClinic.id);
+    const res = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    allVendorBookings = await res.json();
+    renderVendorBookings(allVendorBookings);
+  } catch {
+    el.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-circle"></i><h4>مشکلی در بارگذاری رزروها پیش آمد</h4><p>لطفاً دوباره تلاش کنید</p></div>`;
+  }
+}
+
+function filterBookingsVendor(status, btn) {
+  document.querySelectorAll('#vendor-tab-bookings .req-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadVendorBookings(status);
+}
+
+function renderVendorBookings(list) {
+  const el = document.getElementById('vendor-bookings-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><i class="bi bi-calendar2-x"></i><h4>رزروی وجود ندارد</h4></div>`;
+    return;
+  }
+  window._vendorBookings = list;
+  el.innerHTML = list.map((b, i) => {
+    const cfg = statusConfig[b.status] || statusConfig.pending;
+    return `
+      <div class="vendor-request-card" onclick="openVendorBookingDetail(${i})">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+          <div>
+            <div style="font-size:14px;font-weight:700;">${b.service_name}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${b.customer_name || ''} <span style="direction:ltr;display:inline-block;">${b.customer_phone || ''}</span></div>
+          </div>
+          <span class="badge" style="color:${cfg.color};background:${cfg.bg};">${b.status_display || cfg.label}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);"><i class="bi bi-calendar-event"></i> ${toHijriDate(b.requested_date)} — ${toPersianDigits((b.requested_time || '').slice(0,5))}</div>
+      </div>`;
+  }).join('');
+}
+
+let confirmedTimeValue = null;
+
+function onConfirmedTimeSelected(value24, display) {
+  confirmedTimeValue = value24;
+  document.getElementById('booking-confirmed-time').value = display;
+}
+
+function openVendorBookingDetail(index) {
+  const b = window._vendorBookings[index];
+  const canAct = b.status === 'pending';
+  confirmedTimeValue = (b.requested_time || '').slice(0,5);
+
+  document.getElementById('booking-detail-content').innerHTML = `
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px;">${b.service_name}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">${b.customer_name || ''} — <span style="direction:ltr;display:inline-block;">${b.customer_phone || ''}</span></div>
+      <div style="font-size:13px;"><i class="bi bi-calendar-event"></i> تاریخ درخواستی: ${toHijriDate(b.requested_date)} — ${toPersianDigits((b.requested_time || '').slice(0,5))}</div>
+      <div style="font-size:13px;margin-top:4px;"><i class="bi bi-credit-card"></i> پرداخت: ${b.payment_method === 'online' ? 'آنلاین' : 'حضوری'}</div>
+      ${b.note ? `<div style="font-size:13px;margin-top:8px;">${b.note}</div>` : ''}
+      ${b.clinic_note ? `<div style="font-size:12px;color:var(--text-muted);margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">یادداشت شما: ${b.clinic_note}</div>` : ''}
+    </div>
+
+    ${canAct ? `
+      <div class="input-group-custom">
+        <label>ساعت تأیید نهایی (اختیاری - در صورت خالی، همان ساعت درخواستی)</label>
+        <input class="input-custom" type="text" id="booking-confirmed-time" readonly value="${toPersianDigits((b.requested_time || '').slice(0,5))}" onclick="openTimePicker(onConfirmedTimeSelected, confirmedTimeValue)" style="cursor:pointer;" />
+      </div>
+      <div class="input-group-custom">
+        <label>یادداشت برای مشتری (اختیاری)</label>
+        <textarea class="input-custom" id="booking-clinic-note" rows="2" placeholder="مثلاً: لطفاً ۱۰ دقیقه زودتر تشریف بیاورید"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-primary" id="btn-confirm-booking" style="flex:1;" onclick="submitBookingAction(${b.id}, 'confirm')">تأیید رزرو</button>
+        <button class="btn-danger" id="btn-reject-booking" style="flex:1;" onclick="submitBookingAction(${b.id}, 'reject')">رد رزرو</button>
+      </div>
+    ` : `<p style="font-size:12px;color:var(--text-muted);text-align:center;">این رزرو قبلاً بررسی شده و دیگر قابل تغییر نیست</p>`}
+  `;
+
+  openModal('modal-booking-detail');
+}
+
+async function submitBookingAction(id, action) {
+  const confirmedTime = confirmedTimeValue;
+  const clinicNote     = document.getElementById('booking-clinic-note')?.value || '';
+  const btn = document.getElementById(action === 'confirm' ? 'btn-confirm-booking' : 'btn-reject-booking');
+  setLoading(btn, true, 'در حال ثبت...');
+
+  try {
+    const res  = await fetch(`${API}/bookings/${id}/action/`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        action,
+        clinic_note: clinicNote,
+        ...(action === 'confirm' && confirmedTime ? { confirmed_time: confirmedTime } : {}),
+      })
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      showToast(data.error || 'خطا در ثبت وضعیت رزرو');
+      return;
+    }
+    showToast(action === 'confirm' ? 'رزرو تأیید شد ✓' : 'رزرو رد شد');
+    closeModal('modal-booking-detail');
+    const activeFilterBtn = document.querySelector('#vendor-tab-bookings .req-filter.active');
+    loadVendorBookings(activeFilterBtn?.dataset.status || 'all');
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, action === 'confirm' ? 'تأیید رزرو' : 'رد رزرو');
+  }
+}
+
+/* ── REQUESTS (درخواست‌های مشاوره) ── */
+async function loadRequests() {
+  const el = document.getElementById('requests-list');
+  try {
+    const res  = await fetch(`${API}/consultations/clinic/?clinic_id=${currentClinic.id}`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    allRequests = await res.json();
+    renderRequests('all');
+  } catch {
+    el.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-circle"></i><h4>مشکلی در بارگذاری درخواست‌ها پیش آمد</h4></div>`;
+  }
+}
+
+function renderRequests(filter) {
+  const list = filter === 'all' ? allRequests : allRequests.filter(r => r.status === filter);
+  const el   = document.getElementById('requests-list');
+
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><i class="bi bi-inbox"></i><h4>درخواستی وجود ندارد</h4></div>`;
+    return;
+  }
+
+  window._vendorRequests = list;
+
+  el.innerHTML = list.map((r, i) => {
+    const cfg = statusConfig[r.status] || statusConfig.pending;
+    return `
+      <div class="vendor-request-card" onclick="openRequestDetail(${i})">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+          <div>
+            <div style="font-size:14px;font-weight:700;">${r.service_name}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;direction:ltr;text-align:right;">${r.customer_phone || ''}</div>
+          </div>
+          <span class="badge" style="color:${cfg.color};background:${cfg.bg};">${cfg.label}</span>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);">${(r.description || '').slice(0, 60)}${r.description?.length > 60 ? '...' : ''}</p>
+      </div>`;
+  }).join('');
+}
+
+function filterReqs(status, btn) {
+  document.querySelectorAll('.req-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRequests(status);
+}
+
+function openRequestDetail(index) {
+  const r = window._vendorRequests[index];
+  const statuses = Object.entries(statusConfig);
+
+  document.getElementById('request-detail-content').innerHTML = `
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px;">${r.service_name}</div>
+      <div style="font-size:12px;color:var(--text-muted);direction:ltr;text-align:right;margin-bottom:8px;">${r.customer_phone || ''}</div>
+      <div style="font-size:13px;">${r.description || ''}</div>
+      ${r.preferred_dates ? `<div style="font-size:12px;color:var(--text-muted);margin-top:8px;"><i class="bi bi-clock"></i> بازه ترجیحی: ${r.preferred_dates}</div>` : ''}
+    </div>
+
+    <div class="input-group-custom">
+      <label>تغییر وضعیت</label>
+      <select class="input-custom" id="status-select">
+        ${statuses.map(([key, cfg]) => `<option value="${key}" ${key === r.status ? 'selected' : ''}>${cfg.label}</option>`).join('')}
+      </select>
+    </div>
+
+    <div class="input-group-custom">
+      <label>زمان ویزیت (در صورت نیاز)</label>
+      <input class="input-custom" type="datetime-local" id="visit-date-input" />
+    </div>
+
+    <div class="input-group-custom">
+      <label>یادداشت برای کاربر</label>
+      <textarea class="input-custom" id="status-note" rows="2" placeholder="توضیح برای کاربر..."></textarea>
+    </div>
+
+    <button class="btn-primary" id="btn-update-status" onclick="updateRequestStatus(${r.id})">به‌روزرسانی وضعیت</button>
+  `;
+
+  openModal('modal-request-detail');
+}
+
+async function updateRequestStatus(id) {
+  const status     = document.getElementById('status-select').value;
+  const visitDate   = document.getElementById('visit-date-input').value;
+  const note         = document.getElementById('status-note').value;
+  const btn          = document.getElementById('btn-update-status');
+  setLoading(btn, true, 'در حال ثبت...');
+
+  try {
+    const res = await fetch(`${API}/consultations/${id}/status/`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ status, visit_date: visitDate || undefined, note })
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      showToast(data.error || 'خطا در به‌روزرسانی وضعیت');
+      return;
+    }
+    showToast('وضعیت بروزرسانی شد ✓');
+    closeModal('modal-request-detail');
+    loadRequests();
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally { setLoading(btn, false, 'به‌روزرسانی وضعیت'); }
+}
+
+/* ── PROFILE ── */
+async function saveVendorProfile() {
+  const btn = document.getElementById('btn-save-profile');
+  setLoading(btn, true, 'در حال ذخیره...');
+  const categoryId = document.getElementById('profile-category').value;
+  try {
+    const res = await fetch(`${API}/vendor/profile/?clinic_id=${currentClinic.id}`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        name: document.getElementById('profile-clinic-name').value,
+        description: document.getElementById('profile-description').value,
+        city: document.getElementById('profile-city').value,
+        address: document.getElementById('profile-address').value,
+        phone: document.getElementById('profile-phone').value,
+        category_id: categoryId || null,
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const firstError = Object.values(data)[0];
+      showToast(Array.isArray(firstError) ? firstError[0] : (data.error || 'خطا در ذخیره پروفایل'));
+      return;
+    }
+    currentClinic.category = data.category || null;
+    serviceOptionsCache = null; // نوع کسب‌وکار ممکن است تغییر کرده باشد؛ فهرست خدمات استاندارد را دوباره بگیر
+    showToast('پروفایل ذخیره شد ✓');
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally { setLoading(btn, false, 'ذخیره تغییرات'); }
+}
+
+/* ── SERVICES ── */
+function renderServices() {
+  const svcs = currentClinic.services || [];
+  document.getElementById('vendor-services-list').innerHTML = svcs.length ? svcs.map(s => `
+    <div class="vendor-service-row">
+      <div>
+        <div style="font-size:13px;font-weight:600;">${s.name}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${s.duration} دقیقه${s.category_name ? ' · ' + s.category_name : ''}</div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--primary-dark);">${formatMoney(s.price)}</div>
+    </div>`).join('') : '<p style="color:var(--text-muted);font-size:13px;">سرویسی ثبت نشده</p>';
+}
+
+/* ── ADD SERVICE MODAL ── */
+let serviceOptionsCache = null; // فهرست سرویس‌های استاندارد نوع کسب‌وکار این مطب
+
+function openAddServiceModal() {
+  switchServiceMode('standard');
+  openModal('modal-add-service');
+  loadServiceOptions();
+}
+
+function switchServiceMode(mode) {
+  document.getElementById('service-mode-standard').style.display = mode === 'standard' ? 'block' : 'none';
+  document.getElementById('service-mode-custom').style.display   = mode === 'custom'   ? 'block' : 'none';
+  document.getElementById('service-mode-standard-btn').classList.toggle('active', mode === 'standard');
+  document.getElementById('service-mode-custom-btn').classList.toggle('active', mode === 'custom');
+}
+
+async function loadServiceOptions() {
+  const listEl = document.getElementById('service-options-list');
+  const categoryId = currentClinic?.category?.id;
+
+  if (!categoryId) {
+    listEl.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">ابتدا باید نوع کسب‌وکار مطب مشخص شود.</p>';
+    return;
+  }
+
+  try {
+    if (!serviceOptionsCache || serviceOptionsCache.categoryId !== categoryId) {
+      const res  = await fetch(`${API}/categories/${categoryId}/service-options/`);
+      const data = await res.json();
+      serviceOptionsCache = { categoryId, name: data.name, options: data.service_options || [] };
+    }
+  } catch {
+    listEl.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">خطا در دریافت فهرست سرویس‌های استاندارد.</p>';
+    return;
+  }
+
+  document.getElementById('service-options-category-name').textContent = serviceOptionsCache.name || '—';
+
+  const existingCategoryIds = new Set((currentClinic.services || []).map(s => s.category).filter(Boolean));
+
+  if (!serviceOptionsCache.options.length) {
+    listEl.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">فهرست استانداردی برای این نوع کسب‌وکار تعریف نشده است.</p>';
+    return;
+  }
+
+  listEl.innerHTML = serviceOptionsCache.options.map(opt => {
+    const alreadyAdded = existingCategoryIds.has(opt.id);
+    return `
+      <label style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border);font-size:13px;${alreadyAdded ? 'opacity:.5;' : ''}">
+        <input type="checkbox" class="service-option-checkbox" value="${opt.id}" ${alreadyAdded ? 'disabled' : ''} />
+        <span>${opt.name}${alreadyAdded ? ' <span style="font-size:11px;">(قبلاً افزوده شده)</span>' : ''}</span>
+      </label>`;
+  }).join('');
+}
+
+async function addSelectedServices() {
+  const ids = Array.from(document.querySelectorAll('.service-option-checkbox:checked')).map(cb => Number(cb.value));
+  if (!ids.length) { showToast('حداقل یک سرویس را انتخاب کنید'); return; }
+
+  const btn = document.getElementById('btn-add-selected-services');
+  setLoading(btn, true, 'در حال افزودن...');
+
+  try {
+    const res  = await fetch(`${API}/vendor/services/bulk-add/`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ category_ids: ids, clinic_id: currentClinic.id })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || data.detail || 'خطا در افزودن سرویس‌ها');
+      return;
+    }
+    currentClinic.services = (currentClinic.services || []).concat(data.created || [], data.already_existing || []);
+    renderServices();
+    closeModal('modal-add-service');
+    showToast(`${toPersianDigits((data.created || []).length)} سرویس افزوده شد ✓`);
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, 'افزودن سرویس‌های انتخاب‌شده');
+  }
+}
+
+async function addService() {
+  const name      = document.getElementById('new-service-name').value;
+  const price      = document.getElementById('new-service-price').value;
+  const duration    = document.getElementById('new-service-duration').value;
+  if (!name || !price || !duration) { showToast('همه فیلدها را پر کنید'); return; }
+
+  const btn = document.getElementById('btn-add-service');
+  setLoading(btn, true, 'در حال افزودن...');
+  try {
+    const res  = await fetch(`${API}/vendor/services/add/`, { method:'POST', headers: authHeaders(), body: JSON.stringify({ name, price, duration, clinic_id: currentClinic.id }) });
+    const data = await res.json();
+    if (!res.ok) {
+      const firstError = Object.values(data)[0];
+      showToast(Array.isArray(firstError) ? firstError[0] : (data.error || 'خطا در افزودن سرویس'));
+      return;
+    }
+    currentClinic.services = currentClinic.services || [];
+    currentClinic.services.push(data);
+    renderServices();
+    closeModal('modal-add-service');
+    showToast('سرویس افزوده شد ✓');
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, 'افزودن');
+  }
+}
+
+/* ── PORTFOLIO ── */
+function renderPortfolio() {
+  const items = currentClinic.portfolio_items || [];
+  document.getElementById('vendor-portfolio-grid').innerHTML = items.length ? items.map(p => `
+    <div style="aspect-ratio:1;border-radius:var(--radius-sm);background:${p.is_approved ? 'var(--primary-light)' : '#FEF3C7'};display:flex;align-items:center;justify-content:center;font-size:24px;position:relative;">
+      ${p.media_type === 'video_short' ? '🎬' : '📸'}
+      <span style="position:absolute;bottom:4px;right:4px;left:4px;font-size:9px;background:rgba(0,0,0,0.6);color:white;border-radius:4px;padding:2px;text-align:center;">${p.is_approved ? 'تأیید شده' : 'در انتظار'}</span>
+    </div>`).join('') : '<p style="color:var(--text-muted);font-size:13px;grid-column:span 3;">نمونه‌کاری ثبت نشده</p>';
+}
+
+async function addPortfolio() {
+  const mediaType = document.getElementById('new-portfolio-type').value;
+  const caption    = document.getElementById('new-portfolio-caption').value;
+
+  const btn = document.getElementById('btn-add-portfolio');
+  setLoading(btn, true, 'در حال ثبت...');
+  try {
+    const res  = await fetch(`${API}/vendor/portfolio/add/`, { method:'POST', headers: authHeaders(), body: JSON.stringify({ media_type: mediaType, caption, clinic_id: currentClinic.id }) });
+    const data = await res.json();
+    if (!res.ok) {
+      const firstError = Object.values(data)[0];
+      showToast(Array.isArray(firstError) ? firstError[0] : (data.error || 'خطا در ثبت نمونه‌کار'));
+      return;
+    }
+    currentClinic.portfolio_items = currentClinic.portfolio_items || [];
+    currentClinic.portfolio_items.push(data);
+    renderPortfolio();
+    closeModal('modal-add-portfolio');
+    showToast('نمونه‌کار ثبت شد - در انتظار تأیید ✓');
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, 'ثبت نمونه‌کار');
+  }
+}
+
+async function loadNotifBadge() {
+  try {
+    const res  = await fetch(`${API}/notifications/unread-count/`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    const badge = document.getElementById('notif-badge');
+    if (data.count > 0) { badge.textContent = data.count > 9 ? '۹+' : toPersianDigits(data.count); badge.style.display = 'flex'; }
+    else { badge.style.display = 'none'; }
+  } catch {}
+}
+
+loadDashboard();
+loadNotifBadge();
+</script>
+{% endblock %}

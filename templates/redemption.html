@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}زیباپلاس — خرج اعتبار{% endblock %}
+
+{% block navbar %}
+<nav class="navbar-custom">
+  <span class="navbar-title">خرج اعتبار</span>
+  <div style="width:38px;"></div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="px-page pt-3">
+
+  <!-- خلاصه اعتبار -->
+  <div class="wallet-card mb-4">
+    <div style="position:relative;z-index:1;">
+      <p style="font-size:13px;color:rgba(255,255,255,0.7);margin-bottom:4px;">اعتبار قابل استفاده</p>
+      <p style="font-size:22px;font-weight:700;color:white;" id="available-credit">---</p>
+    </div>
+  </div>
+
+  <p style="font-size:13px;color:var(--text-muted);line-height:1.8;margin-bottom:20px;">
+    <i class="bi bi-info-circle text-primary"></i>
+    اعتبار خود را برای رزرو هتل، بلیط، تور و سایر سرویس‌های زیر خرج کنید. درخواست شما توسط تیم ما بررسی و در صورت تأیید ووچر برایتان ارسال می‌شود.
+  </p>
+
+  <!-- گرید آیکون‌ها -->
+  <div class="section-title">سرویس‌های موجود</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;" id="partners-grid">
+    <!-- skeleton -->
+    <div class="skeleton" style="height:90px;border-radius:var(--radius);"></div>
+    <div class="skeleton" style="height:90px;border-radius:var(--radius);"></div>
+    <div class="skeleton" style="height:90px;border-radius:var(--radius);"></div>
+    <div class="skeleton" style="height:90px;border-radius:var(--radius);"></div>
+  </div>
+
+  <!-- فروشگاه‌ها -->
+  <div class="section-title">فروشگاه‌ها</div>
+  <div id="stores-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px;"></div>
+
+  <!-- تاریخچه درخواست‌ها -->
+  <div class="section-title">درخواست‌های من</div>
+  <div id="requests-list"></div>
+
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+<nav class="bottom-nav">
+  <a href="/"          class="bottom-nav-item"><i class="bi bi-house-door-fill"></i>خانه</a>
+  <a href="/redemption/" class="bottom-nav-item active"><i class="bi bi-gift"></i>خرج اعتبار</a>
+  <a href="/bookings/" class="bottom-nav-item"><i class="bi bi-calendar2-check"></i>رزروها</a>
+  <a href="/wallet/"   class="bottom-nav-item"><i class="bi bi-wallet2"></i>کیف پول</a>
+  <a href="/profile/"  class="bottom-nav-item"><i class="bi bi-person-circle"></i>پروفایل</a>
+</nav>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal ثبت درخواست -->
+<div class="modal-overlay" id="modal-request" onclick="closeModal('modal-request')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">درخواست خرج اعتبار</div>
+
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+      <div style="font-size:32px;" id="modal-partner-icon">🏨</div>
+      <div style="font-size:14px;font-weight:700;" id="modal-partner-name"></div>
+    </div>
+
+    <div class="input-group-custom">
+      <label>توضیحات درخواست</label>
+      <textarea class="input-custom" id="request-description" rows="3" placeholder="مثلاً: رزرو هتل آبان مشهد برای ۲ شب، تاریخ ۱۰ تا ۱۲ تیر"></textarea>
+    </div>
+
+    <div class="input-group-custom">
+      <label>مبلغ تخمینی (اختیاری - تومان)</label>
+      <input class="input-custom" type="number" id="request-amount" placeholder="مثلاً 1500000" />
+    </div>
+
+    <button class="btn-primary" id="btn-submit-request" onclick="submitRequest()">ثبت درخواست</button>
+  </div>
+</div>
+
+<!-- Modal جزئیات درخواست (وضعیت/ووچر) -->
+<div class="modal-overlay" id="modal-detail" onclick="closeModal('modal-detail')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">جزئیات درخواست</div>
+    <div id="detail-content"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+requireAuth();
+
+const mockPartners = [
+  {id:1, name:'هتل', icon:'🏨'},
+  {id:2, name:'بلیط هواپیما', icon:'✈️'},
+  {id:3, name:'تور', icon:'🗺️'},
+  {id:4, name:'رستوران', icon:'🍽️'},
+];
+
+const mockRequests = [
+  {id:1, partner_name:'هتل', partner_icon:'🏨', description:'رزرو هتل آبان مشهد، ۲ شب', status:'approved', final_amount:'1500000', voucher_file:null, admin_note:'ووچر ارسال شد', created_at:'2026-06-10'},
+  {id:2, partner_name:'بلیط هواپیما', partner_icon:'✈️', description:'بلیط تهران-مشهد رفت و برگشت', status:'pending', created_at:'2026-06-18'},
+];
+
+let selectedPartner = null;
+let allRequests      = [];
+
+async function loadCredit() {
+  try {
+    const res  = await fetch(`${API}/wallet/`, { headers: authHeaders() });
+    const data = await res.json();
+    document.getElementById('available-credit').textContent = formatMoney(data.total_balance);
+  } catch { document.getElementById('available-credit').textContent = '---'; }
+}
+
+async function loadPartners() {
+  try {
+    const res      = await fetch(`${API}/redemption/partners/`);
+    const partners = await res.json();
+    renderPartners(partners);
+  } catch { renderPartners(mockPartners); }
+}
+
+function renderPartners(list) {
+  window._partners = list;
+  document.getElementById('partners-grid').innerHTML = list.map(p => `
+    <div onclick="openRequestModal(${p.id})" style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 8px;text-align:center;cursor:pointer;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='var(--shadow)'" onmouseout="this.style.boxShadow='none'">
+      <div style="font-size:30px;margin-bottom:6px;">${p.icon}</div>
+      <div style="font-size:11px;font-weight:600;color:var(--text-main);">${p.name}</div>
+    </div>`).join('');
+}
+
+function openRequestModal(partnerId) {
+  selectedPartner = window._partners.find(p => p.id === partnerId);
+  document.getElementById('modal-partner-icon').textContent = selectedPartner.icon;
+  document.getElementById('modal-partner-name').textContent = selectedPartner.name;
+  document.getElementById('request-description').value = '';
+  document.getElementById('request-amount').value = '';
+  openModal('modal-request');
+}
+
+async function submitRequest() {
+  const description = document.getElementById('request-description').value.trim();
+  const amount       = document.getElementById('request-amount').value;
+
+  if (!description) { showToast('توضیحات درخواست را وارد کنید'); return; }
+
+  const btn = document.getElementById('btn-submit-request');
+  setLoading(btn, true, 'در حال ثبت...');
+
+  try {
+    const res = await fetch(`${API}/redemption/requests/`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        partner: selectedPartner.id,
+        description,
+        requested_amount: amount || null,
+      })
+    });
+    const data = await res.json();
+    closeModal('modal-request');
+    if (data.id) { showToast('درخواست شما ثبت شد ✓'); loadRequests(); }
+    else showToast('خطا در ثبت درخواست');
+  } catch {
+    closeModal('modal-request');
+    showToast('درخواست (نمونه) ثبت شد ✓');
+  } finally { setLoading(btn, false, 'ثبت درخواست'); }
+}
+
+async function loadRequests() {
+  try {
+    const res  = await fetch(`${API}/redemption/requests/mine/`, { headers: authHeaders() });
+    allRequests = await res.json();
+  } catch { allRequests = mockRequests; }
+  renderRequests();
+}
+
+function renderRequests() {
+  const el = document.getElementById('requests-list');
+  if (!allRequests.length) {
+    el.innerHTML = `<div class="empty-state"><i class="bi bi-bag"></i><h4>درخواستی ثبت نشده</h4></div>`;
+    return;
+  }
+
+  const statusCfg = {
+    pending:  { label:'در انتظار بررسی', color:'#92400E', bg:'#FEF3C7' },
+    approved: { label:'تأیید شد',        color:'#0F6E56', bg:'var(--primary-light)' },
+    rejected: { label:'رد شده',          color:'#991B1B', bg:'#FEE2E2' },
+  };
+
+  el.innerHTML = allRequests.map((r, i) => {
+    const cfg = statusCfg[r.status] || statusCfg.pending;
+    return `
+      <div onclick="openDetail(${i})" style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px;">
+        <div style="font-size:26px;">${r.partner_icon}</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;">${r.partner_name}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${r.description?.slice(0,40) || ''}${r.description?.length > 40 ? '...' : ''}</div>
+        </div>
+        <span class="badge" style="color:${cfg.color};background:${cfg.bg};">${cfg.label}</span>
+      </div>`;
+  }).join('');
+}
+
+function openDetail(index) {
+  const r = allRequests[index];
+  const statusCfg = {
+    pending:  { label:'در انتظار بررسی', color:'#92400E', bg:'#FEF3C7' },
+    approved: { label:'تأیید شد',        color:'#0F6E56', bg:'var(--primary-light)' },
+    rejected: { label:'رد شده',          color:'#991B1B', bg:'#FEE2E2' },
+  };
+  const cfg = statusCfg[r.status] || statusCfg.pending;
+
+  document.getElementById('detail-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div style="font-size:32px;">${r.partner_icon}</div>
+      <div>
+        <div style="font-size:15px;font-weight:700;">${r.partner_name}</div>
+        <span class="badge" style="color:${cfg.color};background:${cfg.bg};margin-top:4px;">${cfg.label}</span>
+      </div>
+    </div>
+
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;">
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">توضیحات شما</p>
+      <p style="font-size:13px;">${r.description}</p>
+    </div>
+
+    ${r.final_amount ? `
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border);">
+        <span style="font-size:13px;color:var(--text-muted);">مبلغ نهایی کسر شده</span>
+        <span style="font-size:14px;font-weight:700;color:var(--primary-dark);">${formatMoney(r.final_amount)}</span>
+      </div>` : ''}
+
+    ${r.cashback_amount ? `
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border);">
+        <span style="font-size:13px;color:var(--text-muted);">کش‌بک برگشتی به کیف‌پول</span>
+        <span style="font-size:14px;font-weight:700;color:var(--success);">+${formatMoney(r.cashback_amount)}</span>
+      </div>` : ''}
+
+    ${r.admin_note ? `
+      <div style="margin-top:10px;">
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">پاسخ تیم پشتیبانی</p>
+        <p style="font-size:13px;">${r.admin_note}</p>
+      </div>` : ''}
+
+    ${r.voucher_file ? `
+      <a href="${r.voucher_file}" target="_blank" class="btn-primary" style="display:block;text-align:center;margin-top:16px;text-decoration:none;">
+        <i class="bi bi-download"></i> دانلود ووچر / بلیط
+      </a>` : ''}
+  `;
+
+  openModal('modal-detail');
+}
+
+loadCredit();
+async function loadStores() {
+  const el = document.getElementById('stores-grid');
+  try {
+    const res = await fetch(`${API}/stores/`);
+    if (!res.ok) throw new Error('failed');
+    const data = await res.json();
+    const stores = data.results || data;
+    if (!stores.length) { el.innerHTML = ''; return; }
+    el.innerHTML = stores.map(s => `
+      <a href="/store/?id=${s.id}" style="text-decoration:none;color:inherit;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
+        <div style="height:70px;background:var(--bg);display:flex;align-items:center;justify-content:center;">
+          ${s.logo_image_url ? `<img src="${s.logo_image_url}" style="width:100%;height:100%;object-fit:cover;" />` : '<i class="bi bi-shop" style="font-size:22px;color:var(--text-light);"></i>'}
+        </div>
+        <div style="padding:8px;">
+          <div style="font-size:12px;font-weight:600;">${s.name}</div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:2px;">${s.city || ''} ${s.category_name || ''}</div>
+        </div>
+      </a>`).join('');
+  } catch {
+    el.innerHTML = `<p style="font-size:12px;color:var(--text-muted);grid-column:span 2;">مشکلی در بارگذاری فروشگاه‌ها پیش آمد</p>`;
+  }
+}
+
+loadPartners();
+loadRequests();
+loadStores();
+</script>
+{% endblock %}

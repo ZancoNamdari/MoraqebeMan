@@ -15,6 +15,26 @@ export interface CreateAgencySupervisorPayload {
   email?: string
 }
 
+export interface AgencyAdmin {
+  id: number
+  user_id: number
+  username: string
+  full_name: string
+  phone_number: string
+  supervisor_id: number
+  supervisor_name: string
+  created_by_username: string | null
+  created_at: string
+}
+
+export interface CreateAgencyAdminPayload {
+  first_name: string
+  last_name: string
+  phone_number: string
+  email?: string
+  supervisor_id: number
+}
+
 export interface AgencyPatient {
   id: number
   user_id: number | null
@@ -40,6 +60,8 @@ export interface AgencyPatient {
   language_dialect: string
   basic_medical_info: string
   physical_condition: string
+  pipeline_status: string
+  created_by: string | null
   needed_shifts: string[]
   created_at: string
   updated_at: string

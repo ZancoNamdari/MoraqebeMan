@@ -10,19 +10,21 @@ from apps.audit.services import AuditService
 from apps.authorization.permissions import IsAgency, IsSuperuser
 from apps.caregivers.models import CaregiverProfile, CaregiverStatus
 from apps.caregivers.permissions import IsCaregiver
-from apps.families.models import FamilyPatientLink, FamilyProfile, LinkStatus, PatientProfile
+from apps.families.models import FamilyPatientLink, FamilyProfile, LinkStatus, PatientPipelineStatus, PatientProfile
 from apps.families.permissions import IsFamily
 from apps.families.serializers import PatientProfileSerializer
 from apps.care.matching import suggest_caregivers_for_agency_patient
 
-from .models import AgencyCaregiverLink, AgencyFamilyLink, AgencyLinkStatus, AgencyPatientLink, AgencyProfile, AgencySupervisor
-from .tenancy import agency_caregiver_profile_ids, resolve_tenant_context
+from .models import AgencyAdmin, AgencyCaregiverLink, AgencyFamilyLink, AgencyLinkStatus, AgencyPatientLink, AgencyProfile, AgencySupervisor
+from .tenancy import agency_caregiver_profile_ids, resolve_tenant_context, visible_creator_user_ids
 from .serializers import (
+    AgencyAdminSerializer,
     AgencyCaregiverLinkSerializer,
     AgencyDashboardSerializer,
     AgencyFamilyLinkSerializer,
     AgencyProfileSerializer,
     AgencySupervisorSerializer,
+    CreateAgencyAdminSerializer,
     CreateAgencySerializer,
     CreateAgencySupervisorSerializer,
     CreateFamilyForPatientSerializer,
@@ -418,6 +420,61 @@ class AgencySupervisorListCreateView(APIView):
         return Response(AgencySupervisorSerializer(supervisor).data, status=status.HTTP_201_CREATED)
 
 
+class AgencyAdminListCreateView(APIView):
+    """
+    GET/POST /api/agencies/<agency_id>/admins/
+
+    Owner/superuser only (allow_supervisor=False, same reasoning as
+    AgencySupervisorListCreateView above) - creating a new admin, and
+    deciding which supervisor they report to, is the owner/manager's
+    call per the confirmed requirement, not something a supervisor
+    can do for themselves.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, agency_id):
+        ctx = resolve_tenant_context(request, agency_id, allow_supervisor=False)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+
+        admins = ctx.agency.admins.select_related("user", "supervisor__user", "created_by")
+        return Response(AgencyAdminSerializer(admins, many=True).data)
+
+    def post(self, request, agency_id):
+        ctx = resolve_tenant_context(request, agency_id, allow_supervisor=False)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        agency = ctx.agency
+
+        serializer = CreateAgencyAdminSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        supervisor = AgencySupervisor.objects.filter(id=data["supervisor_id"], agency=agency).first()
+        if supervisor is None:
+            return Response(
+                {"detail": "سوپروایزر انتخاب‌شده یافت نشد یا متعلق به این آژانس نیست."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if User.objects.filter(phone_number=data["phone_number"]).exists():
+            return Response({"detail": "این شماره تلفن قبلاً ثبت شده است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User(
+            first_name=data["first_name"], last_name=data["last_name"],
+            phone_number=data["phone_number"], email=data.get("email", ""),
+            role=UserRole.AGENCY_ADMIN,
+        )
+        user.set_password(get_random_string(32))
+        user.save()
+
+        admin = AgencyAdmin.objects.create(
+            user=user, agency=agency, supervisor=supervisor, created_by=request.user,
+        )
+
+        return Response(AgencyAdminSerializer(admin).data, status=status.HTTP_201_CREATED)
+
+
 # ---------------------------------------------------------------------
 # Agency-scoped patient creation — the actual "receptionist" job per
 # the confirmed requirement: an agency (or its supervisor) enters a
@@ -454,15 +511,41 @@ class AgencyPatientListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, agency_id):
-        ctx = resolve_tenant_context(request, agency_id)
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
         if ctx is None:
             return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
         agency = ctx.agency
 
-        patients = PatientProfile.objects.filter(
-            agency_links__agency=agency, agency_links__status=AgencyLinkStatus.APPROVED,
-        ).distinct()
-        return Response(PatientProfileSerializer(patients, many=True).data)
+        links = AgencyPatientLink.objects.filter(
+            agency=agency, status=AgencyLinkStatus.APPROVED,
+        ).select_related("patient", "decided_by")
+
+        # Per the confirmed data-scoping requirement: an admin sees
+        # only their own created patients, a supervisor sees their
+        # own plus every admin reporting to them, and the owner (or a
+        # superuser) sees everyone — visible_creator_user_ids()
+        # returns None for that last case, meaning "no restriction".
+        creator_scope = visible_creator_user_ids(request.user)
+        if creator_scope is not None:
+            links = links.filter(decided_by_id__in=creator_scope)
+
+        patients_data = PatientProfileSerializer([link.patient for link in links], many=True).data
+
+        # created_by is attached here rather than as a field on
+        # PatientProfileSerializer itself, since "who created this"
+        # is a fact about the AgencyPatientLink (this agency's
+        # relationship to the patient), not an intrinsic property of
+        # the patient record — a patient could theoretically have a
+        # different creator per agency in a multi-agency future,
+        # though that doesn't happen today.
+        creator_by_patient_id = {
+            link.patient_id: (link.decided_by.get_full_name() or link.decided_by.username) if link.decided_by else None
+            for link in links
+        }
+        for row in patients_data:
+            row["created_by"] = creator_by_patient_id.get(row["id"])
+
+        return Response(patients_data)
 
     def post(self, request, agency_id):
         ctx = resolve_tenant_context(request, agency_id)
@@ -532,6 +615,60 @@ class AgencyPatientListCreateView(APIView):
                 "access_code": family.access_code,
             }
         return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+class AgencyPatientPipelineStatusView(APIView):
+    """
+    PATCH /api/agencies/<agency_id>/patients/<patient_id>/pipeline-status/
+    Updates only pipeline_status — the single field the agency-panel
+    Kanban board needs to change when a card moves to a different
+    column, deliberately kept separate from the full patient-edit
+    flow (which doesn't exist as a single endpoint yet) so moving a
+    card never risks touching any of the patient's actual profile
+    data.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, agency_id, patient_id):
+        ctx = resolve_tenant_context(request, agency_id)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        agency = ctx.agency
+
+        patient = PatientProfile.objects.filter(
+            id=patient_id, agency_links__agency=agency, agency_links__status=AgencyLinkStatus.APPROVED,
+        ).first()
+        if patient is None:
+            return Response({"detail": "سالمند یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        new_status = request.data.get("pipeline_status")
+        valid_values = [choice[0] for choice in PatientPipelineStatus.choices]
+        if new_status not in valid_values:
+            return Response(
+                {"detail": f"مقدار pipeline_status باید یکی از {valid_values} باشد."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        patient.pipeline_status = new_status
+        patient.save(update_fields=["pipeline_status"])
+
+        # created_by is attached the same way as in
+        # AgencyPatientListCreateView.get() — it's a fact about this
+        # agency's AgencyPatientLink to the patient, not a field on
+        # PatientProfileSerializer itself, so it has to be added here
+        # too or the frontend's optimistic-update replacement (which
+        # takes this exact response as the new card data) loses the
+        # creator tag the moment a card is dragged to a new column.
+        link = AgencyPatientLink.objects.filter(
+            agency=agency, patient=patient, status=AgencyLinkStatus.APPROVED,
+        ).select_related("decided_by").first()
+        created_by = None
+        if link is not None and link.decided_by is not None:
+            created_by = link.decided_by.get_full_name() or link.decided_by.username
+
+        response_data = PatientProfileSerializer(patient).data
+        response_data["created_by"] = created_by
+        return Response(response_data)
 
 
 # ---------------------------------------------------------------------

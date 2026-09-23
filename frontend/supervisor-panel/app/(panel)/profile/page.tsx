@@ -1,11 +1,29 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/useauth"
 import { authService } from "@/services/auth.service"
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth(["agency_supervisor"])
+  const { user, loading } = useAuth(["admin", "superuser"])
+
+  // Profile fields
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
+
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [profileMessage, setProfileMessage] = useState("")
+  const [profileError, setProfileError] = useState("")
+
+  useEffect(() => {
+    if (!user) return
+    setFirstName(user.first_name || "")
+    setLastName(user.last_name || "")
+    setEmail(user.email || "")
+    setPhoneNumber(user.phone_number || "")
+  }, [user])
 
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
@@ -18,6 +36,33 @@ export default function ProfilePage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  async function handleSaveProfile(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    setProfileMessage("")
+    setProfileError("")
+    setSavingProfile(true)
+
+    try {
+      await authService.updateProfile({
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        phone_number: phoneNumber,
+      })
+      setProfileMessage("اطلاعات پروفایل با موفقیت به‌روزرسانی شد.")
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.phone_number?.[0] ||
+        error?.response?.data?.email?.[0] ||
+        error?.response?.data?.detail ||
+        "به‌روزرسانی اطلاعات با خطا مواجه شد."
+      setProfileError(message)
+    } finally {
+      setSavingProfile(false)
+    }
+  }
 
   async function handleChangePassword(
     event: React.FormEvent<HTMLFormElement>
@@ -59,6 +104,8 @@ export default function ProfilePage() {
       const message =
         error?.response?.data?.detail ||
         error?.response?.data?.message ||
+        error?.response?.data?.new_password?.[0] ||
+        error?.response?.data?.current_password?.[0] ||
         "تغییر رمز عبور انجام نشد. رمز فعلی را بررسی کنید."
 
       setPasswordError(message)
@@ -94,7 +141,7 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        {/* Profile information */}
+        {/* Editable profile information */}
         <section className="rounded-2xl border border-border bg-background p-6 shadow-sm">
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-foreground">
@@ -102,36 +149,42 @@ export default function ProfilePage() {
             </h2>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              این اطلاعات فقط قابل مشاهده هستند.
+              نام، ایمیل و شماره موبایل قابل ویرایش است. تغییر شماره موبایل، نیاز به تأیید مجدد دارد.
             </p>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <ProfileField
-              label="نام"
-              value={user.first_name}
-            />
+          <form onSubmit={handleSaveProfile}>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <EditableField label="نام" value={firstName} onChange={setFirstName} />
+              <EditableField label="نام خانوادگی" value={lastName} onChange={setLastName} />
+              <ReadOnlyField label="نام کاربری" value={user.username} />
+              <ReadOnlyField label="کد ملی" value={user.national_id || "ثبت نشده"} />
+              <EditableField label="ایمیل" value={email} onChange={setEmail} type="email" />
+              <EditableField label="شماره موبایل" value={phoneNumber} onChange={setPhoneNumber} dir="ltr" />
+            </div>
 
-            <ProfileField
-              label="نام خانوادگی"
-              value={user.last_name}
-            />
+            {profileError && (
+              <div className="mt-5 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {profileError}
+              </div>
+            )}
 
-            <ProfileField
-              label="نام کاربری"
-              value={user.username}
-            />
+            {profileMessage && (
+              <div className="mt-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                {profileMessage}
+              </div>
+            )}
 
-            <ProfileField
-              label="کد ملی"
-              value={user.national_id || "ثبت نشده"}
-            />
-
-            <ProfileField
-              label="شماره موبایل"
-              value={user.phone_number}
-            />
-          </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="submit"
+                disabled={savingProfile}
+                className="rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingProfile ? "در حال ذخیره..." : "ذخیره تغییرات"}
+              </button>
+            </div>
+          </form>
         </section>
 
         {/* Change password */}
@@ -209,7 +262,37 @@ export default function ProfilePage() {
   )
 }
 
-function ProfileField({
+function EditableField({
+  label,
+  value,
+  onChange,
+  type = "text",
+  dir,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  type?: string
+  dir?: string
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium text-foreground">
+        {label}
+      </label>
+
+      <input
+        type={type}
+        value={value}
+        dir={dir}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/10"
+      />
+    </div>
+  )
+}
+
+function ReadOnlyField({
   label,
   value,
 }: {
@@ -268,4 +351,3 @@ function PasswordField({
     </div>
   )
 }
-

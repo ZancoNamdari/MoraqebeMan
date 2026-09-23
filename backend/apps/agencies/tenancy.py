@@ -51,6 +51,7 @@ def resolve_tenant_context(
     request,
     agency_id: int,
     allow_supervisor: bool = True,
+    allow_admin: bool = False,
 ) -> TenantContext | None:
     """
     Returns a TenantContext if request.user may act on behalf of
@@ -63,6 +64,15 @@ def resolve_tenant_context(
     explicitly passes allow_supervisor=False, since a supervisor
     creating a peer supervisor was never part of the confirmed
     requirement.
+
+    allow_admin defaults to False — deliberately opt-in, unlike
+    allow_supervisor. AGENCY_ADMIN is a newer, narrower-scoped role
+    (see AgencyAdmin's own docstring) than a supervisor, and most
+    existing agency-scoped endpoints were built and tested before it
+    existed; changing the default here would silently grant every one
+    of them to admins without each call site explicitly deciding
+    that's correct. Only the patient Kanban endpoints pass
+    allow_admin=True today.
     """
     from .models import AgencyProfile
 
@@ -78,6 +88,40 @@ def resolve_tenant_context(
         supervisor_profile = getattr(request.user, "agency_supervisor_profile", None)
         if supervisor_profile is not None and supervisor_profile.agency_id == agency_id:
             return TenantContext(agency=supervisor_profile.agency, actor_role="supervisor")
+
+    if allow_admin and request.user.role == UserRole.AGENCY_ADMIN:
+        admin_profile = getattr(request.user, "agency_admin_profile", None)
+        if admin_profile is not None and admin_profile.agency_id == agency_id:
+            return TenantContext(agency=admin_profile.agency, actor_role="admin")
+
+    return None
+
+
+def visible_creator_user_ids(request_user) -> list[int] | None:
+    """
+    For the patient Kanban board's data-scoping rule (per the
+    confirmed requirement): given the current request's user, returns
+    the list of user ids whose CREATED patients this person should
+    see, or None to mean "no restriction — see everyone in the
+    agency" (owner/superuser).
+
+    - owner/superuser: None (unrestricted — filtered by agency alone
+      elsewhere, same as before this function existed).
+    - supervisor: themselves + every AgencyAdmin reporting to them.
+    - admin: themselves only.
+    """
+    if request_user.role in (UserRole.SUPERUSER, UserRole.AGENCY):
+        return None
+
+    if request_user.role == UserRole.AGENCY_SUPERVISOR:
+        supervisor_profile = getattr(request_user, "agency_supervisor_profile", None)
+        if supervisor_profile is None:
+            return [request_user.id]
+        admin_user_ids = list(supervisor_profile.admins.values_list("user_id", flat=True))
+        return [request_user.id, *admin_user_ids]
+
+    if request_user.role == UserRole.AGENCY_ADMIN:
+        return [request_user.id]
 
     return None
 

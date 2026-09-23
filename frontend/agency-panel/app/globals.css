@@ -117,3 +117,16 @@ body {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+
+/* html/body never scroll at all, and therefore never show a
+   scrollbar of their own — the only element in this whole panel
+   that scrolls is <main> itself (see mainlayout.tsx), which sits
+   entirely inside the fixed sidebar/topbar shell. This is a
+   stronger fix than reserving scrollbar space (the earlier
+   scrollbar-gutter approach): with nothing at this level able to
+   scroll in the first place, there's no scrollbar-width change to
+   guard against at all. */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}

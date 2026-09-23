@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}زیباپلاس — نوبت‌های من{% endblock %}
+
+{% block navbar %}
+<nav class="navbar-custom">
+  <span class="navbar-title">نوبت‌های من نزد پزشکان</span>
+  <div style="width:38px;"></div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="px-page pt-3">
+  <div id="appointments-list">
+    <div class="skeleton" style="height:90px;border-radius:var(--radius);margin-bottom:10px;"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal-overlay" id="modal-reschedule" onclick="closeModal('modal-reschedule')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">درخواست جابه‌جایی نوبت</div>
+    <div class="input-group-custom">
+      <label>تاریخ جدید (شمسی)</label>
+      <input class="input-custom" type="text" id="resch-date" readonly placeholder="انتخاب تاریخ" onclick="openDatePicker(onReschDateSelected, reschDateGregorian)" style="cursor:pointer;background:var(--white);" />
+    </div>
+    <div class="input-group-custom">
+      <label>ساعت جدید</label>
+      <input class="input-custom" type="text" id="resch-time" readonly placeholder="انتخاب ساعت" onclick="openTimePicker(onReschTimeSelected, reschTimeValue)" style="cursor:pointer;background:var(--white);" />
+    </div>
+    <div class="input-group-custom"><label>یادداشت (اختیاری)</label><textarea class="input-custom" id="resch-note" rows="2"></textarea></div>
+    <button class="btn-primary" onclick="submitReschedule()">ارسال درخواست</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-review" onclick="closeModal('modal-review')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">ثبت نظر</div>
+    <div class="input-group-custom">
+      <label>امتیاز</label>
+      <div id="review-stars" style="font-size:28px;color:#D97706;cursor:pointer;"></div>
+    </div>
+    <div class="input-group-custom"><label>نظر شما (اختیاری)</label><textarea class="input-custom" id="review-comment" rows="3"></textarea></div>
+    <button class="btn-primary" onclick="submitReview()">ثبت نظر</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+requireAuth();
+
+let allAppointments = [];
+let currentApptIdForAction = null;
+let reschDateGregorian = null, reschTimeValue = null;
+let reviewRating = 5;
+
+async function loadAppointments() {
+  const el = document.getElementById('appointments-list');
+  try {
+    const res = await fetch(`${API}/doctor-appointments/mine/`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    allAppointments = await res.json();
+    renderAppointments();
+  } catch {
+    el.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-circle"></i><h4>مشکلی در بارگذاری پیش آمد</h4></div>`;
+  }
+}
+
+const statusCfg = {
+  pending:{label:'در انتظار تأیید پزشک',bg:'#FEF3C7',color:'#92400E'},
+  confirmed:{label:'تأیید شده',bg:'var(--primary-light)',color:'var(--primary-dark)'},
+  reschedule_requested:{label:'در انتظار تأیید جابه‌جایی',bg:'#DBEAFE',color:'#1E40AF'},
+  completed:{label:'انجام شد',bg:'#F3F4F6',color:'#374151'},
+  rejected:{label:'رد شده',bg:'#FEE2E2',color:'#991B1B'},
+  cancelled:{label:'لغو شده',bg:'#FEE2E2',color:'#991B1B'},
+};
+
+function renderAppointments() {
+  const el = document.getElementById('appointments-list');
+  if (!allAppointments.length) {
+    el.innerHTML = `<div class="empty-state"><i class="bi bi-calendar-x"></i><h4>هنوز نوبتی ثبت نکرده‌اید</h4></div>`;
+    return;
+  }
+  el.innerHTML = allAppointments.map(a => {
+    const cfg = statusCfg[a.status] || statusCfg.pending;
+    return `
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+          <div>
+            <div style="font-size:14px;font-weight:700;">${a.doctor_name}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${a.disease_type}</div>
+          </div>
+          <span class="badge" style="color:${cfg.color};background:${cfg.bg};">${a.status_display || cfg.label}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);"><i class="bi bi-calendar-event"></i> ${toHijriDate(a.requested_date)} — ${toPersianDigits((a.requested_time || '').slice(0,5))}</div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:4px;">کد رهگیری: <span style="direction:ltr;display:inline-block;">${a.tracking_code}</span></div>
+        ${a.status === 'pending' || a.status === 'confirmed' ? `
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button class="btn-outline btn-sm" onclick="cancelAppointment(${a.id})">لغو نوبت</button>
+            ${a.status === 'confirmed' ? `<button class="btn-outline btn-sm" onclick="openRescheduleModal(${a.id})">درخواست جابه‌جایی</button>` : ''}
+          </div>` : ''}
+        ${a.status === 'completed' ? `<button class="btn-outline btn-sm" style="margin-top:10px;" onclick="openReviewModal(${a.id})">ثبت نظر</button>` : ''}
+      </div>`;
+  }).join('');
+}
+
+async function cancelAppointment(id) {
+  if (!confirm('این نوبت لغو شود؟')) return;
+  try {
+    const res = await fetch(`${API}/doctor-appointments/${id}/cancel/`, { method: 'POST', headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'خطا در لغو نوبت'); return; }
+    showToast('نوبت لغو شد');
+    loadAppointments();
+  } catch { showToast('مشکلی در ارتباط با سرور پیش آمد'); }
+}
+
+function openRescheduleModal(id) {
+  currentApptIdForAction = id;
+  reschDateGregorian = null; reschTimeValue = null;
+  document.getElementById('resch-date').value = '';
+  document.getElementById('resch-time').value = '';
+  document.getElementById('resch-note').value = '';
+  openModal('modal-reschedule');
+}
+function onReschDateSelected(iso, display) { reschDateGregorian = iso; document.getElementById('resch-date').value = display; }
+function onReschTimeSelected(value24, display) { reschTimeValue = value24; document.getElementById('resch-time').value = display; }
+
+async function submitReschedule() {
+  if (!reschDateGregorian || !reschTimeValue) { showToast('تاریخ و ساعت جدید را انتخاب کنید'); return; }
+  try {
+    const res = await fetch(`${API}/doctor-appointments/${currentApptIdForAction}/reschedule/`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ requested_date: reschDateGregorian, requested_time: reschTimeValue, note: document.getElementById('resch-note').value })
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'خطا در ارسال درخواست'); return; }
+    showToast('درخواست جابه‌جایی ارسال شد ✓');
+    closeModal('modal-reschedule');
+    loadAppointments();
+  } catch { showToast('مشکلی در ارتباط با سرور پیش آمد'); }
+}
+
+function openReviewModal(id) {
+  currentApptIdForAction = id;
+  reviewRating = 5;
+  document.getElementById('review-comment').value = '';
+  renderStars();
+  openModal('modal-review');
+}
+function renderStars() {
+  document.getElementById('review-stars').innerHTML = [1,2,3,4,5].map(i =>
+    `<span onclick="setRating(${i})">${i <= reviewRating ? '★' : '☆'}</span>`).join('');
+}
+function setRating(r) { reviewRating = r; renderStars(); }
+
+async function submitReview() {
+  try {
+    const res = await fetch(`${API}/doctor-reviews/`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ appointment: currentApptIdForAction, rating: reviewRating, comment: document.getElementById('review-comment').value })
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'خطا در ثبت نظر'); return; }
+    showToast('نظر شما ثبت شد ✓');
+    closeModal('modal-review');
+  } catch { showToast('مشکلی در ارتباط با سرور پیش آمد'); }
+}
+
+loadAppointments();
+</script>
+{% endblock %}

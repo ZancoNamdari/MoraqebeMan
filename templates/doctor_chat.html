@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}زیباپلاس — گفتگو با پزشکان{% endblock %}
+
+{% block navbar %}
+<nav class="navbar-custom">
+  <button class="back-btn" onclick="onBackClick()"><i class="bi bi-arrow-right"></i></button>
+  <span class="navbar-title" id="chat-page-title">گفتگوهای من</span>
+  <div style="width:38px;"></div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div id="chat-list-view" class="px-page pt-3">
+  <div id="conversations-list"></div>
+</div>
+
+<div id="chat-thread-view" style="display:none;height:calc(100vh - 56px - 70px);display:flex;flex-direction:column;">
+  <div id="thread-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;"></div>
+  <div style="display:flex;gap:8px;padding:12px 16px;background:var(--white);border-top:1px solid var(--border);">
+    <textarea id="thread-input" rows="1" placeholder="پیام خود را بنویسید..." style="flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-family:inherit;font-size:13px;resize:none;"></textarea>
+    <button onclick="sendMessage()" style="width:42px;height:42px;border-radius:50%;background:var(--primary);color:white;border:none;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;"><i class="bi bi-send-fill"></i></button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+requireAuth();
+
+const conversationParam = new URLSearchParams(window.location.search).get('conversation');
+let allConversations = [];
+let activeConversationId = conversationParam ? Number(conversationParam) : null;
+let pollTimer = null;
+const POLL_INTERVAL_THREAD = 3500;
+const POLL_INTERVAL_LIST   = 8000;
+
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+function onBackClick() {
+  stopPolling();
+  if (activeConversationId) { window.location.href = '/doctor-chat/'; }
+  else { window.location.href = '/profile/'; }
+}
+
+async function init() {
+  if (activeConversationId) {
+    showThreadView();
+  } else {
+    showListView();
+  }
+}
+
+function showListView() {
+  document.getElementById('chat-page-title').textContent = 'گفتگوهای من';
+  document.getElementById('chat-list-view').style.display = 'block';
+  document.getElementById('chat-thread-view').style.display = 'none';
+  stopPolling();
+  loadConversations();
+  pollTimer = setInterval(loadConversations, POLL_INTERVAL_LIST);
+}
+
+async function loadConversations() {
+  const el = document.getElementById('conversations-list');
+  try {
+    const res = await fetch(`${API}/doctor-chat/mine/`, { headers: authHeaders() });
+    if (!res.ok) throw new Error();
+    allConversations = await res.json();
+    if (!allConversations.length) { el.innerHTML = `<div class="empty-state"><i class="bi bi-chat-dots"></i><h4>هنوز گفتگویی شروع نکرده‌اید</h4></div>`; return; }
+    el.innerHTML = allConversations.map(c => `
+      <a href="/doctor-chat/?conversation=${c.id}" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--primary-light);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--primary-dark);font-weight:700;">
+          ${c.doctor_photo ? `<img src="${c.doctor_photo}" style="width:100%;height:100%;object-fit:cover;" />` : (c.doctor_name || '؟')[0]}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13.5px;font-weight:700;">${c.doctor_name}</div>
+          <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.last_message || 'گفتگو را شروع کنید'}</div>
+        </div>
+        ${c.unread_count > 0 ? `<span style="background:var(--primary);color:white;border-radius:50%;width:20px;height:20px;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${toPersianDigits(c.unread_count)}</span>` : ''}
+      </a>`).join('');
+  } catch {
+    el.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-circle"></i><h4>مشکلی در بارگذاری پیش آمد</h4></div>`;
+  }
+}
+
+async function showThreadView() {
+  document.getElementById('chat-list-view').style.display = 'none';
+  document.getElementById('chat-thread-view').style.display = 'flex';
+  stopPolling();
+  await refreshThread(true);
+  pollTimer = setInterval(() => refreshThread(false), POLL_INTERVAL_THREAD);
+}
+
+async function refreshThread(markAsRead) {
+  try {
+    const res = await fetch(`${API}/doctor-chat/mine/`, { headers: authHeaders() });
+    if (!res.ok) throw new Error();
+    const list = await res.json();
+    const conv = list.find(c => c.id === activeConversationId);
+    if (!conv) { showToast('گفتگو پیدا نشد'); stopPolling(); return; }
+    document.getElementById('chat-page-title').textContent = conv.doctor_name;
+    renderMessages(conv.messages);
+    if (markAsRead) fetch(`${API}/doctor-chat/${activeConversationId}/read/`, { method: 'POST', headers: authHeaders() });
+  } catch {
+    if (markAsRead) showToast('مشکلی در بارگذاری گفتگو پیش آمد');
+  }
+}
+
+let lastRenderedMessageCount = -1;
+
+function renderMessages(messages) {
+  const el = document.getElementById('thread-messages');
+  const count = (messages || []).length;
+  const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+
+  el.innerHTML = (messages || []).map(m => {
+    const isMine = m.sender === 'patient';
+    return `<div style="align-self:${isMine ? 'flex-start' : 'flex-end'};max-width:75%;background:${isMine ? 'var(--primary)' : 'var(--white)'};color:${isMine ? 'white' : 'var(--text-main)'};border:${isMine ? 'none' : '1px solid var(--border)'};padding:10px 14px;border-radius:14px;font-size:13px;">${m.content}</div>`;
+  }).join('');
+
+  // فقط وقتی پیام جدیدی رسیده (یا بار اول است) یا کاربر از قبل پایین صفحه بوده، اسکرول پایین برو -
+  // اگر کاربر برای خواندن تاریخچه بالا رفته، هر بار Poll او را به‌زور پایین نکشیم
+  if (lastRenderedMessageCount === -1 || count > lastRenderedMessageCount || isNearBottom) {
+    el.scrollTop = el.scrollHeight;
+  }
+  lastRenderedMessageCount = count;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('thread-input');
+  const content = input.value.trim();
+  if (!content) return;
+  input.value = '';
+  try {
+    const res = await fetch(`${API}/doctor-chat/${activeConversationId}/send/`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ content }) });
+    if (!res.ok) throw new Error();
+    const resAll = await fetch(`${API}/doctor-chat/mine/`, { headers: authHeaders() });
+    const list = await resAll.json();
+    const conv = list.find(c => c.id === activeConversationId);
+    if (conv) renderMessages(conv.messages);
+  } catch {
+    showToast('مشکلی در ارسال پیام پیش آمد');
+  }
+}
+
+init();
+</script>
+{% endblock %}

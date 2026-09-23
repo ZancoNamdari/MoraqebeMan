@@ -150,6 +150,33 @@ class ChangePasswordView(APIView):
         )
 
 
+class UpdateProfileView(APIView):
+    """
+    PATCH /api/auth/profile/
+    Lets any authenticated user (regardless of role/panel) edit their
+    own first_name/last_name/email/phone_number. Deliberately generic
+    rather than per-panel, since editing your own basic profile info
+    is the same operation everywhere — a supervisor, admin, or agency
+    user all update the same underlying User model fields. Changing
+    phone_number resets is_phone_verified (handled inside the
+    serializer's own update()), consistent with how every other
+    phone-verification flow in this codebase treats a changed number
+    as unverified until re-confirmed.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = ProfileUpdateSerializer(
+            instance=request.user,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(UserSerializer(request.user).data)
+
+
 class OTPLoginRequestView(APIView):
     """
     POST /api/auth/otp-login/request/ {"phone_number": "09..."}

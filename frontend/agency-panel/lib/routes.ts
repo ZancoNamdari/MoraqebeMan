@@ -9,4 +9,9 @@ export const ROUTES = {
   complaints: "/complaints",
   blacklistAppeals: "/blacklist-appeals",
   candidates: "/candidates",
+  matching: "/matching",
+  analytics: "/analytics",
+  financial: "/financial",
+  settings: "/settings",
+  admins: "/admins",
 }

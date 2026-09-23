@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}زیباپلاس — ثبت‌نام فروشگاه{% endblock %}
+
+{% block content_class %}{% endblock %}
+
+{% block content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg);">
+  <div style="width:100%;max-width:400px;">
+
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="width:72px;height:72px;background:#CCFBF1;border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:32px;">🏪</div>
+      <h1 style="font-size:22px;font-weight:700;margin-bottom:6px;">ثبت‌نام فروشگاه</h1>
+      <p style="font-size:13px;color:var(--text-muted);">فروشگاه خود را به زیباپلاس اضافه کنید</p>
+    </div>
+
+    <div id="step-1" style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;">
+
+      <div class="input-group-custom">
+        <label>نام و نام خانوادگی</label>
+        <input class="input-custom" type="text" id="reg-fullname" placeholder="نام شما" />
+      </div>
+
+      <div class="input-group-custom">
+        <label>نام فروشگاه</label>
+        <input class="input-custom" type="text" id="reg-store-name" placeholder="داروخانه ..." />
+      </div>
+
+      <div class="input-group-custom">
+        <label>شماره موبایل</label>
+        <input class="input-custom" type="tel" id="reg-phone" placeholder="09xxxxxxxxx" maxlength="11" />
+      </div>
+
+      <div class="input-group-custom">
+        <label>نوع فروشگاه</label>
+        <select class="input-custom" id="reg-category">
+          <option value="">در حال بارگذاری...</option>
+        </select>
+      </div>
+
+      <div class="input-group-custom">
+        <label>شهر</label>
+        <input class="input-custom" type="text" id="reg-city" placeholder="مثلاً: تهران" />
+      </div>
+
+      <div class="input-group-custom">
+        <label>آدرس کامل</label>
+        <textarea class="input-custom" id="reg-address" rows="2" placeholder="آدرس دقیق فروشگاه برای نمایش به مشتریان..."></textarea>
+      </div>
+
+      <div class="input-group-custom">
+        <label>توضیحات فروشگاه</label>
+        <textarea class="input-custom" id="reg-description" rows="3" placeholder="توضیح کوتاهی درباره فروشگاه بنویسید..."></textarea>
+      </div>
+
+      <div class="input-group-custom" id="marketer-code-group">
+        <label>کد معرف بازاریاب (اختیاری)</label>
+        <input class="input-custom" type="text" id="reg-marketer-code" placeholder="مثلاً: AB12CD34" style="text-transform:uppercase;" />
+      </div>
+
+      <div class="input-group-custom">
+        <label>تصویر فروشگاه</label>
+        <input class="input-custom" type="file" id="reg-logo-image" accept="image/*" />
+        <p style="font-size:11px;color:var(--text-light);margin-top:4px;">این تصویر به‌عنوان تصویر اصلی فروشگاه شما به مشتریان نمایش داده می‌شود</p>
+      </div>
+
+      <div class="input-group-custom">
+        <label>تصویر کاور فروشگاه</label>
+        <input class="input-custom" type="file" id="reg-cover-image" accept="image/*" />
+        <p style="font-size:11px;color:var(--text-light);margin-top:4px;">این تصویر در بالای صفحه پروفایل فروشگاه شما نمایش داده می‌شود</p>
+      </div>
+
+      <div style="display:flex;align-items:start;gap:10px;margin:18px 0;">
+        <input type="checkbox" id="reg-terms" style="margin-top:3px;" />
+        <label for="reg-terms" style="font-size:12px;color:var(--text-muted);font-weight:400;cursor:pointer;">
+          <a href="/terms/" style="color:var(--primary);">قوانین و مقررات</a> پلتفرم را مطالعه کرده و می‌پذیرم
+        </label>
+      </div>
+
+      <button class="btn-primary" id="btn-register" onclick="submitRegistration()">ثبت‌نام و دریافت کد تأیید</button>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div id="step-2" style="display:none;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;">
+      <div style="text-align:center;margin-bottom:20px;">
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">کد تأیید ارسال شده به</p>
+        <p style="font-size:16px;font-weight:700;direction:ltr;" id="reg-otp-phone"></p>
+      </div>
+      <div class="otp-inputs" style="margin-bottom:20px;">
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" />
+      </div>
+      <button class="btn-primary" id="btn-verify-reg" onclick="verifyRegistration()">تأیید نهایی</button>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div id="step-3" style="display:none;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 24px;text-align:center;">
+      <div style="font-size:56px;margin-bottom:16px;">⏳</div>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:10px;">درخواست شما ثبت شد</h3>
+      <p style="font-size:13px;color:var(--text-muted);line-height:1.8;margin-bottom:20px;">
+        تیم ما درخواست شما را بررسی می‌کند. پس از تأیید، می‌توانید محصولات فروشگاه خود را مدیریت کنید.
+      </p>
+      <a href="/login/" class="btn-outline" style="display:block;text-decoration:none;">بازگشت به صفحه ورود</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let regPhone = '';
+
+(function prefillMarketerCodeFromLink() {
+  const ref = new URLSearchParams(window.location.search).get('ref');
+  if (ref) document.getElementById('reg-marketer-code').value = ref.toUpperCase();
+})();
+
+function loadCategoryOptions() {
+  const select = document.getElementById('reg-category');
+  fetch(`${API}/store-categories/`)
+    .then(r => r.json())
+    .then(categories => {
+      select.innerHTML = '<option value="">انتخاب کنید...</option>' +
+        categories.map(c => `<option value="${c.id}">${c.icon || ''} ${c.name}</option>`).join('');
+    })
+    .catch(() => {
+      select.innerHTML = '<option value="">خطا در بارگذاری - صفحه را رفرش کنید</option>';
+    });
+}
+loadCategoryOptions();
+
+function submitRegistration() {
+  const fullName    = document.getElementById('reg-fullname').value.trim();
+  const storeName   = document.getElementById('reg-store-name').value.trim();
+  const phone        = document.getElementById('reg-phone').value.trim();
+  const categoryId   = document.getElementById('reg-category').value;
+  const city          = document.getElementById('reg-city').value.trim();
+  const address       = document.getElementById('reg-address').value.trim();
+  const description   = document.getElementById('reg-description').value.trim();
+  const marketerCode  = document.getElementById('reg-marketer-code').value.trim();
+  const logoImage     = document.getElementById('reg-logo-image').files[0];
+  const coverImage    = document.getElementById('reg-cover-image').files[0];
+  const terms        = document.getElementById('reg-terms').checked;
+
+  if (!fullName || !storeName) { showToast('نام و نام فروشگاه را وارد کنید'); return; }
+  if (!phone.match(/^09[0-9]{9}$/)) { showToast('شماره موبایل معتبر نیست'); return; }
+  if (!categoryId) { showToast('نوع فروشگاه را انتخاب کنید'); return; }
+  if (!city) { showToast('شهر را وارد کنید'); return; }
+  if (!address) { showToast('آدرس کامل فروشگاه را وارد کنید'); return; }
+  if (!logoImage) { showToast('تصویر فروشگاه را انتخاب کنید'); return; }
+  if (!coverImage) { showToast('تصویر کاور فروشگاه را انتخاب کنید'); return; }
+  if (!terms) { showToast('باید قوانین را بپذیرید'); return; }
+
+  regPhone = phone;
+  const btn = document.getElementById('btn-register');
+  setLoading(btn, true, 'در حال ثبت...');
+
+  const formData = new FormData();
+  formData.append('full_name', fullName);
+  formData.append('store_name', storeName);
+  formData.append('phone_number', phone);
+  formData.append('category_id', categoryId);
+  formData.append('city', city);
+  formData.append('address', address);
+  formData.append('description', description);
+  formData.append('marketer_code', marketerCode);
+  formData.append('logo_image', logoImage);
+  formData.append('cover_image', coverImage);
+
+  fetch(`${API}/store/register/`, { method: 'POST', body: formData })
+  .then(async res => {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'خطا در ثبت‌نام');
+    return fetch(`${API}/auth/send-otp/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone_number: phone })
+    });
+  })
+  .then(() => {
+    document.getElementById('reg-otp-phone').textContent = phone;
+    document.getElementById('step-1').style.display = 'none';
+    document.getElementById('step-2').style.display = 'block';
+    setupOTPInputs(verifyRegistration);
+    showToast('کد تأیید ارسال شد ✓');
+  })
+  .catch((err) => showToast(err.message || 'خطا در ثبت‌نام، دوباره تلاش کنید'))
+  .finally(() => setLoading(btn, false, 'ثبت‌نام و دریافت کد تأیید'));
+}
+
+function verifyRegistration() {
+  const inputs = document.querySelectorAll('.otp-input');
+  const code   = Array.from(inputs).map(i => i.value).join('');
+  if (code.length !== 6) { showToast('کد ۶ رقمی را کامل وارد کنید'); return; }
+
+  const btn = document.getElementById('btn-verify-reg');
+  setLoading(btn, true, 'در حال بررسی...');
+
+  fetch(`${API}/auth/verify-otp/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone_number: regPhone, code })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.tokens) {
+      document.getElementById('step-2').style.display = 'none';
+      document.getElementById('step-3').style.display = 'block';
+    } else {
+      showToast('کد اشتباه یا منقضی شده');
+    }
+  })
+  .catch(() => showToast('خطا در ارتباط با سرور'))
+  .finally(() => setLoading(btn, false, 'تأیید نهایی'));
+}
+</script>
+{% endblock %}

@@ -1,0 +1,510 @@
+{% extends "admin_base.html" %}
+{% block title %}مطب‌ها — پنل مدیریت{% endblock %}
+{% block page_title %}مدیریت مطب‌ها{% endblock %}
+
+{% block content %}
+<div class="admin-filter-bar">
+  <button class="admin-filter-chip active" data-status="all" onclick="filterClinics('all', this)">همه</button>
+  <button class="admin-filter-chip" data-status="pending" onclick="filterClinics('pending', this)">در انتظار تأیید</button>
+  <button class="admin-filter-chip" data-status="active" onclick="filterClinics('active', this)">فعال</button>
+  <button class="admin-filter-chip" data-status="inactive" onclick="filterClinics('inactive', this)">غیرفعال</button>
+  <input class="admin-search" id="clinic-search" placeholder="جست‌وجو بر اساس نام، شهر، شماره تماس..." oninput="onClinicSearch(this.value)" />
+  <button class="admin-btn admin-btn-primary" style="margin-right:auto;" onclick="openAddClinicModal()"><i class="bi bi-plus-lg"></i> افزودن مطب</button>
+</div>
+
+<div class="admin-card" style="padding:0;overflow-x:auto;">
+  <table class="admin-table">
+    <thead>
+      <tr><th>نام مطب</th><th>مالک</th><th>نوع کسب‌وکار</th><th>شهر</th><th>وضعیت</th><th>تکمیل اطلاعات</th><th></th></tr>
+    </thead>
+    <tbody id="clinics-body"></tbody>
+  </table>
+  <div id="clinics-empty" style="display:none;" class="admin-empty"><i class="bi bi-hospital"></i>مطبی یافت نشد</div>
+</div>
+
+<div style="display:flex;justify-content:center;margin-top:16px;">
+  <button class="admin-btn admin-btn-outline" id="btn-load-more-clinics" style="display:none;" onclick="loadClinics(false)">نمایش بیشتر</button>
+</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal-overlay" id="modal-add-clinic" onclick="if(event.target===this) closeModal('modal-add-clinic')">
+  <div class="modal-box">
+    <div class="modal-title">افزودن مطب جدید</div>
+    <div class="admin-input-group"><label>شماره موبایل مالک</label><input class="admin-input" id="new-clinic-owner-phone" placeholder="09xxxxxxxxx" /></div>
+    <div class="admin-input-group"><label>نام مطب</label><input class="admin-input" id="new-clinic-name" /></div>
+    <div class="admin-input-group">
+      <label>نوع کسب‌وکار</label>
+      <select class="admin-input" id="new-clinic-category"><option value="">در حال بارگذاری...</option></select>
+    </div>
+    <div class="admin-input-group"><label>شهر</label><input class="admin-input" id="new-clinic-city" /></div>
+    <div class="admin-input-group"><label>آدرس</label><input class="admin-input" id="new-clinic-address" /></div>
+    <div class="admin-input-group"><label>شماره تماس مطب</label><input class="admin-input" id="new-clinic-phone" /></div>
+    <div class="admin-input-group">
+      <label>تصویر مطب (اختیاری - بعداً هم قابل افزودن است)</label>
+      <input class="admin-input" type="file" id="new-clinic-image" accept="image/*" />
+    </div>
+    <div class="admin-input-group">
+      <label>تصویر کاور (اختیاری)</label>
+      <input class="admin-input" type="file" id="new-clinic-cover" accept="image/*" />
+    </div>
+    <button class="admin-btn admin-btn-primary" id="btn-save-new-clinic" style="width:100%;" onclick="saveNewClinic()">ایجاد مطب</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-clinic-detail" onclick="if(event.target===this) closeModal('modal-clinic-detail')">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-title">جزئیات مطب</div>
+    <div id="clinic-detail-content"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-clinic-service" onclick="if(event.target===this) closeModal('modal-add-clinic-service')">
+  <div class="modal-box">
+    <div class="modal-title">افزودن سرویس</div>
+    <div class="admin-input-group"><label>نام سرویس</label><input class="admin-input" id="new-svc-name" /></div>
+    <div class="admin-input-group"><label>قیمت (تومان)</label><input class="admin-input" type="number" id="new-svc-price" /></div>
+    <div class="admin-input-group"><label>مدت زمان (دقیقه)</label><input class="admin-input" type="number" id="new-svc-duration" /></div>
+    <button class="admin-btn admin-btn-primary" id="btn-save-new-svc" style="width:100%;" onclick="saveNewClinicService()">افزودن</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStatus = new URLSearchParams(location.search).get('status') || 'all';
+let currentSearch  = '';
+let nextPageUrl    = null;
+let allClinics      = [];
+let allCategoriesCache = null;
+let searchDebounce  = null;
+let activeClinicId  = null;
+let activeClinicServices = [];
+
+async function loadClinics(reset = true) {
+  const body  = document.getElementById('clinics-body');
+  const empty = document.getElementById('clinics-empty');
+  const loadMoreBtn = document.getElementById('btn-load-more-clinics');
+
+  const url = reset ? new URL(`${API}/admin-panel/clinics/`) : new URL(nextPageUrl);
+  if (reset) {
+    if (currentStatus !== 'all') url.searchParams.set('status', currentStatus);
+    if (currentSearch) url.searchParams.set('search', currentSearch);
+  }
+
+  try {
+    const res  = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    const data = await res.json();
+    const results = data.results || data;
+    nextPageUrl = data.next || null;
+    allClinics = reset ? results : allClinics.concat(results);
+
+    if (!allClinics.length) {
+      body.innerHTML = '';
+      empty.innerHTML = '<i class="bi bi-hospital"></i>مطبی یافت نشد';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      renderClinics(allClinics);
+    }
+    loadMoreBtn.style.display = nextPageUrl ? 'inline-flex' : 'none';
+  } catch {
+    body.innerHTML = '';
+    empty.innerHTML = '<i class="bi bi-exclamation-circle"></i>مشکلی در بارگذاری پیش آمد';
+    empty.style.display = 'block';
+  }
+
+  const openId = new URLSearchParams(location.search).get('open');
+  if (reset && openId) {
+    const clinic = allClinics.find(c => String(c.id) === openId);
+    if (clinic) openClinicDetail(clinic.id);
+  }
+}
+
+function renderClinics(list) {
+  const statusCfg = {
+    pending:  { label:'در انتظار تأیید', bg:'#FEF3C7', color:'#92400E' },
+    active:   { label:'فعال',            bg:'var(--primary-light)', color:'var(--primary-dark)' },
+    inactive: { label:'غیرفعال',          bg:'#FEE2E2', color:'#991B1B' },
+  };
+  document.getElementById('clinics-body').innerHTML = list.map(c => {
+    const cfg = statusCfg[c.status] || statusCfg.pending;
+    return `
+      <tr style="cursor:pointer;" onclick="openClinicDetail(${c.id})">
+        <td style="font-weight:700;">${c.name}</td>
+        <td>${c.owner_name || '—'}<br><span style="color:var(--text-muted);font-size:11px;direction:ltr;display:inline-block;">${c.owner_phone || ''}</span></td>
+        <td>${c.category_name || '—'}</td>
+        <td>${c.city || '—'}</td>
+        <td><span class="admin-badge" style="background:${cfg.bg};color:${cfg.color};">${cfg.label}</span></td>
+        <td>${c.is_complete
+          ? '<span class="admin-badge" style="background:var(--primary-light);color:var(--primary-dark);">کامل</span>'
+          : '<span class="admin-badge" style="background:#FEE2E2;color:#991B1B;">ناقص</span>'}</td>
+        <td><button class="admin-btn admin-btn-outline admin-btn-sm" onclick="event.stopPropagation();openClinicDetail(${c.id})">مشاهده</button></td>
+      </tr>`;
+  }).join('');
+}
+
+function filterClinics(status, btn) {
+  document.querySelectorAll('.admin-filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  currentStatus = status;
+  loadClinics(true);
+}
+
+function onClinicSearch(val) {
+  currentSearch = val.trim();
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => loadClinics(true), 350);
+}
+
+/* ── دسته‌بندی‌ها (برای سلکت‌باکس‌ها) ── */
+async function getCategoriesForSelect() {
+  if (allCategoriesCache) return allCategoriesCache;
+  try {
+    const res = await fetch(`${API}/admin-panel/categories/`, { headers: authHeaders() });
+    allCategoriesCache = await res.json();
+  } catch { allCategoriesCache = []; }
+  return allCategoriesCache;
+}
+
+/* ── افزودن مطب جدید ── */
+async function openAddClinicModal() {
+  ['new-clinic-owner-phone','new-clinic-name','new-clinic-city','new-clinic-address','new-clinic-phone','new-clinic-image','new-clinic-cover'].forEach(id => document.getElementById(id).value = '');
+  const select = document.getElementById('new-clinic-category');
+  const cats = await getCategoriesForSelect();
+  select.innerHTML = '<option value="">— بدون نوع کسب‌وکار —</option>' + cats.map(c => `<option value="${c.id}">${c.icon || ''} ${c.name}</option>`).join('');
+  openModal('modal-add-clinic');
+}
+
+async function saveNewClinic() {
+  const ownerPhone = document.getElementById('new-clinic-owner-phone').value.trim();
+  const name         = document.getElementById('new-clinic-name').value.trim();
+  const categoryId   = document.getElementById('new-clinic-category').value;
+  const city          = document.getElementById('new-clinic-city').value.trim();
+  const address        = document.getElementById('new-clinic-address').value.trim();
+  const phone           = document.getElementById('new-clinic-phone').value.trim();
+
+  if (!ownerPhone || !name) { showToast('شماره موبایل مالک و نام مطب الزامی است'); return; }
+
+  const btn = document.getElementById('btn-save-new-clinic');
+  setLoading(btn, true, 'در حال ایجاد...');
+  try {
+    const res  = await fetch(`${API}/admin-panel/clinics/`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ owner_phone: ownerPhone, name, category_id: categoryId || null, city, address, phone })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const firstError = Object.values(data)[0];
+      showToast(Array.isArray(firstError) ? firstError[0] : (data.error || 'خطا در ایجاد مطب'));
+      return;
+    }
+    showToast('مطب ایجاد شد ✓');
+
+    const clinicImageFile = document.getElementById('new-clinic-image').files[0];
+    const coverImageFile   = document.getElementById('new-clinic-cover').files[0];
+    if (clinicImageFile || coverImageFile) {
+      const formData = new FormData();
+      if (clinicImageFile) formData.append('clinic_image', clinicImageFile);
+      if (coverImageFile) formData.append('cover_image', coverImageFile);
+      try {
+        await fetch(`${API}/admin-panel/clinics/${data.id}/images/`, {
+          method: 'POST',
+          headers: { 'Authorization': authHeaders()['Authorization'] },
+          body: formData,
+        });
+      } catch { showToast('مطب ایجاد شد ولی آپلود تصویر با خطا مواجه شد - از داخل جزئیات مطب دوباره امتحان کنید'); }
+    }
+
+    closeModal('modal-add-clinic');
+    loadClinics(true);
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, 'ایجاد مطب');
+  }
+}
+
+/* ── جزئیات / ویرایش / حذف مطب ── */
+async function openClinicDetail(id) {
+  activeClinicId = id;
+  const content = document.getElementById('clinic-detail-content');
+  content.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">در حال بارگذاری...</p>';
+  openModal('modal-clinic-detail');
+
+  try {
+    const res = await fetch(`${API}/admin-panel/clinics/${id}/`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    const c = await res.json();
+    await renderClinicDetail(c);
+    loadClinicServices(id);
+  } catch {
+    content.innerHTML = '<p style="color:var(--error);font-size:13px;">مشکلی در بارگذاری جزئیات این مطب پیش آمد</p>';
+  }
+}
+
+async function renderClinicDetail(c) {
+  const statusLabel = { pending:'در انتظار تأیید', active:'فعال', inactive:'غیرفعال' }[c.status] || c.status;
+  const isComplete = !!(c.city && c.address);
+  const cats = await getCategoriesForSelect();
+
+  document.getElementById('clinic-detail-content').innerHTML = `
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">وضعیت فعلی: <b>${statusLabel}</b> ${!isComplete ? '<span style="color:#991B1B;">— اطلاعات ناقص است</span>' : ''}</div>
+
+    <div class="admin-input-group"><label>نام مطب</label><input class="admin-input" id="edit-clinic-name" value="${c.name || ''}" /></div>
+    <div class="admin-input-group">
+      <label>مالک</label>
+      <div style="font-size:12.5px;color:var(--text-muted);">${c.owner_name || '—'} — <span style="direction:ltr;display:inline-block;">${c.owner_phone || ''}</span></div>
+    </div>
+    <div class="admin-input-group">
+      <label>نوع کسب‌وکار</label>
+      <select class="admin-input" id="edit-clinic-category">
+        <option value="">— بدون نوع کسب‌وکار —</option>
+        ${cats.map(cat => `<option value="${cat.id}" ${c.category_name === cat.name ? 'selected' : ''}>${cat.icon || ''} ${cat.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="admin-input-group"><label>شهر</label><input class="admin-input" id="edit-clinic-city" value="${c.city || ''}" /></div>
+    <div class="admin-input-group"><label>آدرس</label><input class="admin-input" id="edit-clinic-address" value="${c.address || ''}" /></div>
+    <div class="admin-input-group"><label>شماره تماس</label><input class="admin-input" id="edit-clinic-phone" value="${c.phone || ''}" /></div>
+    <div class="admin-input-group"><label>توضیحات</label><textarea class="admin-input" id="edit-clinic-description" rows="2">${c.description || ''}</textarea></div>
+
+    <div class="admin-input-group">
+      <label>تصاویر مطب</label>
+      <div style="display:flex;gap:10px;margin-bottom:10px;" id="clinic-current-images">
+        ${(c.images || []).length ? c.images.map(img => `
+          <div style="position:relative;">
+            <img src="${img.image}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--border);" />
+            ${img.is_cover ? '<span class="admin-badge" style="position:absolute;bottom:-8px;left:2px;background:var(--primary-light);color:var(--primary-dark);font-size:9px;">کاور</span>' : ''}
+          </div>`).join('')
+          : '<p style="font-size:11.5px;color:#991B1B;">این مطب هنوز هیچ تصویری ندارد - همین باعث می‌شود در صفحه اصلی و پروفایل مطب عکسی نمایش داده نشود.</p>'}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:160px;">
+          <label style="font-size:11px;color:var(--text-muted);">تصویر مطب (جایگزین می‌شود)</label>
+          <input class="admin-input" type="file" id="upload-clinic-image" accept="image/*" />
+        </div>
+        <div style="flex:1;min-width:160px;">
+          <label style="font-size:11px;color:var(--text-muted);">تصویر کاور (جایگزین می‌شود)</label>
+          <input class="admin-input" type="file" id="upload-clinic-cover" accept="image/*" />
+        </div>
+      </div>
+      <button class="admin-btn admin-btn-outline admin-btn-sm" id="btn-upload-clinic-images" onclick="uploadClinicImages(${c.id})" style="margin-top:8px;">آپلود تصاویر</button>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;margin-top:14px;">
+      <button class="admin-btn admin-btn-outline" id="btn-save-clinic-edits" onclick="saveClinicEdits(${c.id})">ذخیره تغییرات</button>
+      ${c.status !== 'active' ? `<button class="admin-btn admin-btn-primary" id="btn-approve-clinic" onclick="clinicAction(${c.id}, 'approve')" ${!isComplete ? 'disabled title="اطلاعات ناقص است"' : ''}>تأیید مطب</button>` : ''}
+      ${c.status !== 'inactive' ? `<button class="admin-btn admin-btn-outline" id="btn-reject-clinic" onclick="clinicAction(${c.id}, '${c.status === 'pending' ? 'reject' : 'deactivate'}')">${c.status === 'pending' ? 'رد درخواست' : 'غیرفعال‌سازی'}</button>` : ''}
+      <button class="admin-btn admin-btn-danger" id="btn-delete-clinic" onclick="deleteClinic(${c.id})" style="margin-right:auto;">حذف مطب</button>
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding-top:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h4 style="font-size:13px;font-weight:800;">خدمات این مطب</h4>
+        <button class="admin-btn admin-btn-outline admin-btn-sm" onclick="openAddClinicServiceModal()"><i class="bi bi-plus-lg"></i> افزودن سرویس</button>
+      </div>
+      <div id="clinic-services-list"><p style="font-size:12px;color:var(--text-muted);">در حال بارگذاری...</p></div>
+    </div>
+  `;
+}
+
+async function uploadClinicImages(clinicId) {
+  const clinicImageFile = document.getElementById('upload-clinic-image').files[0];
+  const coverImageFile   = document.getElementById('upload-clinic-cover').files[0];
+  if (!clinicImageFile && !coverImageFile) { showToast('حداقل یک تصویر انتخاب کنید'); return; }
+
+  const btn = document.getElementById('btn-upload-clinic-images');
+  setLoading(btn, true, 'در حال آپلود...');
+
+  const formData = new FormData();
+  if (clinicImageFile) formData.append('clinic_image', clinicImageFile);
+  if (coverImageFile) formData.append('cover_image', coverImageFile);
+
+  try {
+    const res = await fetch(`${API}/admin-panel/clinics/${clinicId}/images/`, {
+      method: 'POST',
+      headers: { 'Authorization': authHeaders()['Authorization'] },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'خطا در آپلود تصاویر'); return; }
+    showToast('تصاویر آپلود شد ✓');
+    openClinicDetail(clinicId);
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, 'آپلود تصاویر');
+  }
+}
+
+async function saveClinicEdits(id) {
+  const btn = document.getElementById('btn-save-clinic-edits');
+  setLoading(btn, true, 'در حال ذخیره...');
+  try {
+    const res  = await fetch(`${API}/admin-panel/clinics/${id}/`, {
+      method: 'PATCH', headers: authHeaders(),
+      body: JSON.stringify({
+        name: document.getElementById('edit-clinic-name').value,
+        category_id: document.getElementById('edit-clinic-category').value || null,
+        city: document.getElementById('edit-clinic-city').value,
+        address: document.getElementById('edit-clinic-address').value,
+        phone: document.getElementById('edit-clinic-phone').value,
+        description: document.getElementById('edit-clinic-description').value,
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const firstError = Object.values(data)[0];
+      showToast(Array.isArray(firstError) ? firstError[0] : 'خطا در ذخیره تغییرات');
+      return;
+    }
+    showToast('تغییرات ذخیره شد ✓');
+    await renderClinicDetail(data);
+    loadClinicServices(id);
+    loadClinics(true);
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, 'ذخیره تغییرات');
+  }
+}
+
+async function clinicAction(id, action) {
+  const btn = document.getElementById(action === 'approve' ? 'btn-approve-clinic' : 'btn-reject-clinic');
+  setLoading(btn, true, 'در حال ثبت...');
+  try {
+    const res  = await fetch(`${API}/admin-panel/clinics/${id}/action/`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'خطا در ثبت عملیات'); return; }
+    showToast(action === 'approve' ? 'مطب تأیید شد ✓' : 'وضعیت مطب به‌روزرسانی شد');
+    await renderClinicDetail(data);
+    loadClinicServices(id);
+    loadClinics(true);
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, action === 'approve' ? 'تأیید مطب' : 'رد درخواست');
+  }
+}
+
+async function deleteClinic(id) {
+  if (!confirm('این مطب برای همیشه حذف می‌شود، همراه با تمام سرویس‌ها و رزروهای مرتبط. ادامه می‌دهید؟')) return;
+  const btn = document.getElementById('btn-delete-clinic');
+  setLoading(btn, true, 'در حال حذف...');
+  try {
+    const res = await fetch(`${API}/admin-panel/clinics/${id}/`, { method: 'DELETE', headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    showToast('مطب حذف شد');
+    closeModal('modal-clinic-detail');
+    loadClinics(true);
+  } catch {
+    showToast('مشکلی در حذف مطب پیش آمد');
+    setLoading(btn, false, 'حذف مطب');
+  }
+}
+
+/* ── سرویس‌های مطب ── */
+async function loadClinicServices(clinicId) {
+  const el = document.getElementById('clinic-services-list');
+  try {
+    const res = await fetch(`${API}/admin-panel/services/?clinic=${clinicId}`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    activeClinicServices = await res.json();
+    renderClinicServices();
+  } catch {
+    el.innerHTML = '<p style="font-size:12px;color:var(--error);">مشکلی در بارگذاری خدمات پیش آمد</p>';
+  }
+}
+
+function renderClinicServices() {
+  const el = document.getElementById('clinic-services-list');
+  if (!activeClinicServices.length) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">سرویسی ثبت نشده</p>';
+    return;
+  }
+  el.innerHTML = `
+    <table class="admin-table">
+      <thead><tr><th>نام</th><th>قیمت</th><th>مدت (دقیقه)</th><th>فعال</th><th></th></tr></thead>
+      <tbody>
+        ${activeClinicServices.map(s => `
+          <tr>
+            <td>${s.name}</td>
+            <td><input class="admin-input" style="width:100px;padding:5px 8px;" type="number" value="${s.price}" onchange="updateClinicService(${s.id}, 'price', this.value)" /></td>
+            <td><input class="admin-input" style="width:80px;padding:5px 8px;" type="number" value="${s.duration}" onchange="updateClinicService(${s.id}, 'duration', this.value)" /></td>
+            <td><input type="checkbox" ${s.is_active ? 'checked' : ''} onchange="updateClinicService(${s.id}, 'is_active', this.checked)" /></td>
+            <td><button class="admin-btn admin-btn-danger admin-btn-sm" onclick="deleteClinicService(${s.id})">حذف</button></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function openAddClinicServiceModal() {
+  document.getElementById('new-svc-name').value = '';
+  document.getElementById('new-svc-price').value = '';
+  document.getElementById('new-svc-duration').value = '';
+  openModal('modal-add-clinic-service');
+}
+
+async function saveNewClinicService() {
+  const name      = document.getElementById('new-svc-name').value.trim();
+  const price      = document.getElementById('new-svc-price').value;
+  const duration    = document.getElementById('new-svc-duration').value;
+  if (!name || !price || !duration) { showToast('همه فیلدها را پر کنید'); return; }
+
+  const btn = document.getElementById('btn-save-new-svc');
+  setLoading(btn, true, 'در حال افزودن...');
+  try {
+    const res  = await fetch(`${API}/admin-panel/services/`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ clinic: activeClinicId, name, price, duration })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const firstError = Object.values(data)[0];
+      showToast(Array.isArray(firstError) ? firstError[0] : 'خطا در افزودن سرویس');
+      return;
+    }
+    showToast('سرویس افزوده شد ✓');
+    closeModal('modal-add-clinic-service');
+    loadClinicServices(activeClinicId);
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد');
+  } finally {
+    setLoading(btn, false, 'افزودن');
+  }
+}
+
+async function updateClinicService(id, field, value) {
+  try {
+    const res = await fetch(`${API}/admin-panel/services/${id}/`, {
+      method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ [field]: value })
+    });
+    if (!res.ok) throw new Error('failed');
+    showToast('به‌روزرسانی شد ✓');
+  } catch {
+    showToast('مشکلی در ارتباط با سرور پیش آمد - تغییر اعمال نشد');
+    loadClinicServices(activeClinicId);
+  }
+}
+
+async function deleteClinicService(id) {
+  if (!confirm('این سرویس حذف شود؟')) return;
+  try {
+    const res = await fetch(`${API}/admin-panel/services/${id}/`, { method: 'DELETE', headers: authHeaders() });
+    if (!res.ok) throw new Error('failed');
+    showToast('حذف شد');
+    loadClinicServices(activeClinicId);
+  } catch {
+    showToast('مشکلی در حذف پیش آمد');
+  }
+}
+
+loadClinics(true);
+document.querySelectorAll('.admin-filter-chip').forEach(chip => {
+  chip.classList.toggle('active', chip.dataset.status === currentStatus);
+});
+</script>
+{% endblock %}

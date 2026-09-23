@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.families.models import RelationType
 
-from .models import AgencyCaregiverLink, AgencyFamilyLink, AgencyProfile, AgencySupervisor
+from .models import AgencyAdmin, AgencyCaregiverLink, AgencyFamilyLink, AgencyProfile, AgencySupervisor
 
 
 class AgencyProfileSerializer(serializers.ModelSerializer):
@@ -139,6 +139,48 @@ class AgencySupervisorSerializer(serializers.ModelSerializer):
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
+
+
+class CreateAgencyAdminSerializer(serializers.Serializer):
+    """
+    Same shape and reasoning as CreateAgencySupervisorSerializer —
+    no password field, random one generated server-side. The one
+    addition, supervisor_id, is load-bearing for the data-scoping
+    rule: every admin reports to exactly one specific supervisor,
+    chosen by the owner/manager at creation time, never afterward.
+    """
+    first_name = serializers.CharField(max_length=50)
+    last_name = serializers.CharField(max_length=50)
+    phone_number = serializers.RegexField(
+        regex=r"^09\d{9}$",
+        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
+    )
+    email = serializers.EmailField(required=False, allow_blank=True)
+    supervisor_id = serializers.IntegerField()
+
+
+class AgencyAdminSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
+    username = serializers.CharField(source="user.username", read_only=True)
+    full_name = serializers.SerializerMethodField()
+    phone_number = serializers.CharField(source="user.phone_number", read_only=True)
+    supervisor_id = serializers.IntegerField(source="supervisor.id", read_only=True)
+    supervisor_name = serializers.SerializerMethodField()
+    created_by_username = serializers.CharField(source="created_by.username", read_only=True, default=None)
+
+    class Meta:
+        model = AgencyAdmin
+        fields = [
+            "id", "user_id", "username", "full_name", "phone_number",
+            "supervisor_id", "supervisor_name", "created_by_username", "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_full_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
+
+    def get_supervisor_name(self, obj):
+        return f"{obj.supervisor.user.first_name} {obj.supervisor.user.last_name}".strip() or obj.supervisor.user.username
 
 
 class CreateFamilyForPatientSerializer(serializers.Serializer):
