@@ -58,10 +58,11 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "مالی", href: ROUTES.financial, icon: Wallet },
   {
     label: "کارمندان",
-    href: ROUTES.supervisors,
+    href: ROUTES.employees,
     icon: UserCog,
     ownerOnly: true,
     children: [
+      { label: "سوپروایزرها", href: ROUTES.supervisors, icon: UserCog },
       { label: "ادمین‌ها", href: ROUTES.admins, icon: ShieldCheck },
     ],
   },
