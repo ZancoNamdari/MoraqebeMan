@@ -22,7 +22,7 @@ export default function SupervisorsPage() {
   const [supervisors, setSupervisors] = useState<AgencySupervisor[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ first_name: "", last_name: "", phone_number: "" })
+  const [form, setForm] = useState({ first_name: "", last_name: "", phone_number: "", position: "" })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
@@ -49,7 +49,7 @@ export default function SupervisorsPage() {
     try {
       const created = await agencyManagementService.createSupervisor(agencyId, form)
       setSupervisors((prev) => [created, ...prev])
-      setForm({ first_name: "", last_name: "", phone_number: "" })
+      setForm({ first_name: "", last_name: "", phone_number: "", position: "" })
       setShowForm(false)
     } catch (err: any) {
       setError(err?.response?.data?.detail || "ثبت سوپروایزر با خطا مواجه شد.")
@@ -93,6 +93,10 @@ export default function SupervisorsPage() {
               <Label htmlFor="phone_number">شماره موبایل</Label>
               <Input id="phone_number" dir="ltr" value={form.phone_number} onChange={(e) => setForm({ ...form, phone_number: e.target.value })} />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="position">سمت</Label>
+              <Input id="position" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} placeholder="مثلاً سرپرست شیفت" />
+            </div>
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -116,6 +120,7 @@ export default function SupervisorsPage() {
           {supervisors.map((s) => (
             <div key={s.id} className="rounded-lg border border-slate-200 bg-white p-3">
               <p className="text-sm font-medium text-slate-900">{s.full_name}</p>
+              {s.position && <p className="text-xs text-slate-500">{s.position}</p>}
               <p className="text-xs text-slate-500" dir="ltr">{s.phone_number}</p>
               {s.created_by_username && (
                 <p className="mt-1 text-[11px] text-slate-400">ثبت‌شده توسط: {s.created_by_username}</p>

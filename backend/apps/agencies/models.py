@@ -152,6 +152,10 @@ class AgencySupervisor(models.Model):
     agency = models.ForeignKey(
         AgencyProfile, on_delete=models.CASCADE, related_name="supervisors", verbose_name="آژانس",
     )
+    position = models.CharField(
+        max_length=100, blank=True, verbose_name="سمت",
+        help_text="عنوان دقیق سمت این سوپروایزر در چارت سازمانی آژانس — آزاد، چون چارت هر آژانس فرق دارد.",
+    )
     created_by = models.ForeignKey(
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="created_agency_supervisors", verbose_name="ایجادکننده",
@@ -189,6 +193,10 @@ class AgencyAdmin(models.Model):
     supervisor = models.ForeignKey(
         AgencySupervisor, on_delete=models.CASCADE, related_name="admins", verbose_name="سوپروایزر مسئول",
         help_text="سوپروایزری که این ادمین مستقیماً زیر نظر او کار می‌کند.",
+    )
+    position = models.CharField(
+        max_length=100, blank=True, verbose_name="سمت",
+        help_text="عنوان دقیق سمت این ادمین در چارت سازمانی آژانس — آزاد، چون چارت هر آژانس فرق دارد.",
     )
     created_by = models.ForeignKey(
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,

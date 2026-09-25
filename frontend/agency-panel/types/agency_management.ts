@@ -4,6 +4,7 @@ export interface AgencySupervisor {
   username: string
   full_name: string
   phone_number: string
+  position: string
   created_by_username: string | null
   created_at: string
 }
@@ -13,6 +14,7 @@ export interface CreateAgencySupervisorPayload {
   last_name: string
   phone_number: string
   email?: string
+  position?: string
 }
 
 export interface AgencyAdmin {
@@ -21,6 +23,7 @@ export interface AgencyAdmin {
   username: string
   full_name: string
   phone_number: string
+  position: string
   supervisor_id: number
   supervisor_name: string
   created_by_username: string | null
@@ -32,7 +35,26 @@ export interface CreateAgencyAdminPayload {
   last_name: string
   phone_number: string
   email?: string
+  position?: string
   supervisor_id: number
+}
+
+export interface AgencyCaregiverPipelineItem {
+  id: number
+  full_name: string
+  phone_number: string
+  agency_pipeline_status: string
+  is_urgent: boolean
+  doc_no_criminal_record: boolean
+  doc_no_addiction_test: boolean
+  doc_identity_verified: boolean
+  doc_personal_photo: boolean
+  doc_mental_health_test: boolean
+  doc_promissory_note: boolean
+  doc_id_card_received: boolean
+  tags: string[]
+  process_milestones: string[]
+  created_by: string | null
 }
 
 export interface AgencyPatient {
@@ -62,6 +84,8 @@ export interface AgencyPatient {
   physical_condition: string
   pipeline_status: string
   created_by: string | null
+  is_urgent: boolean
+  tags: string[]
   needed_shifts: string[]
   created_at: string
   updated_at: string

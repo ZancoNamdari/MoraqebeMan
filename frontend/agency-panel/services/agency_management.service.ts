@@ -1,6 +1,7 @@
 import { api } from "./api"
 import type {
   AgencyAdmin,
+  AgencyCaregiverPipelineItem,
   AgencyCaregiverSuggestion,
   AgencyPatient,
   AgencySuggestionsResponse,
@@ -52,5 +53,29 @@ export const agencyManagementService = {
       pipeline_status: pipelineStatus,
     })
     return data as AgencyPatient
+  },
+
+  async updatePatientUrgent(agencyId: number, patientId: number, isUrgent: boolean) {
+    const { data } = await api.patch(`/api/agencies/${agencyId}/patients/${patientId}/pipeline-status/`, {
+      is_urgent: isUrgent,
+    })
+    return data as AgencyPatient
+  },
+
+  async updatePatientTags(agencyId: number, patientId: number, tags: string[]) {
+    const { data } = await api.patch(`/api/agencies/${agencyId}/patients/${patientId}/pipeline-status/`, {
+      tags,
+    })
+    return data as AgencyPatient
+  },
+
+  async listCaregiverPipeline(agencyId: number) {
+    const { data } = await api.get(`/api/agencies/${agencyId}/caregivers-pipeline/`)
+    return data as AgencyCaregiverPipelineItem[]
+  },
+
+  async updateCaregiverPipeline(agencyId: number, caregiverId: number, fields: Partial<AgencyCaregiverPipelineItem>) {
+    const { data } = await api.patch(`/api/agencies/${agencyId}/caregivers-pipeline/${caregiverId}/`, fields)
+    return data as AgencyCaregiverPipelineItem
   },
 }

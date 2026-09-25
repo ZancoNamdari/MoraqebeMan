@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.families.models import RelationType
+from apps.caregivers.models import CaregiverProfile
 
 from .models import AgencyAdmin, AgencyCaregiverLink, AgencyFamilyLink, AgencyProfile, AgencySupervisor
 
@@ -51,6 +52,31 @@ class AgencyCaregiverLinkSerializer(serializers.ModelSerializer):
 
     def get_caregiver_phone_number(self, obj):
         return obj.caregiver.user.phone_number
+
+
+class AgencyCaregiverPipelineSerializer(serializers.ModelSerializer):
+    """
+    Caregiver data for the agency-panel خدمت‌دهنده Kanban board —
+    operates directly on CaregiverProfile (unlike
+    AgencyCaregiverLinkSerializer above, which wraps AgencyCaregiverLink),
+    since every field this board needs — the pipeline stage, the
+    urgent flag, and each of the seven document-checklist items — is
+    agency-operational data that lives on CaregiverProfile itself.
+    """
+    full_name = serializers.SerializerMethodField()
+    phone_number = serializers.CharField(source="user.phone_number", read_only=True)
+
+    class Meta:
+        model = CaregiverProfile
+        fields = [
+            "id", "full_name", "phone_number", "agency_pipeline_status", "is_urgent", "tags", "process_milestones",
+            "doc_no_criminal_record", "doc_no_addiction_test", "doc_identity_verified",
+            "doc_personal_photo", "doc_mental_health_test", "doc_promissory_note", "doc_id_card_received",
+        ]
+        read_only_fields = ["id", "full_name", "phone_number"]
+
+    def get_full_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
 
 
 class JoinAgencyByCodeSerializer(serializers.Serializer):
@@ -123,6 +149,7 @@ class CreateAgencySupervisorSerializer(serializers.Serializer):
         error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
     )
     email = serializers.EmailField(required=False, allow_blank=True)
+    position = serializers.CharField(max_length=100, required=False, allow_blank=True)
 
 
 class AgencySupervisorSerializer(serializers.ModelSerializer):
@@ -134,7 +161,7 @@ class AgencySupervisorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AgencySupervisor
-        fields = ["id", "user_id", "username", "full_name", "phone_number", "created_by_username", "created_at"]
+        fields = ["id", "user_id", "username", "full_name", "phone_number", "position", "created_by_username", "created_at"]
         read_only_fields = fields
 
     def get_full_name(self, obj):
@@ -156,6 +183,7 @@ class CreateAgencyAdminSerializer(serializers.Serializer):
         error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
     )
     email = serializers.EmailField(required=False, allow_blank=True)
+    position = serializers.CharField(max_length=100, required=False, allow_blank=True)
     supervisor_id = serializers.IntegerField()
 
 
@@ -171,7 +199,7 @@ class AgencyAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = AgencyAdmin
         fields = [
-            "id", "user_id", "username", "full_name", "phone_number",
+            "id", "user_id", "username", "full_name", "phone_number", "position",
             "supervisor_id", "supervisor_name", "created_by_username", "created_at",
         ]
         read_only_fields = fields

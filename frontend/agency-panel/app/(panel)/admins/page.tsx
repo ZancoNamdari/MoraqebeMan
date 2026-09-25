@@ -14,7 +14,7 @@ import { agencyManagementService } from "@/services/agency_management.service"
 import { ROUTES } from "@/lib/routes"
 import type { AgencyAdmin, AgencySupervisor } from "@/types/agency_management"
 
-const emptyForm = { first_name: "", last_name: "", phone_number: "", supervisor_id: "" }
+const emptyForm = { first_name: "", last_name: "", phone_number: "", position: "", supervisor_id: "" }
 
 export default function AdminsPage() {
   const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor", "agency_admin"])
@@ -60,6 +60,7 @@ export default function AdminsPage() {
         first_name: form.first_name,
         last_name: form.last_name,
         phone_number: form.phone_number,
+        position: form.position,
         supervisor_id: Number(form.supervisor_id),
       })
       setAdmins((prev) => [created, ...prev])
@@ -114,6 +115,10 @@ export default function AdminsPage() {
               <Input id="phone_number" dir="ltr" value={form.phone_number} onChange={(e) => setForm({ ...form, phone_number: e.target.value })} />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="position">سمت</Label>
+              <Input id="position" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} placeholder="مثلاً ادمین خدمت‌گیرنده‌ها" />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="supervisor_id">سوپروایزر مسئول</Label>
               <select
                 id="supervisor_id"
@@ -150,6 +155,7 @@ export default function AdminsPage() {
           {admins.map((a) => (
             <div key={a.id} className="rounded-lg border border-slate-200 bg-white p-3">
               <p className="text-sm font-medium text-slate-900">{a.full_name}</p>
+              {a.position && <p className="text-xs text-slate-500">{a.position}</p>}
               <p className="text-xs text-slate-500" dir="ltr">{a.phone_number}</p>
               <p className="mt-1 text-[11px] text-slate-500">زیر نظر: {a.supervisor_name}</p>
               {a.created_by_username && (

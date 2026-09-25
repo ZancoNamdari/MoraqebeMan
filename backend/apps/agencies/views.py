@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import User, UserRole
 from apps.audit.services import AuditService
 from apps.authorization.permissions import IsAgency, IsSuperuser
-from apps.caregivers.models import CaregiverProfile, CaregiverStatus
+from apps.caregivers.models import CaregiverAgencyPipelineStatus, CaregiverProcessMilestone, CaregiverProfile, CaregiverStatus
 from apps.caregivers.permissions import IsCaregiver
 from apps.families.models import FamilyPatientLink, FamilyProfile, LinkStatus, PatientPipelineStatus, PatientProfile
 from apps.families.permissions import IsFamily
@@ -20,6 +20,7 @@ from .tenancy import agency_caregiver_profile_ids, resolve_tenant_context, visib
 from .serializers import (
     AgencyAdminSerializer,
     AgencyCaregiverLinkSerializer,
+    AgencyCaregiverPipelineSerializer,
     AgencyDashboardSerializer,
     AgencyFamilyLinkSerializer,
     AgencyProfileSerializer,
@@ -414,7 +415,9 @@ class AgencySupervisorListCreateView(APIView):
         user.set_password(get_random_string(32))
         user.save()
 
-        supervisor = AgencySupervisor.objects.create(user=user, agency=agency, created_by=request.user)
+        supervisor = AgencySupervisor.objects.create(
+            user=user, agency=agency, created_by=request.user, position=data.get("position", ""),
+        )
         audit.agency_supervisor_created(request.user.id, user.id, agency.id)
 
         return Response(AgencySupervisorSerializer(supervisor).data, status=status.HTTP_201_CREATED)
@@ -470,6 +473,7 @@ class AgencyAdminListCreateView(APIView):
 
         admin = AgencyAdmin.objects.create(
             user=user, agency=agency, supervisor=supervisor, created_by=request.user,
+            position=data.get("position", ""),
         )
 
         return Response(AgencyAdminSerializer(admin).data, status=status.HTTP_201_CREATED)
@@ -546,6 +550,110 @@ class AgencyPatientListCreateView(APIView):
             row["created_by"] = creator_by_patient_id.get(row["id"])
 
         return Response(patients_data)
+
+
+class AgencyCaregiverPipelineListView(APIView):
+    """
+    GET /api/agencies/<agency_id>/caregivers-pipeline/
+    The خدمت‌دهنده Kanban board's data source — same data-scoping
+    rule as AgencyPatientListCreateView.get() above (admin sees own,
+    supervisor sees own + their admins, owner sees all), applied here
+    via AgencyCaregiverLink.decided_by rather than
+    AgencyPatientLink.decided_by, but otherwise identical logic.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, agency_id):
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        agency = ctx.agency
+
+        links = AgencyCaregiverLink.objects.filter(
+            agency=agency, status=AgencyLinkStatus.APPROVED,
+        ).select_related("caregiver", "caregiver__user", "decided_by")
+
+        creator_scope = visible_creator_user_ids(request.user)
+        if creator_scope is not None:
+            links = links.filter(decided_by_id__in=creator_scope)
+
+        caregivers_data = AgencyCaregiverPipelineSerializer([link.caregiver for link in links], many=True).data
+
+        creator_by_caregiver_id = {
+            link.caregiver_id: (link.decided_by.get_full_name() or link.decided_by.username) if link.decided_by else None
+            for link in links
+        }
+        for row in caregivers_data:
+            row["created_by"] = creator_by_caregiver_id.get(row["id"])
+
+        return Response(caregivers_data)
+
+
+class AgencyCaregiverPipelineUpdateView(APIView):
+    """
+    PATCH /api/agencies/<agency_id>/caregivers-pipeline/<caregiver_id>/
+    Updates any subset of the agency-operational fields on
+    CaregiverProfile — pipeline stage (drag-and-drop), the urgent
+    flag, or any of the seven document-checklist booleans — in one
+    flexible endpoint, since the frontend board needs to change these
+    independently of each other (a stage move never touches the
+    checklist, and vice versa) but they're all the same kind of
+    "agency's own operational note on this caregiver" data.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, agency_id, caregiver_id):
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        agency = ctx.agency
+
+        link = AgencyCaregiverLink.objects.filter(
+            caregiver_id=caregiver_id, agency=agency, status=AgencyLinkStatus.APPROVED,
+        ).select_related("caregiver").first()
+        if link is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        caregiver = link.caregiver
+
+        if "agency_pipeline_status" in request.data:
+            valid_values = [choice[0] for choice in CaregiverAgencyPipelineStatus.choices]
+            if request.data["agency_pipeline_status"] not in valid_values:
+                return Response(
+                    {"detail": f"مقدار agency_pipeline_status باید یکی از {valid_values} باشد."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            caregiver.agency_pipeline_status = request.data["agency_pipeline_status"]
+
+        editable_bool_fields = [
+            "is_urgent", "doc_no_criminal_record", "doc_no_addiction_test", "doc_identity_verified",
+            "doc_personal_photo", "doc_mental_health_test", "doc_promissory_note", "doc_id_card_received",
+        ]
+        for field in editable_bool_fields:
+            if field in request.data:
+                setattr(caregiver, field, bool(request.data[field]))
+
+        if "tags" in request.data:
+            tags = request.data["tags"]
+            if not isinstance(tags, list) or not all(isinstance(t, str) for t in tags):
+                return Response({"detail": "tags باید فهرستی از رشته‌ها باشد."}, status=status.HTTP_400_BAD_REQUEST)
+            caregiver.tags = tags
+
+        if "process_milestones" in request.data:
+            milestones = request.data["process_milestones"]
+            valid_values = [choice[0] for choice in CaregiverProcessMilestone.choices]
+            if not isinstance(milestones, list) or not all(m in valid_values for m in milestones):
+                return Response(
+                    {"detail": f"process_milestones باید فهرستی از {valid_values} باشد."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            caregiver.process_milestones = milestones
+
+        caregiver.save()
+
+        response_data = AgencyCaregiverPipelineSerializer(caregiver).data
+        response_data["created_by"] = (link.decided_by.get_full_name() or link.decided_by.username) if link.decided_by else None
+        return Response(response_data)
 
     def post(self, request, agency_id):
         ctx = resolve_tenant_context(request, agency_id)
@@ -641,16 +749,32 @@ class AgencyPatientPipelineStatusView(APIView):
         if patient is None:
             return Response({"detail": "سالمند یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
 
-        new_status = request.data.get("pipeline_status")
-        valid_values = [choice[0] for choice in PatientPipelineStatus.choices]
-        if new_status not in valid_values:
-            return Response(
-                {"detail": f"مقدار pipeline_status باید یکی از {valid_values} باشد."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        update_fields = []
 
-        patient.pipeline_status = new_status
-        patient.save(update_fields=["pipeline_status"])
+        if "pipeline_status" in request.data:
+            new_status = request.data["pipeline_status"]
+            valid_values = [choice[0] for choice in PatientPipelineStatus.choices]
+            if new_status not in valid_values:
+                return Response(
+                    {"detail": f"مقدار pipeline_status باید یکی از {valid_values} باشد."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            patient.pipeline_status = new_status
+            update_fields.append("pipeline_status")
+
+        if "is_urgent" in request.data:
+            patient.is_urgent = bool(request.data["is_urgent"])
+            update_fields.append("is_urgent")
+
+        if "tags" in request.data:
+            tags = request.data["tags"]
+            if not isinstance(tags, list) or not all(isinstance(t, str) for t in tags):
+                return Response({"detail": "tags باید فهرستی از رشته‌ها باشد."}, status=status.HTTP_400_BAD_REQUEST)
+            patient.tags = tags
+            update_fields.append("tags")
+
+        if update_fields:
+            patient.save(update_fields=update_fields)
 
         # created_by is attached the same way as in
         # AgencyPatientListCreateView.get() — it's a fact about this
