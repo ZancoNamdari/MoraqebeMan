@@ -1,7 +1,6 @@
 "use client"
 
 import { Fragment, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,8 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { candidateTrackingService, type Candidate, type CandidateResume } from "@/services/candidate_tracking.service"
 import { EXPERIENCE_RANGE, labelForValue } from "@/lib/constants"
 import { toPersianDigits } from "@/lib/persian_digits"
-import { ROUTES } from "@/lib/routes"
-import { Sidebar } from "@/components/layout/sidebar"
 
 const STATUS_CLASS: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -33,8 +30,7 @@ const STATUS_HEX: Record<string, string> = {
 }
 
 export default function CandidatesPage() {
-  const { user, loading: authLoading, logout } = useAuth(["agency", "agency_supervisor"])
-  const router = useRouter()
+  const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor", "agency_admin"])
 
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [loading, setLoading] = useState(true)
@@ -175,231 +171,221 @@ export default function CandidatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">بانک اطلاعات مراقبان</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-        </div>
-      </header>
+    <div className="p-4 sm:p-6">
+      <div className="mb-4">
+        <h1 className="text-lg font-bold text-slate-900">بانک اطلاعات مراقبان</h1>
+      </div>
 
-      <div className="min-h-screen bg-slate-50">
-      <Sidebar onLogout={logout} isOwner={user.role === "agency"} />
+      {error && <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
-      <div className="sm:mr-64">
-        <main className="mx-auto max-w-5xl space-y-4 p-4">
-        {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <button onClick={() => toggleFilter("")} className={`rounded-2xl border border-pink-100 bg-white p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === null ? "ring-2 ring-rose-400" : ""}`}>
+          <p className="text-3xl font-bold text-rose-900">{toPersianDigits(candidates.length)}</p>
+          <p className="mt-1 text-xs font-medium text-muted-foreground">تعداد کل</p>
+        </button>
+        <button onClick={() => toggleFilter("approved")} className={`rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "approved" ? "ring-2 ring-emerald-500" : ""}`}>
+          <p className="text-3xl font-bold text-emerald-700">{toPersianDigits(counts.approved || 0)}</p>
+          <p className="mt-1 text-xs font-medium text-emerald-800/70">تأیید شده</p>
+        </button>
+        <button onClick={() => toggleFilter("pending")} className={`rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "pending" ? "ring-2 ring-amber-500" : ""}`}>
+          <p className="text-3xl font-bold text-amber-700">{toPersianDigits(counts.pending || 0)}</p>
+          <p className="mt-1 text-xs font-medium text-amber-800/70">در حال بررسی</p>
+        </button>
+        <button onClick={() => toggleFilter("needs_more_docs")} className={`rounded-2xl border border-purple-100 bg-purple-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "needs_more_docs" ? "ring-2 ring-purple-500" : ""}`}>
+          <p className="text-3xl font-bold text-purple-700">{toPersianDigits(counts.needs_more_docs || 0)}</p>
+          <p className="mt-1 text-xs font-medium text-purple-800/70">نیاز به مدارک</p>
+        </button>
+        <button onClick={() => toggleFilter("rejected")} className={`rounded-2xl border border-rose-100 bg-rose-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "rejected" ? "ring-2 ring-rose-500" : ""}`}>
+          <p className="text-3xl font-bold text-rose-700">{toPersianDigits(counts.rejected || 0)}</p>
+          <p className="mt-1 text-xs font-medium text-rose-800/70">رد شده</p>
+        </button>
+      </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <button onClick={() => toggleFilter("")} className={`rounded-2xl border border-pink-100 bg-white p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === null ? "ring-2 ring-rose-400" : ""}`}>
-            <p className="text-3xl font-bold text-rose-900">{toPersianDigits(candidates.length)}</p>
-            <p className="mt-1 text-xs font-medium text-muted-foreground">تعداد کل</p>
-          </button>
-          <button onClick={() => toggleFilter("approved")} className={`rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "approved" ? "ring-2 ring-emerald-500" : ""}`}>
-            <p className="text-3xl font-bold text-emerald-700">{toPersianDigits(counts.approved || 0)}</p>
-            <p className="mt-1 text-xs font-medium text-emerald-800/70">تأیید شده</p>
-          </button>
-          <button onClick={() => toggleFilter("pending")} className={`rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "pending" ? "ring-2 ring-amber-500" : ""}`}>
-            <p className="text-3xl font-bold text-amber-700">{toPersianDigits(counts.pending || 0)}</p>
-            <p className="mt-1 text-xs font-medium text-amber-800/70">در حال بررسی</p>
-          </button>
-          <button onClick={() => toggleFilter("needs_more_docs")} className={`rounded-2xl border border-purple-100 bg-purple-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "needs_more_docs" ? "ring-2 ring-purple-500" : ""}`}>
-            <p className="text-3xl font-bold text-purple-700">{toPersianDigits(counts.needs_more_docs || 0)}</p>
-            <p className="mt-1 text-xs font-medium text-purple-800/70">نیاز به مدارک</p>
-          </button>
-          <button onClick={() => toggleFilter("rejected")} className={`rounded-2xl border border-rose-100 bg-rose-50/40 p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === "rejected" ? "ring-2 ring-rose-500" : ""}`}>
-            <p className="text-3xl font-bold text-rose-700">{toPersianDigits(counts.rejected || 0)}</p>
-            <p className="mt-1 text-xs font-medium text-rose-800/70">رد شده</p>
-          </button>
-        </div>
-        {statusFilter && (
-          <p className="px-1 text-xs text-muted-foreground">
-            نمایش فقط مراقبان با وضعیت «{STATUS_LABEL_FA[statusFilter]}» —{" "}
-            <button className="font-medium text-rose-700 underline" onClick={() => setStatusFilter(null)}>نمایش همه</button>
-          </p>
-        )}
+      {statusFilter && (
+        <p className="mb-4 px-1 text-xs text-muted-foreground">
+          نمایش فقط مراقبان با وضعیت «{STATUS_LABEL_FA[statusFilter]}» —{" "}
+          <button className="font-medium text-rose-700 underline" onClick={() => setStatusFilter(null)}>نمایش همه</button>
+        </p>
+      )}
 
-        {candidates.length > 0 && (
-          <Card className="border-pink-100">
-            <CardHeader><CardTitle className="text-rose-900">نمودار وضعیت مراقبان</CardTitle></CardHeader>
-            <CardContent>
-              <StatusDonutChart counts={counts} total={candidates.length} />
-            </CardContent>
-          </Card>
-        )}
-
-        <Card className="border-pink-100">
-          <CardHeader><CardTitle className="text-rose-900">لیست مراقبان ({toPersianDigits(filteredCandidates.length)})</CardTitle></CardHeader>
+      {candidates.length > 0 && (
+        <Card className="mb-4 border-pink-100">
+          <CardHeader><CardTitle className="text-rose-900">نمودار وضعیت مراقبان</CardTitle></CardHeader>
           <CardContent>
-            {loading ? (
-              <Skeleton className="h-96 w-full rounded-2xl" />
-            ) : candidates.length === 0 ? (
-              <p className="text-sm text-muted-foreground">هنوز مراقبی به این آژانس متصل نشده است.</p>
-            ) : filteredCandidates.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                مراقبی با این وضعیت یافت نشد. <button className="font-medium text-rose-700 underline" onClick={() => setStatusFilter(null)}>نمایش همه</button>
-              </p>
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-pink-100">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-pink-100 bg-pink-50/70 text-xs font-semibold text-rose-900">
-                      <th className="p-3 text-right">نام</th>
-                      <th className="p-3 text-right">کد ملی</th>
-                      <th className="p-3 text-right">تلفن</th>
-                      <th className="p-3 text-right">شهر</th>
-                      <th className="p-3 text-right">تجربه</th>
-                      <th className="p-3 text-center">تاریخ ثبت‌نام</th>
-                      <th className="p-3 text-center">وضعیت</th>
-                      <th className="p-3 text-center">امتیاز مصاحبه</th>
-                      <th className="p-3 text-center">تاریخ مصاحبه</th>
-                      <th className="p-3 text-right">یادداشت</th>
-                      <th className="p-3 text-center">ویرایش</th>
-                      <th className="p-3 text-center">جزئیات</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCandidates.map((c, index) => (
-                      <Fragment key={c.user_id}>
-                        <tr className={`border-b border-pink-50 transition-colors last:border-0 hover:bg-pink-50/60 ${index % 2 === 1 ? "bg-pink-50/20" : ""}`}>
-                          <td className="p-3 text-right font-medium text-rose-950">{c.full_name}</td>
-                          <td className="p-3 text-right text-muted-foreground" dir="ltr">{c.national_id ? toPersianDigits(c.national_id) : "—"}</td>
-                          <td className="p-3 text-right text-muted-foreground" dir="ltr">{toPersianDigits(c.phone_number)}</td>
-                          <td className="p-3 text-right text-muted-foreground">{c.city || "—"}</td>
-                          <td className="p-3 text-right text-muted-foreground">{c.experience_level ? labelForValue(EXPERIENCE_RANGE, c.experience_level) : "—"}</td>
-                          <td className="p-3 text-center text-muted-foreground">{c.registered_at ? toPersianDigits(c.registered_at.slice(0, 10)) : "—"}</td>
-                          <td className="p-3 text-center">
-                            <span className={`inline-block rounded-full px-3 py-1 text-[11px] font-medium ${STATUS_CLASS[c.status]}`}>
-                              {c.status_label}
-                            </span>
-                          </td>
-                          <td className="p-3 text-center font-semibold text-rose-900">{c.interview_score !== null ? toPersianDigits(c.interview_score) : "—"}</td>
-                          <td className="p-3 text-center text-muted-foreground">{c.interview_date ? toPersianDigits(c.interview_date) : "—"}</td>
-                          <td className="max-w-[160px] truncate p-3 text-right text-muted-foreground" title={c.staff_notes || undefined}>{c.staff_notes || "—"}</td>
-                          <td className="p-3 text-center">
-                            <Button size="sm" variant="outline" onClick={() => { setExpandedId(c.user_id); resetDrafts(); startEditingFields(c) }}>
-                              ویرایش
-                            </Button>
-                          </td>
-                          <td className="p-3 text-center">
-                            <Button size="sm" variant="outline" onClick={() => { setExpandedId(expandedId === c.user_id ? null : c.user_id); resetDrafts() }}>
-                              {expandedId === c.user_id ? "بستن" : "جزئیات"}
-                            </Button>
-                          </td>
-                        </tr>
-                        {expandedId === c.user_id && (
-                          <tr>
-                            <td colSpan={12} className="bg-pink-50/40 p-4">
-                              <div className="grid gap-4 sm:grid-cols-3">
-                                <div className="space-y-2">
-                                  <p className="text-xs font-medium text-rose-900">ثبت نتیجه مصاحبه</p>
-                                  <div className="flex gap-2">
-                                    <input type="number" min={0} max={100} placeholder="امتیاز (۰ تا ۱۰۰)" value={scoreDraft} onChange={(e) => setScoreDraft(e.target.value)} className="w-32 rounded-md border border-input bg-background p-2 text-sm" />
-                                    <input type="date" value={dateDraft} onChange={(e) => setDateDraft(e.target.value)} className="rounded-md border border-input bg-background p-2 text-sm" />
-                                  </div>
-                                  <textarea placeholder="یادداشت داخلی (اختیاری)" value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} className="w-full rounded-md border border-input bg-background p-2 text-sm" rows={2} />
-                                  <Button size="sm" disabled={acting} onClick={() => handleRecordInterview(c.user_id)}>ثبت مصاحبه</Button>
-                                  {c.staff_notes && <p className="text-xs text-muted-foreground">یادداشت فعلی: {c.staff_notes}</p>}
-                                </div>
-                                <div className="space-y-2">
-                                  {c.status === "needs_more_docs" ? (
-                                    <>
-                                      <p className="text-xs font-medium text-purple-900">در انتظار مدارک تکمیلی</p>
-                                      <p className="text-xs text-muted-foreground">{c.needs_more_docs_note}</p>
-                                      <Button size="sm" variant="outline" disabled={acting} onClick={() => handleMarkReady(c.user_id)}>
-                                        بازگرداندن به بررسی (مدارک دریافت شد)
-                                      </Button>
-                                    </>
-                                  ) : c.status === "pending" ? (
-                                    <>
-                                      <p className="text-xs font-medium text-rose-900">درخواست مدارک تکمیلی</p>
-                                      <textarea placeholder="چه مدرکی نیاز است؟" value={docsNoteDraft} onChange={(e) => setDocsNoteDraft(e.target.value)} className="w-full rounded-md border border-input bg-background p-2 text-sm" rows={2} />
-                                      <Button size="sm" variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50" disabled={acting || !docsNoteDraft.trim()} onClick={() => handleRequestDocs(c.user_id)}>
-                                        درخواست مدارک
-                                      </Button>
-                                    </>
-                                  ) : (
-                                    <p className="text-xs text-muted-foreground">در وضعیت «{c.status_label}» — بدون اقدام بیشتر.</p>
-                                  )}
-                                </div>
-                                <div className="space-y-2">
-                                  <p className="text-xs font-medium text-rose-900">رزومه کامل</p>
-                                  <Button size="sm" variant="outline" disabled={resumeLoading} onClick={() => handleViewResume(c.user_id)}>
-                                    {resumeLoading ? "در حال بارگذاری..." : "مشاهده رزومه"}
-                                  </Button>
-                                </div>
-                              </div>
-                              {editingFields && (
-                                <div className="mt-4 border-t border-pink-100 pt-4">
-                                  <p className="mb-2 text-xs font-medium text-rose-900">ویرایش اطلاعات مراقب</p>
-                                  <p className="mb-3 text-xs text-amber-700">
-                                    این اطلاعات، مشخصات شخصی خود مراقب است — هر تغییری با نام شما در تاریخچه ثبت می‌شود.
-                                  </p>
-                                  <div className="grid gap-3 sm:grid-cols-2">
-                                    <div className="space-y-1">
-                                      <label className="text-xs text-muted-foreground">نام</label>
-                                      <input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="w-full rounded-md border border-input bg-background p-2 text-sm" />
-                                    </div>
-                                    <div className="space-y-1">
-                                      <label className="text-xs text-muted-foreground">نام خانوادگی</label>
-                                      <input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="w-full rounded-md border border-input bg-background p-2 text-sm" />
-                                    </div>
-                                    <div className="space-y-1">
-                                      <label className="text-xs text-muted-foreground">کد ملی</label>
-                                      <input value={editNationalId} onChange={(e) => setEditNationalId(e.target.value)} dir="ltr" className="w-full rounded-md border border-input bg-background p-2 text-sm" />
-                                    </div>
-                                    <div className="space-y-1">
-                                      <label className="text-xs text-muted-foreground">تلفن</label>
-                                      <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} dir="ltr" className="w-full rounded-md border border-input bg-background p-2 text-sm" />
-                                    </div>
-                                  </div>
-                                  <div className="mt-3 flex gap-2">
-                                    <Button size="sm" disabled={savingFields} onClick={() => handleSaveFields(c.user_id)}>
-                                      {savingFields ? "در حال ذخیره..." : "ذخیره تغییرات"}
-                                    </Button>
-                                    <Button size="sm" variant="ghost" onClick={() => setEditingFields(false)}>انصراف</Button>
-                                  </div>
-                                </div>
-                              )}
-                              {resume && (
-                                <div className="mt-4 border-t border-pink-100 pt-4">
-                                  <ResumeView resume={resume} />
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <StatusDonutChart counts={counts} total={candidates.length} />
           </CardContent>
         </Card>
+      )}
 
-        {candidates.length > 0 && (
-          <Card className="border-pink-100 bg-pink-50/40">
-            <CardHeader><CardTitle className="text-rose-900">گزارش سریع</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <div className="rounded-xl bg-white p-4 text-center shadow-sm">
-                <p className="text-2xl font-bold text-rose-900">{averageScore !== null ? toPersianDigits(averageScore) : "—"}</p>
-                <p className="mt-1 text-xs font-medium text-muted-foreground">میانگین امتیاز مصاحبه</p>
-              </div>
-              <div className="rounded-xl bg-white p-4 text-center shadow-sm">
-                <p className="text-2xl font-bold text-emerald-700">{toPersianDigits(approvalRate)}٪</p>
-                <p className="mt-1 text-xs font-medium text-muted-foreground">درصد تأیید‌شدگان</p>
-              </div>
-              <div className="rounded-xl bg-white p-4 text-center shadow-sm">
-                <p className="text-2xl font-bold text-rose-900">{toPersianDigits(scoredCandidates.length)}</p>
-                <p className="mt-1 text-xs font-medium text-muted-foreground">تعداد مصاحبه‌شده</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </main>
-      </div>
-    </div>
+      <Card className="mb-4 border-pink-100">
+        <CardHeader><CardTitle className="text-rose-900">لیست مراقبان ({toPersianDigits(filteredCandidates.length)})</CardTitle></CardHeader>
+        <CardContent>
+          {loading ? (
+            <Skeleton className="h-96 w-full rounded-2xl" />
+          ) : candidates.length === 0 ? (
+            <p className="text-sm text-muted-foreground">هنوز مراقبی به این آژانس متصل نشده است.</p>
+          ) : filteredCandidates.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              مراقبی با این وضعیت یافت نشد. <button className="font-medium text-rose-700 underline" onClick={() => setStatusFilter(null)}>نمایش همه</button>
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-pink-100">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-pink-100 bg-pink-50/70 text-xs font-semibold text-rose-900">
+                    <th className="p-3 text-right">نام</th>
+                    <th className="p-3 text-right">کد ملی</th>
+                    <th className="p-3 text-right">تلفن</th>
+                    <th className="p-3 text-right">شهر</th>
+                    <th className="p-3 text-right">تجربه</th>
+                    <th className="p-3 text-center">تاریخ ثبت‌نام</th>
+                    <th className="p-3 text-center">وضعیت</th>
+                    <th className="p-3 text-center">امتیاز مصاحبه</th>
+                    <th className="p-3 text-center">تاریخ مصاحبه</th>
+                    <th className="p-3 text-right">یادداشت</th>
+                    <th className="p-3 text-center">ویرایش</th>
+                    <th className="p-3 text-center">جزئیات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCandidates.map((c, index) => (
+                    <Fragment key={c.user_id}>
+                      <tr className={`border-b border-pink-50 transition-colors last:border-0 hover:bg-pink-50/60 ${index % 2 === 1 ? "bg-pink-50/20" : ""}`}>
+                        <td className="p-3 text-right font-medium text-rose-950">{c.full_name}</td>
+                        <td className="p-3 text-right text-muted-foreground" dir="ltr">{c.national_id ? toPersianDigits(c.national_id) : "—"}</td>
+                        <td className="p-3 text-right text-muted-foreground" dir="ltr">{toPersianDigits(c.phone_number)}</td>
+                        <td className="p-3 text-right text-muted-foreground">{c.city || "—"}</td>
+                        <td className="p-3 text-right text-muted-foreground">{c.experience_level ? labelForValue(EXPERIENCE_RANGE, c.experience_level) : "—"}</td>
+                        <td className="p-3 text-center text-muted-foreground">{c.registered_at ? toPersianDigits(c.registered_at.slice(0, 10)) : "—"}</td>
+                        <td className="p-3 text-center">
+                          <span className={`inline-block rounded-full px-3 py-1 text-[11px] font-medium ${STATUS_CLASS[c.status]}`}>
+                            {c.status_label}
+                          </span>
+                        </td>
+                        <td className="p-3 text-center font-semibold text-rose-900">{c.interview_score !== null ? toPersianDigits(c.interview_score) : "—"}</td>
+                        <td className="p-3 text-center text-muted-foreground">{c.interview_date ? toPersianDigits(c.interview_date) : "—"}</td>
+                        <td className="max-w-[160px] truncate p-3 text-right text-muted-foreground" title={c.staff_notes || undefined}>{c.staff_notes || "—"}</td>
+                        <td className="p-3 text-center">
+                          <Button size="sm" variant="outline" onClick={() => { setExpandedId(c.user_id); resetDrafts(); startEditingFields(c) }}>
+                            ویرایش
+                          </Button>
+                        </td>
+                        <td className="p-3 text-center">
+                          <Button size="sm" variant="outline" onClick={() => { setExpandedId(expandedId === c.user_id ? null : c.user_id); resetDrafts() }}>
+                            {expandedId === c.user_id ? "بستن" : "جزئیات"}
+                          </Button>
+                        </td>
+                      </tr>
+                      {expandedId === c.user_id && (
+                        <tr>
+                          <td colSpan={12} className="bg-pink-50/40 p-4">
+                            <div className="grid gap-4 sm:grid-cols-3">
+                              <div className="space-y-2">
+                                <p className="text-xs font-medium text-rose-900">ثبت نتیجه مصاحبه</p>
+                                <div className="flex gap-2">
+                                  <input type="number" min={0} max={100} placeholder="امتیاز (۰ تا ۱۰۰)" value={scoreDraft} onChange={(e) => setScoreDraft(e.target.value)} className="w-32 rounded-md border border-input bg-background p-2 text-sm" />
+                                  <input type="date" value={dateDraft} onChange={(e) => setDateDraft(e.target.value)} className="rounded-md border border-input bg-background p-2 text-sm" />
+                                </div>
+                                <textarea placeholder="یادداشت داخلی (اختیاری)" value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} className="w-full rounded-md border border-input bg-background p-2 text-sm" rows={2} />
+                                <Button size="sm" disabled={acting} onClick={() => handleRecordInterview(c.user_id)}>ثبت مصاحبه</Button>
+                                {c.staff_notes && <p className="text-xs text-muted-foreground">یادداشت فعلی: {c.staff_notes}</p>}
+                              </div>
+                              <div className="space-y-2">
+                                {c.status === "needs_more_docs" ? (
+                                  <>
+                                    <p className="text-xs font-medium text-purple-900">در انتظار مدارک تکمیلی</p>
+                                    <p className="text-xs text-muted-foreground">{c.needs_more_docs_note}</p>
+                                    <Button size="sm" variant="outline" disabled={acting} onClick={() => handleMarkReady(c.user_id)}>
+                                      بازگرداندن به بررسی (مدارک دریافت شد)
+                                    </Button>
+                                  </>
+                                ) : c.status === "pending" ? (
+                                  <>
+                                    <p className="text-xs font-medium text-rose-900">درخواست مدارک تکمیلی</p>
+                                    <textarea placeholder="چه مدرکی نیاز است؟" value={docsNoteDraft} onChange={(e) => setDocsNoteDraft(e.target.value)} className="w-full rounded-md border border-input bg-background p-2 text-sm" rows={2} />
+                                    <Button size="sm" variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50" disabled={acting || !docsNoteDraft.trim()} onClick={() => handleRequestDocs(c.user_id)}>
+                                      درخواست مدارک
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">در وضعیت «{c.status_label}» — بدون اقدام بیشتر.</p>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                <p className="text-xs font-medium text-rose-900">رزومه کامل</p>
+                                <Button size="sm" variant="outline" disabled={resumeLoading} onClick={() => handleViewResume(c.user_id)}>
+                                  {resumeLoading ? "در حال بارگذاری..." : "مشاهده رزومه"}
+                                </Button>
+                              </div>
+                            </div>
+                            {editingFields && (
+                              <div className="mt-4 border-t border-pink-100 pt-4">
+                                <p className="mb-2 text-xs font-medium text-rose-900">ویرایش اطلاعات مراقب</p>
+                                <p className="mb-3 text-xs text-amber-700">
+                                  این اطلاعات، مشخصات شخصی خود مراقب است — هر تغییری با نام شما در تاریخچه ثبت می‌شود.
+                                </p>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                  <div className="space-y-1">
+                                    <label className="text-xs text-muted-foreground">نام</label>
+                                    <input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="w-full rounded-md border border-input bg-background p-2 text-sm" />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs text-muted-foreground">نام خانوادگی</label>
+                                    <input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="w-full rounded-md border border-input bg-background p-2 text-sm" />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs text-muted-foreground">کد ملی</label>
+                                    <input value={editNationalId} onChange={(e) => setEditNationalId(e.target.value)} dir="ltr" className="w-full rounded-md border border-input bg-background p-2 text-sm" />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs text-muted-foreground">تلفن</label>
+                                    <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} dir="ltr" className="w-full rounded-md border border-input bg-background p-2 text-sm" />
+                                  </div>
+                                </div>
+                                <div className="mt-3 flex gap-2">
+                                  <Button size="sm" disabled={savingFields} onClick={() => handleSaveFields(c.user_id)}>
+                                    {savingFields ? "در حال ذخیره..." : "ذخیره تغییرات"}
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => setEditingFields(false)}>انصراف</Button>
+                                </div>
+                              </div>
+                            )}
+                            {resume && (
+                              <div className="mt-4 border-t border-pink-100 pt-4">
+                                <ResumeView resume={resume} />
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {candidates.length > 0 && (
+        <Card className="border-pink-100 bg-pink-50/40">
+          <CardHeader><CardTitle className="text-rose-900">گزارش سریع</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl bg-white p-4 text-center shadow-sm">
+              <p className="text-2xl font-bold text-rose-900">{averageScore !== null ? toPersianDigits(averageScore) : "—"}</p>
+              <p className="mt-1 text-xs font-medium text-muted-foreground">میانگین امتیاز مصاحبه</p>
+            </div>
+            <div className="rounded-xl bg-white p-4 text-center shadow-sm">
+              <p className="text-2xl font-bold text-emerald-700">{toPersianDigits(approvalRate)}٪</p>
+              <p className="mt-1 text-xs font-medium text-muted-foreground">درصد تأیید‌شدگان</p>
+            </div>
+            <div className="rounded-xl bg-white p-4 text-center shadow-sm">
+              <p className="text-2xl font-bold text-rose-900">{toPersianDigits(scoredCandidates.length)}</p>
+              <p className="mt-1 text-xs font-medium text-muted-foreground">تعداد مصاحبه‌شده</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

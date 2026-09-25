@@ -156,6 +156,14 @@ class PatientProfile(models.Model):
         default=PatientPipelineStatus.REGISTRATION, db_index=True,
         verbose_name="مرحله کاریز خدمت",
     )
+    is_urgent = models.BooleanField(
+        default=False, verbose_name="فوری",
+        help_text="برچسب فوری روی کارت این خدمت‌گیرنده در کاریز آژانس نمایش داده می‌شود.",
+    )
+    tags = models.JSONField(
+        default=list, blank=True, verbose_name="برچسب‌ها",
+        help_text="برچسب‌های آزاد آژانس روی این خدمت‌گیرنده، برای دسته‌بندی و فیلتر آینده کاریز.",
+    )
     gender = models.CharField(max_length=10, choices=Gender.choices, blank=True, help_text="جنسیت")
     father_name = models.CharField(max_length=150, blank=True, help_text="نام پدر")
     birth_date = jmodels.jDateField(null=True, blank=True, help_text="تاریخ تولد")

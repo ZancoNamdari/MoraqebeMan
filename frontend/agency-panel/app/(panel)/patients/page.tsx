@@ -6,7 +6,7 @@ import {
   DndContext, DragOverlay, useDraggable, useDroppable,
   PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core"
-import { ChevronRight, ChevronLeft, Plus, GripVertical } from "lucide-react"
+import { ChevronRight, ChevronLeft, Plus, GripVertical, AlertTriangle } from "lucide-react"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +32,7 @@ const STAGES = [
 const emptyForm = {
   mode: "standalone" as "standalone" | "with_family",
   full_name: "", gender: "", physical_condition: "", needed_shifts: [] as string[],
+  is_urgent: false,
   family_first_name: "", family_last_name: "", family_phone_number: "", relation: "",
 }
 
@@ -63,7 +64,14 @@ function PatientCard({ patient, onMove, moving, router }: {
     >
       <div className="flex items-start justify-between gap-1">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-slate-900">{patient.full_name}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-sm font-medium text-slate-900">{patient.full_name}</p>
+            {patient.is_urgent && (
+              <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700">
+                <AlertTriangle className="h-2.5 w-2.5" /> فوری
+              </span>
+            )}
+          </div>
           <p className="text-[11px] text-slate-500" dir="ltr">{patient.access_code}</p>
           {patient.created_by && (
             <span className="mt-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
@@ -184,11 +192,11 @@ export default function PatientsPage() {
       const payload = form.mode === "standalone"
         ? {
             mode: "standalone" as const,
-            patient: { full_name: form.full_name, gender: form.gender || undefined, physical_condition: form.physical_condition || undefined, needed_shifts: form.needed_shifts },
+            patient: { full_name: form.full_name, gender: form.gender || undefined, physical_condition: form.physical_condition || undefined, needed_shifts: form.needed_shifts, is_urgent: form.is_urgent },
           }
         : {
             mode: "with_family" as const,
-            patient: { full_name: form.full_name, gender: form.gender || undefined, physical_condition: form.physical_condition || undefined, needed_shifts: form.needed_shifts },
+            patient: { full_name: form.full_name, gender: form.gender || undefined, physical_condition: form.physical_condition || undefined, needed_shifts: form.needed_shifts, is_urgent: form.is_urgent },
             family: { first_name: form.family_first_name, last_name: form.family_last_name, phone_number: form.family_phone_number, relation: form.relation },
           }
       const created = await agencyManagementService.createPatient(agencyId, payload)
@@ -308,6 +316,16 @@ export default function PatientsPage() {
           <Field label="شیفت‌های زمانی مورد نیاز">
             <CheckboxGroup choices={NEEDED_SHIFT} value={form.needed_shifts} onChange={(v) => setForm({ ...form, needed_shifts: v })} />
           </Field>
+
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={form.is_urgent}
+              onChange={(e) => setForm({ ...form, is_urgent: e.target.checked })}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            فوری
+          </label>
 
           {form.mode === "with_family" && (
             <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">

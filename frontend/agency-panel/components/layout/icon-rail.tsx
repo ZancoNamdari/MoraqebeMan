@@ -16,6 +16,7 @@ import {
   ShieldQuestionMark,
   HeartHandshake,
   ShieldCheck,
+  Activity,
   LogOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -44,6 +45,9 @@ export const NAV_ITEMS: NavItem[] = [
     href: ROUTES.caregivers,
     icon: Users,
     children: [
+      { label: "ارزیابی عملکرد", href: ROUTES.caregiverPerformance, icon: BarChart3 },
+      { label: "فعالیت", href: ROUTES.caregiverActivity, icon: Activity },
+      { label: "تنظیمات", href: ROUTES.caregiverSettings, icon: Settings },
       { label: "شکایات", href: ROUTES.complaints, icon: AlertTriangle },
       { label: "بانک اطلاعات مراقبان", href: ROUTES.candidates, icon: ClipboardList },
       { label: "درخواست‌های بازبینی مسدودیت", href: ROUTES.blacklistAppeals, icon: ShieldQuestionMark },

@@ -14,4 +14,7 @@ export const ROUTES = {
   financial: "/financial",
   settings: "/settings",
   admins: "/admins",
+  caregiverPerformance: "/caregivers/performance",
+  caregiverActivity: "/caregivers/activity",
+  caregiverSettings: "/caregivers/settings",
 }

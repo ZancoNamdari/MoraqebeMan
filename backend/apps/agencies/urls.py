@@ -11,6 +11,8 @@ from .views import (
     AgencyFamilyRequestsView,
     AgencyFamilyRosterView,
     AgencyAdminListCreateView,
+    AgencyCaregiverPipelineListView,
+    AgencyCaregiverPipelineUpdateView,
     AgencyPatientListCreateView,
     AgencyPatientPipelineStatusView,
     AgencySuggestedCaregiversView,
@@ -71,6 +73,14 @@ urlpatterns = [
     path(
         "agencies/<int:agency_id>/patients/<int:patient_id>/pipeline-status/",
         AgencyPatientPipelineStatusView.as_view(), name="agencies-patient-pipeline-status",
+    ),
+    path(
+        "agencies/<int:agency_id>/caregivers-pipeline/",
+        AgencyCaregiverPipelineListView.as_view(), name="agencies-caregivers-pipeline",
+    ),
+    path(
+        "agencies/<int:agency_id>/caregivers-pipeline/<int:caregiver_id>/",
+        AgencyCaregiverPipelineUpdateView.as_view(), name="agencies-caregivers-pipeline-update",
     ),
 
     # Agency-scoped matching — candidates restricted to this agency's

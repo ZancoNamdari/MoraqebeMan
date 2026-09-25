@@ -106,6 +106,49 @@ class CaregiverStatus(models.TextChoices):
     SUSPENDED = "suspended", "تعلیق شده"
 
 
+class CaregiverAgencyPipelineStatus(models.TextChoices):
+    """
+    The agency-side service pipeline a caregiver moves through, shown
+    as a Kanban board in agency-panel (خدمت‌دهنده) — deliberately a
+    separate concept from CaregiverStatus above, which is this
+    platform's own review/approval status, not any one agency's
+    day-to-day operational tracking of that caregiver.
+    """
+    REGISTERED = "registered", "ثبت در سایت"
+    DOCUMENTS_IN_PROGRESS = "documents_in_progress", "تکمیل مدارک"
+    BEING_DISPATCHED = "being_dispatched", "در حال اعزام"
+    ON_ASSIGNMENT = "on_assignment", "در حال مأموریت"
+    FIRST_WEEK = "first_week", "هفته اول"
+    CONFIRMED = "confirmed", "تأیید شده"
+    EXPIRED = "expired", "منقضی‌ها"
+
+
+class CaregiverProcessMilestone(models.TextChoices):
+    """
+    The 12-stage overall matching-process flow, per the confirmed
+    requirement — deliberately NOT the Kanban's own column structure
+    (that stays as CaregiverAgencyPipelineStatus above, unchanged).
+    These are attachable milestone tags: any subset can be present on
+    a given caregiver's ManyToMany-style list (stored as
+    CaregiverProfile.process_milestones, a JSONField of these
+    values), marking which points in the broader matching lifecycle
+    apply right now — most notably CONTRACT_ENDING_SOON, which
+    triggers a dashboard reminder to renew the contract.
+    """
+    AVAILABILITY = "availability", "در دسترس بودن"
+    AFTER_MATCH = "after_match", "پس از تطبیق"
+    CAREGIVER_COORDINATION = "caregiver_coordination", "هماهنگی با خدمت‌دهنده"
+    PATIENT_COORDINATION = "patient_coordination", "هماهنگی با خدمت‌گیرنده"
+    DISPATCH = "dispatch", "اعزام نیرو"
+    FINAL_CONFIRMATION = "final_confirmation", "تایید نهایی"
+    CAREGIVER_SUPPORT = "caregiver_support", "پشتیبانی خدمت‌دهنده"
+    PATIENT_SUPPORT = "patient_support", "پشتیبانی خدمت‌گیرنده"
+    MUTUAL_SURVEY = "mutual_survey", "نظرسنجی طرفین از تطبیق"
+    CONTRACT_ENDING_SOON = "contract_ending_soon", "در شرف اتمام قرارداد"
+    CONTRACT_RENEWAL = "contract_renewal", "تمدید قرارداد"
+    CONTRACT_COMPLETED = "contract_completed", "اتمام قرارداد"
+
+
 class CaregiverProfile(models.Model):
     user = models.OneToOneField(
         "accounts.User", on_delete=models.CASCADE, related_name="caregiver_profile", verbose_name="کاربر")
@@ -113,6 +156,35 @@ class CaregiverProfile(models.Model):
     status = models.CharField(
         max_length=20, choices=CaregiverStatus.choices, default=CaregiverStatus.DRAFT,
         db_index=True, verbose_name="وضعیت ثبت‌ نام")
+    agency_pipeline_status = models.CharField(
+        max_length=30, choices=CaregiverAgencyPipelineStatus.choices,
+        default=CaregiverAgencyPipelineStatus.REGISTERED, db_index=True,
+        verbose_name="مرحله کاریز خدمت (آژانس)",
+    )
+    process_milestones = models.JSONField(
+        default=list, blank=True, verbose_name="نقاط عطف فرآیند تطبیق",
+        help_text="زیرمجموعه‌ای از CaregiverProcessMilestone که هم‌اکنون روی این مراقب صدق می‌کند — جدا از agency_pipeline_status بالا.",
+    )
+    is_urgent = models.BooleanField(
+        default=False, verbose_name="فوری",
+        help_text="برچسب فوری روی کارت این مراقب در کاریز آژانس نمایش داده می‌شود.",
+    )
+    tags = models.JSONField(
+        default=list, blank=True, verbose_name="برچسب‌ها",
+        help_text="برچسب‌های آزاد آژانس روی این مراقب — مثلاً دسته خدمت (پرستار، بهیار، سالمندیار) یا هر برچسب دیگری، برای دسته‌بندی و فیلتر آینده کاریز.",
+    )
+    # The seven checklist items specific to the "تکمیل مدارک"
+    # (DOCUMENTS_IN_PROGRESS) pipeline stage — kept as plain booleans
+    # directly on the profile rather than a separate model, since
+    # every caregiver has exactly one fixed set of these, never a
+    # variable list.
+    doc_no_criminal_record = models.BooleanField(default=False, verbose_name="عدم سوءپیشینه")
+    doc_no_addiction_test = models.BooleanField(default=False, verbose_name="آزمایش عدم اعتیاد")
+    doc_identity_verified = models.BooleanField(default=False, verbose_name="تأیید مدارک هویتی")
+    doc_personal_photo = models.BooleanField(default=False, verbose_name="عکس پرسنلی")
+    doc_mental_health_test = models.BooleanField(default=False, verbose_name="آزمون سلامت روان")
+    doc_promissory_note = models.BooleanField(default=False, verbose_name="دریافت سفته/ضمانت")
+    doc_id_card_received = models.BooleanField(default=False, verbose_name="دریافت مدرک شناسایی")
     created_by = models.ForeignKey(
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="created_caregivers", verbose_name="ثبت‌شده توسط",
