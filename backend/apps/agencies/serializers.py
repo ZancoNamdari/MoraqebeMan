@@ -152,6 +152,20 @@ class CreateAgencySupervisorSerializer(serializers.Serializer):
     position = serializers.CharField(max_length=100, required=False, allow_blank=True)
 
 
+class UpdateAgencySupervisorSerializer(serializers.Serializer):
+    """
+    PATCH payload for editing an existing supervisor — every field is
+    optional so the client only sends what actually changed.
+    """
+    first_name = serializers.CharField(max_length=50, required=False)
+    last_name = serializers.CharField(max_length=50, required=False)
+    phone_number = serializers.RegexField(
+        regex=r"^09\d{9}$", required=False,
+        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
+    )
+    position = serializers.CharField(max_length=100, required=False, allow_blank=True)
+
+
 class AgencySupervisorSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source="user.id", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
@@ -185,6 +199,23 @@ class CreateAgencyAdminSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True)
     position = serializers.CharField(max_length=100, required=False, allow_blank=True)
     supervisor_id = serializers.IntegerField()
+
+
+class UpdateAgencyAdminSerializer(serializers.Serializer):
+    """
+    Same reasoning as UpdateAgencySupervisorSerializer above — every
+    field optional. supervisor_id, when present, reassigns which
+    supervisor this admin reports to (validated in the view against
+    this same agency's own supervisor roster).
+    """
+    first_name = serializers.CharField(max_length=50, required=False)
+    last_name = serializers.CharField(max_length=50, required=False)
+    phone_number = serializers.RegexField(
+        regex=r"^09\d{9}$", required=False,
+        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
+    )
+    position = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    supervisor_id = serializers.IntegerField(required=False)
 
 
 class AgencyAdminSerializer(serializers.ModelSerializer):

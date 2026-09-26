@@ -10,12 +10,14 @@ from .views import (
     AgencyFamilyRequestDecisionView,
     AgencyFamilyRequestsView,
     AgencyFamilyRosterView,
+    AgencyAdminDetailView,
     AgencyAdminListCreateView,
     AgencyCaregiverPipelineListView,
     AgencyCaregiverPipelineUpdateView,
     AgencyPatientListCreateView,
     AgencyPatientPipelineStatusView,
     AgencySuggestedCaregiversView,
+    AgencySupervisorDetailView,
     AgencySupervisorListCreateView,
     JoinAgencyAsCaregiverView,
     JoinAgencyAsFamilyView,
@@ -65,7 +67,15 @@ urlpatterns = [
     # since a superuser needs to create a supervisor for an agency
     # that isn't their own.
     path("agencies/<int:agency_id>/supervisors/", AgencySupervisorListCreateView.as_view(), name="agencies-supervisors"),
+    path(
+        "agencies/<int:agency_id>/supervisors/<int:supervisor_id>/",
+        AgencySupervisorDetailView.as_view(), name="agencies-supervisor-detail",
+    ),
     path("agencies/<int:agency_id>/admins/", AgencyAdminListCreateView.as_view(), name="agencies-admins"),
+    path(
+        "agencies/<int:agency_id>/admins/<int:admin_id>/",
+        AgencyAdminDetailView.as_view(), name="agencies-admin-detail",
+    ),
 
     # Agency-scoped patient creation — agency, its own supervisors, or
     # a superuser.

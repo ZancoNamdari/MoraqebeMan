@@ -17,6 +17,13 @@ export interface CreateAgencySupervisorPayload {
   position?: string
 }
 
+export interface UpdateAgencySupervisorPayload {
+  first_name?: string
+  last_name?: string
+  phone_number?: string
+  position?: string
+}
+
 export interface AgencyAdmin {
   id: number
   user_id: number
@@ -37,6 +44,14 @@ export interface CreateAgencyAdminPayload {
   email?: string
   position?: string
   supervisor_id: number
+}
+
+export interface UpdateAgencyAdminPayload {
+  first_name?: string
+  last_name?: string
+  phone_number?: string
+  position?: string
+  supervisor_id?: number
 }
 
 export interface AgencyCaregiverPipelineItem {

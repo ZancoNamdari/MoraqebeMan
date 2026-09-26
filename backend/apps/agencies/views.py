@@ -28,6 +28,8 @@ from .serializers import (
     CreateAgencyAdminSerializer,
     CreateAgencySerializer,
     CreateAgencySupervisorSerializer,
+    UpdateAgencyAdminSerializer,
+    UpdateAgencySupervisorSerializer,
     CreateFamilyForPatientSerializer,
     JoinAgencyByCodeSerializer,
 )
@@ -477,6 +479,117 @@ class AgencyAdminListCreateView(APIView):
         )
 
         return Response(AgencyAdminSerializer(admin).data, status=status.HTTP_201_CREATED)
+
+
+class AgencySupervisorDetailView(APIView):
+    """
+    PATCH /api/agencies/<agency_id>/supervisors/<supervisor_id>/
+
+    Owner/superuser only, same reasoning as AgencySupervisorListCreateView
+    above — editing a supervisor's info is a management action, not
+    something exposed to the supervisor themselves through this route.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, agency_id, supervisor_id):
+        ctx = resolve_tenant_context(request, agency_id, allow_supervisor=False)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+
+        supervisor = AgencySupervisor.objects.filter(
+            id=supervisor_id, agency=ctx.agency,
+        ).select_related("user").first()
+        if supervisor is None:
+            return Response({"detail": "سوپروایزر یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UpdateAgencySupervisorSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        if "phone_number" in data and User.objects.filter(
+            phone_number=data["phone_number"],
+        ).exclude(id=supervisor.user_id).exists():
+            return Response({"detail": "این شماره تلفن قبلاً ثبت شده است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_changed = False
+        if "first_name" in data:
+            supervisor.user.first_name = data["first_name"]
+            user_changed = True
+        if "last_name" in data:
+            supervisor.user.last_name = data["last_name"]
+            user_changed = True
+        if "phone_number" in data:
+            supervisor.user.phone_number = data["phone_number"]
+            user_changed = True
+        if user_changed:
+            supervisor.user.save()
+
+        if "position" in data:
+            supervisor.position = data["position"]
+            supervisor.save()
+
+        return Response(AgencySupervisorSerializer(supervisor).data)
+
+
+class AgencyAdminDetailView(APIView):
+    """
+    PATCH /api/agencies/<agency_id>/admins/<admin_id>/
+
+    Owner/superuser only, same reasoning as above. Reassigning which
+    supervisor this admin reports to also goes through here, validated
+    against this same agency's own supervisor roster.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, agency_id, admin_id):
+        ctx = resolve_tenant_context(request, agency_id, allow_supervisor=False)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+
+        admin = AgencyAdmin.objects.filter(
+            id=admin_id, agency=ctx.agency,
+        ).select_related("user", "supervisor").first()
+        if admin is None:
+            return Response({"detail": "ادمین یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UpdateAgencyAdminSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        if "phone_number" in data and User.objects.filter(
+            phone_number=data["phone_number"],
+        ).exclude(id=admin.user_id).exists():
+            return Response({"detail": "این شماره تلفن قبلاً ثبت شده است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if "supervisor_id" in data:
+            new_supervisor = AgencySupervisor.objects.filter(
+                id=data["supervisor_id"], agency=ctx.agency,
+            ).first()
+            if new_supervisor is None:
+                return Response(
+                    {"detail": "سوپروایزر انتخاب‌شده یافت نشد یا متعلق به این آژانس نیست."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            admin.supervisor = new_supervisor
+
+        user_changed = False
+        if "first_name" in data:
+            admin.user.first_name = data["first_name"]
+            user_changed = True
+        if "last_name" in data:
+            admin.user.last_name = data["last_name"]
+            user_changed = True
+        if "phone_number" in data:
+            admin.user.phone_number = data["phone_number"]
+            user_changed = True
+        if user_changed:
+            admin.user.save()
+
+        if "position" in data:
+            admin.position = data["position"]
+        admin.save()
+
+        return Response(AgencyAdminSerializer(admin).data)
 
 
 # ---------------------------------------------------------------------

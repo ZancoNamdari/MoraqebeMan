@@ -10,6 +10,8 @@ import type {
   CreateAgencyPatientPayload,
   CreateAgencyPatientResponse,
   CreateAgencySupervisorPayload,
+  UpdateAgencyAdminPayload,
+  UpdateAgencySupervisorPayload,
 } from "@/types/agency_management"
 
 export const agencyManagementService = {
@@ -23,6 +25,11 @@ export const agencyManagementService = {
     return data as AgencySupervisor
   },
 
+  async updateSupervisor(agencyId: number, supervisorId: number, payload: UpdateAgencySupervisorPayload) {
+    const { data } = await api.patch(`/api/agencies/${agencyId}/supervisors/${supervisorId}/`, payload)
+    return data as AgencySupervisor
+  },
+
   async listAdmins(agencyId: number) {
     const { data } = await api.get(`/api/agencies/${agencyId}/admins/`)
     return data as AgencyAdmin[]
@@ -30,6 +37,11 @@ export const agencyManagementService = {
 
   async createAdmin(agencyId: number, payload: CreateAgencyAdminPayload) {
     const { data } = await api.post(`/api/agencies/${agencyId}/admins/`, payload)
+    return data as AgencyAdmin
+  },
+
+  async updateAdmin(agencyId: number, adminId: number, payload: UpdateAgencyAdminPayload) {
+    const { data } = await api.patch(`/api/agencies/${agencyId}/admins/${adminId}/`, payload)
     return data as AgencyAdmin
   },
 
