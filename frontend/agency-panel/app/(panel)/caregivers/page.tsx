@@ -5,11 +5,13 @@ import {
   DndContext, DragOverlay, useDraggable, useDroppable,
   PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core"
-import { AlertTriangle, GripVertical, ChevronRight, ChevronLeft } from "lucide-react"
+import { AlertTriangle, GripVertical, ChevronRight, ChevronLeft, Plus } from "lucide-react"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Field } from "@/components/forms/fields"
 import { SearchTrigger, FilterDropdown, DropdownOption, SortDropdown, FilterRow, FilterToggleButton, SortSection, type SortOption } from "@/components/agency/filter-bar"
 import { agencyService } from "@/services/agency.service"
 import { agencyManagementService } from "@/services/agency_management.service"
@@ -277,6 +279,11 @@ export default function CaregiversPage() {
   const [sortBy, setSortBy] = useState("")
   const [filterOpen, setFilterOpen] = useState(false)
 
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ first_name: "", last_name: "", phone_number: "" })
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState("")
+
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
   const availableTags = useMemo(
@@ -313,6 +320,21 @@ export default function CaregiversPage() {
   }, [user])
 
   if (authLoading || !user) return null
+
+  async function handleCreateCaregiver() {
+    if (agencyId === null) return
+    setCreating(true); setCreateError("")
+    try {
+      const created = await agencyManagementService.createCaregiverCandidate(agencyId, form)
+      setPipelineItems((prev) => [created, ...prev])
+      setForm({ first_name: "", last_name: "", phone_number: "" })
+      setShowForm(false)
+    } catch (err: any) {
+      setCreateError(err?.response?.data?.detail || "ثبت خدمت‌دهنده با خطا مواجه شد.")
+    } finally {
+      setCreating(false)
+    }
+  }
 
   async function handleDecision(link: AgencyCaregiverLink, decision: "approve" | "reject") {
     setDecidingId(link.id)
@@ -404,9 +426,43 @@ export default function CaregiversPage() {
           <div className="flex items-center gap-2">
             <SearchTrigger search={search} onSearchChange={setSearch} placeholder="جست‌وجو بر اساس نام یا تلفن..." />
             <FilterToggleButton open={filterOpen} onClick={() => setFilterOpen((o) => !o)} active={activeFilterCount > 0} />
+            <Button size="sm" onClick={() => setShowForm(true)} className="gap-1.5">
+              <Plus className="h-4 w-4" /> افزودن خدمت‌دهنده
+            </Button>
           </div>
         )}
       </div>
+
+      {showForm && (
+        <div className="mb-4 space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+          {createError && <div className="rounded-md bg-red-50 p-2 text-xs text-red-700">{createError}</div>}
+          <p className="text-xs text-slate-500">
+            حساب مراقب با همین نام و شماره ساخته می‌شود — رمز عبور بعداً از طریق شماره موبایل خودِ مراقب بازیابی می‌شود.
+            این کاندید فقط زیر نظر همون کسی که الان ثبتش می‌کنه (شما، یا سوپروایزر/مدیر بالادستتون) در این کاریز دیده می‌شه.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="نام" required>
+              <Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
+            </Field>
+            <Field label="نام خانوادگی" required>
+              <Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
+            </Field>
+          </div>
+          <Field label="شماره موبایل" required>
+            <Input dir="ltr" value={form.phone_number} onChange={(e) => setForm({ ...form, phone_number: e.target.value })} placeholder="09xxxxxxxxx" />
+          </Field>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              disabled={creating || !form.first_name || !form.last_name || !form.phone_number}
+              onClick={handleCreateCaregiver}
+            >
+              {creating ? "در حال ثبت..." : "ثبت خدمت‌دهنده"}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setShowForm(false); setCreateError("") }}>انصراف</Button>
+          </div>
+        </div>
+      )}
 
         <div className="space-y-4">
           {endingSoonItems.length > 0 && (

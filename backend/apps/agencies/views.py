@@ -10,6 +10,7 @@ from apps.audit.services import AuditService
 from apps.authorization.permissions import IsAgency, IsSuperuser
 from apps.caregivers.models import CaregiverAgencyPipelineStatus, CaregiverProcessMilestone, CaregiverProfile, CaregiverStatus
 from apps.caregivers.permissions import IsCaregiver
+from apps.caregivers.serializers import CreateCaregiverSerializer
 from apps.families.models import FamilyPatientLink, FamilyProfile, LinkStatus, PatientPipelineStatus, PatientProfile
 from apps.families.permissions import IsFamily
 from apps.families.serializers import PatientProfileSerializer
@@ -834,6 +835,62 @@ class AgencyCaregiverPipelineListView(APIView):
             row["created_by"] = creator_by_caregiver_id.get(row["id"])
 
         return Response(caregivers_data)
+
+    def post(self, request, agency_id):
+        """
+        POST /api/agencies/<agency_id>/caregivers-pipeline/
+
+        Enters a brand-new caregiver directly into this agency's own
+        Kanban — same "someone else's information, no password field"
+        pattern as AgencyPatientListCreateView.post() and the
+        platform-wide supervisor wizard's own account-creation step
+        (apps.caregivers.supervisor_views.SupervisorCaregiverListView).
+        Reuses that same CreateCaregiverSerializer so both entry
+        points validate identically.
+
+        Deliberately does NOT add any new "assigned supervisor" field:
+        decided_by=request.user is enough on its own, because
+        visible_creator_user_ids() already resolves the right
+        audience from the existing agency staff hierarchy — an admin
+        sees only what they entered, that admin's own supervisor sees
+        it too automatically (supervisor sees "self + every admin
+        reporting to them"), and the owner always sees everything.
+        Whichever of the three roles clicks "افزودن خدمت‌دهنده" is
+        exactly who this candidate is "linked to" from that point on.
+        """
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        agency = ctx.agency
+
+        serializer = CreateCaregiverSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        if User.objects.filter(phone_number=data["phone_number"]).exists():
+            return Response({"detail": "این شماره تلفن قبلاً ثبت شده است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User(
+            first_name=data["first_name"],
+            last_name=data["last_name"],
+            phone_number=data["phone_number"],
+            email=data.get("email", ""),
+            role=UserRole.CAREGIVER,
+        )
+        user.set_password(get_random_string(32))
+        user.save()
+
+        caregiver = CaregiverProfile.objects.create(user=user, created_by=request.user)
+        audit.caregiver_created(request.user.id, user.id)
+
+        AgencyCaregiverLink.objects.create(
+            agency=agency, caregiver=caregiver, status=AgencyLinkStatus.APPROVED, decided_by=request.user,
+        )
+
+        rules = agency_reminder_rules(agency, "caregiver_candidates")
+        response_data = AgencyCaregiverPipelineSerializer(caregiver, context={"rules": rules}).data
+        response_data["created_by"] = request.user.get_full_name() or request.user.username
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
 
 class AgencyCaregiverPipelineUpdateView(APIView):

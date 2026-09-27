@@ -75,6 +75,17 @@ export interface AgencyCaregiverPipelineItem {
   active_reminders: ActiveReminder[]
 }
 
+// Step-0-only, mirroring apps.caregivers.serializers.CreateCaregiverSerializer
+// — no password field, same "entering someone else's info" pattern as
+// CreateAgencyPatientPayload below. Whoever submits this (an admin, a
+// supervisor, or the owner) is who this candidate ends up "linked to"
+// in the pipeline, since the backend records them as decided_by.
+export interface CreateCaregiverCandidatePayload {
+  first_name: string
+  last_name: string
+  phone_number: string
+}
+
 export interface AgencyPatient {
   id: number
   user_id: number | null

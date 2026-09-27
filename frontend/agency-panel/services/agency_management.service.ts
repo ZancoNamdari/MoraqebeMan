@@ -10,6 +10,7 @@ import type {
   CreateAgencyPatientPayload,
   CreateAgencyPatientResponse,
   CreateAgencySupervisorPayload,
+  CreateCaregiverCandidatePayload,
   UpdateAgencyAdminPayload,
   UpdateAgencySupervisorPayload,
 } from "@/types/agency_management"
@@ -84,6 +85,11 @@ export const agencyManagementService = {
   async listCaregiverPipeline(agencyId: number) {
     const { data } = await api.get(`/api/agencies/${agencyId}/caregivers-pipeline/`)
     return data as AgencyCaregiverPipelineItem[]
+  },
+
+  async createCaregiverCandidate(agencyId: number, payload: CreateCaregiverCandidatePayload) {
+    const { data } = await api.post(`/api/agencies/${agencyId}/caregivers-pipeline/`, payload)
+    return data as AgencyCaregiverPipelineItem
   },
 
   async updateCaregiverPipeline(agencyId: number, caregiverId: number, fields: Partial<AgencyCaregiverPipelineItem>) {
