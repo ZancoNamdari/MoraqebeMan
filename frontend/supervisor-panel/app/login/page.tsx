@@ -46,7 +46,12 @@ function LoginForm() {
     setLoading(true)
     try {
       await authService.login(username, password)
-      router.push(ROUTES.dashboard)
+      // Send them back to whatever they were deep-linked to (e.g. a
+      // caregiver-wizard link from agency-panel), never to an
+      // absolute/external URL — only a same-app relative path
+      // (starts with "/", not "//") is honored.
+      const next = searchParams.get("next")
+      router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : ROUTES.dashboard)
     } catch (err: any) {
       setError(extractErrorMessage(err, "نام کاربری یا رمز عبور اشتباه است."))
     } finally {

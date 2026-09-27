@@ -5,7 +5,7 @@ import {
   DndContext, DragOverlay, useDraggable, useDroppable,
   PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core"
-import { AlertTriangle, GripVertical, ChevronRight, ChevronLeft, Plus } from "lucide-react"
+import { AlertTriangle, GripVertical, ChevronRight, ChevronLeft, Plus, ExternalLink } from "lucide-react"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,6 +20,14 @@ import { TagEditor } from "@/components/agency/tag-editor"
 import { ReminderBadges } from "@/components/reminders/reminder-badges"
 import type { AgencyCaregiverLink } from "@/types/agency"
 import type { AgencyCaregiverPipelineItem } from "@/types/agency_management"
+
+// The separate, platform-wide panel where an agency's own supervisor
+// (role agency_supervisor) progresses a caregiver's actual
+// registration wizard (identity, work preferences, experience,
+// skills, references) — already scoped server-side to just this
+// agency's own caregivers. Configurable since it's a different
+// subdomain than this panel's own API.
+const SUPERVISOR_PANEL_URL = process.env.NEXT_PUBLIC_SUPERVISOR_PANEL_URL || "https://supervisor.moraqebman.ir"
 
 // Quick-add suggestion chips for the tag editor — service categories
 // only. The 12 matching-process labels (در دسترس بودن، در شرف اتمام
@@ -184,6 +192,15 @@ function CaregiverCard({ item, onMove, moving, onAddTag, onRemoveTag }: {
           <ChevronLeft className="h-4 w-4" />
         </button>
       </div>
+
+      <a
+        href={`${SUPERVISOR_PANEL_URL}/caregivers/new?id=${item.user_id}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-1.5 flex items-center justify-center gap-1 rounded-md border border-slate-200 bg-slate-50 py-1 text-[10px] font-medium text-slate-600 hover:bg-slate-100"
+      >
+        <ExternalLink className="h-3 w-3" /> ادامه ثبت‌نام در پنل سوپروایزر
+      </a>
     </div>
   )
 }

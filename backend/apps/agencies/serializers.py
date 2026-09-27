@@ -67,16 +67,22 @@ class AgencyCaregiverPipelineSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     phone_number = serializers.CharField(source="user.phone_number", read_only=True)
     active_reminders = serializers.SerializerMethodField()
+    # Distinct from "id" above (that's CaregiverProfile.pk) — the
+    # supervisor-panel wizard's URLs and every /api/supervisor/caregivers/
+    # sub-endpoint are keyed by the platform User's own id, not the
+    # profile's, so the frontend needs this to build a working deep
+    # link into that panel (e.g. /caregivers/new?id=<user_id>).
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
 
     class Meta:
         model = CaregiverProfile
         fields = [
-            "id", "full_name", "phone_number", "agency_pipeline_status", "is_urgent", "tags", "process_milestones",
+            "id", "user_id", "full_name", "phone_number", "agency_pipeline_status", "is_urgent", "tags", "process_milestones",
             "doc_no_criminal_record", "doc_no_addiction_test", "doc_identity_verified",
             "doc_personal_photo", "doc_mental_health_test", "doc_promissory_note", "doc_id_card_received",
             "active_reminders",
         ]
-        read_only_fields = ["id", "full_name", "phone_number", "active_reminders"]
+        read_only_fields = ["id", "user_id", "full_name", "phone_number", "active_reminders"]
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username

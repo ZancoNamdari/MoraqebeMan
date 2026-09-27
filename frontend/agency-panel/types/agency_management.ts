@@ -58,6 +58,11 @@ export interface UpdateAgencyAdminPayload {
 
 export interface AgencyCaregiverPipelineItem {
   id: number
+  // The caregiver's platform User id — distinct from `id` above
+  // (CaregiverProfile.pk) — used to deep-link into the supervisor
+  // panel's own wizard (/caregivers/new?id=<user_id>), which is
+  // keyed by user_id, not by this profile's id.
+  user_id: number
   full_name: string
   phone_number: string
   agency_pipeline_status: string

@@ -60,7 +60,7 @@ export default function ReviewPage() {
 }
 
 function ReviewPageInner() {
-  const { user, loading: authLoading, logout } = useAuth(["admin", "superuser"])
+  const { user, loading: authLoading, logout } = useAuth(["admin", "superuser", "agency_supervisor"])
   const router = useRouter()
   const searchParams = useSearchParams()
   const id = Number(searchParams.get("id"))
@@ -409,7 +409,14 @@ function ReviewPageInner() {
               )}
             </Section>
 
-            {/* Decision actions */}
+            {/* Decision actions — final approve/reject is deliberately
+                ADMIN/SUPERUSER only on the backend (IsAdminOrSuperuser
+                on ApproveCaregiverView/RejectCaregiverView); an agency
+                supervisor can view this page and progress the wizard
+                steps for their own agency's caregivers, but can't make
+                the final call, so this card is hidden for that role
+                rather than showing buttons that would just 403. */}
+            {user?.role !== "agency_supervisor" && (
             <Card className="border-border">
               <CardContent className="space-y-3 p-4">
                 {showRejectBox ? (
@@ -447,6 +454,7 @@ function ReviewPageInner() {
                 )}
               </CardContent>
             </Card>
+            )}
           </>
         )}
       </main>

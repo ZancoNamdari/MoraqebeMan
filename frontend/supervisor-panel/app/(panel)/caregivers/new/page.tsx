@@ -83,7 +83,7 @@ export default function NewCaregiverWizard() {
 }
 
 function NewCaregiverWizardInner() {
-  const { user, loading: authLoading, logout } = useAuth(["admin", "superuser"])
+  const { user, loading: authLoading, logout } = useAuth(["admin", "superuser", "agency_supervisor"])
   const router = useRouter()
   const searchParams = useSearchParams()
   const existingId = searchParams.get("id")
