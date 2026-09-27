@@ -4,6 +4,8 @@ export interface AgencyProfile {
   access_code: string
   company_name: string
   license_number: string
+  isolation_mode: string
+  admin_finance_access: boolean
   created_at: string
 }
 

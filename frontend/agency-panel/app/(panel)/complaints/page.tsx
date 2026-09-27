@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/useauth"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { toPersianDigits } from "@/lib/persian_digits"
 import { agencyService } from "@/services/agency.service"
 import { agencyComplaintsService, type ComplaintListItem } from "@/services/agency_complaints.service"
 import { COMPLAINT_CATEGORY_LABEL, COMPLAINT_STATUS_LABEL } from "@/lib/constants"
@@ -38,15 +40,23 @@ export default function AgencyComplaintsPage() {
 
   return (
     <div className="p-4 sm:p-6">
-      <div className="mb-4">
-        <h1 className="text-lg font-bold text-slate-900">شکایات درباره مراقبان شما</h1>
-        <p className="text-xs text-slate-500">
-          این فهرست فقط جهت اطلاع است — رسیدگی و تصمیم‌گیری درباره شکایات توسط تیم مراقب من انجام می‌شود.
-        </p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-slate-900">شکایات درباره مراقبان شما</h1>
+          <p className="text-xs text-slate-500 print:hidden">
+            این فهرست فقط جهت اطلاع است — رسیدگی و تصمیم‌گیری درباره شکایات توسط تیم مراقب من انجام می‌شود.
+          </p>
+        </div>
+        <Button size="sm" variant="outline" className="print:hidden" onClick={() => window.print()}>
+          چاپ فهرست
+        </Button>
       </div>
+      <p className="hidden text-xs text-slate-500 print:mb-3 print:block">
+        تاریخ چاپ: {toPersianDigits(new Date().toLocaleDateString("fa-IR"))}
+      </p>
 
       {!loading && openCount > 0 && (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 print:hidden">
           {openCount} شکایت درباره مراقبان شما هنوز در حال بررسی است.
         </div>
       )}

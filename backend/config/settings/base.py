@@ -49,6 +49,9 @@ INSTALLED_APPS = [
     "apps.reviews",
     "apps.content",
     "apps.analytics",
+    "apps.finance",
+    "apps.reminders",
+    "apps.episodic",
 ]
 
 MIDDLEWARE = [

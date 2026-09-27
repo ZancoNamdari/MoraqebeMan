@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.accounts.jalali_fields import JalaliDateField
+from apps.reminders.services import compute_active_reminders
 
 from .models import (
     AccessLevel,
@@ -38,6 +39,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     province_name = serializers.CharField(source="province.name", read_only=True, default=None)
     city_name = serializers.CharField(source="city.name", read_only=True, default=None)
     district_name = serializers.CharField(source="district.name", read_only=True, default=None)
+    active_reminders = serializers.SerializerMethodField()
 
     class Meta:
         model = PatientProfile
@@ -49,9 +51,17 @@ class PatientProfileSerializer(serializers.ModelSerializer):
             "guardianship_status", "guardian_details",
             "language_dialect", "basic_medical_info",
             "physical_condition", "needed_shifts", "pipeline_status", "tags",
-            "created_at", "updated_at",
+            "active_reminders", "created_at", "updated_at",
         ]
-        read_only_fields = ["id", "user_id", "access_code", "created_at", "updated_at"]
+        read_only_fields = ["id", "user_id", "access_code", "active_reminders", "created_at", "updated_at"]
+
+    def get_active_reminders(self, obj):
+        # `rules` is passed once per request via the view (list or
+        # detail) as this serializer's context — see
+        # apps.agencies.views.AgencyPatientListCreateView /
+        # AgencyPatientPipelineStatusView.
+        rules = self.context.get("rules") or []
+        return compute_active_reminders("patients", obj, rules)
 
     def validate(self, attrs):
         # "آیا وصی یا قیم قانونی دارد؟" — if the answer is yes, the form

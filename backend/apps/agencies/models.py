@@ -7,6 +7,24 @@ from django_jalali.db import models as jmodels
 # typed by hand by a family/caregiver joining it, same use case.
 _CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
+# Letters only (no digits) for the per-agency PREFIX specifically —
+# per the confirmed requirement: every agency gets its own distinct
+# prefix instead of every code starting with the same shared "AGN-",
+# so two agencies' codes never look similar enough to mix up even at
+# a glance. Kept as its own alphabet (not reusing _CODE_ALPHABET)
+# because a prefix is read as a short "name", not a random string —
+# no digits keeps it from ever being confused with the random suffix
+# that follows the dash.
+_PREFIX_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ"
+PREFIX_LENGTH = 3
+
+
+def _generate_unique_prefix(model) -> str:
+    while True:
+        candidate = get_random_string(PREFIX_LENGTH, _PREFIX_ALPHABET)
+        if not model.objects.filter(code_prefix=candidate).exists():
+            return candidate
+
 
 def _generate_unique_code(model, prefix: str) -> str:
     while True:
@@ -45,13 +63,28 @@ class AgencyProfile(models.Model):
     )
     company_name = models.CharField(max_length=200, verbose_name="نام شرکت/آژانس")
     license_number = models.CharField(max_length=100, blank=True, verbose_name="شماره مجوز فعالیت")
+    code_prefix = models.CharField(
+        max_length=PREFIX_LENGTH, unique=True, editable=False, verbose_name="پیشوند کد آژانس",
+        help_text="پیشوند سه‌حرفی مخصوص همین آژانس — یک‌بار در زمان ایجاد آژانس ساخته می‌شود و "
+                   "دیگر تغییر نمی‌کند، تا کد این آژانس هیچ‌وقت با کد آژانس دیگری شبیه به هم نباشد.",
+    )
     access_code = models.CharField(
         max_length=20, unique=True, editable=False, verbose_name="کد عضویت آژانس",
-        help_text="کد یکتا برای درخواست پیوستن خانواده یا مراقب به این آژانس — مثلاً AGN-92K7XQ",
+        help_text="کد یکتا برای درخواست پیوستن خانواده یا مراقب به این آژانس — مثلاً QXK-92K7XQ "
+                   "(پیشوند QXK مخصوص همین آژانس است).",
     )
     isolation_mode = models.CharField(
         max_length=20, choices=IsolationMode.choices, default=IsolationMode.SHARED, verbose_name="سطح ایزوله‌سازی",
         help_text="امروز فقط 'مشترک' دارای پیاده‌سازی واقعی است — این فیلد صرفاً برای آماده‌بودن معماری برای آینده اضافه شده.",
+    )
+    # Re-declared here (delivered earlier in the "تنظیمات" batch) so
+    # this app's migration history stays a straight, complete line
+    # regardless of whether that batch was applied yet — see this
+    # migration's own note for how that's kept safe either way.
+    admin_finance_access = models.BooleanField(
+        default=False, verbose_name="دسترسی ادمین‌ها به بخش مالی",
+        help_text="اگر فعال باشد، ادمین‌های این آژانس هم می‌توانند بخش «مالی» را ببینند و در آن کار کنند — "
+                   "پیش‌فرض برای همه آژانس‌ها خاموش است.",
     )
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ و زمان ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ و زمان بروزرسانی")
@@ -61,8 +94,10 @@ class AgencyProfile(models.Model):
         verbose_name_plural = "پروفایل‌های آژانس"
 
     def save(self, *args, **kwargs):
+        if not self.code_prefix:
+            self.code_prefix = _generate_unique_prefix(AgencyProfile)
         if not self.access_code:
-            self.access_code = _generate_unique_code(AgencyProfile, "AGN")
+            self.access_code = _generate_unique_code(AgencyProfile, self.code_prefix)
         super().save(*args, **kwargs)
 
     def __str__(self):

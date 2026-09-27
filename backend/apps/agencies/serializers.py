@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.families.models import RelationType
 from apps.caregivers.models import CaregiverProfile
+from apps.reminders.services import compute_active_reminders
 
 from .models import AgencyAdmin, AgencyCaregiverLink, AgencyFamilyLink, AgencyProfile, AgencySupervisor
 
@@ -65,6 +66,7 @@ class AgencyCaregiverPipelineSerializer(serializers.ModelSerializer):
     """
     full_name = serializers.SerializerMethodField()
     phone_number = serializers.CharField(source="user.phone_number", read_only=True)
+    active_reminders = serializers.SerializerMethodField()
 
     class Meta:
         model = CaregiverProfile
@@ -72,11 +74,20 @@ class AgencyCaregiverPipelineSerializer(serializers.ModelSerializer):
             "id", "full_name", "phone_number", "agency_pipeline_status", "is_urgent", "tags", "process_milestones",
             "doc_no_criminal_record", "doc_no_addiction_test", "doc_identity_verified",
             "doc_personal_photo", "doc_mental_health_test", "doc_promissory_note", "doc_id_card_received",
+            "active_reminders",
         ]
-        read_only_fields = ["id", "full_name", "phone_number"]
+        read_only_fields = ["id", "full_name", "phone_number", "active_reminders"]
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
+
+    def get_active_reminders(self, obj):
+        # `rules` is passed once per request via the view (list or
+        # detail) as this serializer's context — see
+        # apps.agencies.views.AgencyCaregiverPipelineListView /
+        # AgencyCaregiverPipelineUpdateView.
+        rules = self.context.get("rules") or []
+        return compute_active_reminders("caregiver_candidates", obj, rules)
 
 
 class JoinAgencyByCodeSerializer(serializers.Serializer):

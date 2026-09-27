@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   DndContext, DragOverlay, useDraggable, useDroppable,
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Field, ChoiceSelect, CheckboxGroup } from "@/components/forms/fields"
+import { SearchTrigger, FilterDropdown, DropdownOption, SortDropdown, FilterRow, FilterToggleButton, SortSection, type SortOption } from "@/components/agency/filter-bar"
+import { ReminderBadges } from "@/components/reminders/reminder-badges"
 import { agencyService } from "@/services/agency.service"
 import { agencyManagementService } from "@/services/agency_management.service"
 import { PHYSICAL_CONDITION, NEEDED_SHIFT, RELATION_TYPE, GENDER } from "@/lib/constants"
@@ -34,6 +36,86 @@ const emptyForm = {
   full_name: "", gender: "", physical_condition: "", needed_shifts: [] as string[],
   is_urgent: false,
   family_first_name: "", family_last_name: "", family_phone_number: "", relation: "",
+}
+
+const emptyFilters = {
+  gender: "" as string,
+  urgentOnly: false,
+  physicalConditions: [] as string[],
+  neededShifts: [] as string[],
+  tags: [] as string[],
+  createdBy: "" as string,
+}
+type PatientFilters = typeof emptyFilters
+
+function toggleInList(list: string[], value: string) {
+  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
+}
+
+function countActiveFilters(f: PatientFilters) {
+  return (
+    (f.gender ? 1 : 0) +
+    (f.urgentOnly ? 1 : 0) +
+    f.physicalConditions.length +
+    f.neededShifts.length +
+    f.tags.length +
+    (f.createdBy ? 1 : 0)
+  )
+}
+
+function matchesFilters(patient: AgencyPatient, search: string, filters: PatientFilters) {
+  if (search.trim()) {
+    const q = search.trim().toLowerCase()
+    const haystack = `${patient.full_name} ${patient.access_code}`.toLowerCase()
+    if (!haystack.includes(q)) return false
+  }
+  if (filters.gender && patient.gender !== filters.gender) return false
+  if (filters.urgentOnly && !patient.is_urgent) return false
+  if (filters.physicalConditions.length && !filters.physicalConditions.includes(patient.physical_condition)) return false
+  if (filters.neededShifts.length && !filters.neededShifts.some((s) => patient.needed_shifts.includes(s))) return false
+  if (filters.tags.length && !filters.tags.some((t) => patient.tags.includes(t))) return false
+  if (filters.createdBy && patient.created_by !== filters.createdBy) return false
+  return true
+}
+
+const SORT_OPTIONS: SortOption[] = [
+  { value: "name_asc", label: "نام (الف تا ی)" },
+  { value: "name_desc", label: "نام (ی تا الف)" },
+  { value: "family_asc", label: "نام خانوادگی (الف تا ی)" },
+  { value: "family_desc", label: "نام خانوادگی (ی تا الف)" },
+  { value: "newest", label: "جدیدترین" },
+  { value: "oldest", label: "قدیمی‌ترین" },
+  { value: "urgent_first", label: "فوری‌ها اول" },
+]
+
+// full_name only ever comes as one string ("نام نام‌خانوادگی"), so the
+// family-name sort splits on the first space and treats everything
+// after it as the surname — handles multi-word family names too.
+function familyNameOf(fullName: string) {
+  const parts = fullName.trim().split(/\s+/)
+  return parts.length > 1 ? parts.slice(1).join(" ") : fullName
+}
+
+function sortPatients(list: AgencyPatient[], sortBy: string) {
+  const sorted = [...list]
+  switch (sortBy) {
+    case "name_asc":
+      return sorted.sort((a, b) => a.full_name.localeCompare(b.full_name, "fa"))
+    case "name_desc":
+      return sorted.sort((a, b) => b.full_name.localeCompare(a.full_name, "fa"))
+    case "family_asc":
+      return sorted.sort((a, b) => familyNameOf(a.full_name).localeCompare(familyNameOf(b.full_name), "fa"))
+    case "family_desc":
+      return sorted.sort((a, b) => familyNameOf(b.full_name).localeCompare(familyNameOf(a.full_name), "fa"))
+    case "newest":
+      return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    case "oldest":
+      return sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    case "urgent_first":
+      return sorted.sort((a, b) => Number(b.is_urgent) - Number(a.is_urgent))
+    default:
+      return sorted
+  }
 }
 
 function PatientCard({ patient, onMove, moving, router }: {
@@ -78,6 +160,7 @@ function PatientCard({ patient, onMove, moving, router }: {
               {patient.created_by}
             </span>
           )}
+          <ReminderBadges reminders={patient.active_reminders} />
         </div>
         <button
           {...attributes}
@@ -165,11 +248,30 @@ export default function PatientsPage() {
   const [activePatient, setActivePatient] = useState<AgencyPatient | null>(null)
   const [successNote, setSuccessNote] = useState<{ accessCode: string; family?: { phone: string; code: string } } | null>(null)
 
+  const [search, setSearch] = useState("")
+  const [filters, setFilters] = useState<PatientFilters>(emptyFilters)
+  const [sortBy, setSortBy] = useState("")
+  const [filterOpen, setFilterOpen] = useState(false)
+
   // A small activation distance, not an instant-drag-on-mousedown
   // sensor — without this, a plain click (e.g. the "یافتن مراقب"
   // button inside a card) would sometimes be swallowed as the start
   // of a drag instead of registering as a click.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
+
+  const availableTags = useMemo(
+    () => Array.from(new Set(patients.flatMap((p) => p.tags))).sort(),
+    [patients]
+  )
+  const availableCreators = useMemo(
+    () => Array.from(new Set(patients.map((p) => p.created_by).filter((c): c is string => !!c))).sort(),
+    [patients]
+  )
+  const filteredPatients = useMemo(
+    () => sortPatients(patients.filter((p) => matchesFilters(p, search, filters)), sortBy),
+    [patients, search, filters, sortBy]
+  )
+  const activeFilterCount = countActiveFilters(filters)
 
   function refresh(id: number) {
     return agencyManagementService.listPatients(id).then(setPatients)
@@ -264,9 +366,17 @@ export default function PatientsPage() {
           <h1 className="text-lg font-bold text-slate-900">خدمت‌گیرنده</h1>
           <p className="text-xs text-slate-500">کاریز خدمت‌رسانی به سالمندها ({patients.length} خدمت‌گیرنده)</p>
         </div>
-        <Button size="sm" onClick={() => setShowForm(true)} className="gap-1.5">
-          <Plus className="h-4 w-4" /> افزودن خدمت‌گیرنده
-        </Button>
+        <div className="flex items-center gap-2">
+          {!loading && (
+            <>
+              <SearchTrigger search={search} onSearchChange={setSearch} placeholder="جست‌وجو بر اساس نام یا کد..." />
+              <FilterToggleButton open={filterOpen} onClick={() => setFilterOpen((o) => !o)} active={activeFilterCount > 0} />
+            </>
+          )}
+          <Button size="sm" onClick={() => setShowForm(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" /> افزودن خدمت‌گیرنده
+          </Button>
+        </div>
       </div>
 
       {successNote && (
@@ -360,6 +470,89 @@ export default function PatientsPage() {
         </div>
       )}
 
+      {!loading && (
+        <>
+        {filterOpen && (
+        <FilterRow
+          hasActive={activeFilterCount > 0}
+          onClearAll={() => setFilters(emptyFilters)}
+          resultCount={filteredPatients.length}
+          totalCount={patients.length}
+        >
+          <FilterDropdown label="جنسیت" active={!!filters.gender} onClear={() => setFilters((f) => ({ ...f, gender: "" }))}>
+            {GENDER.map(([value, label]) => (
+              <DropdownOption key={value} selected={filters.gender === value} onClick={() => setFilters((f) => ({ ...f, gender: f.gender === value ? "" : value }))}>
+                {label}
+              </DropdownOption>
+            ))}
+          </FilterDropdown>
+
+          <FilterDropdown label="فوری" active={filters.urgentOnly} onClear={() => setFilters((f) => ({ ...f, urgentOnly: false }))}>
+            <DropdownOption selected={filters.urgentOnly} onClick={() => setFilters((f) => ({ ...f, urgentOnly: !f.urgentOnly }))}>
+              فقط فوری‌ها
+            </DropdownOption>
+          </FilterDropdown>
+
+          <FilterDropdown
+            label="شرایط جسمانی"
+            active={filters.physicalConditions.length > 0}
+            onClear={() => setFilters((f) => ({ ...f, physicalConditions: [] }))}
+          >
+            {PHYSICAL_CONDITION.map(([value, label]) => (
+              <DropdownOption
+                key={value}
+                selected={filters.physicalConditions.includes(value)}
+                onClick={() => setFilters((f) => ({ ...f, physicalConditions: toggleInList(f.physicalConditions, value) }))}
+              >
+                {label}
+              </DropdownOption>
+            ))}
+          </FilterDropdown>
+
+          <FilterDropdown
+            label="شیفت مورد نیاز"
+            active={filters.neededShifts.length > 0}
+            onClear={() => setFilters((f) => ({ ...f, neededShifts: [] }))}
+          >
+            {NEEDED_SHIFT.map(([value, label]) => (
+              <DropdownOption
+                key={value}
+                selected={filters.neededShifts.includes(value)}
+                onClick={() => setFilters((f) => ({ ...f, neededShifts: toggleInList(f.neededShifts, value) }))}
+              >
+                {label}
+              </DropdownOption>
+            ))}
+          </FilterDropdown>
+
+          {availableTags.length > 0 && (
+            <FilterDropdown label="برچسب‌ها" active={filters.tags.length > 0} onClear={() => setFilters((f) => ({ ...f, tags: [] }))}>
+              {availableTags.map((tag) => (
+                <DropdownOption key={tag} selected={filters.tags.includes(tag)} onClick={() => setFilters((f) => ({ ...f, tags: toggleInList(f.tags, tag) }))}>
+                  {tag}
+                </DropdownOption>
+              ))}
+            </FilterDropdown>
+          )}
+
+          {availableCreators.length > 0 && (
+            <FilterDropdown label="ثبت‌شده توسط" active={!!filters.createdBy} onClear={() => setFilters((f) => ({ ...f, createdBy: "" }))}>
+              {availableCreators.map((creator) => (
+                <DropdownOption key={creator} selected={filters.createdBy === creator} onClick={() => setFilters((f) => ({ ...f, createdBy: f.createdBy === creator ? "" : creator }))}>
+                  {creator}
+                </DropdownOption>
+              ))}
+            </FilterDropdown>
+          )}
+        </FilterRow>
+        )}
+
+        <SortSection>
+          <SortDropdown value={sortBy} options={SORT_OPTIONS} onChange={setSortBy} />
+        </SortSection>
+        </>
+      )}
+
       {loading ? (
         <div className="grid grid-cols-7 gap-3">
           {STAGES.map((s) => <Skeleton key={s.value} className="h-64 rounded-lg" />)}
@@ -371,7 +564,7 @@ export default function PatientsPage() {
               <StageColumn
                 key={stage.value}
                 stage={stage}
-                patients={patients.filter((p) => p.pipeline_status === stage.value)}
+                patients={filteredPatients.filter((p) => p.pipeline_status === stage.value)}
                 onMove={moveStage}
                 movingId={movingId}
                 router={router}

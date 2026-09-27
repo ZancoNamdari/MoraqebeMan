@@ -16,6 +16,8 @@ import { agencyService } from "@/services/agency.service"
 import { ROUTES } from "@/lib/routes"
 import { toPersianDigits } from "@/lib/persian_digits"
 import type { AgencyDashboard, AgencyProfile } from "@/types/agency"
+import type { DashboardInsights } from "@/types/dashboard"
+import { InsightCharts } from "@/components/dashboard/insight-charts"
 
 function StatCard({ icon: Icon, count, label, pendingCount, colorClass, onClick }: {
   icon: React.ElementType; count: number; label: string; pendingCount?: number; colorClass: string; onClick: () => void
@@ -69,6 +71,7 @@ export default function DashboardPage() {
 
   const [profile, setProfile] = useState<AgencyProfile | null>(null)
   const [dashboard, setDashboard] = useState<AgencyDashboard | null>(null)
+  const [insights, setInsights] = useState<DashboardInsights | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [companyName, setCompanyName] = useState("")
@@ -84,6 +87,14 @@ export default function DashboardPage() {
       setLicenseNumber(p.license_number)
     })
   }
+
+  useEffect(() => {
+    if (!user) return
+    // Loaded separately from refresh() above and never blocks the
+    // rest of the dashboard on it — the charts are a nice-to-have
+    // "how are things going" view, not core data the page depends on.
+    agencyService.dashboardInsights().then(setInsights).catch(() => setInsights(null))
+  }, [user])
 
   useEffect(() => {
     if (!user) return
@@ -155,6 +166,13 @@ export default function DashboardPage() {
               onClick={() => router.push(ROUTES.caregivers)}
             />
           </div>
+
+          {insights && (
+            <div>
+              <h2 className="mb-2 px-1 text-sm font-semibold text-slate-900">نمودارها و تحلیل</h2>
+              <InsightCharts insights={insights} />
+            </div>
+          )}
 
           <Card className="border-slate-200">
             <CardHeader className="flex flex-row items-center justify-between">

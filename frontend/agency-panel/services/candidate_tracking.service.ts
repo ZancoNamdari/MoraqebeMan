@@ -19,6 +19,18 @@ export interface Candidate {
   needs_more_docs_note: string
 }
 
+export interface CandidateHistoryEntry {
+  id: number
+  event_type: string
+  event_type_label: string
+  actor_user_id: number | null
+  actor_name: string | null
+  target_user_id: number | null
+  target_name: string | null
+  metadata: Record<string, unknown>
+  created_at: string
+}
+
 export interface CandidateResume {
   identity: Record<string, unknown> | null
   experience: {
@@ -88,6 +100,17 @@ export const candidateTrackingService = {
 
   async resume(userId: number): Promise<CandidateResume> {
     const { data } = await api.get(`/api/caregivers/${userId}/resume/`)
+    return data
+  },
+
+  // Agency-scoped, unlike every other method here — the endpoint
+  // needs to know WHICH agency is asking (it checks that this
+  // candidate is actually linked to that agency before returning
+  // anything), so the caller has to already have its own agency id
+  // on hand (agencyService.me().id), same pattern as the complaints
+  // page's agencyComplaintsService.list(agencyId).
+  async history(agencyId: number, userId: number): Promise<CandidateHistoryEntry[]> {
+    const { data } = await api.get(`/api/agencies/${agencyId}/candidates/${userId}/history/`)
     return data
   },
 }

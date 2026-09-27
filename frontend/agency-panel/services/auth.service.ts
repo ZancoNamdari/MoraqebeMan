@@ -1,4 +1,5 @@
 import { api } from "./api"
+import type { User } from "@/types/user"
 
 export const authService = {
   async login(username: string, password: string) {
@@ -37,5 +38,22 @@ export const authService = {
       token,
       new_password: newPassword,
     })
+  },
+
+  // "خودم" tab of Settings — editing your own basic info and changing
+  // your own password, regardless of which panel/role you are (both
+  // backend endpoints are generic across every panel; see
+  // apps.authentication.views.UpdateProfileView/ChangePasswordView).
+  async updateOwnProfile(payload: { first_name?: string; last_name?: string; email?: string; phone_number?: string }) {
+    const { data } = await api.patch("/api/auth/profile/", payload)
+    return data as User
+  },
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    const { data } = await api.post("/api/auth/change-password/", {
+      current_password: currentPassword,
+      new_password: newPassword,
+    })
+    return data as { detail: string }
   },
 }

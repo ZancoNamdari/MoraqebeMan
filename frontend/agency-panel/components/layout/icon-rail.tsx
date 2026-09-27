@@ -17,6 +17,7 @@ import {
   HeartHandshake,
   ShieldCheck,
   Activity,
+  Receipt,
   LogOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -38,6 +39,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: HeartPulse,
     children: [
       { label: "خانواده‌ها", href: ROUTES.families, icon: HeartHandshake },
+      { label: "خدمات مقطعی", href: ROUTES.episodicServices, icon: Receipt },
     ],
   },
   {
@@ -54,7 +56,10 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: "فرآیند تطبیق", href: ROUTES.matching, icon: GitMerge },
-  { label: "تحلیل", href: ROUTES.analytics, icon: BarChart3 },
+  // "تحلیل" (AgencyAnalyticsView) hidden from the nav for now — feature
+  // stays in the codebase (route + page + backend endpoint untouched),
+  // just re-add this line whenever it's ready to ship.
+  // { label: "تحلیل", href: ROUTES.analytics, icon: BarChart3 },
   { label: "مالی", href: ROUTES.financial, icon: Wallet },
   {
     label: "کارمندان",

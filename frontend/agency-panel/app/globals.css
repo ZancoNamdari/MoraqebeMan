@@ -80,6 +80,52 @@ body {
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
+/* Most pages in this panel were written against a fixed light
+   palette (bg-white, text-slate-900, border-slate-200, ...) instead
+   of the theme's semantic tokens (bg-card, text-foreground, ...).
+   Toggling the .dark class only flips those semantic tokens, so
+   without this block, every hardcoded light-gray/white class stayed
+   exactly as light as before while the page background underneath
+   it turned dark — dark text on a dark page, unreadable.
+   These overrides re-map the hardcoded classes actually in use
+   across the panel onto the same semantic tokens, so existing pages
+   get a readable dark mode with no changes needed to app/**.
+   Intentionally-dark chrome (the icon rail's bg-slate-900/800/700,
+   text-white) is untouched — it already looks the same in both
+   themes on purpose. */
+.dark .bg-white { background-color: var(--card); }
+.dark .bg-slate-50 { background-color: var(--background); }
+.dark .bg-slate-100 { background-color: var(--muted); }
+.dark .bg-slate-200 { background-color: var(--muted); }
+.dark .bg-slate-300 { background-color: var(--muted); }
+.dark .bg-gray-100 { background-color: var(--muted); }
+.dark .bg-gray-200 { background-color: var(--muted); }
+
+.dark .text-slate-900 { color: var(--foreground); }
+.dark .text-slate-800 { color: var(--foreground); }
+.dark .text-slate-700 { color: var(--foreground); }
+.dark .text-slate-600 { color: var(--muted-foreground); }
+.dark .text-slate-500 { color: var(--muted-foreground); }
+.dark .text-slate-400 { color: var(--muted-foreground); }
+.dark .text-slate-300 { color: var(--muted-foreground); }
+.dark .text-gray-700 { color: var(--foreground); }
+.dark .text-gray-600 { color: var(--muted-foreground); }
+.dark .text-gray-500 { color: var(--muted-foreground); }
+
+.dark .border-slate-100 { border-color: var(--border); }
+.dark .border-slate-200 { border-color: var(--border); }
+.dark .border-slate-300 { border-color: var(--border); }
+.dark .border-slate-400 { border-color: var(--border); }
+.dark .border-slate-900 { border-color: var(--foreground); }
+
+.dark .hover\:bg-slate-50:hover { background-color: var(--muted); }
+.dark .hover\:bg-slate-100:hover { background-color: var(--muted); }
+.dark .hover\:bg-slate-200:hover { background-color: var(--accent); }
+.dark .hover\:text-slate-500:hover { color: var(--foreground); }
+.dark .hover\:text-slate-600:hover { color: var(--foreground); }
+.dark .hover\:text-slate-700:hover { color: var(--foreground); }
+.dark .hover\:border-slate-400:hover { border-color: var(--ring); }
+
 @theme inline {
   --color-brand-pink: var(--brand-pink);
   --color-brand-mint: var(--brand-mint);

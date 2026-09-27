@@ -1,3 +1,5 @@
+import type { ActiveReminder } from "@/types/reminders"
+
 export interface AgencySupervisor {
   id: number
   user_id: number
@@ -70,6 +72,7 @@ export interface AgencyCaregiverPipelineItem {
   tags: string[]
   process_milestones: string[]
   created_by: string | null
+  active_reminders: ActiveReminder[]
 }
 
 export interface AgencyPatient {
@@ -102,6 +105,7 @@ export interface AgencyPatient {
   is_urgent: boolean
   tags: string[]
   needed_shifts: string[]
+  active_reminders: ActiveReminder[]
   created_at: string
   updated_at: string
 }

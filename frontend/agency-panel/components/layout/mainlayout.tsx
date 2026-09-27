@@ -1,7 +1,9 @@
 "use client"
 
+import { useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/hooks/useauth"
+import { applyThemePrefs, getSavedThemePrefs } from "@/lib/theme"
 import { IconRail } from "./icon-rail"
 import { SubSidebar, findActiveParent } from "./subsidebar"
 import { TopBar } from "./topbar"
@@ -11,6 +13,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth(["agency", "agency_supervisor", "agency_admin"])
   const pathname = usePathname()
   const hasSubSidebar = !!findActiveParent(pathname)
+
+  // Applies this browser's saved appearance preferences (accent
+  // color, font size, dark mode) on every panel page — see
+  // lib/theme.ts's docstring for why this is client-side/per-user
+  // rather than a synced backend setting.
+  useEffect(() => {
+    applyThemePrefs(getSavedThemePrefs())
+  }, [])
 
   if (loading || !user) return null
 

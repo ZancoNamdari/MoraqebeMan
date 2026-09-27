@@ -1,11 +1,14 @@
 from django.urls import path
 
 from .views import (
+    AgencyAnalyticsView,
+    AgencyCandidateHistoryView,
     AgencyCaregiverRequestDecisionView,
     AgencyCaregiverRequestsView,
     AgencyCandidateTrackingView,
     AgencyCaregiverRosterView,
     AgencyComplaintsAboutOwnRosterView,
+    AgencyDashboardInsightsView,
     AgencyDashboardView,
     AgencyFamilyRequestDecisionView,
     AgencyFamilyRequestsView,
@@ -37,6 +40,8 @@ urlpatterns = [
     # Agency-facing
     path("agencies/me/", MyAgencyProfileView.as_view(), name="agencies-me"),
     path("agencies/me/dashboard/", AgencyDashboardView.as_view(), name="agencies-dashboard"),
+    path("agencies/me/dashboard/insights/", AgencyDashboardInsightsView.as_view(), name="agencies-dashboard-insights"),
+    path("agencies/me/analytics/", AgencyAnalyticsView.as_view(), name="agencies-my-analytics"),
     path("agencies/me/families/", AgencyFamilyRosterView.as_view(), name="agencies-family-roster"),
     path("agencies/me/families/requests/", AgencyFamilyRequestsView.as_view(), name="agencies-family-requests"),
     path(
@@ -104,6 +109,14 @@ urlpatterns = [
     # roster — no resolve/dismiss action, that stays platform-wide
     # staff-only.
     path("agencies/<int:agency_id>/complaints/", AgencyComplaintsAboutOwnRosterView.as_view(), name="agencies-own-complaints"),
+
+    # Per-candidate edit/action history — agency-scoped read of
+    # apps.audit.AuditLog, see AgencyCandidateHistoryView's own
+    # docstring.
+    path(
+        "agencies/<int:agency_id>/candidates/<int:user_id>/history/",
+        AgencyCandidateHistoryView.as_view(), name="agencies-candidate-history",
+    ),
 
     # Platform-wide analytics — SUPERUSER only, see PlatformAnalyticsView's
     # own docstring for why this isn't a fake "sees everything" agency.

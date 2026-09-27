@@ -14,6 +14,7 @@ from apps.families.models import FamilyPatientLink, FamilyProfile, LinkStatus, P
 from apps.families.permissions import IsFamily
 from apps.families.serializers import PatientProfileSerializer
 from apps.care.matching import suggest_caregivers_for_agency_patient
+from apps.reminders.services import agency_reminder_rules, record_stage_transition
 
 from .models import AgencyAdmin, AgencyCaregiverLink, AgencyFamilyLink, AgencyLinkStatus, AgencyPatientLink, AgencyProfile, AgencySupervisor
 from .tenancy import agency_caregiver_profile_ids, resolve_tenant_context, visible_creator_user_ids
@@ -158,6 +159,133 @@ class AgencyDashboardView(APIView):
             ).count(),
         }
         return Response(AgencyDashboardSerializer(data).data)
+
+
+class AgencyDashboardInsightsView(APIView):
+    """
+    GET /api/agencies/me/dashboard/insights/
+
+    Phase-2 dashboard data: chart-ready breakdowns and a short trend,
+    on top of the same tables AgencyDashboardView already counts from
+    — nothing new is tracked here, this just slices the existing data
+    a different way so the dashboard can show it visually instead of
+    as bare numbers.
+
+    Deliberately a raw dict response (same pattern as
+    PlatformAnalyticsView below) rather than a Serializer — this is a
+    read-only aggregate view with a shape that varies by section
+    (breakdown lists, a trend list), not a single flat resource.
+
+    Available to the agency owner or any of its supervisors, same as
+    AgencyDashboardView.
+    """
+    permission_classes = [IsAgencyOwnerOrSupervisor]
+
+    def get(self, request):
+        agency = _resolve_my_agency(request)
+        if agency is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+
+        from django.db.models import Count
+        from apps.caregivers.models import CaregiverProfile, CaregiverStatus
+        from apps.families.models import PatientPipelineStatus, PatientProfile
+        from apps.reviews.models import Complaint, ComplaintCategory
+
+        # ------------------------------------------------------------
+        # 1) Caregiver status breakdown — this is also, deliberately,
+        # the "کل / تایید شده / در حال بررسی / نیاز به تکمیل مدارک /
+        # رد شده" counters that were asked for: every caregiver ever
+        # linked to this agency (any link status, same any_link_ids
+        # reasoning as AgencyDashboardView above), grouped by their
+        # platform-wide CaregiverStatus.
+        # ------------------------------------------------------------
+        any_link_ids = list(agency.caregiver_links.values_list("caregiver_id", flat=True))
+        status_counts = dict(
+            CaregiverProfile.objects.filter(id__in=any_link_ids)
+            .values("status").annotate(n=Count("id")).values_list("status", "n")
+        )
+        caregiver_status_breakdown = [
+            {"status": value, "label": label, "count": status_counts.get(value, 0)}
+            for value, label in CaregiverStatus.choices
+        ]
+        caregiver_total_count = len(any_link_ids)
+
+        # ------------------------------------------------------------
+        # 2) Patient pipeline breakdown — this agency's own approved
+        # patients, by their operational Kanban stage.
+        # ------------------------------------------------------------
+        approved_patient_ids = agency.patient_links.filter(
+            status=AgencyLinkStatus.APPROVED,
+        ).values_list("patient_id", flat=True)
+        pipeline_counts = dict(
+            PatientProfile.objects.filter(id__in=approved_patient_ids)
+            .values("pipeline_status").annotate(n=Count("id")).values_list("pipeline_status", "n")
+        )
+        patient_pipeline_breakdown = [
+            {"status": value, "label": label, "count": pipeline_counts.get(value, 0)}
+            for value, label in PatientPipelineStatus.choices
+        ]
+
+        # ------------------------------------------------------------
+        # 3) Complaints about this agency's own roster, by category —
+        # same roster scope as AgencyComplaintsAboutOwnRosterView.
+        # ------------------------------------------------------------
+        roster_ids = agency_caregiver_profile_ids(agency)
+        complaint_counts = dict(
+            Complaint.objects.filter(about_caregiver_id__in=roster_ids)
+            .values("category").annotate(n=Count("id")).values_list("category", "n")
+        )
+        complaints_by_category = [
+            {"category": value, "label": label, "count": complaint_counts.get(value, 0)}
+            for value, label in ComplaintCategory.choices
+        ]
+
+        # ------------------------------------------------------------
+        # 4) Growth trend, last 8 calendar weeks — how many NEW family
+        # and caregiver join requests this agency received per week.
+        # Weeks are plain calendar weeks (Saturday-aligned, to match
+        # how the rest of this app already thinks in Persian weeks),
+        # each one only labeled with its Jalali start date for display
+        # — the underlying filtering stays on the real Gregorian
+        # column django_jalali stores, so this is exact, not an
+        # approximation.
+        # ------------------------------------------------------------
+        import jdatetime
+        from datetime import timedelta
+        from django.utils import timezone
+
+        now = timezone.now()
+        days_since_saturday = (now.weekday() - 5) % 7  # Monday=0 .. Sunday=6; Saturday=5
+        this_week_start = (now - timedelta(days=days_since_saturday)).replace(
+            hour=0, minute=0, second=0, microsecond=0,
+        )
+
+        # Persian digits, built by hand rather than relying on
+        # strftime locale — jdatetime's %d/%B render Latin digits and
+        # transliterated (not Farsi-script) month names by default.
+        _fa_digits = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
+
+        def _jalali_week_label(g_date):
+            j = jdatetime.date.fromgregorian(date=g_date)
+            return f"{j.day} {j.j_months_fa[j.month - 1]}".translate(_fa_digits)
+
+        weekly_growth_trend = []
+        for i in range(7, -1, -1):
+            start = this_week_start - timedelta(weeks=i)
+            end = start + timedelta(weeks=1)
+            weekly_growth_trend.append({
+                "week_label": _jalali_week_label(start.date()),
+                "new_families": agency.family_links.filter(requested_at__gte=start, requested_at__lt=end).count(),
+                "new_caregivers": agency.caregiver_links.filter(requested_at__gte=start, requested_at__lt=end).count(),
+            })
+
+        return Response({
+            "caregiver_total_count": caregiver_total_count,
+            "caregiver_status_breakdown": caregiver_status_breakdown,
+            "patient_pipeline_breakdown": patient_pipeline_breakdown,
+            "complaints_by_category": complaints_by_category,
+            "weekly_growth_trend": weekly_growth_trend,
+        })
 
 
 # ---------------------------------------------------------------------
@@ -646,7 +774,10 @@ class AgencyPatientListCreateView(APIView):
         if creator_scope is not None:
             links = links.filter(decided_by_id__in=creator_scope)
 
-        patients_data = PatientProfileSerializer([link.patient for link in links], many=True).data
+        rules = agency_reminder_rules(agency, "patients")
+        patients_data = PatientProfileSerializer(
+            [link.patient for link in links], many=True, context={"rules": rules},
+        ).data
 
         # created_by is attached here rather than as a field on
         # PatientProfileSerializer itself, since "who created this"
@@ -690,7 +821,10 @@ class AgencyCaregiverPipelineListView(APIView):
         if creator_scope is not None:
             links = links.filter(decided_by_id__in=creator_scope)
 
-        caregivers_data = AgencyCaregiverPipelineSerializer([link.caregiver for link in links], many=True).data
+        rules = agency_reminder_rules(agency, "caregiver_candidates")
+        caregivers_data = AgencyCaregiverPipelineSerializer(
+            [link.caregiver for link in links], many=True, context={"rules": rules},
+        ).data
 
         creator_by_caregiver_id = {
             link.caregiver_id: (link.decided_by.get_full_name() or link.decided_by.username) if link.decided_by else None
@@ -729,14 +863,37 @@ class AgencyCaregiverPipelineUpdateView(APIView):
 
         caregiver = link.caregiver
 
+        # Every actual change below is collected here as (field, old,
+        # new) and logged individually via audit.candidate_field_edited
+        # after save() — the same accountability trail
+        # EditCandidateFieldsView already gives the caregiver's own
+        # identity fields, extended to cover the operational fields
+        # this view edits (pipeline stage, urgent flag, document
+        # checklist, tags, milestones), since an agency asked for
+        # "every edit, logged with who did it" and these fields were
+        # editable here without ever being logged before.
+        field_changes = []
+
+        def _track(field, new_value):
+            old_value = getattr(caregiver, field)
+            if old_value != new_value:
+                field_changes.append((field, old_value, new_value))
+            setattr(caregiver, field, new_value)
+
         if "agency_pipeline_status" in request.data:
             valid_values = [choice[0] for choice in CaregiverAgencyPipelineStatus.choices]
-            if request.data["agency_pipeline_status"] not in valid_values:
+            new_status = request.data["agency_pipeline_status"]
+            if new_status not in valid_values:
                 return Response(
                     {"detail": f"مقدار agency_pipeline_status باید یکی از {valid_values} باشد."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            caregiver.agency_pipeline_status = request.data["agency_pipeline_status"]
+            if new_status != caregiver.agency_pipeline_status:
+                # Logged BEFORE the field actually changes on `caregiver`
+                # below — record_stage_transition just needs the target
+                # value and the object's id, not the live instance.
+                record_stage_transition("caregiver_candidates", caregiver.id, new_status)
+            _track("agency_pipeline_status", new_status)
 
         editable_bool_fields = [
             "is_urgent", "doc_no_criminal_record", "doc_no_addiction_test", "doc_identity_verified",
@@ -744,13 +901,13 @@ class AgencyCaregiverPipelineUpdateView(APIView):
         ]
         for field in editable_bool_fields:
             if field in request.data:
-                setattr(caregiver, field, bool(request.data[field]))
+                _track(field, bool(request.data[field]))
 
         if "tags" in request.data:
             tags = request.data["tags"]
             if not isinstance(tags, list) or not all(isinstance(t, str) for t in tags):
                 return Response({"detail": "tags باید فهرستی از رشته‌ها باشد."}, status=status.HTTP_400_BAD_REQUEST)
-            caregiver.tags = tags
+            _track("tags", tags)
 
         if "process_milestones" in request.data:
             milestones = request.data["process_milestones"]
@@ -760,11 +917,22 @@ class AgencyCaregiverPipelineUpdateView(APIView):
                     {"detail": f"process_milestones باید فهرستی از {valid_values} باشد."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            caregiver.process_milestones = milestones
+            _track("process_milestones", milestones)
 
         caregiver.save()
 
-        response_data = AgencyCaregiverPipelineSerializer(caregiver).data
+        for field, old_value, new_value in field_changes:
+            # old_value/new_value land straight in AuditLog.metadata
+            # (a JSONField) — str, bool, and list (tags/milestones)
+            # are all natively JSON-serializable, so no coercion is
+            # needed here, unlike EditCandidateFieldsView's plain-text
+            # identity fields.
+            audit.candidate_field_edited(
+                request.user.id, caregiver.user_id, field=field, old_value=old_value, new_value=new_value,
+            )
+
+        rules = agency_reminder_rules(agency, "caregiver_candidates")
+        response_data = AgencyCaregiverPipelineSerializer(caregiver, context={"rules": rules}).data
         response_data["created_by"] = (link.decided_by.get_full_name() or link.decided_by.username) if link.decided_by else None
         return Response(response_data)
 
@@ -872,6 +1040,8 @@ class AgencyPatientPipelineStatusView(APIView):
                     {"detail": f"مقدار pipeline_status باید یکی از {valid_values} باشد."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            if new_status != patient.pipeline_status:
+                record_stage_transition("patients", patient.id, new_status)
             patient.pipeline_status = new_status
             update_fields.append("pipeline_status")
 
@@ -903,7 +1073,8 @@ class AgencyPatientPipelineStatusView(APIView):
         if link is not None and link.decided_by is not None:
             created_by = link.decided_by.get_full_name() or link.decided_by.username
 
-        response_data = PatientProfileSerializer(patient).data
+        rules = agency_reminder_rules(agency, "patients")
+        response_data = PatientProfileSerializer(patient, context={"rules": rules}).data
         response_data["created_by"] = created_by
         return Response(response_data)
 
@@ -1118,3 +1289,236 @@ class AgencyComplaintsAboutOwnRosterView(APIView):
             "patient", "about_caregiver__user__caregiver_identity_profile", "filed_by",
         )
         return Response(ComplaintListItemSerializer(complaints, many=True).data)
+
+
+# ---------------------------------------------------------------------
+# Per-candidate edit history — "هر ویرایش/اقدام با نام کاربر لاگ شود":
+# apps.audit.AuditLog already records every relevant event (field
+# edits via EditCandidateFieldsView/AgencyCaregiverPipelineUpdateView,
+# approvals, rejections, interview records, doc requests) — what was
+# missing was any way for an AGENCY to actually read that trail back
+# for one of its own candidates. apps.audit's existing endpoints are
+# either admin/superuser-only, patient-scoped, or self-scoped; none of
+# them fit an agency looking at a caregiver who isn't them.
+# ---------------------------------------------------------------------
+
+class AgencyCandidateHistoryView(APIView):
+    """
+    GET /api/agencies/<agency_id>/candidates/<user_id>/history/
+
+    Same permission and roster scope as AgencyCandidateTrackingView
+    (any link status, not approved-only — an agency should be able to
+    see the history of a candidate still in their own vetting
+    pipeline, not just an already-approved one). Restricted to the
+    event types that are actually meaningful from an agency's own
+    point of view; deliberately excludes purely-platform events
+    (blacklisting, appeals) that live on a different review track and
+    would only confuse this specific "what has WE done to this
+    candidate's record" view.
+    """
+    permission_classes = [IsAuthenticated]
+
+    _RELEVANT_EVENT_TYPES = [
+        "candidate_field_edited",
+        "caregiver_interview_recorded",
+        "caregiver_needs_more_documents",
+        "caregiver_approved",
+        "caregiver_rejected",
+    ]
+
+    def get(self, request, agency_id, user_id):
+        from apps.audit.models import AuditLog
+        from apps.audit.serializers import AuditLogSerializer, build_user_names_map
+
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+
+        is_linked = AgencyCaregiverLink.objects.filter(
+            agency=ctx.agency, caregiver__user_id=user_id,
+            status__in=[AgencyLinkStatus.PENDING, AgencyLinkStatus.APPROVED],
+        ).exists()
+        if not is_linked:
+            return Response({"detail": "این مراقب متعلق به این آژانس نیست."}, status=status.HTTP_404_NOT_FOUND)
+
+        logs = AuditLog.objects.filter(
+            target_user_id=user_id, event_type__in=self._RELEVANT_EVENT_TYPES,
+        ).order_by("-created_at")[:200]
+
+        user_ids = set()
+        for entry in logs:
+            user_ids.add(entry.actor_user_id)
+            user_ids.add(entry.target_user_id)
+        names = build_user_names_map(user_ids)
+
+        return Response(AuditLogSerializer(logs, many=True, context={"user_names": names}).data)
+
+
+# ---------------------------------------------------------------------
+# Deep analytics — "ghesmate analyze o tahlil": one level beyond the
+# dashboard's category breakdowns (AgencyDashboardInsightsView above),
+# which just slices existing counts. This answers different, more
+# analytical questions: how well is the vetting pipeline converting,
+# how fast are decisions actually made, which caregivers are drawing
+# complaints, and how long are family requests sitting unanswered —
+# all computed from data this agency already has, nothing new tracked.
+# ---------------------------------------------------------------------
+
+class AgencyAnalyticsView(APIView):
+    """
+    GET /api/agencies/me/analytics/
+
+    Available to the agency owner or any of its supervisors, same as
+    AgencyDashboardView/AgencyDashboardInsightsView. Deliberately its
+    own endpoint rather than folded into AgencyDashboardInsightsView
+    — that one answers "what does things look like right now",  this
+    one answers "how well is the operation actually running", and the
+    two pages using them (dashboard vs. a dedicated تحلیل page) are
+    genuinely different questions an owner asks at different times.
+    """
+    permission_classes = [IsAgencyOwnerOrSupervisor]
+
+    def get(self, request):
+        agency = _resolve_my_agency(request)
+        if agency is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+
+        from django.db.models import Count
+        from apps.care.models import AssignmentStatus, CaregiverAssignment
+        from apps.caregivers.models import CaregiverProfile, CaregiverStatus
+        from apps.reviews.models import Complaint
+
+        # ------------------------------------------------------------
+        # 1) Vetting funnel — every caregiver ever linked to this
+        # agency (any link status), by where they ended up, plus the
+        # average time it actually took to reach a decision. Decision
+        # time is measured on the AGENCY LINK (requested_at ->
+        # decided_at), not the platform-wide CaregiverProfile status —
+        # that's the honest measure of "how long did THIS agency take
+        # to decide on THIS candidate," which is what an owner
+        # actually wants to know, not a platform-wide review time that
+        # might include a totally different agency's delay.
+        # ------------------------------------------------------------
+        links = agency.caregiver_links.select_related("caregiver").all()
+        total_candidates = links.count()
+
+        status_counts = {}
+        for link in links:
+            st = link.caregiver.status
+            status_counts[st] = status_counts.get(st, 0) + 1
+
+        approved_count = status_counts.get(CaregiverStatus.APPROVED, 0)
+        rejected_count = status_counts.get(CaregiverStatus.REJECTED, 0)
+        needs_docs_count = status_counts.get(CaregiverStatus.NEEDS_MORE_DOCS, 0)
+        pending_count = status_counts.get(CaregiverStatus.PENDING, 0)
+
+        approval_rate = round(approved_count / total_candidates * 100, 1) if total_candidates else 0.0
+
+        decided_links = links.filter(decided_at__isnull=False)
+        avg_decision_days = None
+        if decided_links.exists():
+            # requested_at/decided_at are jDateTimeField — real
+            # Gregorian datetimes underneath, so plain arithmetic on
+            # the Python objects (not an ORM F-expression subtraction,
+            # which django_jalali doesn't support cleanly) is the
+            # reliable way to compute this.
+            deltas = [
+                (link.decided_at.togregorian() - link.requested_at.togregorian()).total_seconds() / 86400
+                for link in decided_links
+            ]
+            avg_decision_days = round(sum(deltas) / len(deltas), 1)
+
+        # ------------------------------------------------------------
+        # 2) Complaint quality signal — same roster scope as
+        # AgencyComplaintsAboutOwnRosterView/AgencyDashboardInsightsView.
+        # complaints_per_approved_caregiver is a ratio, not a count,
+        # so it stays meaningful whether an agency has 3 caregivers or
+        # 300. top_flagged_caregivers surfaces WHO specifically is
+        # drawing complaints, since a ratio alone hides that.
+        # ------------------------------------------------------------
+        roster_ids = agency_caregiver_profile_ids(agency)
+        total_complaints = Complaint.objects.filter(about_caregiver_id__in=roster_ids).count()
+        complaints_per_approved_caregiver = (
+            round(total_complaints / approved_count, 2) if approved_count else 0.0
+        )
+
+        top_flagged_rows = (
+            Complaint.objects.filter(about_caregiver_id__in=roster_ids)
+            .values("about_caregiver_id")
+            .annotate(n=Count("id"))
+            .order_by("-n")[:5]
+        )
+        caregiver_names = {
+            cp.id: (cp.user.get_full_name() or cp.user.username)
+            for cp in CaregiverProfile.objects.filter(
+                id__in=[row["about_caregiver_id"] for row in top_flagged_rows],
+            ).select_related("user")
+        }
+        top_flagged_caregivers = [
+            {"caregiver_id": row["about_caregiver_id"], "name": caregiver_names.get(row["about_caregiver_id"], "—"), "complaint_count": row["n"]}
+            for row in top_flagged_rows
+        ]
+
+        # ------------------------------------------------------------
+        # 3) Stale family requests — how long PENDING family join
+        # requests have actually been sitting unanswered. Buckets, not
+        # a single average, because an owner needs to know "how many
+        # are overdue right now", not just a number that one very old
+        # forgotten request can skew.
+        # ------------------------------------------------------------
+        from django.utils import timezone
+        now = timezone.now()
+        pending_family_links = agency.family_links.filter(status=AgencyLinkStatus.PENDING)
+        stale_buckets = {"within_3_days": 0, "within_7_days": 0, "over_7_days": 0}
+        for link in pending_family_links:
+            age_days = (now - link.requested_at.togregorian()).total_seconds() / 86400
+            if age_days <= 3:
+                stale_buckets["within_3_days"] += 1
+            elif age_days <= 7:
+                stale_buckets["within_7_days"] += 1
+            else:
+                stale_buckets["over_7_days"] += 1
+
+        # ------------------------------------------------------------
+        # 4) Care activity — assignments serving this agency's own
+        # patients (any caregiver, since a family's own patient is
+        # the anchor an agency actually cares about here), and how
+        # long an assignment lasts on average once it ends.
+        # ------------------------------------------------------------
+        agency_patient_ids = agency.patient_links.filter(
+            status=AgencyLinkStatus.APPROVED,
+        ).values_list("patient_id", flat=True)
+        assignments = CaregiverAssignment.objects.filter(patient_id__in=agency_patient_ids)
+        active_assignments_count = assignments.filter(status=AssignmentStatus.ACTIVE).count()
+        ended_assignments = assignments.filter(status=AssignmentStatus.ENDED, ended_at__isnull=False)
+
+        avg_assignment_duration_days = None
+        if ended_assignments.exists():
+            durations = [
+                (a.ended_at.togregorian() - a.assigned_at.togregorian()).total_seconds() / 86400
+                for a in ended_assignments
+            ]
+            avg_assignment_duration_days = round(sum(durations) / len(durations), 1)
+
+        return Response({
+            "vetting_funnel": {
+                "total_candidates": total_candidates,
+                "approved_count": approved_count,
+                "rejected_count": rejected_count,
+                "needs_more_docs_count": needs_docs_count,
+                "pending_count": pending_count,
+                "approval_rate_percent": approval_rate,
+                "avg_decision_days": avg_decision_days,
+            },
+            "complaint_quality": {
+                "total_complaints": total_complaints,
+                "complaints_per_approved_caregiver": complaints_per_approved_caregiver,
+                "top_flagged_caregivers": top_flagged_caregivers,
+            },
+            "stale_family_requests": stale_buckets,
+            "care_activity": {
+                "active_assignments_count": active_assignments_count,
+                "ended_assignments_count": ended_assignments.count(),
+                "avg_assignment_duration_days": avg_assignment_duration_days,
+            },
+        })

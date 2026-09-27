@@ -1,5 +1,6 @@
 import { api } from "./api"
 import type { AgencyCaregiverLink, AgencyDashboard, AgencyFamilyLink, AgencyProfile } from "@/types/agency"
+import type { DashboardInsights } from "@/types/dashboard"
 
 export const agencyService = {
   async me() {
@@ -7,7 +8,7 @@ export const agencyService = {
     return data as AgencyProfile
   },
 
-  async updateProfile(payload: { company_name?: string; license_number?: string }) {
+  async updateProfile(payload: { company_name?: string; license_number?: string; admin_finance_access?: boolean }) {
     const { data } = await api.put("/api/agencies/me/", payload)
     return data as AgencyProfile
   },
@@ -15,6 +16,11 @@ export const agencyService = {
   async dashboard() {
     const { data } = await api.get("/api/agencies/me/dashboard/")
     return data as AgencyDashboard
+  },
+
+  async dashboardInsights() {
+    const { data } = await api.get("/api/agencies/me/dashboard/insights/")
+    return data as DashboardInsights
   },
 
   async familyRoster() {

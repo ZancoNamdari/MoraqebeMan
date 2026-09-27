@@ -1,6 +1,8 @@
 from django.db import models
 from django_jalali.db import models as jmodels
 
+from apps.caregivers.choices import CollaborationType
+
 # Deliberately a small, separate app rather than adding these models to
 # either apps.caregivers or apps.families — this is fundamentally about
 # the RELATIONSHIP between the two, and neither app currently imports
@@ -38,6 +40,38 @@ class CaregiverAssignment(models.Model):
     notes = models.TextField(blank=True, verbose_name="یادداشت")
     assigned_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="زمان تخصیص")
     ended_at = jmodels.jDateTimeField(null=True, blank=True, verbose_name="زمان پایان")
+
+    # Billing fields — per the confirmed requirement, tariffs are
+    # defined BOTH per service type (apps.finance.ServiceTariff, the
+    # agency-wide default) AND per assignment (these fields, which
+    # override that default for this one caregiver↔patient pairing
+    # specifically). Kept directly on CaregiverAssignment rather than a
+    # separate one-to-one model, since an assignment has exactly one
+    # active billing arrangement at a time, never a history of several
+    # — the same reasoning apps.caregivers.CaregiverWorkPreferences-
+    # style one-to-one extensions already follow elsewhere. All three
+    # custom_*_rate fields are null=True specifically so "no override"
+    # is unambiguous — 0 would be a real (free) rate, not "unset".
+    service_type = models.CharField(
+        max_length=30, choices=CollaborationType.choices, blank=True, verbose_name="نوع خدمت",
+        help_text="برای تعیین اینکه کدام ردیف تعرفه آژانس (ServiceTariff) روی این تخصیص اعمال شود — خالی یعنی این تخصیص هنوز صورت‌حساب نمی‌شود.",
+    )
+    billing_cycle = models.CharField(
+        max_length=10,
+        choices=[("daily", "روزانه"), ("weekly", "هفتگی"), ("monthly", "ماهانه")],
+        blank=True, verbose_name="دوره صورت‌حساب",
+        help_text="دوره‌ای که این تخصیص بر آن اساس صورت‌حساب می‌شود — یک نسخه محلی از apps.finance.BillingCycle، عمداً کپی‌شده تا care به finance وابسته نشود.",
+    )
+    custom_hourly_rate = models.DecimalField(
+        max_digits=12, decimal_places=0, null=True, blank=True, verbose_name="نرخ ساعتی اختصاصی (تومان)",
+        help_text="در صورت خالی بودن، نرخ پیش‌فرض تعرفه آژانس برای این نوع خدمت اعمال می‌شود.",
+    )
+    custom_daily_rate = models.DecimalField(
+        max_digits=12, decimal_places=0, null=True, blank=True, verbose_name="نرخ روزانه اختصاصی (تومان)",
+    )
+    custom_monthly_rate = models.DecimalField(
+        max_digits=12, decimal_places=0, null=True, blank=True, verbose_name="نرخ ماهانه اختصاصی (تومان)",
+    )
 
     class Meta:
         verbose_name = "تخصیص مراقب"

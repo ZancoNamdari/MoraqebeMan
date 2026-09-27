@@ -5,9 +5,34 @@ import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { candidateTrackingService, type Candidate, type CandidateResume } from "@/services/candidate_tracking.service"
+import {
+  candidateTrackingService, type Candidate, type CandidateHistoryEntry, type CandidateResume,
+} from "@/services/candidate_tracking.service"
+import { agencyService } from "@/services/agency.service"
 import { EXPERIENCE_RANGE, labelForValue } from "@/lib/constants"
 import { toPersianDigits } from "@/lib/persian_digits"
+
+// Persian labels for the field names that show up in a candidate's
+// edit history (AuditLog.metadata.field) — both the identity fields
+// (EditCandidateFieldsView) and the operational ones
+// (AgencyCaregiverPipelineUpdateView) land in the same history feed,
+// so this one map covers both.
+const HISTORY_FIELD_LABEL: Record<string, string> = {
+  first_name: "نام", last_name: "نام خانوادگی", national_id: "کد ملی", phone_number: "تلفن",
+  agency_pipeline_status: "مرحله سرویس‌دهی", is_urgent: "فوری", tags: "برچسب‌ها",
+  process_milestones: "مراحل طی‌شده",
+  doc_no_criminal_record: "عدم سوءپیشینه", doc_no_addiction_test: "آزمایش عدم اعتیاد",
+  doc_identity_verified: "احراز هویت", doc_personal_photo: "عکس پرسنلی",
+  doc_mental_health_test: "آزمایش سلامت روان", doc_promissory_note: "سفته/ضمانت",
+  doc_id_card_received: "دریافت کارت شناسایی",
+}
+
+function formatHistoryValue(v: unknown): string {
+  if (v === null || v === undefined || v === "") return "—"
+  if (typeof v === "boolean") return v ? "بله" : "خیر"
+  if (Array.isArray(v)) return v.length ? v.join("، ") : "—"
+  return String(v)
+}
 
 const STATUS_CLASS: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -50,6 +75,10 @@ export default function CandidatesPage() {
   const [editNationalId, setEditNationalId] = useState("")
   const [editPhone, setEditPhone] = useState("")
   const [savingFields, setSavingFields] = useState(false)
+  const [agencyId, setAgencyId] = useState<number | null>(null)
+  const [historyFor, setHistoryFor] = useState<number | null>(null)
+  const [history, setHistory] = useState<CandidateHistoryEntry[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
 
   function refresh() {
     setLoading(true)
@@ -59,8 +88,22 @@ export default function CandidatesPage() {
   useEffect(() => {
     if (!user) return
     refresh()
+    agencyService.me().then((p) => setAgencyId(p.id)).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
+
+  async function handleViewHistory(userId: number) {
+    if (!agencyId) return
+    setHistoryFor(userId); setHistory([]); setHistoryLoading(true)
+    try {
+      const data = await candidateTrackingService.history(agencyId, userId)
+      setHistory(data)
+    } catch {
+      setError("دریافت تاریخچه با خطا مواجه شد.")
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
 
   if (authLoading || !user) return null
 
@@ -86,6 +129,7 @@ export default function CandidatesPage() {
     setScoreDraft(""); setDateDraft(""); setNoteDraft(""); setDocsNoteDraft("")
     setResume(null)
     setEditingFields(false)
+    setHistoryFor(null); setHistory([])
   }
 
   function startEditingFields(c: Candidate) {
@@ -172,13 +216,25 @@ export default function CandidatesPage() {
 
   return (
     <div className="p-4 sm:p-6">
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <h1 className="text-lg font-bold text-slate-900">بانک اطلاعات مراقبان</h1>
+        {/* print:hidden — the print button itself has no business
+            being on the printed page; window.print() renders whatever
+            is currently in the DOM, so this is the whole "printable"
+            implementation, no separate print view needed. */}
+        <Button size="sm" variant="outline" className="print:hidden" onClick={() => window.print()}>
+          چاپ فهرست
+        </Button>
       </div>
+      {/* Only visible on the printed page — gives the sheet a
+          timestamp since the on-screen header doesn't need one. */}
+      <p className="hidden text-xs text-slate-500 print:mb-3 print:block">
+        تاریخ چاپ: {toPersianDigits(new Date().toLocaleDateString("fa-IR"))}
+      </p>
 
-      {error && <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
+      {error && <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 print:hidden">{error}</div>}
 
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5 print:hidden">
         <button onClick={() => toggleFilter("")} className={`rounded-2xl border border-pink-100 bg-white p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${statusFilter === null ? "ring-2 ring-rose-400" : ""}`}>
           <p className="text-3xl font-bold text-rose-900">{toPersianDigits(candidates.length)}</p>
           <p className="mt-1 text-xs font-medium text-muted-foreground">تعداد کل</p>
@@ -202,14 +258,14 @@ export default function CandidatesPage() {
       </div>
 
       {statusFilter && (
-        <p className="mb-4 px-1 text-xs text-muted-foreground">
+        <p className="mb-4 px-1 text-xs text-muted-foreground print:hidden">
           نمایش فقط مراقبان با وضعیت «{STATUS_LABEL_FA[statusFilter]}» —{" "}
           <button className="font-medium text-rose-700 underline" onClick={() => setStatusFilter(null)}>نمایش همه</button>
         </p>
       )}
 
       {candidates.length > 0 && (
-        <Card className="mb-4 border-pink-100">
+        <Card className="mb-4 border-pink-100 print:hidden">
           <CardHeader><CardTitle className="text-rose-900">نمودار وضعیت مراقبان</CardTitle></CardHeader>
           <CardContent>
             <StatusDonutChart counts={counts} total={candidates.length} />
@@ -243,8 +299,9 @@ export default function CandidatesPage() {
                     <th className="p-3 text-center">امتیاز مصاحبه</th>
                     <th className="p-3 text-center">تاریخ مصاحبه</th>
                     <th className="p-3 text-right">یادداشت</th>
-                    <th className="p-3 text-center">ویرایش</th>
-                    <th className="p-3 text-center">جزئیات</th>
+                    <th className="p-3 text-center print:hidden">ویرایش</th>
+                    <th className="p-3 text-center print:hidden">تاریخچه</th>
+                    <th className="p-3 text-center print:hidden">جزئیات</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -265,20 +322,28 @@ export default function CandidatesPage() {
                         <td className="p-3 text-center font-semibold text-rose-900">{c.interview_score !== null ? toPersianDigits(c.interview_score) : "—"}</td>
                         <td className="p-3 text-center text-muted-foreground">{c.interview_date ? toPersianDigits(c.interview_date) : "—"}</td>
                         <td className="max-w-[160px] truncate p-3 text-right text-muted-foreground" title={c.staff_notes || undefined}>{c.staff_notes || "—"}</td>
-                        <td className="p-3 text-center">
+                        <td className="p-3 text-center print:hidden">
                           <Button size="sm" variant="outline" onClick={() => { setExpandedId(c.user_id); resetDrafts(); startEditingFields(c) }}>
                             ویرایش
                           </Button>
                         </td>
-                        <td className="p-3 text-center">
+                        <td className="p-3 text-center print:hidden">
+                          <Button
+                            size="sm" variant="outline"
+                            onClick={() => { setExpandedId(c.user_id); resetDrafts(); handleViewHistory(c.user_id) }}
+                          >
+                            تاریخچه
+                          </Button>
+                        </td>
+                        <td className="p-3 text-center print:hidden">
                           <Button size="sm" variant="outline" onClick={() => { setExpandedId(expandedId === c.user_id ? null : c.user_id); resetDrafts() }}>
                             {expandedId === c.user_id ? "بستن" : "جزئیات"}
                           </Button>
                         </td>
                       </tr>
                       {expandedId === c.user_id && (
-                        <tr>
-                          <td colSpan={12} className="bg-pink-50/40 p-4">
+                        <tr className="print:hidden">
+                          <td colSpan={13} className="bg-pink-50/40 p-4">
                             <div className="grid gap-4 sm:grid-cols-3">
                               <div className="space-y-2">
                                 <p className="text-xs font-medium text-rose-900">ثبت نتیجه مصاحبه</p>
@@ -355,6 +420,36 @@ export default function CandidatesPage() {
                                 <ResumeView resume={resume} />
                               </div>
                             )}
+                            {historyFor === c.user_id && (
+                              <div className="mt-4 border-t border-pink-100 pt-4">
+                                <p className="mb-2 text-xs font-semibold text-rose-900">تاریخچه ویرایش و اقدامات</p>
+                                {historyLoading ? (
+                                  <Skeleton className="h-24 w-full rounded-lg" />
+                                ) : history.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground">هنوز هیچ ویرایش یا اقدامی برای این مراقب ثبت نشده است.</p>
+                                ) : (
+                                  <div className="space-y-1.5">
+                                    {history.map((h) => (
+                                      <div key={h.id} className="rounded-lg border border-pink-100 bg-white p-2.5 text-xs">
+                                        <div className="flex items-center justify-between text-muted-foreground">
+                                          <span className="font-medium text-rose-900">{h.actor_name || "—"}</span>
+                                          <span dir="ltr">{toPersianDigits(h.created_at.slice(0, 16).replace("T", " "))}</span>
+                                        </div>
+                                        {h.event_type === "candidate_field_edited" ? (
+                                          <p className="mt-1 text-slate-700">
+                                            {HISTORY_FIELD_LABEL[h.metadata.field as string] || String(h.metadata.field)} را از{" "}
+                                            <span className="font-medium">{formatHistoryValue(h.metadata.old_value)}</span> به{" "}
+                                            <span className="font-medium">{formatHistoryValue(h.metadata.new_value)}</span> تغییر داد.
+                                          </p>
+                                        ) : (
+                                          <p className="mt-1 text-slate-700">{h.event_type_label}</p>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </td>
                         </tr>
                       )}
@@ -368,7 +463,7 @@ export default function CandidatesPage() {
       </Card>
 
       {candidates.length > 0 && (
-        <Card className="border-pink-100 bg-pink-50/40">
+        <Card className="border-pink-100 bg-pink-50/40 print:hidden">
           <CardHeader><CardTitle className="text-rose-900">گزارش سریع</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <div className="rounded-xl bg-white p-4 text-center shadow-sm">
