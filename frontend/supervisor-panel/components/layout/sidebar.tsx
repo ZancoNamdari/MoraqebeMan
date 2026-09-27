@@ -37,7 +37,7 @@ const items = [
  */
 export function Sidebar() {
   const pathname = usePathname()
-  const { logout } = useAuth(["admin", "superuser"])
+  const { user, logout } = useAuth(["admin", "superuser"])
 
   return (
     <aside
@@ -58,6 +58,17 @@ export function Sidebar() {
           <div className="text-xs text-muted-foreground">پنل ناظر</div>
         </div>
       </div>
+
+      {user && (
+        <div className="border-b border-border px-5 py-3">
+          <div className="truncate text-sm font-medium text-foreground">
+            {`${user.first_name} ${user.last_name}`.trim() || user.username}
+          </div>
+          <div className="truncate text-xs text-muted-foreground">
+            کارشناس پلتفرم
+          </div>
+        </div>
+      )}
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {items.map((item) => {

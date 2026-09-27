@@ -141,6 +141,58 @@ def resolve_own_agency_for_supervisor(user) -> "AgencyProfile | None":  # noqa: 
     return supervisor_profile.agency if supervisor_profile is not None else None
 
 
+def resolve_own_agency_for_actor(user) -> "AgencyProfile | None":  # noqa: F821
+    """
+    Like resolve_own_agency_for_supervisor above, but also covers the
+    agency owner (AGENCY role) — used for the caregiver-document
+    approve/reject decision, which the confirmed requirement gives to
+    "the agency's own supervisor or owner", deliberately not a plain
+    AGENCY_ADMIN (who is the one uploading the file — approval needs
+    a second, more senior pair of eyes, never a self-approval).
+    """
+    if user.role == UserRole.AGENCY:
+        return getattr(user, "agency_profile", None)
+    return resolve_own_agency_for_supervisor(user)
+
+
+def resolve_own_agency_for_agency_staff(user) -> "AgencyProfile | None":  # noqa: F821
+    """
+    Like resolve_own_agency_for_actor above, but ALSO covers
+    AGENCY_ADMIN — used for the caregiver-registration wizard's own
+    visibility check (apps.caregivers.supervisor_views.
+    _caregiver_visible_to_actor), where any of the three agency roles
+    that can start a candidate from agency-panel's Kanban
+    (owner/supervisor/admin, same allow_admin=True set as everywhere
+    else in apps.agencies.views) must also be able to continue
+    entering that same candidate's forms. Deliberately NOT reused for
+    can_review_caregiver_document above — approving a document stays
+    owner/supervisor-only on purpose (a second, more senior pair of
+    eyes than whoever uploaded it).
+    """
+    if user.role == UserRole.AGENCY_ADMIN:
+        admin_profile = getattr(user, "agency_admin_profile", None)
+        return admin_profile.agency if admin_profile is not None else None
+    return resolve_own_agency_for_actor(user)
+
+
+def can_review_caregiver_document(user, caregiver) -> bool:
+    """
+    Whether `user` may approve/reject one of `caregiver`'s uploaded
+    documents — platform ADMIN/SUPERUSER always (from admin-panel's
+    caregiver detail page), or that same caregiver's own agency's
+    owner/supervisor (from agency-panel), per the confirmed
+    requirement that this be possible from both panels. Returns False
+    (never raises) for anything else, same "don't reveal whether it
+    exists" convention as caregiver_visible_to_tenant.
+    """
+    if user.role in (UserRole.ADMIN, UserRole.SUPERUSER):
+        return True
+    agency = resolve_own_agency_for_actor(user)
+    if agency is None:
+        return False
+    return caregiver_visible_to_tenant(agency, caregiver.user_id)
+
+
 def agency_caregiver_profile_ids(agency):
     """CaregiverProfile ids with an APPROVED link to this agency —
     the actual candidate pool for agency-scoped matching."""

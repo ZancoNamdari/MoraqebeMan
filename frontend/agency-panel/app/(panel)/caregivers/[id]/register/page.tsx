@@ -1,30 +1,39 @@
 "use client"
 
-import { Suspense, useEffect, useRef, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
-import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/forms/fields"
-import { LocationPicker } from "@/components/forms/location-picker"
-import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
-import { ErrorSummary } from "@/components/forms/error-summary"
-import { StepIndicator } from "@/components/forms/step-indicator"
-import { AppHeader } from "@/components/layout/app-header"
 import { Separator } from "@/components/ui/separator"
+import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/wizard-forms/fields"
+import { LocationPicker } from "@/components/wizard-forms/location-picker"
+import { JalaliDatePicker } from "@/components/wizard-forms/jalali-date-picker"
+import { ErrorSummary } from "@/components/wizard-forms/error-summary"
+import { StepIndicator } from "@/components/wizard-forms/step-indicator"
+import { AppHeader } from "@/components/layout/app-header"
 import { parseApiErrors, errorsByField, referenceFieldError, type ApiFieldError } from "@/lib/field-labels"
 import { useAuth } from "@/hooks/useauth"
-import { caregiverService } from "@/services/caregiver.service"
+import { caregiverWizardService } from "@/services/caregiver_wizard.service"
 import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
 import { ROUTES } from "@/lib/routes"
-import * as C from "@/lib/constants"
+import * as C from "@/lib/wizard-constants"
 import type {
   ExperienceFormData, IdentityFormData, ReferenceFormData, ServiceArea,
   SkillsFormData, WorkPreferencesFormData,
 } from "@/types/caregiver"
 
+// Continues a caregiver candidate's 4-form registration wizard, right
+// here in agency-panel — ported from the separate supervisor.moraqebman.ir
+// panel's own wizard (same 4 forms + optional compatibility
+// questionnaire, same backend endpoints) so agency staff no longer
+// have to leave this panel and log into a different subdomain
+// mid-flow. Unlike that original, the caregiver ALWAYS already
+// exists by the time this page opens — the account itself is created
+// from the Kanban card ("+ افزودن خدمت‌دهنده" in caregivers/page.tsx),
+// so there's no "step 0: create account" branch to a brand-new id;
+// step 0 here is edit-only (fixing a typo in the name/phone).
 const STEPS = ["اطلاعات پایه", "فرم ۱ — هویتی", "فرم ۲ — شرایط همکاری", "فرم ۳ — سوابق و مهارت", "فرم ۴ — معرف‌ها", "پرسشنامه سازگاری (اختیاری)"]
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
@@ -74,29 +83,19 @@ const EMPTY_REFERENCE: ReferenceFormData = {
   phone_number: "", callable_for_inquiry: true,
 }
 
-export default function NewCaregiverWizard() {
-  return (
-    <Suspense fallback={null}>
-      <NewCaregiverWizardInner />
-    </Suspense>
-  )
-}
-
-function NewCaregiverWizardInner() {
-  const { user, loading: authLoading, logout } = useAuth(["admin", "superuser"])
+export default function CaregiverRegistrationWizard() {
+  const { loading: authLoading } = useAuth(["agency", "agency_supervisor", "agency_admin"])
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const existingId = searchParams.get("id")
+  const params = useParams()
+  const caregiverId = Number(params.id)
 
   const [step, setStep] = useState(0)
-  const [caregiverId, setCaregiverId] = useState<number | null>(existingId ? Number(existingId) : null)
   const [caregiverName, setCaregiverName] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<ApiFieldError[]>([])
   const fieldErrors = errorsByField(error)
   const [done, setDone] = useState(false)
 
-  // Step 0 fields
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [phone, setPhone] = useState("")
@@ -110,45 +109,37 @@ function NewCaregiverWizardInner() {
   const [references, setReferences] = useState<ReferenceFormData[]>([{ ...EMPTY_REFERENCE }])
   const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, string>>({})
 
-  // Resume an in-progress (or already-complete) caregiver: load
-  // whatever's already saved for each step, including the basic
-  // account info (name/phone) so Step 0 can be used to fix a typo
-  // instead of only ever being a one-time "create" screen.
+  // Load whatever's already saved for this (always pre-existing)
+  // caregiver — same resume-in-progress logic as the original wizard.
   useEffect(() => {
     if (!caregiverId) return
-    caregiverService.getBasicInfo(caregiverId).then((info) => {
+    caregiverWizardService.getBasicInfo(caregiverId).then((info) => {
       setFirstName(info.first_name)
       setLastName(info.last_name)
       setPhone(info.phone_number)
     }).catch(() => {})
-    caregiverService.progress(caregiverId).then((p) => setCaregiverName(p.full_name))
-    caregiverService.getIdentity(caregiverId).then(setIdentity).catch(() => {})
-    caregiverService.getWorkPreferences(caregiverId).then(setWorkPrefs).catch(() => {})
-    caregiverService.listServiceAreas(caregiverId).then(setAreas).catch(() => {})
-    caregiverService.getExperience(caregiverId).then(setExperience).catch(() => {})
-    caregiverService.getSkills(caregiverId).then(setSkills).catch(() => {})
-    caregiverService.getReferences(caregiverId).then((refs) => {
+    caregiverWizardService.progress(caregiverId).then((p) => setCaregiverName(p.full_name))
+    caregiverWizardService.getIdentity(caregiverId).then(setIdentity).catch(() => {})
+    caregiverWizardService.getWorkPreferences(caregiverId).then(setWorkPrefs).catch(() => {})
+    caregiverWizardService.listServiceAreas(caregiverId).then(setAreas).catch(() => {})
+    caregiverWizardService.getExperience(caregiverId).then(setExperience).catch(() => {})
+    caregiverWizardService.getSkills(caregiverId).then(setSkills).catch(() => {})
+    caregiverWizardService.getReferences(caregiverId).then((refs) => {
       if (refs.length > 0) setReferences(refs)
     }).catch(() => {})
-    caregiverService.getCompatibilityQuestionnaire(caregiverId).then((data) => {
+    caregiverWizardService.getCompatibilityQuestionnaire(caregiverId).then((data) => {
       const { section_scores, overall_flexibility_score, updated_at, ...answers } = data
       setQuestionnaireAnswers(answers)
     }).catch(() => {})
-    // Land straight on Form 1 rather than the "create account" screen
-    // — the account already exists. Every step (including this one)
-    // stays reachable via the now-clickable step indicator.
+    // Land straight on Form 1 — the account already exists. Every
+    // step (including this one) stays reachable via the step
+    // indicator.
     setStep(1)
   }, [caregiverId])
 
-  // Enter-to-advance keyboard navigation, requested explicitly so the
-  // whole wizard can be driven without a mouse. advanceRef is
-  // refreshed on every render (not just when `step` changes) so it
-  // always closes over the LATEST field values — without this, typing
-  // into a field then pressing Enter could submit stale, empty data
-  // captured from whenever the step was first entered. The listener
-  // itself is attached exactly once (empty dependency array) purely
-  // for efficiency; it always calls through the ref, never a stale
-  // closure directly.
+  // Same Enter-to-advance / smart-next-field keyboard navigation as
+  // the original wizard — see its own comment for why advanceRef is
+  // refreshed every render instead of just when `step` changes.
   const advanceRef = useRef<() => void>(() => {})
   useEffect(() => {
     advanceRef.current = () => {
@@ -166,18 +157,9 @@ function NewCaregiverWizardInner() {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key !== "Enter") return
       const target = e.target as HTMLElement
-      // Textareas need Enter to insert a real newline — this never
-      // changes regardless of what else Enter does elsewhere.
       if (target.tagName === "TEXTAREA") return
       e.preventDefault()
 
-      // Smart "next field" behavior, requested explicitly: Enter on
-      // any field moves focus to the next focusable field within the
-      // CURRENT step (like Tab, but via Enter) — dates and dropdowns
-      // included. Only once there's no next field left in this step
-      // does Enter fall back to actually advancing to the next step,
-      // which is what the ref-based advanceRef call below still
-      // does exactly as before.
       const main = document.querySelector("main")
       if (main) {
         const focusable = Array.from(
@@ -210,29 +192,20 @@ function NewCaregiverWizardInner() {
   async function handleStep0() {
     setError([]); setSaving(true)
     try {
-      if (caregiverId) {
-        // Editing an existing caregiver's basic info — e.g. fixing a
-        // typo in the name.
-        const result = await caregiverService.updateBasicInfo(caregiverId, { first_name: firstName, last_name: lastName, phone_number: phone })
-        setCaregiverName(`${result.first_name} ${result.last_name}`.trim())
-      } else {
-        const result = await caregiverService.create({ first_name: firstName, last_name: lastName, phone_number: phone })
-        setCaregiverId(result.user_id)
-        setCaregiverName(result.full_name)
-      }
+      const result = await caregiverWizardService.updateBasicInfo(caregiverId, { first_name: firstName, last_name: lastName, phone_number: phone })
+      setCaregiverName(`${result.first_name} ${result.last_name}`.trim())
       setStep(1)
     } catch (err: any) {
-      showErrors(err, caregiverId ? "خطا در ذخیره اطلاعات." : "خطا در ایجاد حساب مراقب.")
+      showErrors(err, "خطا در ذخیره اطلاعات.")
     } finally {
       setSaving(false)
     }
   }
 
   async function handleStep1() {
-    if (!caregiverId) return
     setError([]); setSaving(true)
     try {
-      await caregiverService.saveIdentity(caregiverId, identity)
+      await caregiverWizardService.saveIdentity(caregiverId, identity)
       setStep(2)
     } catch (err: any) {
       showErrors(err, "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
@@ -242,17 +215,16 @@ function NewCaregiverWizardInner() {
   }
 
   async function handleAddArea() {
-    if (!caregiverId || !newArea.province) return
-    const created = await caregiverService.addServiceArea(caregiverId, newArea)
+    if (!newArea.province) return
+    const created = await caregiverWizardService.addServiceArea(caregiverId, newArea)
     setAreas([...areas, created])
     setNewArea({ province: null, city: null, district: null })
   }
 
   async function handleStep2() {
-    if (!caregiverId) return
     setError([]); setSaving(true)
     try {
-      await caregiverService.saveWorkPreferences(caregiverId, workPrefs)
+      await caregiverWizardService.saveWorkPreferences(caregiverId, workPrefs)
       setStep(3)
     } catch (err: any) {
       showErrors(err, "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
@@ -262,11 +234,10 @@ function NewCaregiverWizardInner() {
   }
 
   async function handleStep3() {
-    if (!caregiverId) return
     setError([]); setSaving(true)
     try {
-      await caregiverService.saveExperience(caregiverId, experience)
-      await caregiverService.saveSkills(caregiverId, skills)
+      await caregiverWizardService.saveExperience(caregiverId, experience)
+      await caregiverWizardService.saveSkills(caregiverId, skills)
       setStep(4)
     } catch (err: any) {
       showErrors(err, "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
@@ -276,10 +247,9 @@ function NewCaregiverWizardInner() {
   }
 
   async function handleStep4() {
-    if (!caregiverId) return
     setError([]); setSaving(true)
     try {
-      await caregiverService.saveReferences(caregiverId, references)
+      await caregiverWizardService.saveReferences(caregiverId, references)
       setStep(5)
     } catch (err: any) {
       showErrors(err, "ثبت معرف‌ها با خطا مواجه شد.")
@@ -289,10 +259,9 @@ function NewCaregiverWizardInner() {
   }
 
   async function handleStep5() {
-    if (!caregiverId) return
     setError([]); setSaving(true)
     try {
-      await caregiverService.saveCompatibilityQuestionnaire(caregiverId, questionnaireAnswers)
+      await caregiverWizardService.saveCompatibilityQuestionnaire(caregiverId, questionnaireAnswers)
       setDone(true)
     } catch (err: any) {
       showErrors(err, "ثبت پرسشنامه با خطا مواجه شد — همه سؤالات باید پاسخ داده شوند.")
@@ -305,13 +274,8 @@ function NewCaregiverWizardInner() {
     setDone(true)
   }
 
-  function startNext() {
-    setStep(0); setCaregiverId(null); setCaregiverName(""); setDone(false); setError([])
-    setFirstName(""); setLastName(""); setPhone("")
-    setIdentity(EMPTY_IDENTITY); setWorkPrefs(EMPTY_WORK_PREFS); setAreas([])
-    setExperience(EMPTY_EXPERIENCE); setSkills(EMPTY_SKILLS)
-    setReferences([{ ...EMPTY_REFERENCE }])
-    setQuestionnaireAnswers({})
+  function updateReference(index: number, patch: Partial<ReferenceFormData>) {
+    setReferences(references.map((r, i) => (i === index ? { ...r, ...patch } : r)))
   }
 
   if (done) {
@@ -323,12 +287,7 @@ function NewCaregiverWizardInner() {
               ✓
             </div>
             <h2 className="text-xl font-bold text-emerald-900">اطلاعات {caregiverName} با موفقیت ثبت شد</h2>
-            <div className="flex flex-col gap-2 pt-2">
-              <Button size="lg" className="bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/30 hover:from-primary hover:to-primary" onClick={startNext}>
-                + افزودن مراقب بعدی
-              </Button>
-              <Button variant="outline" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به لیست</Button>
-            </div>
+            <Button size="lg" className="w-full" onClick={() => router.push(ROUTES.caregivers)}>بازگشت به لیست خدمت‌دهنده‌ها</Button>
           </CardContent>
         </Card>
       </div>
@@ -338,17 +297,16 @@ function NewCaregiverWizardInner() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background">
       <AppHeader
-        title={caregiverName || "مراقب جدید"}
+        title={caregiverName || "تکمیل ثبت‌نام خدمت‌دهنده"}
         maxWidth="max-w-5xl"
         subheader={
           <>
-            <StepIndicator steps={STEPS} current={step} onNavigate={setStep} canNavigate={!!caregiverId} />
+            <StepIndicator steps={STEPS} current={step} onNavigate={setStep} canNavigate />
             <p className="mt-2 text-center text-sm font-medium text-muted-foreground">{STEPS[step]}</p>
           </>
         }
       >
-        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به لیست</Button>
-        <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.caregivers)}>بازگشت به لیست</Button>
       </AppHeader>
 
       <main className="mx-auto max-w-5xl space-y-4 p-4 pb-28">
@@ -356,14 +314,13 @@ function NewCaregiverWizardInner() {
 
         {step === 0 && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">👤</span> {caregiverId ? "ویرایش اطلاعات پایه" : "اطلاعات پایه حساب"}</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">👤</span> ویرایش اطلاعات پایه</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="نام" required><Input value={firstName} onChange={(e) => setFirstName(e.target.value)} /></Field>
               <Field label="نام خانوادگی" required><Input value={lastName} onChange={(e) => setLastName(e.target.value)} /></Field>
               <Field label="شماره موبایل" required>
                 <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" />
               </Field>
-              {!caregiverId && <p className="text-xs text-muted-foreground">نام کاربری و رمز عبور به‌صورت خودکار ساخته می‌شود.</p>}
             </CardContent>
           </Card>
         )}
@@ -469,8 +426,7 @@ function NewCaregiverWizardInner() {
                           type="button"
                           className="text-xs text-destructive underline"
                           onClick={async () => {
-                            if (!caregiverId) return
-                            await caregiverService.deleteServiceArea(caregiverId, a.id!)
+                            await caregiverWizardService.deleteServiceArea(caregiverId, a.id!)
                             setAreas(areas.filter((x) => x.id !== a.id))
                           }}
                         >
@@ -496,7 +452,7 @@ function NewCaregiverWizardInner() {
 
               <Field label="توضیحات تکمیلی (اختیاری)"><Textarea value={workPrefs.additional_notes} onChange={(e) => setWorkPrefs({ ...workPrefs, additional_notes: e.target.value })} /></Field>
 
-<Field label="پذیرش قوانین و مسئولیت اطلاعات" required error={fieldErrors.terms_accepted}>
+              <Field label="پذیرش قوانین و مسئولیت اطلاعات" required error={fieldErrors.terms_accepted}>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={workPrefs.terms_accepted} onChange={(e) => setWorkPrefs({ ...workPrefs, terms_accepted: e.target.checked })} className="accent-primary" />
                   اطلاعات فوق تأیید و مسئولیت صحت آن پذیرفته می‌شود.
@@ -598,7 +554,7 @@ function NewCaregiverWizardInner() {
         {step === 5 && (
           <div className="space-y-4">
             <p className="rounded-lg border border-dashed border-border bg-secondary/40 p-3 text-base text-muted-foreground">
-              این پرسشنامه اختیاری است — تکمیل آن در تأیید یا رد پروفایل مراقب تأثیری ندارد، فقط کیفیت پیشنهاد مراقب در بخش «تطابق» را بهبود می‌دهد. هر زمان می‌توانید آن را رد کنید و بعداً از صفحه بررسی مراقب تکمیل کنید.
+              این پرسشنامه اختیاری است — تکمیل آن در تأیید یا رد پروفایل مراقب تأثیری ندارد، فقط کیفیت پیشنهاد مراقب در بخش «تطابق» را بهبود می‌دهد. هر زمان می‌توانید آن را رد کنید و بعداً تکمیل کنید.
             </p>
             {CAREGIVER_QUESTIONNAIRE.map((section) => (
               <Card key={section.title}>
@@ -638,34 +594,34 @@ function NewCaregiverWizardInner() {
             </Button>
           )}
           {step === 0 && (
-            <Button className="flex-1 bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/20 hover:from-primary hover:to-primary" size="lg" onClick={handleStep0} disabled={saving || !firstName || !lastName || !phone}>
-              {saving ? "در حال ذخیره..." : caregiverId ? "ذخیره تغییرات" : "ایجاد و ادامه"}
+            <Button className="flex-1" size="lg" onClick={handleStep0} disabled={saving || !firstName || !lastName || !phone}>
+              {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
             </Button>
           )}
           {step === 1 && (
-            <Button className="flex-1 bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/20 hover:from-primary hover:to-primary" size="lg" onClick={handleStep1} disabled={saving}>
+            <Button className="flex-1" size="lg" onClick={handleStep1} disabled={saving}>
               {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 2 && (
-            <Button className="flex-1 bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/20 hover:from-primary hover:to-primary" size="lg" onClick={handleStep2} disabled={saving}>
+            <Button className="flex-1" size="lg" onClick={handleStep2} disabled={saving}>
               {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 3 && (
-            <Button className="flex-1 bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/20 hover:from-primary hover:to-primary" size="lg" onClick={handleStep3} disabled={saving}>
+            <Button className="flex-1" size="lg" onClick={handleStep3} disabled={saving}>
               {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 4 && (
-            <Button className="flex-1 bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/20 hover:from-primary hover:to-primary" size="lg" onClick={handleStep4} disabled={saving}>
+            <Button className="flex-1" size="lg" onClick={handleStep4} disabled={saving}>
               {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 5 && (
             <>
               <Button
-                className="flex-1 bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/20 hover:from-primary hover:to-primary"
+                className="flex-1"
                 size="lg" onClick={handleStep5} disabled={saving || Object.keys(questionnaireAnswers).length < 16}
               >
                 {saving ? "در حال ذخیره..." : "ذخیره نهایی"}
@@ -679,10 +635,4 @@ function NewCaregiverWizardInner() {
       </footer>
     </div>
   )
-
-  function updateReference(index: number, patch: Partial<ReferenceFormData>) {
-    setReferences(references.map((r, i) => (i === index ? { ...r, ...patch } : r)))
-  }
 }
-
-

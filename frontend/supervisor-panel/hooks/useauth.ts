@@ -19,18 +19,17 @@ import { ROUTES } from "@/lib/routes"
  * whether it should be allowed to.
  *
  * Each panel now passes its own allowed role(s) into useAuth(), e.g.:
- *   useAuth(["admin", "superuser"])   // admin-panel
- *   useAuth(["agency", "agency_supervisor"])  // agency-panel
+ *   useAuth(["admin", "superuser"])   // admin-panel, and every page
+ *                                      // in this panel (supervisor-
+ *                                      // panel is admin/superuser-
+ *                                      // only — the caregiver-
+ *                                      // registration wizard now
+ *                                      // lives in agency-panel
+ *                                      // instead, see its
+ *                                      // caregivers/[id]/register)
+ *   useAuth(["agency", "agency_supervisor", "agency_admin"])  // agency-panel
  *   useAuth(["superuser"])            // superuser-panel
  *   useAuth(["family"])               // family-panel
- * supervisor-panel is now ["admin", "superuser", "agency_supervisor"]
- * on its caregiver-wizard/dashboard/review pages (not every page —
- * e.g. matching-weight config stayed admin/superuser-only): an
- * agency's own supervisor progresses that agency's own caregivers'
- * registration here, already scoped server-side
- * (_caregiver_visible_to_actor in apps.caregivers.supervisor_views),
- * deep-linked to from a button on that caregiver's card in
- * agency-panel.
  * A mismatch logs the account out immediately (not just blocks one
  * screen) and redirects to login with an explanatory query param,
  * rather than silently rendering a dashboard shell for a role that

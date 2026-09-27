@@ -1,24 +1,27 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
-import { Input } from "@/components/ui/input"
-import { caregiverService } from "@/services/caregiver.service"
-import { assignmentService } from "@/services/assignment.service"
+import { caregiverWizardService } from "@/services/caregiver_wizard.service"
 import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
 import { ROUTES } from "@/lib/routes"
-import * as C from "@/lib/constants"
-import { labelForValue, labelsForValues, yesNoLabel, patientAvatar } from "@/lib/constants"
+import * as C from "@/lib/wizard-constants"
+import { labelForValue, labelsForValues, yesNoLabel } from "@/lib/wizard-constants"
 import type { FullCaregiverProfile } from "@/types/caregiver"
-import type { CaregiverAssignment } from "@/types/assignment"
 import { cn } from "@/lib/utils"
 
+// Read-mostly summary of a caregiver's 4-form registration, ported
+// from supervisor.moraqebman.ir's own review page — trimmed to what
+// belongs in agency-panel: no final approve/reject (deliberately
+// ADMIN/SUPERUSER-only on the backend, unchanged), and no patient
+// assignment tool (that's a separate, already agency-scoped feature —
+// AgencySuggestedCaregiversView / the matching flow — not this
+// platform-wide, unscoped one).
 const STATUS_LABEL: Record<string, string> = {
   draft: "پیش‌نویس", pending: "در انتظار بررسی", approved: "تأیید شده",
   rejected: "رد شده", suspended: "تعلیق شده",
@@ -51,42 +54,15 @@ function Section({ icon, title, children }: { icon: string; title: string; child
   )
 }
 
-export default function ReviewPage() {
-  return (
-    <Suspense fallback={null}>
-      <ReviewPageInner />
-    </Suspense>
-  )
-}
-
-function ReviewPageInner() {
-  const { user, loading: authLoading, logout } = useAuth(["admin", "superuser"])
+export default function CaregiverProfilePage() {
+  const { loading: authLoading } = useAuth(["agency", "agency_supervisor", "agency_admin"])
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const id = Number(searchParams.get("id"))
+  const params = useParams()
+  const id = Number(params.id)
 
   const [profile, setProfile] = useState<FullCaregiverProfile | null>(null)
   const [name, setName] = useState("")
   const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState(false)
-  const [rejectReason, setRejectReason] = useState("")
-  const [showRejectBox, setShowRejectBox] = useState(false)
-  const [message, setMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null)
-
-  const [assignments, setAssignments] = useState<CaregiverAssignment[]>([])
-  const [assignmentsLoading, setAssignmentsLoading] = useState(true)
-  const [patientCode, setPatientCode] = useState("")
-  const [assigning, setAssigning] = useState(false)
-  const [assignError, setAssignError] = useState("")
-
-  function refreshAssignments() {
-    return assignmentService.listForCaregiver(id).then(setAssignments)
-  }
-
-  useEffect(() => {
-    if (!id) return
-    refreshAssignments().finally(() => setAssignmentsLoading(false))
-  }, [id])
 
   const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, string>>({})
   const [questionnaireScores, setQuestionnaireScores] = useState<{ overall_flexibility_score: number; section_scores: Record<string, number> } | null>(null)
@@ -96,7 +72,7 @@ function ReviewPageInner() {
 
   useEffect(() => {
     if (!id) return
-    caregiverService.getCompatibilityQuestionnaire(id)
+    caregiverWizardService.getCompatibilityQuestionnaire(id)
       .then((data) => {
         const { section_scores, overall_flexibility_score, updated_at, ...answers } = data
         setQuestionnaireAnswers(answers)
@@ -109,7 +85,7 @@ function ReviewPageInner() {
   async function handleSaveQuestionnaire() {
     setQuestionnaireSaving(true); setQuestionnaireMessage("")
     try {
-      const result = await caregiverService.saveCompatibilityQuestionnaire(id, questionnaireAnswers)
+      const result = await caregiverWizardService.saveCompatibilityQuestionnaire(id, questionnaireAnswers)
       const { section_scores, overall_flexibility_score } = result
       setQuestionnaireScores({ overall_flexibility_score, section_scores })
       setQuestionnaireMessage("پرسشنامه ذخیره شد.")
@@ -123,76 +99,22 @@ function ReviewPageInner() {
   useEffect(() => {
     if (!id) return
     Promise.all([
-      caregiverService.fullProfile(id),
-      caregiverService.getBasicInfo(id),
+      caregiverWizardService.fullProfile(id),
+      caregiverWizardService.getBasicInfo(id),
     ]).then(([full, basic]) => {
       setProfile(full)
       setName(`${basic.first_name} ${basic.last_name}`.trim())
     }).finally(() => setLoading(false))
   }, [id])
 
-  if (authLoading || !user) return null
-
-  async function handleApprove() {
-    setBusy(true); setMessage(null)
-    try {
-      await caregiverService.approve(id)
-      const full = await caregiverService.fullProfile(id)
-      setProfile(full)
-      setMessage({ kind: "success", text: "پروفایل با موفقیت تأیید شد." })
-    } catch (err: any) {
-      const missing = err?.response?.data?.missing as string[] | undefined
-      setMessage({
-        kind: "error",
-        text: missing?.length
-          ? `پروفایل ناقص است: ${missing.join("، ")}`
-          : "تأیید با خطا مواجه شد.",
-      })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function handleReject() {
-    setBusy(true); setMessage(null)
-    try {
-      await caregiverService.reject(id, rejectReason)
-      const full = await caregiverService.fullProfile(id)
-      setProfile(full)
-      setShowRejectBox(false)
-      setMessage({ kind: "success", text: "پروفایل رد شد." })
-    } catch {
-      setMessage({ kind: "error", text: "رد کردن با خطا مواجه شد." })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function handleAssign() {
-    setAssigning(true); setAssignError("")
-    try {
-      await assignmentService.assign(id, patientCode.trim().toUpperCase())
-      setPatientCode("")
-      await refreshAssignments()
-    } catch (err: any) {
-      setAssignError(err?.response?.data?.detail || "تخصیص با خطا مواجه شد.")
-    } finally {
-      setAssigning(false)
-    }
-  }
-
-  async function handleEndAssignment(assignmentId: number) {
-    if (!window.confirm("آیا از پایان این تخصیص مطمئن هستید؟")) return
-    await assignmentService.end(assignmentId)
-    refreshAssignments()
-  }
+  if (authLoading) return null
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
       <AppHeader
         title={
           <span className="flex flex-col items-start gap-1">
-            <span>بررسی پروفایل — {name || "..."}</span>
+            <span>پروفایل — {name || "..."}</span>
             {profile && (
               <span className={cn("inline-block rounded-full px-2 py-0.5 text-xs font-medium", STATUS_CLASS[profile.status])}>
                 {STATUS_LABEL[profile.status] || profile.status}
@@ -202,21 +124,11 @@ function ReviewPageInner() {
         }
         maxWidth="max-w-3xl"
       >
-        <Button variant="outline" size="sm" onClick={() => router.push(`${ROUTES.newCaregiver}?id=${id}`)}>ویرایش</Button>
-        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به لیست</Button>
-        <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
+        <Button variant="outline" size="sm" onClick={() => router.push(`${ROUTES.caregivers}/${id}/register`)}>ویرایش / ادامه ثبت‌نام</Button>
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.caregivers)}>بازگشت به لیست</Button>
       </AppHeader>
 
       <main className="mx-auto max-w-3xl space-y-4 p-4">
-        {message && (
-          <div className={cn(
-            "rounded-lg border p-3 text-sm font-medium",
-            message.kind === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-destructive/30 bg-destructive/10 text-destructive"
-          )}>
-            {message.text}
-          </div>
-        )}
-
         {loading || !profile ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 w-full" />)}
@@ -225,7 +137,7 @@ function ReviewPageInner() {
           <>
             {profile.status === "rejected" && profile.rejection_reason && (
               <div className="rounded-lg border border-border bg-secondary p-3 text-sm text-foreground">
-                <strong>دلیل رد شدن:</strong> {profile.rejection_reason}
+                <strong>دلیل رد شدن (توسط پلتفرم):</strong> {profile.rejection_reason}
               </div>
             )}
 
@@ -309,46 +221,6 @@ function ReviewPageInner() {
               )}
             </Section>
 
-            <Section icon="🏥" title="بیماران تخصیص‌یافته">
-              {assignmentsLoading ? (
-                <p className="text-sm text-muted-foreground">در حال بارگذاری...</p>
-              ) : (
-                <div className="space-y-3">
-                  {assignments.filter((a) => a.status === "active").length === 0 ? (
-                    <p className="text-sm text-muted-foreground">این مراقب در حال حاضر به بیماری تخصیص ندارد.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {assignments.filter((a) => a.status === "active").map((a) => (
-                        <div key={a.id} className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 p-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{patientAvatar(a.patient_gender)}</span>
-                            <div>
-                              <p className="text-sm font-medium">{a.patient_name}</p>
-                              <p className="text-xs text-muted-foreground">از تاریخ {a.assigned_at.slice(0, 10)}</p>
-                            </div>
-                          </div>
-                          <button className="text-xs text-primary-strong hover:underline" onClick={() => handleEndAssignment(a.id)}>
-                            پایان تخصیص
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
-                    <p className="text-xs font-medium text-muted-foreground">تخصیص به بیمار جدید با کد بیمار</p>
-                    {assignError && <p className="text-xs text-destructive">{assignError}</p>}
-                    <div className="flex flex-wrap gap-2">
-                      <Input placeholder="کد بیمار (مثلاً ELD-7K4P9X)" className="w-48" value={patientCode} onChange={(e) => setPatientCode(e.target.value)} dir="ltr" />
-                      <Button variant="outline" className="border-border text-primary-strong hover:bg-secondary" disabled={assigning || !patientCode} onClick={handleAssign}>
-                        + تخصیص
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Section>
-
             <Section icon="💬" title="پرسشنامه سازگاری مراقب">
               {questionnaireLoading ? (
                 <p className="text-sm text-muted-foreground">در حال بارگذاری...</p>
@@ -399,7 +271,7 @@ function ReviewPageInner() {
                   ))}
 
                   <Button
-                    className="w-full bg-primary hover:bg-primary"
+                    className="w-full"
                     disabled={questionnaireSaving || Object.keys(questionnaireAnswers).length < 16}
                     onClick={handleSaveQuestionnaire}
                   >
@@ -408,48 +280,6 @@ function ReviewPageInner() {
                 </div>
               )}
             </Section>
-
-            {/* Decision actions — final approve/reject is admin/
-                superuser only on the backend (IsAdminOrSuperuser on
-                ApproveCaregiverView/RejectCaregiverView), which is
-                also the only role that reaches this page now. */}
-            <Card className="border-border">
-              <CardContent className="space-y-3 p-4">
-                {showRejectBox ? (
-                  <div className="space-y-2">
-                    <Textarea
-                      value={rejectReason}
-                      onChange={(e) => setRejectReason(e.target.value)}
-                      placeholder="دلیل رد شدن را بنویسید..."
-                    />
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setShowRejectBox(false)} disabled={busy}>انصراف</Button>
-                      <Button className="flex-1 bg-primary hover:bg-primary" onClick={handleReject} disabled={busy}>
-                        {busy ? "..." : "ثبت رد شدن"}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1 border-border text-primary-strong hover:bg-secondary"
-                      onClick={() => setShowRejectBox(true)}
-                      disabled={busy || profile.status === "rejected"}
-                    >
-                      رد کردن
-                    </Button>
-                    <Button
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                      onClick={handleApprove}
-                      disabled={busy || profile.status === "approved"}
-                    >
-                      {busy ? "..." : profile.status === "approved" ? "✓ تأیید شده" : "تأیید پروفایل"}
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </>
         )}
       </main>

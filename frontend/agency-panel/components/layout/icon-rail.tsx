@@ -19,6 +19,7 @@ import {
   Activity,
   Receipt,
   LogOut,
+  UserPlus,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/lib/routes"
@@ -47,6 +48,14 @@ export const NAV_ITEMS: NavItem[] = [
     href: ROUTES.caregivers,
     icon: Users,
     children: [
+      // Deep-links into the caregivers list page with ?add=1 — opens
+      // the same "افزودن خدمت‌دهنده" form the page's own header button
+      // does (handleCreateCaregiver / agencyManagementService.
+      // createCaregiverCandidate), just reachable straight from the
+      // nav instead of only after landing on "نمای کلی" first. Once
+      // the candidate is created there, its card's "ادامه ثبت‌نام"
+      // link continues into the actual wizard at caregivers/[id]/register.
+      { label: "افزودن خدمت‌دهنده جدید", href: `${ROUTES.caregivers}?add=1`, icon: UserPlus },
       { label: "ارزیابی عملکرد", href: ROUTES.caregiverPerformance, icon: BarChart3 },
       { label: "فعالیت", href: ROUTES.caregiverActivity, icon: Activity },
       { label: "تنظیمات", href: ROUTES.caregiverSettings, icon: Settings },

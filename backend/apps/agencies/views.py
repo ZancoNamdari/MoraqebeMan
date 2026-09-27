@@ -8,9 +8,17 @@ from rest_framework.views import APIView
 from apps.accounts.models import User, UserRole
 from apps.audit.services import AuditService
 from apps.authorization.permissions import IsAgency, IsSuperuser
-from apps.caregivers.models import CaregiverAgencyPipelineStatus, CaregiverProcessMilestone, CaregiverProfile, CaregiverStatus
+from apps.caregivers.models import (
+    CaregiverAgencyPipelineStatus,
+    CaregiverDocumentReviewStatus,
+    CaregiverDocumentType,
+    CaregiverDocumentUpload,
+    CaregiverProcessMilestone,
+    CaregiverProfile,
+    CaregiverStatus,
+)
 from apps.caregivers.permissions import IsCaregiver
-from apps.caregivers.serializers import CreateCaregiverSerializer
+from apps.caregivers.serializers import CaregiverDocumentUploadSerializer, CreateCaregiverSerializer
 from apps.families.models import FamilyPatientLink, FamilyProfile, LinkStatus, PatientPipelineStatus, PatientProfile
 from apps.families.permissions import IsFamily
 from apps.families.serializers import PatientProfileSerializer
@@ -816,7 +824,7 @@ class AgencyCaregiverPipelineListView(APIView):
 
         links = AgencyCaregiverLink.objects.filter(
             agency=agency, status=AgencyLinkStatus.APPROVED,
-        ).select_related("caregiver", "caregiver__user", "decided_by")
+        ).select_related("caregiver", "caregiver__user", "decided_by").prefetch_related("caregiver__document_uploads")
 
         creator_scope = visible_creator_user_ids(request.user)
         if creator_scope is not None:
@@ -1061,6 +1069,64 @@ class AgencyCaregiverPipelineUpdateView(APIView):
                 "access_code": family.access_code,
             }
         return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+class AgencyCaregiverDocumentUploadView(APIView):
+    """
+    POST /api/agencies/<agency_id>/caregivers-pipeline/<caregiver_id>/documents/<document_type>/
+    Multipart upload for one of the seven "تکمیل مدارک" checklist
+    items — see CaregiverDocumentUpload's own docstring. Lives in this
+    agency-scoped URL space (caregiver_id = CaregiverProfile.pk), not
+    apps.caregivers.document_views' platform-wide space, per the
+    confirmed requirement that uploading is agency staff's own job
+    ("پرسنل آژانس همون جا زیر هر چک‌باکس"), same
+    resolve_tenant_context(allow_admin=True) permission as the sibling
+    AgencyCaregiverPipelineUpdateView.patch() right above.
+
+    Re-uploading (e.g. after a rejection) replaces the file on the
+    same (caregiver, document_type) row and resets status back to
+    PENDING, clearing any previous review — a redo, not a new record.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, agency_id, caregiver_id, document_type):
+        if document_type not in CaregiverDocumentType.values:
+            return Response({"detail": "نوع مدرک نامعتبر است."}, status=status.HTTP_404_NOT_FOUND)
+
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        agency = ctx.agency
+
+        link = AgencyCaregiverLink.objects.filter(
+            caregiver_id=caregiver_id, agency=agency, status=AgencyLinkStatus.APPROVED,
+        ).select_related("caregiver").first()
+        if link is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        uploaded_file = request.data.get("file")
+        if not uploaded_file:
+            return Response({"detail": "فایل الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        upload, _ = CaregiverDocumentUpload.objects.update_or_create(
+            caregiver=link.caregiver, document_type=document_type,
+            defaults={
+                "file": uploaded_file,
+                "status": CaregiverDocumentReviewStatus.PENDING,
+                "uploaded_by": request.user,
+                "reviewed_by": None,
+                "reviewed_at": None,
+                "rejection_reason": "",
+            },
+        )
+        # A fresh/re-upload always means "not approved anymore" — keep
+        # the fast-read doc_* boolean in sync the same way approve()/
+        # reject() do, rather than leaving a stale checked box from a
+        # since-replaced file.
+        upload._sync_profile_flag()
+
+        audit.caregiver_updated(request.user.id, link.caregiver.user_id, section=f"document_uploaded:{document_type}")
+        return Response(CaregiverDocumentUploadSerializer(upload).data, status=status.HTTP_201_CREATED)
 
 
 class AgencyPatientPipelineStatusView(APIView):

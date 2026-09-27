@@ -9,3 +9,13 @@ services:
     build:
       args:
         NEXT_PUBLIC_API_URL: http://localhost:8000
+
+  # No ports override existed for this service before — it had none,
+  # since prod only reaches it through nginx. For local testing it
+  # needs to be reachable directly.
+  agency_panel:
+    build:
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3004:3000"

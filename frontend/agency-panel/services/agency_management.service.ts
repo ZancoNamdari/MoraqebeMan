@@ -6,6 +6,8 @@ import type {
   AgencyPatient,
   AgencySuggestionsResponse,
   AgencySupervisor,
+  CaregiverDocumentField,
+  CaregiverDocumentUpload,
   CreateAgencyAdminPayload,
   CreateAgencyPatientPayload,
   CreateAgencyPatientResponse,
@@ -95,5 +97,33 @@ export const agencyManagementService = {
   async updateCaregiverPipeline(agencyId: number, caregiverId: number, fields: Partial<AgencyCaregiverPipelineItem>) {
     const { data } = await api.patch(`/api/agencies/${agencyId}/caregivers-pipeline/${caregiverId}/`, fields)
     return data as AgencyCaregiverPipelineItem
+  },
+
+  // Uploads (or re-uploads, after a rejection) the file behind one of
+  // the seven document-checklist items — agency staff's own job, from
+  // right under that checklist item in the drawer.
+  async uploadCaregiverDocument(agencyId: number, caregiverId: number, documentType: CaregiverDocumentField, file: File) {
+    const formData = new FormData()
+    formData.append("file", file)
+    const { data } = await api.post(
+      `/api/agencies/${agencyId}/caregivers-pipeline/${caregiverId}/documents/${documentType}/`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    )
+    return data as CaregiverDocumentUpload
+  },
+
+  // Approve/reject live in the platform-wide, user_id-keyed space
+  // (apps.caregivers.document_views), reachable from here too per
+  // the confirmed requirement that the agency's own owner/supervisor
+  // can review — same endpoints admin-panel hits.
+  async approveCaregiverDocument(caregiverUserId: number, documentType: CaregiverDocumentField) {
+    const { data } = await api.post(`/api/caregivers/${caregiverUserId}/documents/${documentType}/approve/`)
+    return data as CaregiverDocumentUpload
+  },
+
+  async rejectCaregiverDocument(caregiverUserId: number, documentType: CaregiverDocumentField, reason: string) {
+    const { data } = await api.post(`/api/caregivers/${caregiverUserId}/documents/${documentType}/reject/`, { reason })
+    return data as CaregiverDocumentUpload
   },
 }

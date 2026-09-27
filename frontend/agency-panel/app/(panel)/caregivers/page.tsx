@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState, type ChangeEvent } from "react"
 import {
   DndContext, DragOverlay, useDraggable, useDroppable,
   PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core"
-import { AlertTriangle, GripVertical, ChevronRight, ChevronLeft, Plus, ExternalLink } from "lucide-react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { AlertTriangle, GripVertical, ChevronRight, ChevronLeft, Plus, ClipboardList } from "lucide-react"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,15 +21,7 @@ import { cn } from "@/lib/utils"
 import { TagEditor } from "@/components/agency/tag-editor"
 import { ReminderBadges } from "@/components/reminders/reminder-badges"
 import type { AgencyCaregiverLink } from "@/types/agency"
-import type { AgencyCaregiverPipelineItem } from "@/types/agency_management"
-
-// The separate, platform-wide panel where an agency's own supervisor
-// (role agency_supervisor) progresses a caregiver's actual
-// registration wizard (identity, work preferences, experience,
-// skills, references) — already scoped server-side to just this
-// agency's own caregivers. Configurable since it's a different
-// subdomain than this panel's own API.
-const SUPERVISOR_PANEL_URL = process.env.NEXT_PUBLIC_SUPERVISOR_PANEL_URL || "https://supervisor.moraqebman.ir"
+import type { AgencyCaregiverPipelineItem, CaregiverDocumentField, CaregiverDocumentReviewStatus } from "@/types/agency_management"
 
 // Quick-add suggestion chips for the tag editor — service categories
 // only. The 12 matching-process labels (در دسترس بودن، در شرف اتمام
@@ -55,14 +49,21 @@ const STAGES = [
 ] as const
 
 const DOC_CHECKLIST = [
-  { field: "doc_no_criminal_record", label: "عدم سوءپیشینه" },
-  { field: "doc_no_addiction_test", label: "آزمایش عدم اعتیاد" },
-  { field: "doc_identity_verified", label: "تأیید مدارک هویتی" },
-  { field: "doc_personal_photo", label: "عکس پرسنلی" },
-  { field: "doc_mental_health_test", label: "آزمون سلامت روان" },
-  { field: "doc_promissory_note", label: "دریافت سفته/ضمانت" },
-  { field: "doc_id_card_received", label: "دریافت مدرک شناسایی" },
-] as const
+  { field: "doc_no_criminal_record", docType: "no_criminal_record", label: "عدم سوءپیشینه" },
+  { field: "doc_no_addiction_test", docType: "no_addiction_test", label: "آزمایش عدم اعتیاد" },
+  { field: "doc_identity_verified", docType: "identity_verified", label: "تأیید مدارک هویتی" },
+  { field: "doc_personal_photo", docType: "personal_photo", label: "عکس پرسنلی" },
+  { field: "doc_mental_health_test", docType: "mental_health_test", label: "آزمون سلامت روان" },
+  { field: "doc_promissory_note", docType: "promissory_note", label: "دریافت سفته/ضمانت" },
+  { field: "doc_id_card_received", docType: "id_card_received", label: "دریافت مدرک شناسایی" },
+] as const satisfies readonly { field: keyof AgencyCaregiverPipelineItem; docType: CaregiverDocumentField; label: string }[]
+
+const DOC_STATUS_LABEL: Record<CaregiverDocumentReviewStatus, string> = {
+  pending: "در انتظار بررسی", approved: "تأیید شده", rejected: "رد شده",
+}
+const DOC_STATUS_COLOR: Record<CaregiverDocumentReviewStatus, string> = {
+  pending: "text-amber-700 bg-amber-100", approved: "text-emerald-700 bg-emerald-100", rejected: "text-red-700 bg-red-100",
+}
 
 function docsCompletedCount(item: AgencyCaregiverPipelineItem) {
   return DOC_CHECKLIST.filter((d) => item[d.field]).length
@@ -193,14 +194,20 @@ function CaregiverCard({ item, onMove, moving, onAddTag, onRemoveTag }: {
         </button>
       </div>
 
-      <a
-        href={`${SUPERVISOR_PANEL_URL}/caregivers/new?id=${item.user_id}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-1.5 flex items-center justify-center gap-1 rounded-md border border-slate-200 bg-slate-50 py-1 text-[10px] font-medium text-slate-600 hover:bg-slate-100"
-      >
-        <ExternalLink className="h-3 w-3" /> ادامه ثبت‌نام در پنل سوپروایزر
-      </a>
+      <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+        <Link
+          href={`/caregivers/${item.user_id}/register`}
+          className="flex items-center justify-center gap-1 rounded-md border border-slate-200 bg-slate-50 py-1 text-[10px] font-medium text-slate-600 hover:bg-slate-100"
+        >
+          <ClipboardList className="h-3 w-3" /> ادامه ثبت‌نام
+        </Link>
+        <Link
+          href={`/caregivers/${item.user_id}/profile`}
+          className="flex items-center justify-center gap-1 rounded-md border border-slate-200 bg-slate-50 py-1 text-[10px] font-medium text-slate-600 hover:bg-slate-100"
+        >
+          مشاهده پروفایل
+        </Link>
+      </div>
     </div>
   )
 }
@@ -236,40 +243,140 @@ function StageColumn({ stage, items, onMove, movingId, onAddTag, onRemoveTag }: 
   )
 }
 
-function DocumentChecklistDrawer({ item, agencyId, onUpdated }: {
+function DocumentChecklistRow({ item, agencyId, docType, label, canReview, onUpdated }: {
   item: AgencyCaregiverPipelineItem
   agencyId: number
+  docType: CaregiverDocumentField
+  label: string
+  canReview: boolean
   onUpdated: (updated: AgencyCaregiverPipelineItem) => void
 }) {
-  const [saving, setSaving] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [rejecting, setRejecting] = useState(false)
+  const [reason, setReason] = useState("")
+  const upload = item.documents?.[docType] ?? null
 
-  async function toggle(field: (typeof DOC_CHECKLIST)[number]["field"]) {
-    setSaving(field)
+  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    setBusy(true)
     try {
-      const updated = await agencyManagementService.updateCaregiverPipeline(agencyId, item.id, {
-        [field]: !item[field],
-      })
-      onUpdated(updated)
+      await agencyManagementService.uploadCaregiverDocument(agencyId, item.id, docType, file)
+      // Re-pull the whole caregiver row rather than hand-patching one
+      // upload into it — the fast-read doc_* boolean the Kanban badge
+      // uses is recomputed server-side on upload too (reset to
+      // false), and re-fetching keeps both in sync with zero risk of
+      // drifting apart.
+      const refreshed = await agencyManagementService.updateCaregiverPipeline(agencyId, item.id, {})
+      onUpdated(refreshed)
     } finally {
-      setSaving(null)
+      setBusy(false)
     }
   }
 
+  async function handleApprove() {
+    setBusy(true)
+    try {
+      await agencyManagementService.approveCaregiverDocument(item.user_id, docType)
+      const refreshed = await agencyManagementService.updateCaregiverPipeline(agencyId, item.id, {})
+      onUpdated(refreshed)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleReject() {
+    if (!reason.trim()) return
+    setBusy(true)
+    try {
+      await agencyManagementService.rejectCaregiverDocument(item.user_id, docType, reason.trim())
+      const refreshed = await agencyManagementService.updateCaregiverPipeline(agencyId, item.id, {})
+      onUpdated(refreshed)
+      setRejecting(false)
+      setReason("")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="rounded-md border border-slate-200 bg-white p-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-slate-700">{label}</span>
+        {upload ? (
+          <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium", DOC_STATUS_COLOR[upload.status])}>
+            {DOC_STATUS_LABEL[upload.status]}
+          </span>
+        ) : (
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">آپلود نشده</span>
+        )}
+      </div>
+
+      {upload?.status === "rejected" && upload.rejection_reason && (
+        <p className="mt-1 text-[10px] text-red-600">دلیل رد: {upload.rejection_reason}</p>
+      )}
+
+      <div className="mt-1.5 flex items-center gap-2">
+        <label className={cn(
+          "flex-1 cursor-pointer rounded border border-dashed border-slate-300 py-1 text-center text-[10px] text-slate-500 hover:bg-slate-50",
+          busy && "pointer-events-none opacity-50",
+        )}>
+          {upload ? "آپلود مجدد فایل" : "آپلود فایل"}
+          <input type="file" className="hidden" disabled={busy} onChange={handleFile} />
+        </label>
+        {upload?.file && (
+          <a href={upload.file} target="_blank" rel="noopener noreferrer" className="text-[10px] text-purple-700 underline">
+            مشاهده فایل
+          </a>
+        )}
+      </div>
+
+      {canReview && upload && upload.status === "pending" && (
+        <div className="mt-1.5 flex items-center gap-2">
+          <Button size="sm" className="h-6 flex-1 text-[10px]" disabled={busy} onClick={handleApprove}>تأیید</Button>
+          <Button size="sm" variant="outline" className="h-6 flex-1 text-[10px] text-red-600" disabled={busy} onClick={() => setRejecting(true)}>رد</Button>
+        </div>
+      )}
+
+      {canReview && rejecting && (
+        <div className="mt-1.5 space-y-1">
+          <Input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="دلیل رد شدن"
+            className="h-6 text-[10px]"
+          />
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="destructive" className="h-6 flex-1 text-[10px]" disabled={busy || !reason.trim()} onClick={handleReject}>ثبت رد</Button>
+            <Button size="sm" variant="ghost" className="h-6 flex-1 text-[10px]" disabled={busy} onClick={() => { setRejecting(false); setReason("") }}>انصراف</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DocumentChecklistDrawer({ item, agencyId, canReview, onUpdated }: {
+  item: AgencyCaregiverPipelineItem
+  agencyId: number
+  canReview: boolean
+  onUpdated: (updated: AgencyCaregiverPipelineItem) => void
+}) {
   return (
     <div className="rounded-lg border border-purple-200 bg-purple-50/40 p-3">
       <p className="mb-2 text-xs font-bold text-purple-900">{item.full_name} — چک‌لیست مدارک</p>
       <div className="space-y-1.5">
         {DOC_CHECKLIST.map((d) => (
-          <label key={d.field} className="flex items-center gap-2 text-xs text-slate-700">
-            <input
-              type="checkbox"
-              checked={item[d.field]}
-              disabled={saving === d.field}
-              onChange={() => toggle(d.field)}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            {d.label}
-          </label>
+          <DocumentChecklistRow
+            key={d.field}
+            item={item}
+            agencyId={agencyId}
+            docType={d.docType}
+            label={d.label}
+            canReview={canReview}
+            onUpdated={onUpdated}
+          />
         ))}
       </div>
     </div>
@@ -277,7 +384,16 @@ function DocumentChecklistDrawer({ item, agencyId, onUpdated }: {
 }
 
 export default function CaregiversPage() {
+  return (
+    <Suspense fallback={null}>
+      <CaregiversPageInner />
+    </Suspense>
+  )
+}
+
+function CaregiversPageInner() {
   const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor", "agency_admin"])
+  const searchParams = useSearchParams()
 
   const [agencyId, setAgencyId] = useState<number | null>(null)
 
@@ -335,6 +451,14 @@ export default function CaregiversPage() {
       ])
     })
   }, [user])
+
+  // Deep-link from the sidebar's "افزودن خدمت‌دهنده جدید" nav item
+  // (?add=1) — opens the same form the page's own header button
+  // does, so that link works as a direct shortcut into this page
+  // rather than just landing on the list and requiring another click.
+  useEffect(() => {
+    if (searchParams.get("add") === "1") setShowForm(true)
+  }, [searchParams])
 
   if (authLoading || !user) return null
 
@@ -604,6 +728,7 @@ export default function CaregiversPage() {
                           key={item.id}
                           item={item}
                           agencyId={agencyId!}
+                          canReview={user?.role === "agency" || user?.role === "agency_supervisor"}
                           onUpdated={(updated) => setPipelineItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))}
                         />
                       ))}

@@ -149,6 +149,107 @@ class CaregiverProcessMilestone(models.TextChoices):
     CONTRACT_COMPLETED = "contract_completed", "اتمام قرارداد"
 
 
+class CaregiverDocumentType(models.TextChoices):
+    """
+    One-to-one with the seven doc_* booleans on CaregiverProfile below
+    — this is the upload+review record BEHIND each of those flags;
+    the boolean itself stays the fast-read summary everywhere it's
+    already used (Kanban badge count, reminder rules), and is kept in
+    sync automatically whenever a CaregiverDocumentUpload's status
+    changes (see CaregiverDocumentUpload.save()/sync_profile_flag()).
+    """
+    NO_CRIMINAL_RECORD = "no_criminal_record", "عدم سوءپیشینه"
+    NO_ADDICTION_TEST = "no_addiction_test", "آزمایش عدم اعتیاد"
+    IDENTITY_VERIFIED = "identity_verified", "تأیید مدارک هویتی"
+    PERSONAL_PHOTO = "personal_photo", "عکس پرسنلی"
+    MENTAL_HEALTH_TEST = "mental_health_test", "آزمون سلامت روان"
+    PROMISSORY_NOTE = "promissory_note", "دریافت سفته/ضمانت"
+    ID_CARD_RECEIVED = "id_card_received", "دریافت مدرک شناسایی"
+
+
+class CaregiverDocumentReviewStatus(models.TextChoices):
+    PENDING = "pending", "در انتظار بررسی"
+    APPROVED = "approved", "تأیید شده"
+    REJECTED = "rejected", "رد شده"
+
+
+def caregiver_document_upload_path(instance, filename):
+    return f"caregivers/{instance.caregiver_id}/documents/{instance.document_type}/{filename}"
+
+
+class CaregiverDocumentUpload(models.Model):
+    """
+    The actual file behind one of the seven "تکمیل مدارک" checklist
+    items — added because a plain checkbox that any agency staff can
+    click has no way to prove the document was ever really provided.
+    Agency staff (admin/supervisor/owner) uploads the file from
+    agency-panel's checklist drawer; a "کارشناس" reviews and
+    approves/rejects it — either platform admin/superuser (from
+    admin-panel's caregiver detail page) or that SAME agency's own
+    supervisor/owner (from agency-panel) — see
+    apps.caregivers.document_views for the shared permission check
+    both panels hit. Deliberately NOT the uploader themselves: an
+    agency admin enters the file, but approval needs a second, more
+    senior pair of eyes (the "supervisor" hierarchy already
+    established elsewhere in this codebase), never a self-approval.
+
+    One row per (caregiver, document_type) — re-uploading (e.g. after
+    a rejection) replaces the file on the same row and resets it back
+    to PENDING, rather than piling up a history of every past
+    attempt; a rejected document is a redo, not an archived record.
+    """
+    caregiver = models.ForeignKey(
+        "caregivers.CaregiverProfile", on_delete=models.CASCADE, related_name="document_uploads",
+        verbose_name="مراقب",
+    )
+    document_type = models.CharField(max_length=30, choices=CaregiverDocumentType.choices, verbose_name="نوع مدرک")
+    file = models.FileField(upload_to=caregiver_document_upload_path, verbose_name="فایل")
+    status = models.CharField(
+        max_length=20, choices=CaregiverDocumentReviewStatus.choices,
+        default=CaregiverDocumentReviewStatus.PENDING, db_index=True, verbose_name="وضعیت بررسی",
+    )
+    uploaded_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="caregiver_documents_uploaded", verbose_name="بارگذاری‌کننده",
+    )
+    uploaded_at = jmodels.jDateTimeField(auto_now=True, verbose_name="زمان بارگذاری")
+    reviewed_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="caregiver_documents_reviewed", verbose_name="بررسی‌کننده",
+    )
+    reviewed_at = jmodels.jDateTimeField(null=True, blank=True, verbose_name="زمان بررسی")
+    rejection_reason = models.TextField(blank=True, verbose_name="دلیل رد شدن")
+
+    class Meta:
+        unique_together = ("caregiver", "document_type")
+        verbose_name = "مدرک بارگذاری‌شده مراقب"
+        verbose_name_plural = "مدارک بارگذاری‌شده مراقبان"
+
+    def __str__(self):
+        return f"{self.caregiver_id} — {self.document_type} ({self.status})"
+
+    def _sync_profile_flag(self):
+        field_name = f"doc_{self.document_type}"
+        setattr(self.caregiver, field_name, self.status == CaregiverDocumentReviewStatus.APPROVED)
+        self.caregiver.save(update_fields=[field_name])
+
+    def approve(self, reviewer):
+        self.status = CaregiverDocumentReviewStatus.APPROVED
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.rejection_reason = ""
+        self.save(update_fields=["status", "reviewed_by", "reviewed_at", "rejection_reason"])
+        self._sync_profile_flag()
+
+    def reject(self, reviewer, reason: str):
+        self.status = CaregiverDocumentReviewStatus.REJECTED
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.rejection_reason = reason
+        self.save(update_fields=["status", "reviewed_by", "reviewed_at", "rejection_reason"])
+        self._sync_profile_flag()  # false — a rejected document is not a satisfied checklist item
+
+
 class CaregiverProfile(models.Model):
     user = models.OneToOneField(
         "accounts.User", on_delete=models.CASCADE, related_name="caregiver_profile", verbose_name="کاربر")
@@ -177,7 +278,11 @@ class CaregiverProfile(models.Model):
     # (DOCUMENTS_IN_PROGRESS) pipeline stage — kept as plain booleans
     # directly on the profile rather than a separate model, since
     # every caregiver has exactly one fixed set of these, never a
-    # variable list.
+    # variable list. Each one is now backed by a CaregiverDocumentUpload
+    # row (see above) holding the actual file + review status; these
+    # booleans stay in sync with that row's approval state (kept here,
+    # not derived on the fly, since they're already read everywhere —
+    # the Kanban badge count, reminder rules — as plain fields).
     doc_no_criminal_record = models.BooleanField(default=False, verbose_name="عدم سوءپیشینه")
     doc_no_addiction_test = models.BooleanField(default=False, verbose_name="آزمایش عدم اعتیاد")
     doc_identity_verified = models.BooleanField(default=False, verbose_name="تأیید مدارک هویتی")

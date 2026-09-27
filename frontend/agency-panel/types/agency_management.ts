@@ -56,6 +56,26 @@ export interface UpdateAgencyAdminPayload {
   supervisor_id?: number
 }
 
+// One of the seven "تکمیل مدارک" checklist items' real file — see
+// backend's CaregiverDocumentUpload docstring. null when nothing has
+// been uploaded for that document type yet.
+export type CaregiverDocumentReviewStatus = "pending" | "approved" | "rejected"
+
+export interface CaregiverDocumentUpload {
+  document_type: string
+  file: string
+  status: CaregiverDocumentReviewStatus
+  uploaded_by_name: string | null
+  uploaded_at: string
+  reviewed_by_name: string | null
+  reviewed_at: string | null
+  rejection_reason: string
+}
+
+export type CaregiverDocumentField =
+  | "no_criminal_record" | "no_addiction_test" | "identity_verified"
+  | "personal_photo" | "mental_health_test" | "promissory_note" | "id_card_received"
+
 export interface AgencyCaregiverPipelineItem {
   id: number
   // The caregiver's platform User id — distinct from `id` above
@@ -74,6 +94,11 @@ export interface AgencyCaregiverPipelineItem {
   doc_mental_health_test: boolean
   doc_promissory_note: boolean
   doc_id_card_received: boolean
+  // Keyed by CaregiverDocumentField (e.g. "no_criminal_record", NOT
+  // the "doc_" prefixed booleans above) — the file/status detail
+  // behind each of those seven fast-read booleans; null for a
+  // document type that has never been uploaded.
+  documents: Record<CaregiverDocumentField, CaregiverDocumentUpload | null>
   tags: string[]
   process_milestones: string[]
   created_by: string | null

@@ -53,7 +53,7 @@ function StatCard({
 }
 
 export default function DashboardPage() {
-  const { user, loading: authLoading } = useAuth(["admin", "superuser", "agency_supervisor"])
+  const { user, loading: authLoading } = useAuth(["admin", "superuser"])
   const router = useRouter()
   const [caregivers, setCaregivers] = useState<CaregiverListItem[]>([])
   const [loading, setLoading] = useState(true)

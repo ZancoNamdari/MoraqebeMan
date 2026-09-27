@@ -29,6 +29,7 @@ from apps.accounts.models import User, UserRole
 from apps.audit.services import AuditService
 
 from .models import (
+    CaregiverDocumentType,
     CaregiverExperience,
     CaregiverProfile,
     CaregiverReference,
@@ -37,11 +38,12 @@ from .models import (
     CaregiverWorkPreferences,
     IdentityProfile,
 )
-from .permissions import IsAdminOrSuperuserOrAgencySupervisor
+from .permissions import IsAdminOrSuperuserOrAgencyStaff
 from .serializers import (
     CaregiverBasicInfoSerializer,
     CaregiverCompatibilityQuestionnaireSerializer,
     CaregiverExperienceSerializer,
+    CaregiverDocumentUploadSerializer,
     CaregiverListItemSerializer,
     CaregiverReferenceListSerializer,
     CaregiverReferenceSerializer,
@@ -56,6 +58,22 @@ from .serializers import (
 from .views import _get_identity_dict, _missing_forms
 
 audit = AuditService()
+
+
+def _get_documents_dict(profile: CaregiverProfile) -> dict:
+    """
+    Same shape as apps.agencies.serializers.
+    AgencyCaregiverPipelineSerializer.get_documents — kept as its own
+    copy here (rather than a shared import) since that one lives in
+    apps.agencies and this one needs to stay reachable without an
+    agencies->caregivers->agencies import cycle.
+    """
+    uploads_by_type = {upload.document_type: upload for upload in profile.document_uploads.all()}
+    return {
+        document_type: CaregiverDocumentUploadSerializer(uploads_by_type[document_type]).data
+        if document_type in uploads_by_type else None
+        for document_type in CaregiverDocumentType.values
+    }
 
 
 def _get_target_user(request, user_id: int) -> User | None:
@@ -79,29 +97,31 @@ def _get_target_profile(request, user_id: int) -> CaregiverProfile | None:
 def _caregiver_visible_to_actor(request, user_id: int) -> bool:
     """
     ADMIN/SUPERUSER see every caregiver on the platform (unchanged
-    behavior). AGENCY_SUPERVISOR only sees caregivers actually linked
-    to their own agency, and only once that link is APPROVED — a
-    supervisor entering a brand-new caregiver auto-approves that link
-    themselves (see SupervisorCaregiverListView.post below), so this
-    only ever blocks a DIFFERENT agency's caregivers, not their own
-    freshly-created ones.
+    behavior). Any of the three agency-staff roles (owner/
+    AGENCY, supervisor/AGENCY_SUPERVISOR, admin/AGENCY_ADMIN) only see
+    caregivers actually linked to their own agency, and only once that
+    link is APPROVED — whichever of the three entered a brand-new
+    caregiver from agency-panel's Kanban auto-approves that link
+    themselves (see apps.agencies.views.AgencyCaregiverPipelineListView.
+    post), so this only ever blocks a DIFFERENT agency's caregivers,
+    not their own freshly-created ones.
 
     Returns False (not an exception) for anything unexpected — e.g. an
-    AGENCY_SUPERVISOR whose own AgencySupervisor row is somehow
-    missing — callers turn a False into a 404, matching this
-    platform's established "don't reveal whether the record exists at
-    all to someone who can't see it" convention (see apps.families's
+    agency-staff user whose own agency profile is somehow missing —
+    callers turn a False into a 404, matching this platform's
+    established "don't reveal whether the record exists at all to
+    someone who can't see it" convention (see apps.families's
     patients app: "stranger gets 404 not 403").
     """
     if request.user.role in (UserRole.ADMIN, UserRole.SUPERUSER):
         return True
 
-    if request.user.role != UserRole.AGENCY_SUPERVISOR:
+    if request.user.role not in (UserRole.AGENCY, UserRole.AGENCY_SUPERVISOR, UserRole.AGENCY_ADMIN):
         return False
 
-    from apps.agencies.tenancy import caregiver_visible_to_tenant, resolve_own_agency_for_supervisor
+    from apps.agencies.tenancy import caregiver_visible_to_tenant, resolve_own_agency_for_agency_staff
 
-    agency = resolve_own_agency_for_supervisor(request.user)
+    agency = resolve_own_agency_for_agency_staff(request.user)
     if agency is None:
         return False
 
@@ -127,7 +147,7 @@ class SupervisorCaregiverDetailView(APIView):
            bulk import, not meant as a routine "remove someone from
            the platform" action.
     """
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def get(self, request, user_id):
         user = _get_target_user(request, user_id)
@@ -186,7 +206,7 @@ class SupervisorCaregiverFullProfileView(APIView):
     instead of IsCaregiver, same pattern as every other view in this
     file.
     """
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def get(self, request, user_id):
         profile = _get_target_profile(request, user_id)
@@ -204,6 +224,7 @@ class SupervisorCaregiverFullProfileView(APIView):
             "experience": getattr(profile, "experience", None),
             "skills": getattr(profile, "skills", None),
             "references": profile.references.all(),
+            "documents": _get_documents_dict(profile),
         }
         return Response(SupervisorCaregiverFullProfileSerializer(data).data)
 
@@ -216,14 +237,20 @@ class SupervisorCaregiverListView(APIView):
          Returns the new user_id the frontend then uses for every
          subsequent step of the wizard.
     """
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def get(self, request):
         caregivers = User.objects.filter(role=UserRole.CAREGIVER).order_by("-date_joined")
 
-        if request.user.role == UserRole.AGENCY_SUPERVISOR:
-            from apps.agencies.tenancy import agency_caregiver_user_ids, resolve_own_agency_for_supervisor
-            agency = resolve_own_agency_for_supervisor(request.user)
+        if request.user.role in (UserRole.AGENCY, UserRole.AGENCY_SUPERVISOR, UserRole.AGENCY_ADMIN):
+            # Widened alongside _caregiver_visible_to_actor above and
+            # the IsAdminOrSuperuserOrAgencyStaff permission class —
+            # without this filter, an agency-staff user hitting this
+            # endpoint directly (agency-panel itself never calls it;
+            # it has its own agency-scoped pipeline list) would see
+            # every caregiver on the platform instead of none.
+            from apps.agencies.tenancy import agency_caregiver_user_ids, resolve_own_agency_for_agency_staff
+            agency = resolve_own_agency_for_agency_staff(request.user)
             if agency is None:
                 caregivers = caregivers.none()
             else:
@@ -281,9 +308,17 @@ class SupervisorCaregiverListView(APIView):
         data = serializer.validated_data
 
         agency_to_link = None
-        if request.user.role == UserRole.AGENCY_SUPERVISOR:
-            from apps.agencies.tenancy import resolve_own_agency_for_supervisor
-            agency_to_link = resolve_own_agency_for_supervisor(request.user)
+        if request.user.role in (UserRole.AGENCY, UserRole.AGENCY_SUPERVISOR, UserRole.AGENCY_ADMIN):
+            # Same widening as _caregiver_visible_to_actor/the list
+            # filter above — without this, an agency-staff owner/admin
+            # hitting this endpoint directly would create a caregiver
+            # account with no agency link at all (agency-panel itself
+            # uses its own AgencyCaregiverPipelineListView.post() for
+            # this step and never reaches here, but the permission
+            # class no longer excludes them, so this branch must not
+            # either).
+            from apps.agencies.tenancy import resolve_own_agency_for_agency_staff
+            agency_to_link = resolve_own_agency_for_agency_staff(request.user)
             if agency_to_link is None:
                 return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -330,7 +365,7 @@ class SupervisorCaregiverListView(APIView):
 
 
 class SupervisorIdentityView(APIView):
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def get(self, request, user_id):
         user = _get_target_user(request, user_id)
@@ -354,7 +389,7 @@ class SupervisorIdentityView(APIView):
 
 
 class SupervisorWorkPreferencesView(APIView):
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def get(self, request, user_id):
         profile = _get_target_profile(request, user_id)
@@ -406,7 +441,7 @@ class SupervisorCompatibilityQuestionnaireView(APIView):
     hard requirement to approve and work as a caregiver, so it stays
     optional rather than becoming a new gate on approval.
     """
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def get(self, request, user_id):
         profile = _get_target_profile(request, user_id)
@@ -430,7 +465,7 @@ class SupervisorCompatibilityQuestionnaireView(APIView):
 
 
 class SupervisorServiceAreasView(APIView):
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def get(self, request, user_id):
         profile = _get_target_profile(request, user_id)
@@ -450,7 +485,7 @@ class SupervisorServiceAreasView(APIView):
 
 
 class SupervisorServiceAreaDetailView(APIView):
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def delete(self, request, user_id, area_id):
         profile = _get_target_profile(request, user_id)
@@ -464,7 +499,7 @@ class SupervisorServiceAreaDetailView(APIView):
 
 
 class SupervisorExperienceView(APIView):
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def get(self, request, user_id):
         profile = _get_target_profile(request, user_id)
@@ -488,7 +523,7 @@ class SupervisorExperienceView(APIView):
 
 
 class SupervisorSkillsView(APIView):
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def get(self, request, user_id):
         profile = _get_target_profile(request, user_id)
@@ -512,7 +547,7 @@ class SupervisorSkillsView(APIView):
 
 
 class SupervisorReferencesView(APIView):
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def get(self, request, user_id):
         profile = _get_target_profile(request, user_id)
@@ -540,7 +575,7 @@ class SupervisorCaregiverProgressView(APIView):
     """GET /api/supervisor/caregivers/<user_id>/progress/ — which of
     the 4 forms are done, for the wizard's step indicator / resume
     logic when a supervisor comes back to an in-progress entry."""
-    permission_classes = [IsAdminOrSuperuserOrAgencySupervisor]
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
 
     def get(self, request, user_id):
         user = _get_target_user(request, user_id)

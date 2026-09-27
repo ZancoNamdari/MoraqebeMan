@@ -37,6 +37,7 @@ from .views import (
     RejectCaregiverView,
     ServiceAreaDetailView,
 )
+from .document_views import CaregiverDocumentApproveView, CaregiverDocumentRejectView
 
 urlpatterns = [
     path("caregivers/me/identity/", MyIdentityProfileView.as_view(), name="my-identity-profile"),
@@ -57,6 +58,14 @@ urlpatterns = [
     path("caregivers/<int:user_id>/mark-ready-for-review/", MarkReadyForReviewView.as_view(), name="mark-ready-for-review"),
     path("caregivers/<int:user_id>/resume/", CandidateResumeView.as_view(), name="candidate-resume"),
     path("caregivers/<int:user_id>/edit-fields/", EditCandidateFieldsView.as_view(), name="candidate-edit-fields"),
+    path(
+        "caregivers/<int:user_id>/documents/<str:document_type>/approve/",
+        CaregiverDocumentApproveView.as_view(), name="caregiver-document-approve",
+    ),
+    path(
+        "caregivers/<int:user_id>/documents/<str:document_type>/reject/",
+        CaregiverDocumentRejectView.as_view(), name="caregiver-document-reject",
+    ),
     path("caregivers/blacklist-appeals/", BlacklistAppealListView.as_view(), name="blacklist-appeal-list"),
     path("caregivers/blacklist-appeals/<int:appeal_id>/approve/", ApproveBlacklistAppealView.as_view(), name="blacklist-appeal-approve"),
     path("caregivers/blacklist-appeals/<int:appeal_id>/deny/", DenyBlacklistAppealView.as_view(), name="blacklist-appeal-deny"),

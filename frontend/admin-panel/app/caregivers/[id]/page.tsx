@@ -12,7 +12,7 @@ import { caregiverReviewService } from "@/services/caregiver_review.service"
 import { complaintReviewService, type ComplaintListItem } from "@/services/complaint_review.service"
 import { caregiverReviewsService, type CaregiverReview } from "@/services/caregiver_reviews.service"
 import { COMPLAINT_STATUS_LABEL } from "@/lib/constants"
-import { STATUS_LABEL, type CaregiverFullProfile } from "@/types/caregiver_review"
+import { STATUS_LABEL, type CaregiverDocumentField, type CaregiverFullProfile } from "@/types/caregiver_review"
 import { ROUTES } from "@/lib/routes"
 
 const STATUS_CLASS: Record<string, string> = {
@@ -21,6 +21,103 @@ const STATUS_CLASS: Record<string, string> = {
   approved: "bg-emerald-100 text-emerald-800",
   rejected: "bg-rose-100 text-rose-800",
   suspended: "bg-red-200 text-red-900",
+}
+
+const DOC_CHECKLIST: { docType: CaregiverDocumentField; label: string }[] = [
+  { docType: "no_criminal_record", label: "عدم سوءپیشینه" },
+  { docType: "no_addiction_test", label: "آزمایش عدم اعتیاد" },
+  { docType: "identity_verified", label: "تأیید مدارک هویتی" },
+  { docType: "personal_photo", label: "عکس پرسنلی" },
+  { docType: "mental_health_test", label: "آزمون سلامت روان" },
+  { docType: "promissory_note", label: "دریافت سفته/ضمانت" },
+  { docType: "id_card_received", label: "دریافت مدرک شناسایی" },
+]
+
+const DOC_STATUS_LABEL: Record<string, string> = { pending: "در انتظار بررسی", approved: "تأیید شده", rejected: "رد شده" }
+const DOC_STATUS_CLASS: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-800", approved: "bg-emerald-100 text-emerald-800", rejected: "bg-rose-100 text-rose-800",
+}
+
+function DocumentReviewRow({ userId, docType, label, upload, onReviewed }: {
+  userId: number
+  docType: CaregiverDocumentField
+  label: string
+  upload: CaregiverFullProfile["documents"][CaregiverDocumentField] | undefined
+  onReviewed: () => Promise<unknown>
+}) {
+  const [busy, setBusy] = useState(false)
+  const [rejecting, setRejecting] = useState(false)
+  const [reason, setReason] = useState("")
+
+  async function handleApprove() {
+    setBusy(true)
+    try {
+      await caregiverReviewService.approveDocument(userId, docType)
+      await onReviewed()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleReject() {
+    if (!reason.trim()) return
+    setBusy(true)
+    try {
+      await caregiverReviewService.rejectDocument(userId, docType, reason.trim())
+      await onReviewed()
+      setRejecting(false); setReason("")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-pink-100 bg-pink-50/40 p-2.5 text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span>{label}</span>
+        {upload ? (
+          <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", DOC_STATUS_CLASS[upload.status])}>
+            {DOC_STATUS_LABEL[upload.status]}
+          </span>
+        ) : (
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500">آپلود نشده</span>
+        )}
+      </div>
+
+      {upload?.status === "rejected" && upload.rejection_reason && (
+        <p className="mt-1 text-xs text-rose-700">دلیل رد: {upload.rejection_reason}</p>
+      )}
+
+      {upload && (
+        <div className="mt-1.5 flex items-center gap-2">
+          <a href={upload.file} target="_blank" rel="noopener noreferrer" className="text-xs text-rose-700 underline">مشاهده فایل</a>
+        </div>
+      )}
+
+      {upload && upload.status === "pending" && !rejecting && (
+        <div className="mt-1.5 flex gap-2">
+          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" disabled={busy} onClick={handleApprove}>تأیید</Button>
+          <Button size="sm" variant="outline" className="border-rose-200 text-rose-700 hover:bg-rose-50" disabled={busy} onClick={() => setRejecting(true)}>رد</Button>
+        </div>
+      )}
+
+      {rejecting && (
+        <div className="mt-1.5 space-y-2">
+          <textarea
+            className="w-full rounded-md border border-input bg-background p-2 text-xs"
+            rows={2}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="دلیل رد شدن"
+          />
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="border-rose-200 text-rose-700 hover:bg-rose-50" disabled={busy || !reason.trim()} onClick={handleReject}>ثبت رد</Button>
+            <Button size="sm" variant="ghost" onClick={() => { setRejecting(false); setReason("") }}>انصراف</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function CaregiverDetailPage() {
@@ -189,6 +286,22 @@ export default function CaregiverDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            <Card className="border-pink-100">
+              <CardHeader><CardTitle className="text-sm text-rose-900">تکمیل مدارک ({DOC_CHECKLIST.filter((d) => profile.documents?.[d.docType]?.status === "approved").length} از {DOC_CHECKLIST.length})</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {DOC_CHECKLIST.map((d) => (
+                  <DocumentReviewRow
+                    key={d.docType}
+                    userId={userId}
+                    docType={d.docType}
+                    label={d.label}
+                    upload={profile.documents?.[d.docType]}
+                    onReviewed={refresh}
+                  />
+                ))}
+              </CardContent>
+            </Card>
 
             <Card className="border-pink-100">
               <CardHeader><CardTitle className="text-sm text-rose-900">اطلاعات کامل ثبت‌شده</CardTitle></CardHeader>

@@ -165,12 +165,47 @@ class AgencySupervisorCaregiverScopingTests(BaseAPITestCase):
         response = client.get("/api/supervisor/caregivers/")
         self.assertEqual(response.status_code, 403)
 
-    def test_plain_agency_account_not_a_supervisor_still_rejected(self):
-        # The agency OWNER account (role=AGENCY) is a different role
-        # than AGENCY_SUPERVISOR — this endpoint is supervisor-only,
-        # the agency owner manages caregivers through /api/agencies/*
-        # instead (its own roster endpoints), not this wizard.
+    def test_agency_owner_now_allowed_and_scoped_to_own_agency(self):
+        # The caregiver-registration wizard now lives inside
+        # agency-panel itself (not a separate supervisor-panel), so
+        # the agency OWNER account (role=AGENCY) — not just its
+        # AGENCY_SUPERVISOR staff — must be able to drive it through
+        # these same platform-wide endpoints too (widened via
+        # IsAdminOrSuperuserOrAgencyStaff +
+        # resolve_own_agency_for_agency_staff). Confirm it's let in
+        # AND still scoped to its own agency's caregivers only, same
+        # as an AGENCY_SUPERVISOR would be.
         client = APIClient()
         client.force_authenticate(self.agency.user)
+
+        response = client.get("/api/supervisor/caregivers/")
+        self.assertEqual(response.status_code, 200)
+
+        create = self.supervisor_client.post("/api/supervisor/caregivers/", self.new_caregiver_payload, format="json")
+        self.assertEqual(create.status_code, 201)
+        own_agency_caregiver_id = create.data["user_id"]
+
+        other_create = self.other_supervisor_client.post(
+            "/api/supervisor/caregivers/",
+            {"first_name": "زهرا", "last_name": "احمدی", "phone_number": "09121300002"},
+            format="json",
+        )
+        self.assertEqual(other_create.status_code, 201)
+        other_agency_caregiver_id = other_create.data["user_id"]
+
+        visible_ids = {item["user_id"] for item in client.get("/api/supervisor/caregivers/").data}
+        self.assertIn(own_agency_caregiver_id, visible_ids)
+        self.assertNotIn(other_agency_caregiver_id, visible_ids)
+
+        self.assertEqual(client.get(f"/api/supervisor/caregivers/{other_agency_caregiver_id}/").status_code, 404)
+
+    def test_agency_staff_role_outside_the_widened_set_still_rejected(self):
+        # AGENCY_OTHER is a real agency-linked role but was never
+        # included in the widened permission set (owner/supervisor/
+        # admin only) — confirms the widening was deliberately scoped,
+        # not "any agency-linked account".
+        other_staff = make_user("agency_other_scope", role=UserRole.AGENCY_OTHER, phone_number="09100009006")
+        client = APIClient()
+        client.force_authenticate(other_staff)
         response = client.get("/api/supervisor/caregivers/")
         self.assertEqual(response.status_code, 403)

@@ -1,10 +1,19 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import User
+from .models import User, UserRole
 
 
 class UserSerializer(serializers.ModelSerializer):
+    # Which agency this account belongs to — null for every role
+    # that isn't tied to one (family, patient, caregiver, admin,
+    # superuser). Added specifically so supervisor-panel (and
+    # agency-panel) can show "شما سوپروایزر آژانس X هستید" right in
+    # the header after login — MeView/UserSerializer is shared
+    # across every panel, so this stays a no-op elsewhere rather than
+    # a per-panel serializer.
+    agency_name = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -17,8 +26,21 @@ class UserSerializer(serializers.ModelSerializer):
             "phone_number",
             "role",
             "is_phone_verified",
+            "agency_name",
         ]
         read_only_fields = fields
+
+    def get_agency_name(self, obj):
+        if obj.role == UserRole.AGENCY:
+            profile = getattr(obj, "agency_profile", None)
+            return profile.company_name if profile else None
+        if obj.role == UserRole.AGENCY_ADMIN:
+            profile = getattr(obj, "agency_admin_profile", None)
+            return profile.agency.company_name if profile else None
+        if obj.role == UserRole.AGENCY_SUPERVISOR:
+            profile = getattr(obj, "agency_supervisor_profile", None)
+            return profile.agency.company_name if profile else None
+        return None
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):

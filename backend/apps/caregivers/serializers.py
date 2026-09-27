@@ -10,7 +10,7 @@ from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, Collaboration
                       PreviousWorkplace, SpecialConditionExperience, TrainingCourse, Gender)    
 from .models import (CaregiverWorkPreferences, CaregiverServiceArea, CaregiverExperience,
                      CaregiverSkills, CaregiverReference, IdentityProfile, CaregiverCompatibilityQuestionnaire,
-                     BlacklistAppeal)
+                     BlacklistAppeal, CaregiverDocumentUpload)
 
 
 class CreateBlacklistAppealSerializer(serializers.Serializer):
@@ -366,6 +366,13 @@ class CaregiverFullProfileSerializer(serializers.Serializer):
     experience = CaregiverExperienceSerializer(allow_null=True)
     skills = CaregiverSkillsSerializer(allow_null=True)
     references = CaregiverReferenceSerializer(many=True)
+    # Same "تکمیل مدارک" checklist detail agency-panel's Kanban card
+    # gets via AgencyCaregiverPipelineSerializer.get_documents — added
+    # here too so a reviewer looking at this SAME full-profile view
+    # (admin-panel's caregiver detail page, and supervisor-panel's own
+    # review page for an agency_supervisor) can see and act on the
+    # uploaded files, not just the plain doc_* booleans.
+    documents = serializers.DictField(allow_null=True, required=False)
 
 
 class SupervisorCaregiverFullProfileSerializer(CaregiverFullProfileSerializer):
@@ -468,3 +475,31 @@ class CaregiverCompatibilityQuestionnaireSerializer(serializers.ModelSerializer)
 
     def get_overall_flexibility_score(self, obj):
         return obj.overall_flexibility_score()
+
+
+class CaregiverDocumentUploadSerializer(serializers.ModelSerializer):
+    """
+    One of the seven "تکمیل مدارک" checklist items — the file plus
+    where it stands in review. Shared between agency-panel's checklist
+    drawer (upload, and approve/reject for a supervisor/owner) and
+    admin-panel's caregiver detail page (approve/reject for platform
+    staff) — see apps.caregivers.document_views for who's allowed to
+    do which action.
+    """
+    uploaded_by_name = serializers.SerializerMethodField()
+    reviewed_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CaregiverDocumentUpload
+        fields = [
+            "document_type", "file", "status",
+            "uploaded_by_name", "uploaded_at",
+            "reviewed_by_name", "reviewed_at", "rejection_reason",
+        ]
+        read_only_fields = fields
+
+    def get_uploaded_by_name(self, obj):
+        return obj.uploaded_by.get_full_name() or obj.uploaded_by.username if obj.uploaded_by else None
+
+    def get_reviewed_by_name(self, obj):
+        return obj.reviewed_by.get_full_name() or obj.reviewed_by.username if obj.reviewed_by else None

@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from apps.families.models import RelationType
-from apps.caregivers.models import CaregiverProfile
+from apps.caregivers.models import CaregiverDocumentType, CaregiverProfile
+from apps.caregivers.serializers import CaregiverDocumentUploadSerializer
 from apps.reminders.services import compute_active_reminders
 
 from .models import AgencyAdmin, AgencyCaregiverLink, AgencyFamilyLink, AgencyProfile, AgencySupervisor
@@ -73,6 +74,12 @@ class AgencyCaregiverPipelineSerializer(serializers.ModelSerializer):
     # profile's, so the frontend needs this to build a working deep
     # link into that panel (e.g. /caregivers/new?id=<user_id>).
     user_id = serializers.IntegerField(source="user.id", read_only=True)
+    # Per-document upload/review detail behind each doc_* boolean
+    # (file, status, who uploaded/reviewed it, rejection reason) — the
+    # booleans above stay as the fast-read summary already used by the
+    # Kanban badge/reminder rules, this adds what the checklist
+    # drawer's upload UI needs to actually show and act on.
+    documents = serializers.SerializerMethodField()
 
     class Meta:
         model = CaregiverProfile
@@ -80,12 +87,20 @@ class AgencyCaregiverPipelineSerializer(serializers.ModelSerializer):
             "id", "user_id", "full_name", "phone_number", "agency_pipeline_status", "is_urgent", "tags", "process_milestones",
             "doc_no_criminal_record", "doc_no_addiction_test", "doc_identity_verified",
             "doc_personal_photo", "doc_mental_health_test", "doc_promissory_note", "doc_id_card_received",
-            "active_reminders",
+            "documents", "active_reminders",
         ]
-        read_only_fields = ["id", "user_id", "full_name", "phone_number", "active_reminders"]
+        read_only_fields = ["id", "user_id", "full_name", "phone_number", "documents", "active_reminders"]
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
+
+    def get_documents(self, obj):
+        uploads_by_type = {upload.document_type: upload for upload in obj.document_uploads.all()}
+        return {
+            document_type: CaregiverDocumentUploadSerializer(uploads_by_type[document_type]).data
+            if document_type in uploads_by_type else None
+            for document_type in CaregiverDocumentType.values
+        }
 
     def get_active_reminders(self, obj):
         # `rules` is passed once per request via the view (list or
