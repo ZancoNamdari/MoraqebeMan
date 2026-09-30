@@ -50,6 +50,7 @@ class IdentityProfile(models.Model):
     )
     
     father_name = models.CharField(max_length=150, blank=True, verbose_name="نام پدر")
+    national_id = models.CharField(max_length=10, blank=True, verbose_name="شماره ملی")
     birth_certificate_number = models.CharField(max_length=30, blank=True, verbose_name="شماره شناسنامه")
     birth_certificate_issue_place = models.CharField(max_length=150, blank=True, verbose_name="محل صدور شناسنامه")
     birth_date = jmodels.jDateField(null=True, blank=True, verbose_name="تاریخ تولد")
@@ -257,9 +258,14 @@ class CaregiverProfile(models.Model):
     status = models.CharField(
         max_length=20, choices=CaregiverStatus.choices, default=CaregiverStatus.DRAFT,
         db_index=True, verbose_name="وضعیت ثبت‌ نام")
+    # No `choices=` here — same reasoning as PatientProfile.
+    # pipeline_status in apps.families.models: an agency's real valid
+    # stage values now live in AgencyPipelineStage, per agency, and
+    # can grow past the original 7, so a fixed enum here would make
+    # DRF reject a legitimately-added custom stage the moment any
+    # serializer touches this field.
     agency_pipeline_status = models.CharField(
-        max_length=30, choices=CaregiverAgencyPipelineStatus.choices,
-        default=CaregiverAgencyPipelineStatus.REGISTERED, db_index=True,
+        max_length=30, default=CaregiverAgencyPipelineStatus.REGISTERED, db_index=True,
         verbose_name="مرحله کاریز خدمت (آژانس)",
     )
     process_milestones = models.JSONField(
@@ -328,6 +334,22 @@ class CaregiverProfile(models.Model):
     needs_more_docs_note = models.TextField(
         blank=True, max_length=1000, verbose_name="توضیح مدارک مورد نیاز",
         help_text="وقتی وضعیت روی «نیاز به مدارک بیشتر» است، این متن مشخص می‌کند چه چیزی از مراقب خواسته شده — به خود مراقب نشان داده می‌شود.",
+    )
+    # Agency-entered, not derived from anywhere else — set once a
+    # caregiver's mission/assignment actually starts (agency_pipeline_
+    # status reaches ON_ASSIGNMENT) so the agency can see, from real
+    # data rather than a manually-typed tag, which caregivers are
+    # nearing the end of their current contract. See
+    # apps.agencies.views.AgencyCaregiverPipelineUpdateView.patch for
+    # how it's written, and the "در شرف اتمام قرارداد" badge on the
+    # agency panel's caregiver Kanban card for how it's read.
+    contract_start_date = jmodels.jDateField(
+        null=True, blank=True, verbose_name="تاریخ شروع قرارداد فعلی",
+        help_text="تاریخ شروع همان قرارداد فعلی — در همان مرحله «در حال مأموریت» ثبت می‌شود، کنار تاریخ پایان.",
+    )
+    contract_end_date = jmodels.jDateField(
+        null=True, blank=True, verbose_name="تاریخ پایان قرارداد فعلی",
+        help_text="از زمانی که این مراقب وارد مرحله «در حال مأموریت» می‌شود ثبت می‌شود — برای پیگیری نزدیک‌شدن به پایان قرارداد.",
     )
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
@@ -600,6 +622,10 @@ class CaregiverApprovalLog(models.Model):
 class CaregiverWorkPreferences(models.Model):
     profile = models.OneToOneField(CaregiverProfile, on_delete=models.CASCADE, related_name="work_preferences", verbose_name="پروفایل مراقب")
     collaboration_types = models.JSONField(default=list, verbose_name="نوع همکاری")
+    daily_work_hours = models.CharField(
+        max_length=100, blank=True, verbose_name="ساعات کاری مراقبت روزانه",
+        help_text="فقط برای «مراقبت روزانه» — مثلاً «از ساعت ۸ تا ۱۶».",
+    )
     work_status = models.CharField(max_length=20, choices=WorkStatus.choices, blank=True, verbose_name="وضعیت کاری")
     family_presence_preference = models.CharField(max_length=20, choices=FamilyPresencePreference.choices, blank=True, verbose_name="حضور خانواده سالمند")
     accepted_gender = models.CharField(max_length=20, choices=AcceptedGender.choices, blank=True, verbose_name="جنسیت قابل قبول")
@@ -621,6 +647,7 @@ class CaregiverWorkPreferences(models.Model):
     night_stay_until = models.CharField(max_length=20, choices=NightStayUntil.choices, blank=True, verbose_name="حداکثر زمان ماندن در شب")
     has_night_time_limit = models.BooleanField(null=True, blank=True, default=None, verbose_name="محدودیت زمانی برای شب دارد")
     additional_notes = models.TextField(blank=True, max_length=500, verbose_name="توضیحات تکمیلی")
+    requested_salary = models.CharField(max_length=100, blank=True, verbose_name="حقوق درخواستی")
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
@@ -762,21 +789,30 @@ class CaregiverReference(models.Model):
 
 
 class FlexibilityAnswer(models.TextChoices):
-    """Every question in the caregiver compatibility questionnaire
-    uses the same 4-option structure: option A is always the most
-    accommodating/flexible response, option D is always the response
-    that wants similarity/has the firmest boundary. The actual
-    question and option text is long-form and question-specific (16
-    genuinely different questions, not the same question repeated),
-    so it lives in the frontend as static content — same split
-    already used for PatientCompatibilityQuestionnaire's axis labels
-    — but the underlying scale, and what it means to score it, is
-    identical across all 16 fields, which is what this shared choice
-    class captures."""
+    """Legacy a/b/c/d scale — kept only so old migrations referencing
+    it still import cleanly. No field on CaregiverCompatibilityQuestionnaire
+    uses this anymore; see ScoreAnswer below."""
     A = "a", "گزینه الف"
     B = "b", "گزینه ب"
     C = "c", "گزینه ج"
     D = "d", "گزینه د"
+
+
+class ScoreAnswer(models.TextChoices):
+    """The caregiver compatibility questionnaire's 4 questions all
+    share this same 0/50/100 scale (none / somewhat / fully) —
+    replaced the old 16-question a/b/c/d scale on an explicit,
+    confirmed decision that scoped this change to the wizard/model/
+    review pages only; the caregiver-side trait-matching engine
+    (apps.care.trait_matching) still reads section_scores()/
+    overall_flexibility_score() below, which is why those methods
+    are kept working (against the new 4 fields) rather than removed
+    — but the DB-seeded QuestionTraitMapping rows still reference the
+    old 16 field names, so trait matching quietly gets no signal from
+    caregivers until that's separately rewired."""
+    NONE = "0", "هیچ‌وجه"
+    SOME = "50", "تا حدی"
+    FULL = "100", "کاملاً"
 
 
 class CaregiverCompatibilityQuestionnaire(models.Model):
@@ -786,36 +822,31 @@ class CaregiverCompatibilityQuestionnaire(models.Model):
     could only compare objective signals (gender/age/location
     preference), never anything about how a caregiver actually
     approaches the parts of care that vary most by belief, boundaries,
-    and culture. One row per caregiver, 16 questions across 4 sections
-    exactly as specified in the source questionnaire.
+    and culture. One row per caregiver.
+
+    Replaced the original 16-question/4-section version with 4 direct
+    0/50/100 self-ratings, per an explicit request.
     """
     caregiver = models.OneToOneField(
         CaregiverProfile, on_delete=models.CASCADE, related_name="compatibility_questionnaire", verbose_name="مراقب",
     )
 
-    # بخش اول: هم‌راستایی عقیدتی و مناسکی
-    religious_belief_accommodation = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="پذیرش باور مذهبی متفاوت سالمند")
-    physical_contact_sensitivity_adaptation = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="تطبیق با حساسیت فرهنگی نسبت به تماس بدنی")
-    prayer_time_scheduling_flexibility = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="هماهنگی برنامه مراقبتی با مناسک مذهبی")
-    traditional_belief_acceptance = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="پذیرش باور سنتی غیرعلمی سالمند")
-
-    # بخش دوم: هم‌راستایی ارزش‌های بنیادین و مرزهای حرفه‌ای
-    family_event_participation = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="حضور در مناسبت‌های خانوادگی")
-    false_accusation_reaction = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="واکنش به اتهام ناشی از فراموشی سالمند")
-    confidentiality_commitment = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="تعهد به محرمانگی اطلاعات")
-    gender_based_task_flexibility = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="انعطاف در محدودیت وظایف بر اساس جنسیت")
-
-    # بخش سوم: هم‌راستایی سبک زندگی و محیط کاری
-    home_environment_adaptability = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="سازگاری با شرایط فیزیکی خانه سالمند")
-    schedule_flexibility_for_family_events = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="انعطاف برنامه در تداخل با رویداد خانوادگی")
-    traditional_food_treatment_openness = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="باز بودن به غذا و درمان سنتی سالمند")
-    personal_conversation_patience = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="صبر برای گفت‌وگوی شخصی سالمند")
-    home_organization_adaptability = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="سازگاری با نظم و چیدمان خانه سالمند")
-
-    # بخش چهارم: انعطاف‌پذیری فرهنگی و هوش فرهنگی
-    cultural_expression_tolerance = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="تحمل بیان و شوخی‌های فرهنگی متفاوت")
-    unfamiliar_custom_acceptance = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="پذیرش رسوم ناآشنای خانواده سالمند")
-    dialect_communication_effort = models.CharField(max_length=1, choices=FlexibilityAnswer.choices, verbose_name="تلاش برای ارتباط با وجود تفاوت لهجه")
+    religiosity_level = models.CharField(
+        max_length=3, choices=ScoreAnswer.choices, default=ScoreAnswer.SOME,
+        verbose_name="میزان مذهبی بودن",
+    )
+    family_compatibility_level = models.CharField(
+        max_length=3, choices=ScoreAnswer.choices, default=ScoreAnswer.SOME,
+        verbose_name="سازگاری با خانواده سالمند",
+    )
+    patience_level = models.CharField(
+        max_length=3, choices=ScoreAnswer.choices, default=ScoreAnswer.SOME,
+        verbose_name="میزان صبوری",
+    )
+    clinical_compatibility_level = models.CharField(
+        max_length=3, choices=ScoreAnswer.choices, default=ScoreAnswer.SOME,
+        verbose_name="سازگاری بالینی",
+    )
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="زمان تکمیل")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="آخرین به‌روزرسانی")
@@ -824,45 +855,27 @@ class CaregiverCompatibilityQuestionnaire(models.Model):
         verbose_name = "پرسشنامه سازگاری مراقب"
         verbose_name_plural = "پرسشنامه‌های سازگاری مراقبان"
 
-    # a=4 (most accommodating) down to d=1 (wants similarity/firmest
-    # boundary) — see FlexibilityAnswer's docstring for why every
-    # field can share this one scoring rule.
-    _POINTS = {"a": 4, "b": 3, "c": 2, "d": 1}
-
     SECTION_FIELDS = {
-        "عقیدتی و مناسکی": [
-            "religious_belief_accommodation", "physical_contact_sensitivity_adaptation",
-            "prayer_time_scheduling_flexibility", "traditional_belief_acceptance",
-        ],
-        "ارزش‌های بنیادین و مرزهای حرفه‌ای": [
-            "family_event_participation", "false_accusation_reaction",
-            "confidentiality_commitment", "gender_based_task_flexibility",
-        ],
-        "سبک زندگی و محیط کاری": [
-            "home_environment_adaptability", "schedule_flexibility_for_family_events",
-            "traditional_food_treatment_openness", "personal_conversation_patience",
-            "home_organization_adaptability",
-        ],
-        "انعطاف‌پذیری فرهنگی": [
-            "cultural_expression_tolerance", "unfamiliar_custom_acceptance", "dialect_communication_effort",
+        "سازگاری عمومی": [
+            "religiosity_level", "family_compatibility_level",
+            "patience_level", "clinical_compatibility_level",
         ],
     }
 
     def section_scores(self) -> dict:
-        """Each section's average flexibility, as a 0-100 percentage —
-        0 would mean every answer in that section was 'd', 100 would
-        mean every answer was 'a'."""
+        """Each section's average score, 0-100 — values are already
+        0/50/100 so this is a plain average, no rescaling needed."""
         scores = {}
         for section, fields in self.SECTION_FIELDS.items():
-            points = [self._POINTS[getattr(self, f)] for f in fields]
-            scores[section] = round((sum(points) / len(points) - 1) / 3 * 100)
+            points = [int(getattr(self, f)) for f in fields]
+            scores[section] = round(sum(points) / len(points))
         return scores
 
     def overall_flexibility_score(self) -> int:
-        """A single 0-100 summary across all 16 answers."""
+        """A single 0-100 summary across all 4 answers."""
         all_fields = [f for fields in self.SECTION_FIELDS.values() for f in fields]
-        points = [self._POINTS[getattr(self, f)] for f in all_fields]
-        return round((sum(points) / len(points) - 1) / 3 * 100)
+        points = [int(getattr(self, f)) for f in all_fields]
+        return round(sum(points) / len(points))
 
     def __str__(self):
         return f"پرسشنامه سازگاری {self.caregiver}"

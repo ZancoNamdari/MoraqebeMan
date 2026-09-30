@@ -4,6 +4,8 @@ import type {
   AgencyCaregiverPipelineItem,
   AgencyCaregiverSuggestion,
   AgencyPatient,
+  AgencyPatientSuggestionsResponse,
+  AgencyPipelineStage,
   AgencySuggestionsResponse,
   AgencySupervisor,
   CaregiverDocumentField,
@@ -13,6 +15,8 @@ import type {
   CreateAgencyPatientResponse,
   CreateAgencySupervisorPayload,
   CreateCaregiverCandidatePayload,
+  PatientDocumentUpload,
+  PatientQuestionnaireAnswers,
   UpdateAgencyAdminPayload,
   UpdateAgencySupervisorPayload,
 } from "@/types/agency_management"
@@ -58,9 +62,60 @@ export const agencyManagementService = {
     return data as CreateAgencyPatientResponse
   },
 
+  // The rest of the multi-step "افزودن خدمت‌گیرنده" wizard — full
+  // identity edit, the optional compatibility questionnaire, and
+  // identity-document uploads — all continuing on the patient createPatient()
+  // just returned, same "quick-create then keep filling in a wizard"
+  // shape as caregiverWizardService's own steps.
+  async getPatientDetail(agencyId: number, patientId: number) {
+    const { data } = await api.get(`/api/agencies/${agencyId}/patients/${patientId}/`)
+    return data as AgencyPatient
+  },
+
+  async updatePatientDetail(agencyId: number, patientId: number, fields: Record<string, unknown>) {
+    const { data } = await api.patch(`/api/agencies/${agencyId}/patients/${patientId}/`, fields)
+    return data as AgencyPatient
+  },
+
+  async getPatientQuestionnaire(agencyId: number, patientId: number) {
+    const { data } = await api.get(`/api/agencies/${agencyId}/patients/${patientId}/questionnaire/`)
+    return data as PatientQuestionnaireAnswers
+  },
+
+  async savePatientQuestionnaire(agencyId: number, patientId: number, answers: PatientQuestionnaireAnswers) {
+    const { data } = await api.put(`/api/agencies/${agencyId}/patients/${patientId}/questionnaire/`, answers)
+    return data as PatientQuestionnaireAnswers
+  },
+
+  async uploadPatientDocument(agencyId: number, patientId: number, documentType: string, file: File) {
+    const formData = new FormData()
+    formData.append("file", file)
+    const { data } = await api.post(
+      `/api/agencies/${agencyId}/patients/${patientId}/documents/${documentType}/`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    )
+    return data as PatientDocumentUpload
+  },
+
   async suggestCaregivers(agencyId: number, patientId: number) {
     const { data } = await api.get(`/api/agencies/${agencyId}/patients/${patientId}/suggest-caregivers/`)
     return data as AgencySuggestionsResponse
+  },
+
+  async suggestPatientsForCaregiver(agencyId: number, caregiverId: number) {
+    const { data } = await api.get(`/api/agencies/${agencyId}/caregivers-pipeline/${caregiverId}/suggest-patients/`)
+    return data as AgencyPatientSuggestionsResponse
+  },
+
+  async listPipelineStages(agencyId: number, pipelineType: "patient" | "caregiver" | "episodic") {
+    const { data } = await api.get(`/api/agencies/${agencyId}/pipeline-stages/${pipelineType}/`)
+    return data as AgencyPipelineStage[]
+  },
+
+  async addPipelineStage(agencyId: number, pipelineType: "patient" | "caregiver" | "episodic", label: string) {
+    const { data } = await api.post(`/api/agencies/${agencyId}/pipeline-stages/${pipelineType}/`, { label })
+    return data as AgencyPipelineStage
   },
 
   async updatePipelineStatus(agencyId: number, patientId: number, pipelineStatus: string) {

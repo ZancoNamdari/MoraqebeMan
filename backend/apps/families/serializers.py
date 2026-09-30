@@ -8,7 +8,9 @@ from .models import (
     FamilyPatientLink,
     FamilyProfile,
     GuardianshipStatus,
+    LinkStatus,
     PatientCompatibilityQuestionnaire,
+    PatientDocumentUpload,
     PatientProfile,
     RelationType,
 )
@@ -32,6 +34,8 @@ class FamilyProfileSerializer(serializers.ModelSerializer):
 
 class PatientProfileSerializer(serializers.ModelSerializer):
     birth_date = JalaliDateField(required=False, allow_null=True)
+    contract_start_date = JalaliDateField(required=False, allow_null=True)
+    contract_end_date = JalaliDateField(required=False, allow_null=True)
     # Same reasoning as FamilyProfileSerializer.user_id — keep the JSON
     # shape stable as a plain (possibly null) integer.
     user_id = serializers.IntegerField(read_only=True, allow_null=True)
@@ -40,6 +44,11 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     city_name = serializers.CharField(source="city.name", read_only=True, default=None)
     district_name = serializers.CharField(source="district.name", read_only=True, default=None)
     active_reminders = serializers.SerializerMethodField()
+    # Every approved family member's own phone number on this patient's
+    # record, besides `emergency_contact_phone` above — read-only, since
+    # it comes from each family member's own account, not something the
+    # agency panel edits directly.
+    family_contacts = serializers.SerializerMethodField()
 
     class Meta:
         model = PatientProfile
@@ -47,13 +56,26 @@ class PatientProfileSerializer(serializers.ModelSerializer):
             "id", "user_id", "access_code", "full_name", "gender", "father_name", "birth_date",
             "national_id", "birth_certificate_number", "birth_certificate_issue_place",
             "full_address", "province", "city", "district", "province_name", "city_name", "district_name",
-            "postal_code", "emergency_contact_phone",
+            "postal_code", "emergency_contact_phone", "family_contacts",
             "guardianship_status", "guardian_details",
             "language_dialect", "basic_medical_info",
-            "physical_condition", "needed_shifts", "pipeline_status", "tags",
+            "physical_condition", "needed_shifts", "pipeline_status", "tags", "notes",
+            "contract_start_date", "contract_end_date",
             "active_reminders", "created_at", "updated_at",
         ]
-        read_only_fields = ["id", "user_id", "access_code", "active_reminders", "created_at", "updated_at"]
+        read_only_fields = ["id", "user_id", "access_code", "family_contacts", "active_reminders", "created_at", "updated_at"]
+
+    def get_family_contacts(self, obj):
+        contacts = []
+        links = obj.family_links.filter(status=LinkStatus.APPROVED).select_related("family__user")
+        for link in links:
+            phone = getattr(link.family.user, "phone_number", "") if link.family and link.family.user else ""
+            if not phone:
+                continue
+            relation_label = link.get_relation_display() if hasattr(link, "get_relation_display") else link.relation
+            name = link.family.display_name or link.family.user.username
+            contacts.append({"label": f"{name} ({relation_label})", "phone": phone})
+        return contacts
 
     def get_active_reminders(self, obj):
         # `rules` is passed once per request via the view (list or
@@ -102,6 +124,20 @@ class PatientCompatibilityQuestionnaireSerializer(serializers.ModelSerializer):
             "created_at", "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
+
+
+class PatientDocumentUploadSerializer(serializers.ModelSerializer):
+    uploaded_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PatientDocumentUpload
+        fields = ["document_type", "file", "uploaded_by_name", "uploaded_at"]
+        read_only_fields = fields
+
+    def get_uploaded_by_name(self, obj):
+        if obj.uploaded_by is None:
+            return None
+        return obj.uploaded_by.get_full_name() or obj.uploaded_by.username
 
 
 class FamilyPatientLinkSerializer(serializers.ModelSerializer):

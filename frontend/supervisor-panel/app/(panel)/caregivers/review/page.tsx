@@ -233,6 +233,7 @@ function ReviewPageInner() {
               {profile.identity ? (
                 <div>
                   <InfoRow label="نام پدر" value={profile.identity.father_name} />
+                  <InfoRow label="شماره ملی" value={profile.identity.national_id} />
                   <InfoRow label="جنسیت" value={labelForValue(C.GENDER, profile.identity.gender)} />
                   <InfoRow label="وضعیت تأهل" value={labelForValue(C.MARITAL_STATUS, profile.identity.marital_status)} />
                   <InfoRow label="تاریخ تولد" value={profile.identity.birth_date} />
@@ -249,10 +250,14 @@ function ReviewPageInner() {
               {profile.work_preferences ? (
                 <div>
                   <InfoRow label="نوع همکاری" value={labelsForValues(C.COLLABORATION_TYPE, profile.work_preferences.collaboration_types)} />
+                  {profile.work_preferences.collaboration_types.includes("daily") && (
+                    <InfoRow label="ساعات کاری مراقبت روزانه" value={profile.work_preferences.daily_work_hours} />
+                  )}
                   <InfoRow label="وضعیت کاری" value={labelForValue(C.WORK_STATUS, profile.work_preferences.work_status)} />
                   <InfoRow label="خدمات قابل ارائه" value={labelsForValues(C.OFFERED_SERVICE, profile.work_preferences.offered_services)} />
                   <InfoRow label="روزهای کاری" value={labelsForValues(C.WEEKDAY, profile.work_preferences.available_days)} />
                   <InfoRow label="شیفت‌ها" value={labelsForValues(C.SHIFT, profile.work_preferences.available_shifts)} />
+                  <InfoRow label="حقوق درخواستی" value={profile.work_preferences.requested_salary} />
                   <InfoRow label="پذیرش قوانین" value={yesNoLabel(profile.work_preferences.terms_accepted)} />
                 </div>
               ) : (
@@ -400,7 +405,7 @@ function ReviewPageInner() {
 
                   <Button
                     className="w-full bg-primary hover:bg-primary"
-                    disabled={questionnaireSaving || Object.keys(questionnaireAnswers).length < 16}
+                    disabled={questionnaireSaving || Object.keys(questionnaireAnswers).length < 4}
                     onClick={handleSaveQuestionnaire}
                   >
                     {questionnaireSaving ? "در حال ذخیره..." : "ذخیره پرسشنامه"}
@@ -409,10 +414,7 @@ function ReviewPageInner() {
               )}
             </Section>
 
-            {/* Decision actions — final approve/reject is admin/
-                superuser only on the backend (IsAdminOrSuperuser on
-                ApproveCaregiverView/RejectCaregiverView), which is
-                also the only role that reaches this page now. */}
+            {/* Decision actions */}
             <Card className="border-border">
               <CardContent className="space-y-3 p-4">
                 {showRejectBox ? (

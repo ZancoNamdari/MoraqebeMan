@@ -151,9 +151,18 @@ class PatientProfile(models.Model):
     )
 
     full_name = models.CharField(max_length=150, help_text="نام و نام خانوادگی سالمند")
+    # No `choices=` here on purpose — an agency's actual valid stage
+    # values now live in apps.agencies.models.AgencyPipelineStage
+    # (per-agency, can grow past the original 7), so a fixed enum
+    # here would make DRF reject a legitimately-added custom stage
+    # value the moment ANY serializer touches this field. The two
+    # PATCH views that accept a new value from the client validate it
+    # themselves against that agency's own stage list; this field
+    # stays a plain, unconstrained string. PatientPipelineStatus
+    # above still supplies the default and the platform's original
+    # seed values.
     pipeline_status = models.CharField(
-        max_length=30, choices=PatientPipelineStatus.choices,
-        default=PatientPipelineStatus.REGISTRATION, db_index=True,
+        max_length=30, default=PatientPipelineStatus.REGISTRATION, db_index=True,
         verbose_name="مرحله کاریز خدمت",
     )
     is_urgent = models.BooleanField(
@@ -163,6 +172,23 @@ class PatientProfile(models.Model):
     tags = models.JSONField(
         default=list, blank=True, verbose_name="برچسب‌ها",
         help_text="برچسب‌های آزاد آژانس روی این خدمت‌گیرنده، برای دسته‌بندی و فیلتر آینده کاریز.",
+    )
+    notes = models.TextField(
+        blank=True, default="", verbose_name="یادداشت داخلی",
+        help_text="یادداشت آزاد کارکنان آژانس روی کارت این خدمت‌گیرنده در کاریز — فقط داخلی، برای نمایش عمومی نیست.",
+    )
+    # Agency-entered, same pattern as apps.caregivers.models.
+    # CaregiverProfile.contract_start_date/contract_end_date — shown
+    # on the card once the patient reaches "قرارداد بسته و تایید شده"
+    # (pipeline_status == "contract_confirmed"), for tracking a
+    # patient's own current contract window from real data.
+    contract_start_date = jmodels.jDateField(
+        null=True, blank=True, verbose_name="تاریخ شروع قرارداد فعلی",
+        help_text="تاریخ شروع قرارداد فعلی این خدمت‌گیرنده — در مرحله «قرارداد بسته و تایید شده» ثبت می‌شود.",
+    )
+    contract_end_date = jmodels.jDateField(
+        null=True, blank=True, verbose_name="تاریخ پایان قرارداد فعلی",
+        help_text="تاریخ پایان قرارداد فعلی این خدمت‌گیرنده — کنار تاریخ شروع، برای پیگیری نزدیک‌شدن به پایان قرارداد.",
     )
     gender = models.CharField(max_length=10, choices=Gender.choices, blank=True, help_text="جنسیت")
     father_name = models.CharField(max_length=150, blank=True, help_text="نام پدر")
@@ -405,3 +431,55 @@ class PatientCompatibilityQuestionnaire(models.Model):
 
     def __str__(self):
         return f"پرسشنامه سازگاری — {self.patient.full_name}"
+
+
+# ---------------------------------------------------------------------------
+# Tab 3 — مدارک شناسایی (identity documents). Mirrors
+# apps.caregivers.models.CaregiverDocumentUpload's own shape (file +
+# uploaded_by/uploaded_at, one row per (patient, document_type), a
+# re-upload replaces the same row) but WITHOUT that model's
+# approve/reject review workflow — there is no "doc_*" checklist
+# booleans on PatientProfile the way there is on CaregiverProfile, and
+# no confirmed requirement yet for a second-pair-of-eyes review step
+# here, so this stays a plain upload record. status/reviewed_by can be
+# added later the same way if that requirement shows up, without
+# touching this shape.
+# ---------------------------------------------------------------------------
+
+class PatientDocumentType(models.TextChoices):
+    NATIONAL_ID_CARD = "national_id_card", "کارت ملی"
+    BIRTH_CERTIFICATE = "birth_certificate", "شناسنامه"
+    PERSONAL_PHOTO = "personal_photo", "عکس پرسنلی"
+
+
+def patient_document_upload_path(instance, filename):
+    return f"patients/{instance.patient_id}/documents/{instance.document_type}/{filename}"
+
+
+class PatientDocumentUpload(models.Model):
+    """
+    One row per (patient, document_type) — the actual file behind one
+    of the three "مدارک شناسایی" items referenced (but never actually
+    built) on the family-panel's own patient-registration page. A
+    re-upload replaces the file on the same row rather than piling up
+    a history of past attempts, same reasoning as
+    CaregiverDocumentUpload.
+    """
+    patient = models.ForeignKey(
+        PatientProfile, on_delete=models.CASCADE, related_name="document_uploads", verbose_name="سالمند",
+    )
+    document_type = models.CharField(max_length=30, choices=PatientDocumentType.choices, verbose_name="نوع مدرک")
+    file = models.FileField(upload_to=patient_document_upload_path, verbose_name="فایل")
+    uploaded_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="patient_documents_uploaded", verbose_name="بارگذاری‌کننده",
+    )
+    uploaded_at = jmodels.jDateTimeField(auto_now=True, verbose_name="زمان بارگذاری")
+
+    class Meta:
+        unique_together = ("patient", "document_type")
+        verbose_name = "مدرک هویتی سالمند"
+        verbose_name_plural = "مدارک هویتی سالمند"
+
+    def __str__(self):
+        return f"{self.get_document_type_display()} — {self.patient.full_name}"

@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -32,6 +33,14 @@ export type NavItem = {
   children?: { label: string; href: string; icon: React.ElementType }[]
 }
 
+// Each domain-specific dashboard (caregivers/patients/staff/financial)
+// now lives as the first child inside its OWN section below, instead
+// of being clustered together under one generic top-level "داشبورد"
+// group — per the confirmed requirement that every dashboard should
+// live where its data lives. Only ROUTES.dashboard itself (the
+// agency's own cross-domain landing page — company profile, access
+// code, etc.) stays a flat top-level item, since it isn't specific to
+// any one section.
 export const NAV_ITEMS: NavItem[] = [
   { label: "داشبورد", href: ROUTES.dashboard, icon: LayoutDashboard },
   {
@@ -39,8 +48,16 @@ export const NAV_ITEMS: NavItem[] = [
     href: ROUTES.patients,
     icon: HeartPulse,
     children: [
+      { label: "داشبورد خدمت‌گیرنده‌ها", href: ROUTES.dashboardPatients, icon: LayoutDashboard },
+      // Deep-links into the patients list page with ?add=1, which
+      // shows ONLY the add-patient form (no columns) — see that
+      // page's isAddOnly. Submitting continues straight into the new
+      // patient's wizard at patients/[id]/register. Same pattern as
+      // خدمت‌دهنده's own "افزودن خدمت‌دهنده" shortcut right below.
+      { label: "افزودن خدمت‌گیرنده", href: `${ROUTES.patients}?add=1`, icon: UserPlus },
       { label: "خانواده‌ها", href: ROUTES.families, icon: HeartHandshake },
       { label: "خدمات مقطعی", href: ROUTES.episodicServices, icon: Receipt },
+      { label: "بانک اطلاعات خدمت‌گیرندگان", href: ROUTES.patientsBank, icon: ClipboardList },
     ],
   },
   {
@@ -48,19 +65,17 @@ export const NAV_ITEMS: NavItem[] = [
     href: ROUTES.caregivers,
     icon: Users,
     children: [
-      // Deep-links into the caregivers list page with ?add=1 — opens
-      // the same "افزودن خدمت‌دهنده" form the page's own header button
-      // does (handleCreateCaregiver / agencyManagementService.
-      // createCaregiverCandidate), just reachable straight from the
-      // nav instead of only after landing on "نمای کلی" first. Once
-      // the candidate is created there, its card's "ادامه ثبت‌نام"
-      // link continues into the actual wizard at caregivers/[id]/register.
-      { label: "افزودن خدمت‌دهنده جدید", href: `${ROUTES.caregivers}?add=1`, icon: UserPlus },
+      { label: "داشبورد خدمت‌دهنده‌ها", href: ROUTES.dashboardCaregivers, icon: LayoutDashboard },
+      // Deep-links into the caregivers list page with ?add=1, which
+      // shows ONLY the add-caregiver form (no cards/columns) — see
+      // that page's isAddOnly. Submitting continues straight into
+      // the new caregiver's wizard at caregivers/[id]/register.
+      { label: "افزودن خدمت‌دهنده", href: `${ROUTES.caregivers}?add=1`, icon: UserPlus },
       { label: "ارزیابی عملکرد", href: ROUTES.caregiverPerformance, icon: BarChart3 },
       { label: "فعالیت", href: ROUTES.caregiverActivity, icon: Activity },
       { label: "تنظیمات", href: ROUTES.caregiverSettings, icon: Settings },
       { label: "شکایات", href: ROUTES.complaints, icon: AlertTriangle },
-      { label: "بانک اطلاعات مراقبان", href: ROUTES.candidates, icon: ClipboardList },
+      { label: "بانک اطلاعات خدمت‌دهندگان", href: ROUTES.candidates, icon: ClipboardList },
       { label: "درخواست‌های بازبینی مسدودیت", href: ROUTES.blacklistAppeals, icon: ShieldQuestionMark },
     ],
   },
@@ -69,13 +84,21 @@ export const NAV_ITEMS: NavItem[] = [
   // stays in the codebase (route + page + backend endpoint untouched),
   // just re-add this line whenever it's ready to ship.
   // { label: "تحلیل", href: ROUTES.analytics, icon: BarChart3 },
-  { label: "مالی", href: ROUTES.financial, icon: Wallet },
+  {
+    label: "مالی",
+    href: ROUTES.financial,
+    icon: Wallet,
+    children: [
+      { label: "داشبورد مالی", href: ROUTES.dashboardFinancial, icon: LayoutDashboard },
+    ],
+  },
   {
     label: "کارمندان",
     href: ROUTES.employees,
     icon: UserCog,
     ownerOnly: true,
     children: [
+      { label: "داشبورد پرسنل", href: ROUTES.dashboardStaff, icon: LayoutDashboard },
       { label: "سوپروایزرها", href: ROUTES.supervisors, icon: UserCog },
       { label: "ادمین‌ها", href: ROUTES.admins, icon: ShieldCheck },
     ],
@@ -106,8 +129,13 @@ export function IconRail({ isOwner, onLogout, username }: { isOwner: boolean; on
 
   return (
     <aside className="fixed inset-y-0 right-0 z-40 hidden w-16 flex-col items-center bg-slate-900 py-4 lg:flex">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-        <span className="text-lg font-bold">م</span>
+      {/* The actual مراقب من logo — the dark circular badge artwork the
+          user supplied, in public/logo.jpg. It already carries its
+          own circular dark background, so this wrapper is just a
+          rounded-full crop/frame, no extra bg color — replaces the
+          ad-hoc "م" placeholder letter that used to sit here. */}
+      <div className="mb-4 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full">
+        <Image src="/logo.jpg" alt="مراقب من" width={40} height={40} className="h-full w-full object-cover" priority />
       </div>
 
       <nav className="flex flex-1 flex-col items-center gap-1">

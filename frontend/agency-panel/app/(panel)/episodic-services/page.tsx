@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   DndContext, DragOverlay, useDraggable, useDroppable,
   PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core"
-import { GripVertical, Phone, Plus, User, Receipt, BellRing } from "lucide-react"
+import { GripVertical, ChevronRight, ChevronLeft, Phone, Plus, User, Receipt, BellRing } from "lucide-react"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,16 +14,42 @@ import { Field } from "@/components/forms/fields"
 import { SearchTrigger, FilterDropdown, DropdownOption, SortDropdown, FilterRow, FilterToggleButton, SortSection, type SortOption } from "@/components/agency/filter-bar"
 import { agencyService } from "@/services/agency.service"
 import { episodicService } from "@/services/episodic.service"
+import { agencyManagementService } from "@/services/agency_management.service"
+import { PinButton } from "@/components/agency/pin-button"
+import { PinnedOnlyToggle } from "@/components/agency/pinned-only-toggle"
+import { DateRangeFilter, matchesDateRange, type DateRangeValue } from "@/components/agency/date-range-filter"
+import { usePinned } from "@/hooks/use-pinned"
 import { cn } from "@/lib/utils"
 import type { EpisodicCaregiverOption, EpisodicService, EpisodicStage } from "@/types/episodic"
-import { EPISODIC_PAYMENT_METHOD_OPTIONS } from "@/types/episodic"
+import { BUILT_IN_EPISODIC_STAGES, EPISODIC_PAYMENT_METHOD_OPTIONS } from "@/types/episodic"
 
-const STAGES: { value: EpisodicStage; label: string }[] = [
-  { value: "phone_coordination", label: "هماهنگی تلفنی" },
-  { value: "dispatched", label: "اعزام" },
-  { value: "settled", label: "تسویه‌حساب" },
-  { value: "followup", label: "پیگیری" },
+type Stage = { value: string; label: string }
+
+// Same "sticky note" auto-grow behavior as the patient/caregiver
+// cards' own note textarea — see those files' identical helper.
+function autoGrowNote(el: HTMLTextAreaElement | null) {
+  if (!el) return
+  el.style.height = "auto"
+  el.style.height = `${el.scrollHeight}px`
+}
+
+// Used only until this agency's real stage list has loaded from the
+// server (apps.agencies.models.AgencyPipelineStage, pipeline_type=
+// "episodic") — same placeholder-only role as patients/page.tsx and
+// caregivers/page.tsx's own DEFAULT_STAGES.
+const DEFAULT_STAGES: Stage[] = [
+  { value: BUILT_IN_EPISODIC_STAGES.PHONE_COORDINATION, label: "هماهنگی تلفنی" },
+  { value: BUILT_IN_EPISODIC_STAGES.DISPATCHED, label: "اعزام" },
+  { value: BUILT_IN_EPISODIC_STAGES.SETTLED, label: "تسویه‌حساب" },
+  { value: BUILT_IN_EPISODIC_STAGES.FOLLOWUP, label: "پیگیری" },
 ]
+
+// One neutral header style for every column — same reasoning as the
+// patient/caregiver boards: no per-stage color coding, so a custom
+// stage appended past the 4 built-in ones looks exactly like every
+// other column.
+const STAGE_HEADER_CLASS = { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200" }
+const ARROW_DEPTH = 18
 
 const REMINDER_COLOR_CLASS: Record<string, string> = {
   red: "bg-red-100 text-red-700",
@@ -104,22 +130,18 @@ function ReminderBadges({ service }: { service: EpisodicService }) {
 }
 
 /**
- * Card content deliberately differs per stage (per the confirmed
- * requirement) — هماهنگی تلفنی shows just contact info, اعزام adds
- * the caregiver picker, تسویه‌حساب shows the real invoice once one
- * exists, and پیگیری is where reminder badges actually matter.
+ * Only the 4 built-in stages have any special content here — اعزام
+ * gets the caregiver picker, تسویه‌حساب shows the real invoice, و
+ * پیگیری shows the assigned caregiver's name. A custom stage
+ * appended past these renders nothing extra: it's a plain column,
+ * same as a custom patient/caregiver stage.
  */
 function StageBody({ service, caregivers, onAssignCaregiver }: {
   service: EpisodicService
   caregivers: EpisodicCaregiverOption[]
   onAssignCaregiver: (caregiverId: number | null) => void
 }) {
-  if (service.stage === "phone_coordination") {
-    return (
-      <p className="mt-1 line-clamp-2 text-[11px] text-slate-500">{service.notes || "یادداشتی ثبت نشده"}</p>
-    )
-  }
-  if (service.stage === "dispatched") {
+  if (service.stage === BUILT_IN_EPISODIC_STAGES.DISPATCHED) {
     return (
       <div className="mt-1.5">
         <select
@@ -133,7 +155,7 @@ function StageBody({ service, caregivers, onAssignCaregiver }: {
       </div>
     )
   }
-  if (service.stage === "settled") {
+  if (service.stage === BUILT_IN_EPISODIC_STAGES.SETTLED) {
     return service.invoice ? (
       <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-emerald-700">
         <Receipt className="h-3 w-3" /> {service.invoice_amount} تومان — {service.invoice_status_display}
@@ -142,111 +164,164 @@ function StageBody({ service, caregivers, onAssignCaregiver }: {
       <p className="mt-1 text-[11px] text-amber-600">هنوز تسویه ثبت نشده</p>
     )
   }
-  // followup
-  return (
-    <>
-      {service.assigned_caregiver_name && (
-        <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
-          <User className="h-3 w-3" /> {service.assigned_caregiver_name}
-        </p>
-      )}
-      <ReminderBadges service={service} />
-    </>
-  )
+  if (service.stage === BUILT_IN_EPISODIC_STAGES.FOLLOWUP && service.assigned_caregiver_name) {
+    return (
+      <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
+        <User className="h-3 w-3" /> {service.assigned_caregiver_name}
+      </p>
+    )
+  }
+  return null
 }
 
-function EpisodicCard({ service, caregivers, onMove, onAssignCaregiver, moving }: {
+function EpisodicCard({ service, stages, caregivers, onMove, onAssignCaregiver, onSaveNote, moving, pinned, onTogglePin }: {
   service: EpisodicService
+  stages: Stage[]
   caregivers: EpisodicCaregiverOption[]
-  onMove: (s: EpisodicService, target: EpisodicStage) => void
+  onMove: (s: EpisodicService, direction: 1 | -1) => void
   onAssignCaregiver: (s: EpisodicService, caregiverId: number | null) => void
+  onSaveNote: (s: EpisodicService, notes: string) => void
   moving: boolean
+  pinned: boolean
+  onTogglePin: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: service.id,
     data: { service },
   })
-  const stageIndex = STAGES.findIndex((s) => s.value === service.stage)
+  const stageIndex = stages.findIndex((s) => s.value === service.stage)
   const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined
+
+  // Same local-draft-then-save-on-blur pattern as the patient/
+  // caregiver note textareas.
+  const [noteDraft, setNoteDraft] = useState(service.notes ?? "")
+  useEffect(() => setNoteDraft(service.notes ?? ""), [service.notes])
+  const noteRef = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => autoGrowNote(noteRef.current), [noteDraft])
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={cn("rounded-md border border-slate-200 bg-white p-2.5 shadow-sm", isDragging && "z-50 opacity-50")}
+      className={cn(
+        "min-h-[130px] min-w-[170px] max-w-[460px] resize overflow-auto rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md",
+        isDragging && "z-50 opacity-50"
+      )}
     >
-      <div className="flex items-start justify-between gap-1">
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-slate-900">{service.recipient_full_name}</p>
+          <p className="min-w-0 break-words text-base font-bold text-slate-900">{service.recipient_full_name}</p>
+          {/* flex-wrap + min-w-0/break-all on the number itself — a
+              long number in a narrow column otherwise overflows
+              straight past the card's edge. */}
           {service.recipient_phone_number && (
-            <p className="flex items-center gap-1 text-[11px] text-slate-500" dir="ltr">
-              <Phone className="h-2.5 w-2.5" /> {service.recipient_phone_number}
+            <p className="flex flex-nowrap items-center gap-1 text-[10px] text-slate-500">
+              <Phone className="h-2.5 w-2.5 shrink-0" />
+              <span className="shrink-0">شماره تماس:</span>
+              <span className="min-w-0 break-all" dir="ltr">{service.recipient_phone_number}</span>
             </p>
           )}
         </div>
-        <button
-          {...attributes}
-          {...listeners}
-          className="shrink-0 cursor-grab touch-none rounded p-1 text-slate-300 hover:bg-slate-100 hover:text-slate-500 active:cursor-grabbing"
-          title="جابجایی با کشیدن"
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <PinButton pinned={pinned} onToggle={onTogglePin} />
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab touch-none rounded p-1 text-slate-300 hover:bg-slate-100 hover:text-slate-500 active:cursor-grabbing"
+            title="جابجایی با کشیدن"
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      <StageBody service={service} caregivers={caregivers} onAssignCaregiver={(id) => onAssignCaregiver(service, id)} />
+      <textarea
+        ref={noteRef}
+        value={noteDraft}
+        onChange={(e) => setNoteDraft(e.target.value)}
+        onBlur={() => {
+          if (noteDraft !== (service.notes ?? "")) onSaveNote(service, noteDraft)
+        }}
+        placeholder="یادداشت داخلی..."
+        rows={3}
+        className="mt-2 w-full resize-none overflow-hidden rounded-lg border border-slate-100 bg-slate-50 px-2 py-1.5 text-xs text-slate-600 placeholder:text-slate-400 focus:border-primary/40 focus:bg-white focus:outline-none"
+      />
 
-      <div className="mt-2 flex items-center justify-between gap-1">
-        <button
-          className="rounded border border-slate-200 px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-50 disabled:opacity-30"
-          disabled={moving || stageIndex === 0}
-          onClick={() => onMove(service, STAGES[stageIndex - 1].value)}
-        >
-          مرحله قبل
+      <StageBody service={service} caregivers={caregivers} onAssignCaregiver={(id) => onAssignCaregiver(service, id)} />
+      <ReminderBadges service={service} />
+
+      <div className="mt-3 flex items-center justify-between gap-1 border-t border-slate-100 pt-3">
+        <button className="rounded-full p-1 text-slate-400 hover:bg-slate-100 disabled:opacity-30" disabled={moving || stageIndex <= 0} onClick={() => onMove(service, -1)}>
+          <ChevronRight className="h-4 w-4" />
         </button>
-        <button
-          className="rounded bg-primary px-2 py-0.5 text-[11px] font-medium text-primary-foreground hover:opacity-90 disabled:opacity-30"
-          disabled={moving || stageIndex === STAGES.length - 1}
-          onClick={() => onMove(service, STAGES[stageIndex + 1].value)}
-        >
-          مرحله بعد
+        <p className="flex-1 text-center text-[11px] text-slate-400">{stages[stageIndex]?.label}</p>
+        <button className="rounded-full p-1 text-slate-400 hover:bg-slate-100 disabled:opacity-30" disabled={moving || stageIndex === -1 || stageIndex === stages.length - 1} onClick={() => onMove(service, 1)}>
+          <ChevronLeft className="h-4 w-4" />
         </button>
       </div>
     </div>
   )
 }
 
-function StageColumn({ stage, services, caregivers, onMove, onAssignCaregiver, movingId }: {
-  stage: (typeof STAGES)[number]
+function StageColumn({ stage, index, stages, services, caregivers, onMove, onAssignCaregiver, onSaveNote, movingId, onQuickAdd, isPinned, onTogglePin }: {
+  stage: Stage
+  index: number
+  stages: Stage[]
   services: EpisodicService[]
   caregivers: EpisodicCaregiverOption[]
-  onMove: (s: EpisodicService, target: EpisodicStage) => void
+  onMove: (s: EpisodicService, direction: 1 | -1) => void
   onAssignCaregiver: (s: EpisodicService, caregiverId: number | null) => void
+  onSaveNote: (s: EpisodicService, notes: string) => void
   movingId: number | null
+  onQuickAdd?: () => void
+  isPinned: (id: number) => boolean
+  onTogglePin: (id: number) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.value })
+  const colors = STAGE_HEADER_CLASS
+  const isFirst = index === 0
+
+  // Same left-pointing chevron-chain header as the patient/caregiver
+  // boards — see those files' own comment for the RTL reasoning.
+  const clipPath = isFirst
+    ? `polygon(100% 0, ${ARROW_DEPTH}px 0, 0 50%, ${ARROW_DEPTH}px 100%, 100% 100%)`
+    : `polygon(100% 0, ${ARROW_DEPTH}px 0, 0 50%, ${ARROW_DEPTH}px 100%, 100% 100%, calc(100% - ${ARROW_DEPTH}px) 50%)`
+
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "flex min-w-[240px] flex-col rounded-lg border bg-slate-100 transition-colors",
-        isOver ? "border-primary bg-primary/5" : "border-slate-200"
+        "flex w-[270px] shrink-0 flex-col rounded-xl border-2 bg-slate-50 shadow-sm transition-colors",
+        isOver ? "border-primary bg-primary/5" : "border-transparent"
       )}
     >
-      <div className="border-b border-slate-200 p-3">
-        <p className="text-xs font-bold text-slate-700">{stage.label}</p>
-        <p className="text-[11px] text-slate-500">{services.length} مورد</p>
+      <div
+        className={cn("flex flex-col items-center justify-center px-7 py-3 text-center shadow-sm", colors.bg, colors.text)}
+        style={{ clipPath }}
+      >
+        <p className="text-sm font-bold leading-tight">{stage.label}</p>
+        <p className="text-[11px] opacity-80">{services.length} مورد</p>
       </div>
-      <div className="min-h-[80px] flex-1 space-y-2 p-2">
+      <div className="h-[2px] w-full bg-slate-300" />
+      <div className="min-h-[120px] flex-1 space-y-3 p-3">
         {services.length === 0 ? (
-          <p className="p-3 text-center text-[11px] text-slate-400">موردی نیست</p>
+          <p className="p-3 text-center text-xs text-slate-400">موردی نیست</p>
         ) : (
           services.map((s) => (
             <EpisodicCard
-              key={s.id} service={s} caregivers={caregivers}
-              onMove={onMove} onAssignCaregiver={onAssignCaregiver} moving={movingId === s.id}
+              key={s.id} service={s} stages={stages} caregivers={caregivers}
+              onMove={onMove} onAssignCaregiver={onAssignCaregiver} onSaveNote={onSaveNote} moving={movingId === s.id}
+              pinned={isPinned(s.id)} onTogglePin={() => onTogglePin(s.id)}
             />
           ))
+        )}
+        {isFirst && onQuickAdd && (
+          <button
+            onClick={onQuickAdd}
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-300 bg-white py-3 text-sm font-medium text-slate-500 hover:bg-slate-100"
+          >
+            <Plus className="h-4 w-4" /> افزودن خدمت مقطعی سریع
+          </button>
         )}
       </div>
     </div>
@@ -259,6 +334,10 @@ export default function EpisodicServicesPage() {
   const [agencyId, setAgencyId] = useState<number | null>(null)
   const [services, setServices] = useState<EpisodicService[]>([])
   const [caregivers, setCaregivers] = useState<EpisodicCaregiverOption[]>([])
+  const [stages, setStages] = useState<Stage[]>(DEFAULT_STAGES)
+  const [addingStage, setAddingStage] = useState(false)
+  const [newStageLabel, setNewStageLabel] = useState("")
+  const [savingStage, setSavingStage] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -278,6 +357,9 @@ export default function EpisodicServicesPage() {
   const [filters, setFilters] = useState<EpisodicFilters>(emptyEpisodicFilters)
   const [sortBy, setSortBy] = useState("")
   const [filterOpen, setFilterOpen] = useState(false)
+  const [dateRange, setDateRange] = useState<DateRangeValue>("all")
+  const [pinnedOnly, setPinnedOnly] = useState(false)
+  const { pinned: pinnedIds, isPinned, toggle: togglePin } = usePinned("episodic")
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
@@ -285,27 +367,33 @@ export default function EpisodicServicesPage() {
     () => Array.from(new Set(services.map((s) => s.created_by_username).filter((c): c is string => !!c))).sort(),
     [services]
   )
-  const filteredServices = useMemo(
-    () => sortEpisodicServices(services.filter((s) => matchesEpisodicFilters(s, search, filters)), sortBy),
-    [services, search, filters, sortBy]
-  )
+  const filteredServices = useMemo(() => {
+    const base = services.filter((s) =>
+      matchesEpisodicFilters(s, search, filters) &&
+      matchesDateRange(s.created_at, dateRange) &&
+      (!pinnedOnly || pinnedIds.has(s.id))
+    )
+    return sortEpisodicServices(base, sortBy)
+  }, [services, search, filters, sortBy, dateRange, pinnedOnly, pinnedIds])
   const activeFilterCount = countActiveEpisodicFilters(filters)
-
-  const columns = useMemo(
-    () => STAGES.map((stage) => ({ stage, services: filteredServices.filter((s) => s.stage === stage.value) })),
-    [filteredServices]
-  )
-
 
   function refresh(id: number) {
     return episodicService.list(id).then(setServices)
+  }
+
+  function refreshStages(id: number) {
+    return agencyManagementService.listPipelineStages(id, "episodic").then(setStages)
   }
 
   useEffect(() => {
     if (!user) return
     agencyService.me().then((profile) => {
       setAgencyId(profile.id)
-      return Promise.all([refresh(profile.id), episodicService.caregiverRoster(profile.id).then(setCaregivers)])
+      return Promise.all([
+        refresh(profile.id),
+        refreshStages(profile.id),
+        episodicService.caregiverRoster(profile.id).then(setCaregivers),
+      ])
     }).finally(() => setLoading(false))
   }, [user])
 
@@ -342,14 +430,36 @@ export default function EpisodicServicesPage() {
     }
   }
 
-  function moveStage(service: EpisodicService, target: EpisodicStage) {
-    if (target === "settled" && !service.invoice) {
+  function moveToStage(service: EpisodicService, target: EpisodicStage) {
+    if (target === BUILT_IN_EPISODIC_STAGES.SETTLED && !service.invoice) {
       setPendingSettlement(service)
       setSettlement(emptySettlement)
       setSettleError("")
       return
     }
     applyStageChange(service, target)
+  }
+
+  function moveStage(service: EpisodicService, direction: 1 | -1) {
+    const currentIndex = stages.findIndex((s) => s.value === service.stage)
+    const nextIndex = currentIndex + direction
+    if (nextIndex < 0 || nextIndex >= stages.length) return
+    moveToStage(service, stages[nextIndex].value)
+  }
+
+  async function handleAddStage() {
+    if (agencyId === null || !newStageLabel.trim()) return
+    setSavingStage(true)
+    try {
+      const created = await agencyManagementService.addPipelineStage(agencyId, "episodic", newStageLabel.trim())
+      setStages((prev) => [...prev, created])
+      setNewStageLabel("")
+      setAddingStage(false)
+    } catch {
+      window.alert("افزودن مرحله با خطا مواجه شد.")
+    } finally {
+      setSavingStage(false)
+    }
   }
 
   async function confirmSettlement() {
@@ -362,7 +472,7 @@ export default function EpisodicServicesPage() {
     setMovingId(pendingSettlement.id)
     try {
       const updated = await episodicService.updateStage(agencyId, pendingSettlement.id, {
-        stage: "settled", amount: settlement.amount, method: settlement.method, paid_at: settlement.paid_at,
+        stage: BUILT_IN_EPISODIC_STAGES.SETTLED, amount: settlement.amount, method: settlement.method, paid_at: settlement.paid_at,
       })
       setServices((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
       setPendingSettlement(null)
@@ -386,6 +496,19 @@ export default function EpisodicServicesPage() {
     }
   }
 
+  async function handleSaveNote(service: EpisodicService, notes: string) {
+    if (agencyId === null) return
+    const previous = services
+    setServices((prev) => prev.map((s) => (s.id === service.id ? { ...s, notes } : s)))
+    try {
+      const updated = await episodicService.updateStage(agencyId, service.id, { notes })
+      setServices((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
+    } catch {
+      setServices(previous)
+      window.alert("ذخیره یادداشت با خطا مواجه شد.")
+    }
+  }
+
   function handleDragStart(event: DragStartEvent) {
     const service = event.active.data.current?.service as EpisodicService | undefined
     setActiveService(service ?? null)
@@ -397,7 +520,7 @@ export default function EpisodicServicesPage() {
     if (!over) return
     const service = active.data.current?.service as EpisodicService | undefined
     if (!service) return
-    moveStage(service, String(over.id) as EpisodicStage)
+    moveToStage(service, String(over.id))
   }
 
   return (
@@ -522,28 +645,78 @@ export default function EpisodicServicesPage() {
 
         <SortSection>
           <SortDropdown value={sortBy} options={EPISODIC_SORT_OPTIONS} onChange={setSortBy} />
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          <div className="mr-auto">
+            <PinnedOnlyToggle pinnedOnly={pinnedOnly} onChange={setPinnedOnly} pinnedCount={pinnedIds.size} />
+          </div>
         </SortSection>
         </>
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {STAGES.map((s) => <Skeleton key={s.value} className="h-64 rounded-lg" />)}
+        <div className="flex gap-3 overflow-x-auto">
+          {DEFAULT_STAGES.map((s) => <Skeleton key={s.value} className="h-72 w-[270px] shrink-0 rounded-xl" />)}
         </div>
       ) : (
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 gap-3 overflow-x-auto sm:grid-cols-2 lg:grid-cols-4">
-            {columns.map(({ stage, services: colServices }) => (
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {stages.map((stage, index) => (
               <StageColumn
-                key={stage.value} stage={stage} services={colServices} caregivers={caregivers}
-                onMove={moveStage} onAssignCaregiver={assignCaregiver} movingId={movingId}
+                key={stage.value}
+                stage={stage}
+                index={index}
+                stages={stages}
+                services={filteredServices.filter((s) => s.stage === stage.value)}
+                caregivers={caregivers}
+                onMove={moveStage}
+                onAssignCaregiver={assignCaregiver}
+                onSaveNote={handleSaveNote}
+                movingId={movingId}
+                onQuickAdd={index === 0 ? () => setShowForm(true) : undefined}
+                isPinned={isPinned}
+                onTogglePin={togglePin}
               />
             ))}
+
+            {/* Appends a brand-new stage to the end of this agency's
+                own episodic-services pipeline — same
+                apps.agencies.models.AgencyPipelineStage row, just
+                pipeline_type="episodic". */}
+            <div className="flex w-[270px] shrink-0 flex-col items-center justify-start rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-3">
+              {addingStage ? (
+                <div className="w-full space-y-2">
+                  <Input
+                    autoFocus
+                    value={newStageLabel}
+                    onChange={(e) => setNewStageLabel(e.target.value)}
+                    placeholder="عنوان مرحله جدید"
+                    className="text-xs"
+                  />
+                  <div className="flex gap-1.5">
+                    <Button size="sm" className="h-7 flex-1 text-xs" disabled={savingStage || !newStageLabel.trim()} onClick={handleAddStage}>
+                      {savingStage ? "..." : "افزودن"}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 flex-1 text-xs" onClick={() => { setAddingStage(false); setNewStageLabel("") }}>
+                      انصراف
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setAddingStage(true)}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-medium text-slate-500 hover:bg-slate-100"
+                >
+                  <Plus className="h-4 w-4" /> افزودن مرحله
+                </button>
+              )}
+            </div>
           </div>
+
           <DragOverlay>
             {activeService && (
-              <div className="w-52 rounded-md border border-primary bg-white p-2.5 shadow-lg">
-                <p className="truncate text-sm font-medium text-slate-900">{activeService.recipient_full_name}</p>
+              <div className="w-72 rounded-xl border border-primary bg-white p-4 shadow-lg">
+                <p className="truncate text-base font-bold text-slate-900">{activeService.recipient_full_name}</p>
+                <p className="text-xs text-slate-500" dir="ltr">{activeService.recipient_phone_number}</p>
               </div>
             )}
           </DragOverlay>

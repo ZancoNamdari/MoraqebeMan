@@ -2,6 +2,13 @@ from django.db import models
 from django.utils.crypto import get_random_string
 from django_jalali.db import models as jmodels
 
+# Reused rather than redefined — apps.caregivers.choices.Gender is
+# already the platform's one gender enum (IdentityProfile, PatientProfile
+# all use it), and EducationLevel already exists there too with the
+# exact same Persian-labeled tiers this feature needs, so both are
+# imported as-is instead of duplicating them here.
+from apps.caregivers.choices import EducationLevel, Gender
+
 # Same alphabet/format as apps.families's FAM-/ELD- codes (excludes
 # visually-ambiguous characters) — an agency's code is read aloud or
 # typed by hand by a family/caregiver joining it, same use case.
@@ -197,6 +204,19 @@ class AgencySupervisor(models.Model):
         help_text="خود آژانس این حساب را ساخته، یا یک سوپریوزر — هر دو مجازند.",
     )
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    # Added for the agency staff dashboard's breakdowns
+    # (gender/education/city) — every existing row has none of this
+    # data, so all four are nullable/optional, entered later by the
+    # agency editing this supervisor's profile.
+    gender = models.CharField(max_length=10, choices=Gender.choices, null=True, blank=True, verbose_name="جنسیت")
+    birth_date = jmodels.jDateField(null=True, blank=True, verbose_name="تاریخ تولد")
+    city = models.ForeignKey(
+        "locations.City", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="agency_supervisors", verbose_name="شهر",
+    )
+    education_level = models.CharField(
+        max_length=20, choices=EducationLevel.choices, null=True, blank=True, verbose_name="مدرک تحصیلی",
+    )
 
     class Meta:
         verbose_name = "سوپروایزر آژانس"
@@ -238,6 +258,19 @@ class AgencyAdmin(models.Model):
         related_name="created_agency_admins", verbose_name="ایجادکننده",
     )
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    # Same four fields, same reasoning, as AgencySupervisor above —
+    # duplicated by hand rather than a shared abstract base, matching
+    # how position/created_by/created_at are already duplicated
+    # between these two models.
+    gender = models.CharField(max_length=10, choices=Gender.choices, null=True, blank=True, verbose_name="جنسیت")
+    birth_date = jmodels.jDateField(null=True, blank=True, verbose_name="تاریخ تولد")
+    city = models.ForeignKey(
+        "locations.City", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="agency_admins", verbose_name="شهر",
+    )
+    education_level = models.CharField(
+        max_length=20, choices=EducationLevel.choices, null=True, blank=True, verbose_name="مدرک تحصیلی",
+    )
 
     class Meta:
         verbose_name = "ادمین آژانس"
@@ -293,3 +326,58 @@ class AgencyPatientLink(models.Model):
 
     def __str__(self):
         return f"{self.agency} ↔ {self.patient} ({self.status})"
+
+
+class PipelineType(models.TextChoices):
+    """Which Kanban board a AgencyPipelineStage row belongs to —
+    patients/page.tsx, caregivers/page.tsx, and episodic-services/
+    page.tsx each keep their own independent stage list per agency."""
+    PATIENT = "patient", "کاریز خدمت‌گیرنده"
+    CAREGIVER = "caregiver", "کاریز خدمت‌دهنده"
+    EPISODIC = "episodic", "کاریز خدمات مقطعی"
+
+
+class AgencyPipelineStage(models.Model):
+    """
+    One column of an agency's own patient/caregiver Kanban board.
+
+    Every agency starts with the platform's original 7 stages for
+    each board (seeded by a data migration, using the exact same
+    `value`s the old PatientPipelineStatus/CaregiverAgencyPipelineStatus
+    TextChoices enums used — so every existing
+    PatientProfile.pipeline_status / CaregiverProfile.
+    agency_pipeline_status value on record still resolves to a real
+    row here with zero data migration needed on those fields
+    themselves). From there, an agency can append further stages of
+    its own — see AgencyPipelineStageListCreateView.
+
+    `pipeline_status`/`agency_pipeline_status` themselves stay plain,
+    unconstrained CharFields (no FK) specifically so every other part
+    of the platform that already reads/writes them as a bare string —
+    reminders' stage-transition tracking, the matching page, dashboard
+    breakdowns — keeps working unchanged; only the two PATCH views
+    that accept a new stage value from the client now check it against
+    this table (per agency) instead of a fixed enum.
+    """
+    agency = models.ForeignKey(
+        AgencyProfile, on_delete=models.CASCADE, related_name="pipeline_stages", verbose_name="آژانس",
+    )
+    pipeline_type = models.CharField(max_length=10, choices=PipelineType.choices, verbose_name="نوع کاریز")
+    # Capped at 30, matching PatientProfile.pipeline_status /
+    # CaregiverProfile.agency_pipeline_status's own max_length — this
+    # value is written straight into whichever of those two fields a
+    # card in this stage sits in, so it can never be longer than what
+    # that field can hold.
+    value = models.SlugField(max_length=30, verbose_name="مقدار ذخیره‌شده")
+    label = models.CharField(max_length=60, verbose_name="عنوان مرحله")
+    order = models.PositiveSmallIntegerField(verbose_name="ترتیب نمایش")
+    created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+
+    class Meta:
+        unique_together = [("agency", "pipeline_type", "value"), ("agency", "pipeline_type", "order")]
+        ordering = ["pipeline_type", "order"]
+        verbose_name = "مرحله کاریز آژانس"
+        verbose_name_plural = "مراحل کاریز آژانس"
+
+    def __str__(self):
+        return f"{self.agency} / {self.pipeline_type} / {self.label}"

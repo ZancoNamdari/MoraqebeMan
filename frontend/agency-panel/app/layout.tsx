@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { IBM_Plex_Sans_Arabic } from "next/font/google"
 import "./globals.css"
+import { PersianDigitsProvider } from "@/components/persian-digits-provider"
 
 // Self-hosted via next/font/google — downloaded and served from this
 // app's own domain at build time, not fetched from Google at runtime.
@@ -29,7 +30,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fa" dir="rtl" className={ibmPlexSansArabic.variable}>
-      <body className="antialiased min-h-screen bg-background">{children}</body>
+      <body className="antialiased min-h-screen bg-background">
+        <PersianDigitsProvider />
+        {children}
+      </body>
     </html>
   )
 }

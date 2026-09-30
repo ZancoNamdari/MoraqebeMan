@@ -9,10 +9,16 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Field, ChoiceSelect } from "@/components/wizard-forms/fields"
+import { LocationPicker, type LocationValue } from "@/components/wizard-forms/location-picker"
+import { JalaliDatePicker } from "@/components/wizard-forms/jalali-date-picker"
+import { GENDER, EDUCATION_LEVEL, labelForValue } from "@/lib/wizard-constants"
 import { agencyService } from "@/services/agency.service"
 import { agencyManagementService } from "@/services/agency_management.service"
 import { ROUTES } from "@/lib/routes"
 import type { AgencySupervisor } from "@/types/agency_management"
+
+const emptyLocation: LocationValue = { province: null, city: null, district: null }
 
 export default function SupervisorsPage() {
   const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor", "agency_admin"])
@@ -22,7 +28,8 @@ export default function SupervisorsPage() {
   const [supervisors, setSupervisors] = useState<AgencySupervisor[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ first_name: "", last_name: "", phone_number: "", position: "" })
+  const [form, setForm] = useState({ first_name: "", last_name: "", phone_number: "", position: "", gender: "", education_level: "", birth_date: "" })
+  const [location, setLocation] = useState<LocationValue>(emptyLocation)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
@@ -47,9 +54,19 @@ export default function SupervisorsPage() {
     if (agencyId === null) return
     setSaving(true); setError("")
     try {
-      const created = await agencyManagementService.createSupervisor(agencyId, form)
+      const created = await agencyManagementService.createSupervisor(agencyId, {
+        first_name: form.first_name,
+        last_name: form.last_name,
+        phone_number: form.phone_number,
+        position: form.position,
+        gender: form.gender || undefined,
+        birth_date: form.birth_date || undefined,
+        city_id: location.city ?? undefined,
+        education_level: form.education_level || undefined,
+      })
       setSupervisors((prev) => [created, ...prev])
-      setForm({ first_name: "", last_name: "", phone_number: "", position: "" })
+      setForm({ first_name: "", last_name: "", phone_number: "", position: "", gender: "", education_level: "", birth_date: "" })
+      setLocation(emptyLocation)
       setShowForm(false)
     } catch (err: any) {
       setError(err?.response?.data?.detail || "ثبت سوپروایزر با خطا مواجه شد.")
@@ -97,6 +114,27 @@ export default function SupervisorsPage() {
               <Label htmlFor="position">سمت</Label>
               <Input id="position" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} placeholder="مثلاً سرپرست شیفت" />
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="جنسیت">
+                <ChoiceSelect choices={GENDER} value={form.gender} onChange={(v) => setForm({ ...form, gender: v })} />
+              </Field>
+              <Field label="مدرک تحصیلی">
+                <ChoiceSelect choices={EDUCATION_LEVEL} value={form.education_level} onChange={(v) => setForm({ ...form, education_level: v })} />
+              </Field>
+            </div>
+
+            <Field label="تاریخ تولد">
+              <JalaliDatePicker value={form.birth_date} onChange={(v) => setForm({ ...form, birth_date: v })} />
+            </Field>
+
+            <LocationPicker
+              province={location.province}
+              city={location.city}
+              district={location.district}
+              onChange={setLocation}
+            />
+
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -122,6 +160,13 @@ export default function SupervisorsPage() {
               <p className="text-sm font-medium text-slate-900">{s.full_name}</p>
               {s.position && <p className="text-xs text-slate-500">{s.position}</p>}
               <p className="text-xs text-slate-500" dir="ltr">{s.phone_number}</p>
+              <p className="mt-1 text-[11px] text-slate-400">
+                {[
+                  s.gender && labelForValue(GENDER, s.gender),
+                  s.education_level && labelForValue(EDUCATION_LEVEL, s.education_level),
+                  s.city_name,
+                ].filter(Boolean).join(" · ")}
+              </p>
               {s.created_by_username && (
                 <p className="mt-1 text-[11px] text-slate-400">ثبت‌شده توسط: {s.created_by_username}</p>
               )}

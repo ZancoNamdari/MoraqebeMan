@@ -1,6 +1,19 @@
 import type { ActiveReminder } from "@/types/reminders"
 
-export type EpisodicStage = "phone_coordination" | "dispatched" | "settled" | "followup"
+// A plain string, not a fixed union, now that an agency can append
+// its own custom stages past the 4 built-in ones (see
+// apps.agencies.pipeline_stages' PipelineType.EPISODIC seed) — the 4
+// built-in values below are still the ones with special behavior
+// (caregiver picker, settlement/invoice, reminders); anything else is
+// a plain, generic Kanban column.
+export type EpisodicStage = string
+
+export const BUILT_IN_EPISODIC_STAGES = {
+  PHONE_COORDINATION: "phone_coordination",
+  DISPATCHED: "dispatched",
+  SETTLED: "settled",
+  FOLLOWUP: "followup",
+} as const
 
 // Duplicated from apps.finance.PaymentMethod's choices (see backend)
 // rather than importing frontend/types/finance.ts — keeps this

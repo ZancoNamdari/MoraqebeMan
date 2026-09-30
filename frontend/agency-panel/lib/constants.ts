@@ -36,6 +36,13 @@ export const GENDER: Choice[] = [
   ["male", "مرد"],
 ]
 
+// Mirrors apps.families.models.GuardianshipStatus.
+export const GUARDIANSHIP_STATUS: Choice[] = [
+  ["none", "ندارد"],
+  ["legal_guardian", "قیم قانونی دارد"],
+  ["trustee", "وصی دارد"],
+]
+
 export const COMPLAINT_CATEGORY_LABEL: Record<string, string> = {
   service_quality: "کیفیت خدمات",
   behavior: "رفتار نامناسب",

@@ -120,7 +120,7 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
         model = IdentityProfile
         fields = [
             "full_name",
-            "father_name", "birth_certificate_number", "birth_certificate_issue_place",
+            "father_name", "national_id", "birth_certificate_number", "birth_certificate_issue_place",
             "birth_date", "gender", "marital_status", "children_count", "military_status",
             "height_range", "weight_range", "ethnicities",
             "has_chronic_disease", "chronic_disease_types",
@@ -189,12 +189,13 @@ class CaregiverWorkPreferencesSerializer(serializers.ModelSerializer):
     class Meta:
         model = CaregiverWorkPreferences
         fields = [
-            "collaboration_types", "work_status", "family_presence_preference",
+            "collaboration_types", "daily_work_hours", "work_status", "family_presence_preference",
             "accepted_gender", "accepted_age_ranges", "offered_services",
             "accepted_physical_conditions", "lifting_capacity", "service_locations",
             "max_commute_time", "available_days", "available_shifts", "commute_methods",
             "smoking_status", "pets_ok", "holiday_work_ok", "overnight_stay_ok",
-            "terms_accepted", "terms_accepted_at", "night_stay_until", "has_night_time_limit", "additional_notes", "created_at", "updated_at",
+            "terms_accepted", "terms_accepted_at", "night_stay_until", "has_night_time_limit",
+            "additional_notes", "requested_salary", "created_at", "updated_at",
         ]
         read_only_fields = ["terms_accepted_at", "created_at", "updated_at"]
 
@@ -458,14 +459,8 @@ class CaregiverCompatibilityQuestionnaireSerializer(serializers.ModelSerializer)
     class Meta:
         model = CaregiverCompatibilityQuestionnaire
         fields = [
-            "religious_belief_accommodation", "physical_contact_sensitivity_adaptation",
-            "prayer_time_scheduling_flexibility", "traditional_belief_acceptance",
-            "family_event_participation", "false_accusation_reaction",
-            "confidentiality_commitment", "gender_based_task_flexibility",
-            "home_environment_adaptability", "schedule_flexibility_for_family_events",
-            "traditional_food_treatment_openness", "personal_conversation_patience",
-            "home_organization_adaptability",
-            "cultural_expression_tolerance", "unfamiliar_custom_acceptance", "dialect_communication_effort",
+            "religiosity_level", "family_compatibility_level",
+            "patience_level", "clinical_compatibility_level",
             "section_scores", "overall_flexibility_score", "updated_at",
         ]
         read_only_fields = ["section_scores", "overall_flexibility_score", "updated_at"]

@@ -1,3 +1,4 @@
+import jdatetime
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from rest_framework import status
@@ -5,9 +6,11 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.jalali_fields import JalaliDateField
 from apps.accounts.models import User, UserRole
 from apps.audit.services import AuditService
 from apps.authorization.permissions import IsAgency, IsSuperuser
+from apps.caregivers.choices import EducationLevel, Gender
 from apps.caregivers.models import (
     CaregiverAgencyPipelineStatus,
     CaregiverDocumentReviewStatus,
@@ -19,13 +22,19 @@ from apps.caregivers.models import (
 )
 from apps.caregivers.permissions import IsCaregiver
 from apps.caregivers.serializers import CaregiverDocumentUploadSerializer, CreateCaregiverSerializer
-from apps.families.models import FamilyPatientLink, FamilyProfile, LinkStatus, PatientPipelineStatus, PatientProfile
+from apps.families.models import (
+    FamilyPatientLink, FamilyProfile, LinkStatus, PatientCompatibilityQuestionnaire,
+    PatientDocumentType, PatientDocumentUpload, PatientPipelineStatus, PatientProfile,
+)
 from apps.families.permissions import IsFamily
-from apps.families.serializers import PatientProfileSerializer
-from apps.care.matching import suggest_caregivers_for_agency_patient
+from apps.families.serializers import (
+    PatientCompatibilityQuestionnaireSerializer, PatientDocumentUploadSerializer, PatientProfileSerializer,
+)
+from apps.care.matching import suggest_caregivers_for_agency_patient, suggest_patients_for_agency_caregiver
 from apps.reminders.services import agency_reminder_rules, record_stage_transition
 
-from .models import AgencyAdmin, AgencyCaregiverLink, AgencyFamilyLink, AgencyLinkStatus, AgencyPatientLink, AgencyProfile, AgencySupervisor
+from .models import AgencyAdmin, AgencyCaregiverLink, AgencyFamilyLink, AgencyLinkStatus, AgencyPatientLink, AgencyPipelineStage, AgencyProfile, AgencySupervisor, PipelineType
+from .pipeline_stages import add_stage, get_stages, stage_choices
 from .tenancy import agency_caregiver_profile_ids, resolve_tenant_context, visible_creator_user_ids
 from .serializers import (
     AgencyAdminSerializer,
@@ -33,6 +42,7 @@ from .serializers import (
     AgencyCaregiverPipelineSerializer,
     AgencyDashboardSerializer,
     AgencyFamilyLinkSerializer,
+    AgencyPipelineStageSerializer,
     AgencyProfileSerializer,
     AgencySupervisorSerializer,
     CreateAgencyAdminSerializer,
@@ -197,7 +207,7 @@ class AgencyDashboardInsightsView(APIView):
 
         from django.db.models import Count
         from apps.caregivers.models import CaregiverProfile, CaregiverStatus
-        from apps.families.models import PatientPipelineStatus, PatientProfile
+        from apps.families.models import PatientProfile
         from apps.reviews.models import Complaint, ComplaintCategory
 
         # ------------------------------------------------------------
@@ -232,7 +242,7 @@ class AgencyDashboardInsightsView(APIView):
         )
         patient_pipeline_breakdown = [
             {"status": value, "label": label, "count": pipeline_counts.get(value, 0)}
-            for value, label in PatientPipelineStatus.choices
+            for value, label in stage_choices(agency, PipelineType.PATIENT)
         ]
 
         # ------------------------------------------------------------
@@ -288,12 +298,274 @@ class AgencyDashboardInsightsView(APIView):
                 "new_caregivers": agency.caregiver_links.filter(requested_at__gte=start, requested_at__lt=end).count(),
             })
 
+        # ------------------------------------------------------------
+        # 5) Caregiver gender/city breakdowns — same "approved roster"
+        # population as caregiver_status_breakdown above is what this
+        # view already treats as visible ("any_link_ids", i.e. every
+        # caregiver ever linked to this agency, any link status —
+        # exactly what caregiver_total_count/caregiver_status_breakdown
+        # count from). Gender/city live on the caregiver's User's
+        # IdentityProfile, not on CaregiverProfile itself, so this
+        # joins through user_id. A caregiver with no IdentityProfile
+        # yet (still early in the wizard) is grouped as "ثبت نشده",
+        # same null-handling as caregiver_status_breakdown's implicit
+        # zero-fill for statuses with no rows.
+        # ------------------------------------------------------------
+        from apps.caregivers.models import IdentityProfile
+        from apps.caregivers.choices import Gender
+
+        caregiver_user_ids = list(
+            CaregiverProfile.objects.filter(id__in=any_link_ids).values_list("user_id", flat=True)
+        )
+        caregiver_gender_breakdown = _gender_breakdown(IdentityProfile, caregiver_user_ids, Gender)
+        caregiver_city_breakdown = _city_breakdown(IdentityProfile, caregiver_user_ids)
+
+        # ------------------------------------------------------------
+        # 6) Patient gender/city breakdowns — same population as
+        # patient_pipeline_breakdown above (this agency's own APPROVED
+        # patients). PatientProfile carries gender/city directly (no
+        # separate identity table on the family side).
+        # ------------------------------------------------------------
+        from apps.families.models import Gender as PatientGender
+
+        patient_gender_counts = dict(
+            PatientProfile.objects.filter(id__in=approved_patient_ids)
+            .values("gender").annotate(n=Count("id")).values_list("gender", "n")
+        )
+        patient_gender_breakdown = [
+            {"gender": value, "label": label, "count": patient_gender_counts.get(value, 0)}
+            for value, label in PatientGender.choices
+        ]
+        unregistered_patient_gender = sum(
+            n for g, n in patient_gender_counts.items() if g not in dict(PatientGender.choices)
+        )
+        if unregistered_patient_gender:
+            patient_gender_breakdown.append({"gender": None, "label": "ثبت نشده", "count": unregistered_patient_gender})
+
+        patient_city_counts = list(
+            PatientProfile.objects.filter(id__in=approved_patient_ids, city__isnull=False)
+            .values("city__name").annotate(n=Count("id")).order_by("-n")
+        )
+        patient_city_breakdown = _grouped_top_n(
+            [(row["city__name"], row["n"]) for row in patient_city_counts], label_key="city",
+        )
+        no_patient_city_count = PatientProfile.objects.filter(id__in=approved_patient_ids, city__isnull=True).count()
+        if no_patient_city_count:
+            patient_city_breakdown.append({"city": None, "label": "ثبت نشده", "count": no_patient_city_count})
+
+        # ------------------------------------------------------------
+        # 7) On-duty breakdown — what share of this agency's caregivers
+        # are CURRENTLY serving a patient right now, so an owner/
+        # supervisor can see at a glance how much of the roster is
+        # actively working vs idle. "On duty" = has at least one
+        # apps.care.models.CaregiverAssignment row with
+        # status=AssignmentStatus.ACTIVE — the one real, always-in-sync
+        # signal for "is this caregiver working right now" (as opposed
+        # to the agency's own manually-set pipeline stage, which is a
+        # workflow label staff might forget to update). Scoped to the
+        # same any_link_ids roster as caregiver_status_breakdown above;
+        # a caregiver can in principle have active assignments to more
+        # than one patient, so this counts distinct caregivers, not
+        # assignment rows.
+        # ------------------------------------------------------------
+        from apps.care.models import AssignmentStatus, CaregiverAssignment
+
+        on_duty_caregiver_ids = set(
+            CaregiverAssignment.objects.filter(
+                status=AssignmentStatus.ACTIVE, caregiver_id__in=any_link_ids,
+            ).values_list("caregiver_id", flat=True).distinct()
+        )
+        on_duty_count = len(on_duty_caregiver_ids)
+        caregiver_on_duty_breakdown = [
+            {"status": "on_duty", "label": "سرکار", "count": on_duty_count},
+            {"status": "off_duty", "label": "خارج از شیفت", "count": caregiver_total_count - on_duty_count},
+        ]
+
         return Response({
             "caregiver_total_count": caregiver_total_count,
             "caregiver_status_breakdown": caregiver_status_breakdown,
+            "caregiver_on_duty_breakdown": caregiver_on_duty_breakdown,
             "patient_pipeline_breakdown": patient_pipeline_breakdown,
             "complaints_by_category": complaints_by_category,
             "weekly_growth_trend": weekly_growth_trend,
+            "caregiver_gender_breakdown": caregiver_gender_breakdown,
+            "caregiver_city_breakdown": caregiver_city_breakdown,
+            "patient_gender_breakdown": patient_gender_breakdown,
+            "patient_city_breakdown": patient_city_breakdown,
+        })
+
+
+def _gender_breakdown(identity_model, user_ids, gender_choices_cls):
+    """
+    Shared helper — gender breakdown for any set of user_ids whose
+    gender lives on a related identity-style model with a `user`
+    OneToOne and a `gender` CharField using Gender's choices. Users
+    with no such row at all (or a blank gender) are grouped under
+    "ثبت نشده", same convention used for education_level below in
+    AgencyStaffDashboardView.
+    """
+    from django.db.models import Count
+
+    counts = dict(
+        identity_model.objects.filter(user_id__in=user_ids)
+        .exclude(gender="").values("gender").annotate(n=Count("id")).values_list("gender", "n")
+    )
+    known_user_count = identity_model.objects.filter(user_id__in=user_ids).exclude(gender="").count()
+    breakdown = [
+        {"gender": value, "label": label, "count": counts.get(value, 0)}
+        for value, label in gender_choices_cls.choices
+    ]
+    unregistered = len(user_ids) - known_user_count
+    if unregistered:
+        breakdown.append({"gender": None, "label": "ثبت نشده", "count": unregistered})
+    return breakdown
+
+
+def _city_breakdown(identity_model, user_ids):
+    """Shared helper — top ~8 cities + 'سایر' for any set of user_ids
+    whose city lives on a related identity-style model's `city` FK."""
+    from django.db.models import Count
+
+    rows = list(
+        identity_model.objects.filter(user_id__in=user_ids, city__isnull=False)
+        .values("city__name").annotate(n=Count("id")).order_by("-n")
+    )
+    pairs = [(row["city__name"], row["n"]) for row in rows]
+    no_city_count = identity_model.objects.filter(user_id__in=user_ids, city__isnull=True).count()
+    no_identity_count = len(user_ids) - identity_model.objects.filter(user_id__in=user_ids).count()
+    breakdown = _grouped_top_n(pairs, label_key="city")
+    unregistered = no_city_count + no_identity_count
+    if unregistered:
+        breakdown.append({"city": None, "label": "ثبت نشده", "count": unregistered})
+    return breakdown
+
+
+def _grouped_top_n(name_count_pairs, label_key, top_n=8, other_label="سایر"):
+    """
+    "Top N + سایر" grouping shared by every city/education breakdown
+    in the agency dashboards — `name_count_pairs` is already sorted
+    descending by count (callers query with order_by("-n")).
+    """
+    top = name_count_pairs[:top_n]
+    rest = name_count_pairs[top_n:]
+    breakdown = [{label_key: name, "label": name, "count": count} for name, count in top]
+    other_total = sum(count for _, count in rest)
+    if other_total:
+        breakdown.append({label_key: None, "label": other_label, "count": other_total})
+    return breakdown
+
+
+class AgencyStaffDashboardView(APIView):
+    """
+    GET /api/agencies/me/dashboard/staff/
+
+    The agency's OWN staff (AgencySupervisor + AgencyAdmin rows) — a
+    separate dashboard from AgencyDashboardInsightsView above, which
+    is about the agency's caregivers/patients, not the people running
+    the agency panel itself. Available to the owner, any of its
+    supervisors, or any of its admins (unlike the /me/dashboard/*
+    endpoints above, which are owner/supervisor-only) — an admin
+    should be able to see their own team's composition too, same
+    breadth as resolve_own_agency_for_agency_staff's other call sites.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.locations.models import City
+        from .tenancy import resolve_own_agency_for_agency_staff
+
+        agency = resolve_own_agency_for_agency_staff(request.user)
+        if agency is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+
+        supervisors = list(agency.supervisors.all())
+        admins = list(agency.admins.all())
+        total_staff = len(supervisors) + len(admins)
+
+        by_role = [
+            {"role": "supervisor", "label": "سوپروایزر", "count": len(supervisors)},
+            {"role": "admin", "label": "ادمین", "count": len(admins)},
+        ]
+
+        gender_counts = {}
+        education_counts = {}
+        city_counts = {}
+        unregistered_gender = 0
+        unregistered_education = 0
+        no_city_count = 0
+        for staff in (*supervisors, *admins):
+            if staff.gender:
+                gender_counts[staff.gender] = gender_counts.get(staff.gender, 0) + 1
+            else:
+                unregistered_gender += 1
+            if staff.education_level:
+                education_counts[staff.education_level] = education_counts.get(staff.education_level, 0) + 1
+            else:
+                unregistered_education += 1
+            if staff.city_id:
+                city_counts[staff.city_id] = city_counts.get(staff.city_id, 0) + 1
+            else:
+                no_city_count += 1
+
+        by_gender = [
+            {"gender": value, "label": label, "count": gender_counts.get(value, 0)}
+            for value, label in Gender.choices
+        ]
+        if unregistered_gender:
+            by_gender.append({"gender": None, "label": "ثبت نشده", "count": unregistered_gender})
+
+        by_education = [
+            {"education_level": value, "label": label, "count": education_counts.get(value, 0)}
+            for value, label in EducationLevel.choices
+        ]
+        if unregistered_education:
+            by_education.append({"education_level": None, "label": "ثبت نشده", "count": unregistered_education})
+
+        city_names = dict(City.objects.filter(id__in=city_counts.keys()).values_list("id", "name"))
+        city_pairs = sorted(
+            ((city_names.get(city_id, "؟"), n) for city_id, n in city_counts.items()),
+            key=lambda pair: pair[1], reverse=True,
+        )
+        by_city = _grouped_top_n(city_pairs, label_key="city")
+        if no_city_count:
+            by_city.append({"city": None, "label": "ثبت نشده", "count": no_city_count})
+
+        # 8-week hiring trend, same Saturday-aligned weekly bucketing
+        # as AgencyDashboardInsightsView's weekly_growth_trend above.
+        import jdatetime
+        from datetime import timedelta
+        from django.utils import timezone
+
+        now = timezone.now()
+        days_since_saturday = (now.weekday() - 5) % 7
+        this_week_start = (now - timedelta(days=days_since_saturday)).replace(
+            hour=0, minute=0, second=0, microsecond=0,
+        )
+        _fa_digits = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
+
+        def _jalali_week_label(g_date):
+            j = jdatetime.date.fromgregorian(date=g_date)
+            return f"{j.day} {j.j_months_fa[j.month - 1]}".translate(_fa_digits)
+
+        weekly_trend = []
+        for i in range(7, -1, -1):
+            start = this_week_start - timedelta(weeks=i)
+            end = start + timedelta(weeks=1)
+            weekly_trend.append({
+                "week_label": _jalali_week_label(start.date()),
+                "new_staff": (
+                    agency.supervisors.filter(created_at__gte=start, created_at__lt=end).count()
+                    + agency.admins.filter(created_at__gte=start, created_at__lt=end).count()
+                ),
+            })
+
+        return Response({
+            "total_staff": total_staff,
+            "by_role": by_role,
+            "by_gender": by_gender,
+            "by_education": by_education,
+            "by_city": by_city,
+            "weekly_trend": weekly_trend,
         })
 
 
@@ -524,7 +796,7 @@ class AgencySupervisorListCreateView(APIView):
         if ctx is None:
             return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
 
-        supervisors = ctx.agency.supervisors.select_related("user", "created_by")
+        supervisors = ctx.agency.supervisors.select_related("user", "created_by", "city")
         return Response(AgencySupervisorSerializer(supervisors, many=True).data)
 
     def post(self, request, agency_id):
@@ -556,6 +828,10 @@ class AgencySupervisorListCreateView(APIView):
 
         supervisor = AgencySupervisor.objects.create(
             user=user, agency=agency, created_by=request.user, position=data.get("position", ""),
+            gender=data.get("gender") or None,
+            birth_date=data.get("birth_date"),
+            city_id=data.get("city_id"),
+            education_level=data.get("education_level") or None,
         )
         audit.agency_supervisor_created(request.user.id, user.id, agency.id)
 
@@ -579,7 +855,7 @@ class AgencyAdminListCreateView(APIView):
         if ctx is None:
             return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
 
-        admins = ctx.agency.admins.select_related("user", "supervisor__user", "created_by")
+        admins = ctx.agency.admins.select_related("user", "supervisor__user", "created_by", "city")
         return Response(AgencyAdminSerializer(admins, many=True).data)
 
     def post(self, request, agency_id):
@@ -613,6 +889,10 @@ class AgencyAdminListCreateView(APIView):
         admin = AgencyAdmin.objects.create(
             user=user, agency=agency, supervisor=supervisor, created_by=request.user,
             position=data.get("position", ""),
+            gender=data.get("gender") or None,
+            birth_date=data.get("birth_date"),
+            city_id=data.get("city_id"),
+            education_level=data.get("education_level") or None,
         )
 
         return Response(AgencyAdminSerializer(admin).data, status=status.HTTP_201_CREATED)
@@ -661,8 +941,23 @@ class AgencySupervisorDetailView(APIView):
         if user_changed:
             supervisor.user.save()
 
+        fields_changed = False
         if "position" in data:
             supervisor.position = data["position"]
+            fields_changed = True
+        if "gender" in data:
+            supervisor.gender = data["gender"] or None
+            fields_changed = True
+        if "birth_date" in data:
+            supervisor.birth_date = data["birth_date"]
+            fields_changed = True
+        if "city_id" in data:
+            supervisor.city_id = data["city_id"]
+            fields_changed = True
+        if "education_level" in data:
+            supervisor.education_level = data["education_level"] or None
+            fields_changed = True
+        if fields_changed:
             supervisor.save()
 
         return Response(AgencySupervisorSerializer(supervisor).data)
@@ -724,6 +1019,14 @@ class AgencyAdminDetailView(APIView):
 
         if "position" in data:
             admin.position = data["position"]
+        if "gender" in data:
+            admin.gender = data["gender"] or None
+        if "birth_date" in data:
+            admin.birth_date = data["birth_date"]
+        if "city_id" in data:
+            admin.city_id = data["city_id"]
+        if "education_level" in data:
+            admin.education_level = data["education_level"] or None
         admin.save()
 
         return Response(AgencyAdminSerializer(admin).data)
@@ -772,7 +1075,9 @@ class AgencyPatientListCreateView(APIView):
 
         links = AgencyPatientLink.objects.filter(
             agency=agency, status=AgencyLinkStatus.APPROVED,
-        ).select_related("patient", "decided_by")
+        ).select_related("patient", "decided_by").prefetch_related(
+            "patient__family_links__family__user",
+        )
 
         # Per the confirmed data-scoping requirement: an admin sees
         # only their own created patients, a supervisor sees their
@@ -803,6 +1108,245 @@ class AgencyPatientListCreateView(APIView):
             row["created_by"] = creator_by_patient_id.get(row["id"])
 
         return Response(patients_data)
+
+    def post(self, request, agency_id):
+        """
+        POST /api/agencies/<agency_id>/patients/
+
+        Moved here from where it was accidentally left — inside
+        AgencyCaregiverPipelineUpdateView, under a URL that requires a
+        caregiver_id and therefore could never actually reach this
+        method (the "افزودن خدمت‌گیرنده" button called this class's
+        own listPatients-style URL with POST and got a 405, since this
+        class previously had no post() at all). allow_admin=True now
+        matches this class's own get() above and the class docstring
+        ("day-to-day patient entry is exactly what a supervisor's job
+        is" — and, per get()'s existing scoping, an admin's too).
+
+        Body:
+          {"mode": "standalone", "patient": {...PatientProfileSerializer fields...}}
+          {"mode": "with_family", "patient": {...}, "family": {first_name, last_name, phone_number, relation}}
+
+        "standalone" creates only a PatientProfile (no User behind
+        it) — the agency hands the patient's own access_code
+        (ELD-...) to a family to link later, same as any other
+        family-less patient on this platform. "with_family" ALSO
+        creates a new User(role=FAMILY) + FamilyProfile on the
+        family's behalf, same "enters someone else's information, no
+        password field" pattern used for caregiver/supervisor
+        creation elsewhere in this codebase — for families who can't
+        self-register.
+
+        Either way, an APPROVED AgencyPatientLink is created
+        immediately; see that model's own docstring for why this
+        always happens regardless of mode.
+        """
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        agency = ctx.agency
+
+        mode = request.data.get("mode")
+        if mode not in ("standalone", "with_family"):
+            return Response(
+                {"detail": "فیلد mode باید standalone یا with_family باشد."}, status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        patient_serializer = PatientProfileSerializer(data=request.data.get("patient", {}))
+        patient_serializer.is_valid(raise_exception=True)
+
+        family = None
+        relation = None
+        if mode == "with_family":
+            family_serializer = CreateFamilyForPatientSerializer(data=request.data.get("family", {}))
+            family_serializer.is_valid(raise_exception=True)
+            family_data = dict(family_serializer.validated_data)
+            relation = family_data.pop("relation")
+
+            if User.objects.filter(phone_number=family_data["phone_number"]).exists():
+                return Response({"detail": "این شماره تلفن قبلاً ثبت شده است."}, status=status.HTTP_400_BAD_REQUEST)
+
+            family_user = User(
+                first_name=family_data["first_name"], last_name=family_data["last_name"],
+                phone_number=family_data["phone_number"], role=UserRole.FAMILY,
+            )
+            # Same reasoning as every other "someone else's account"
+            # creation in this codebase — random password, never
+            # invented by the creator on the family's behalf.
+            family_user.set_password(get_random_string(32))
+            family_user.save()
+
+            family = FamilyProfile.objects.create(
+                user=family_user, display_name=f"{family_data['first_name']} {family_data['last_name']}",
+            )
+
+            # Immediately APPROVED, not a pending join request — the
+            # agency is entering this on the family's own behalf.
+            AgencyFamilyLink.objects.create(
+                agency=agency, family=family, status=AgencyLinkStatus.APPROVED, decided_by=request.user,
+            )
+
+        patient = patient_serializer.save()
+
+        AgencyPatientLink.objects.create(
+            agency=agency, patient=patient, status=AgencyLinkStatus.APPROVED, decided_by=request.user,
+        )
+
+        if family is not None:
+            FamilyPatientLink.objects.create(
+                family=family, patient=patient, relation=relation,
+                status=LinkStatus.APPROVED, approved_by=request.user,
+            )
+
+        audit.patient_created(request.user.id, patient.id)
+
+        response_data = PatientProfileSerializer(patient).data
+        if family is not None:
+            response_data["family"] = {
+                "user_id": family.user.id,
+                "phone_number": family.user.phone_number,
+                "access_code": family.access_code,
+            }
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+def _get_agency_patient(agency, patient_id):
+    """
+    Shared lookup for the three agency-scoped patient-detail endpoints
+    below — same "scoped through the APPROVED AgencyPatientLink, not
+    just PatientProfile.objects.get" pattern as
+    AgencyPatientPipelineStatusView.patch() above, pulled out once
+    since the identity/questionnaire/document views all need it
+    identically.
+    """
+    return PatientProfile.objects.filter(
+        id=patient_id, agency_links__agency=agency, agency_links__status=AgencyLinkStatus.APPROVED,
+    ).first()
+
+
+class AgencyPatientDetailView(APIView):
+    """
+    GET/PATCH /api/agencies/<agency_id>/patients/<patient_id>/
+
+    The "full patient-edit flow" AgencyPatientPipelineStatusView's own
+    docstring notes doesn't exist yet — added specifically so agency
+    staff can complete the rest of a patient's identity record (every
+    PatientProfileSerializer field: father_name, national_id, birth
+    certificate info, postal code, guardianship, language/dialect,
+    basic medical info — whatever wasn't filled in at the quick "افزودن
+    خدمت‌گیرنده" step) from the multi-step wizard, the same way
+    AgencyCaregiverPipelineUpdateView already lets agency staff resume
+    a caregiver's own multi-step registration. Deliberately a SEPARATE
+    endpoint from AgencyPatientPipelineStatusView rather than folded
+    into it — that one is intentionally narrow (pipeline_status/
+    is_urgent/tags only) so a Kanban drag never risks touching profile
+    data; this one is the opposite, full-profile edit that a drag
+    never calls.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, agency_id, patient_id):
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        patient = _get_agency_patient(ctx.agency, patient_id)
+        if patient is None:
+            return Response({"detail": "سالمند یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        rules = agency_reminder_rules(ctx.agency, "patients")
+        return Response(PatientProfileSerializer(patient, context={"rules": rules}).data)
+
+    def patch(self, request, agency_id, patient_id):
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        patient = _get_agency_patient(ctx.agency, patient_id)
+        if patient is None:
+            return Response({"detail": "سالمند یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = PatientProfileSerializer(instance=patient, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        audit.patient_updated(request.user.id, patient.id, section="agency_edit")
+
+        rules = agency_reminder_rules(ctx.agency, "patients")
+        return Response(PatientProfileSerializer(patient, context={"rules": rules}).data)
+
+
+class AgencyPatientQuestionnaireView(APIView):
+    """
+    GET/PUT /api/agencies/<agency_id>/patients/<patient_id>/questionnaire/
+
+    Agency-scoped twin of apps.families.views.PatientQuestionnaireView
+    (which is IsFamily-only and therefore unreachable by agency staff)
+    — same PatientCompatibilityQuestionnaireSerializer, same
+    create-or-replace PUT semantics, scoped through AgencyPatientLink
+    instead of FamilyPatientLink. Optional step in the agency's own
+    patient wizard, same as it is in the caregiver wizard's own
+    compatibility-questionnaire step.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, agency_id, patient_id):
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        patient = _get_agency_patient(ctx.agency, patient_id)
+        if patient is None:
+            return Response({"detail": "سالمند یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        questionnaire = PatientCompatibilityQuestionnaire.objects.filter(patient=patient).first()
+        if questionnaire is None:
+            return Response({"detail": "پرسشنامه هنوز تکمیل نشده است."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(PatientCompatibilityQuestionnaireSerializer(questionnaire).data)
+
+    def put(self, request, agency_id, patient_id):
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        patient = _get_agency_patient(ctx.agency, patient_id)
+        if patient is None:
+            return Response({"detail": "سالمند یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        existing = PatientCompatibilityQuestionnaire.objects.filter(patient=patient).first()
+        serializer = PatientCompatibilityQuestionnaireSerializer(instance=existing, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(patient=patient)
+        audit.patient_updated(request.user.id, patient.id, section="questionnaire")
+        return Response(serializer.data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
+
+
+class AgencyPatientDocumentUploadView(APIView):
+    """
+    POST /api/agencies/<agency_id>/patients/<patient_id>/documents/<document_type>/
+    Multipart upload for one of the three "مدارک شناسایی" identity
+    documents — see PatientDocumentUpload's own docstring for why this
+    has no approve/reject review workflow unlike its caregiver
+    counterpart (AgencyCaregiverDocumentUploadView), which this
+    otherwise mirrors exactly.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, agency_id, patient_id, document_type):
+        if document_type not in PatientDocumentType.values:
+            return Response({"detail": "نوع مدرک نامعتبر است."}, status=status.HTTP_404_NOT_FOUND)
+
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        patient = _get_agency_patient(ctx.agency, patient_id)
+        if patient is None:
+            return Response({"detail": "سالمند یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        uploaded_file = request.data.get("file")
+        if not uploaded_file:
+            return Response({"detail": "فایل الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        upload, _ = PatientDocumentUpload.objects.update_or_create(
+            patient=patient, document_type=document_type,
+            defaults={"file": uploaded_file, "uploaded_by": request.user},
+        )
+        audit.patient_updated(request.user.id, patient.id, section=f"document_uploaded:{document_type}")
+        return Response(PatientDocumentUploadSerializer(upload).data, status=status.HTTP_201_CREATED)
 
 
 class AgencyCaregiverPipelineListView(APIView):
@@ -946,7 +1490,7 @@ class AgencyCaregiverPipelineUpdateView(APIView):
             setattr(caregiver, field, new_value)
 
         if "agency_pipeline_status" in request.data:
-            valid_values = [choice[0] for choice in CaregiverAgencyPipelineStatus.choices]
+            valid_values = [value for value, _ in stage_choices(agency, PipelineType.CAREGIVER)]
             new_status = request.data["agency_pipeline_status"]
             if new_status not in valid_values:
                 return Response(
@@ -984,14 +1528,52 @@ class AgencyCaregiverPipelineUpdateView(APIView):
                 )
             _track("process_milestones", milestones)
 
+        if "staff_notes" in request.data:
+            staff_notes = request.data["staff_notes"]
+            if not isinstance(staff_notes, str):
+                return Response({"detail": "staff_notes باید رشته باشد."}, status=status.HTTP_400_BAD_REQUEST)
+            _track("staff_notes", staff_notes[:1000])
+
+        # Agency-entered once a caregiver reaches "در حال مأموریت" — see
+        # CaregiverProfile.contract_start_date/contract_end_date's own
+        # docstrings. Cleared by sending null/"" (e.g. if the mission
+        # ends and a new one later needs a fresh date).
+        for date_field, error_label in (
+            ("contract_start_date", "تاریخ شروع قرارداد"),
+            ("contract_end_date", "تاریخ پایان قرارداد"),
+        ):
+            if date_field in request.data:
+                raw_value = request.data[date_field]
+                if raw_value in (None, ""):
+                    _track(date_field, None)
+                else:
+                    try:
+                        parsed_date = JalaliDateField().to_internal_value(raw_value)
+                    except Exception:
+                        return Response(
+                            {"detail": f"{error_label} نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    _track(date_field, parsed_date)
+
         caregiver.save()
 
         for field, old_value, new_value in field_changes:
             # old_value/new_value land straight in AuditLog.metadata
             # (a JSONField) — str, bool, and list (tags/milestones)
-            # are all natively JSON-serializable, so no coercion is
-            # needed here, unlike EditCandidateFieldsView's plain-text
-            # identity fields.
+            # are all natively JSON-serializable, so no coercion was
+            # needed for those, unlike EditCandidateFieldsView's
+            # plain-text identity fields. contract_start_date/
+            # contract_end_date are the exception: _track() above
+            # stores the real jdatetime.date object on `caregiver`
+            # (so JalaliDateField.to_representation keeps working),
+            # but jdatetime.date isn't JSON-serializable — passed
+            # through unchanged this raised a 500 the instant either
+            # contract date was actually saved. isoformat() strings
+            # are what the API already shows the client anyway.
+            if isinstance(old_value, jdatetime.date):
+                old_value = old_value.strftime("%Y-%m-%d")
+            if isinstance(new_value, jdatetime.date):
+                new_value = new_value.strftime("%Y-%m-%d")
             audit.candidate_field_edited(
                 request.user.id, caregiver.user_id, field=field, old_value=old_value, new_value=new_value,
             )
@@ -1000,75 +1582,6 @@ class AgencyCaregiverPipelineUpdateView(APIView):
         response_data = AgencyCaregiverPipelineSerializer(caregiver, context={"rules": rules}).data
         response_data["created_by"] = (link.decided_by.get_full_name() or link.decided_by.username) if link.decided_by else None
         return Response(response_data)
-
-    def post(self, request, agency_id):
-        ctx = resolve_tenant_context(request, agency_id)
-        if ctx is None:
-            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
-        agency = ctx.agency
-
-        mode = request.data.get("mode")
-        if mode not in ("standalone", "with_family"):
-            return Response(
-                {"detail": "فیلد mode باید standalone یا with_family باشد."}, status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        patient_serializer = PatientProfileSerializer(data=request.data.get("patient", {}))
-        patient_serializer.is_valid(raise_exception=True)
-
-        family = None
-        relation = None
-        if mode == "with_family":
-            family_serializer = CreateFamilyForPatientSerializer(data=request.data.get("family", {}))
-            family_serializer.is_valid(raise_exception=True)
-            family_data = dict(family_serializer.validated_data)
-            relation = family_data.pop("relation")
-
-            if User.objects.filter(phone_number=family_data["phone_number"]).exists():
-                return Response({"detail": "این شماره تلفن قبلاً ثبت شده است."}, status=status.HTTP_400_BAD_REQUEST)
-
-            family_user = User(
-                first_name=family_data["first_name"], last_name=family_data["last_name"],
-                phone_number=family_data["phone_number"], role=UserRole.FAMILY,
-            )
-            # Same reasoning as every other "someone else's account"
-            # creation in this codebase — random password, never
-            # invented by the creator on the family's behalf.
-            family_user.set_password(get_random_string(32))
-            family_user.save()
-
-            family = FamilyProfile.objects.create(
-                user=family_user, display_name=f"{family_data['first_name']} {family_data['last_name']}",
-            )
-
-            # Immediately APPROVED, not a pending join request — the
-            # agency is entering this on the family's own behalf.
-            AgencyFamilyLink.objects.create(
-                agency=agency, family=family, status=AgencyLinkStatus.APPROVED, decided_by=request.user,
-            )
-
-        patient = patient_serializer.save()
-
-        AgencyPatientLink.objects.create(
-            agency=agency, patient=patient, status=AgencyLinkStatus.APPROVED, decided_by=request.user,
-        )
-
-        if family is not None:
-            FamilyPatientLink.objects.create(
-                family=family, patient=patient, relation=relation,
-                status=LinkStatus.APPROVED, approved_by=request.user,
-            )
-
-        audit.patient_created(request.user.id, patient.id)
-
-        response_data = PatientProfileSerializer(patient).data
-        if family is not None:
-            response_data["family"] = {
-                "user_id": family.user.id,
-                "phone_number": family.user.phone_number,
-                "access_code": family.access_code,
-            }
-        return Response(response_data, status=status.HTTP_201_CREATED)
 
 
 class AgencyCaregiverDocumentUploadView(APIView):
@@ -1157,7 +1670,7 @@ class AgencyPatientPipelineStatusView(APIView):
 
         if "pipeline_status" in request.data:
             new_status = request.data["pipeline_status"]
-            valid_values = [choice[0] for choice in PatientPipelineStatus.choices]
+            valid_values = [value for value, _ in stage_choices(agency, PipelineType.PATIENT)]
             if new_status not in valid_values:
                 return Response(
                     {"detail": f"مقدار pipeline_status باید یکی از {valid_values} باشد."},
@@ -1200,6 +1713,53 @@ class AgencyPatientPipelineStatusView(APIView):
         response_data = PatientProfileSerializer(patient, context={"rules": rules}).data
         response_data["created_by"] = created_by
         return Response(response_data)
+
+
+class AgencyPipelineStageListCreateView(APIView):
+    """
+    GET  /api/agencies/<agency_id>/pipeline-stages/<pipeline_type>/
+    POST /api/agencies/<agency_id>/pipeline-stages/<pipeline_type>/
+
+    `pipeline_type` is "patient", "caregiver", or "episodic" — one of
+    these per board. GET returns this agency's own ordered stage list
+    (seeding the platform's original stages for that board the first
+    time it's asked, see apps.agencies.pipeline_stages.get_stages).
+    POST appends ONE new
+    stage to the end with the given label — the only edit an agency
+    can make to its own pipeline today; reordering, renaming, or
+    removing an existing stage isn't supported yet.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _check_pipeline_type(self, pipeline_type):
+        valid = [choice[0] for choice in PipelineType.choices]
+        return pipeline_type in valid
+
+    def get(self, request, agency_id, pipeline_type):
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        if not self._check_pipeline_type(pipeline_type):
+            return Response({"detail": "نوع کاریز نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        stages = get_stages(ctx.agency, pipeline_type)
+        return Response(AgencyPipelineStageSerializer(stages, many=True).data)
+
+    def post(self, request, agency_id, pipeline_type):
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        if not self._check_pipeline_type(pipeline_type):
+            return Response({"detail": "نوع کاریز نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        label = str(request.data.get("label", "")).strip()
+        if not label:
+            return Response({"detail": "عنوان مرحله الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
+        if len(label) > 60:
+            return Response({"detail": "عنوان مرحله خیلی طولانی است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        stage = add_stage(ctx.agency, pipeline_type, label)
+        return Response(AgencyPipelineStageSerializer(stage).data, status=status.HTTP_201_CREATED)
 
 
 # ---------------------------------------------------------------------
@@ -1246,6 +1806,45 @@ class AgencySuggestedCaregiversView(APIView):
         return Response({
             "patient_name": patient.full_name,
             "patient_gender": patient.gender,
+            "suggestions": suggestions,
+        })
+
+
+class AgencySuggestedPatientsView(APIView):
+    """
+    GET /api/agencies/<agency_id>/caregivers-pipeline/<caregiver_id>/suggest-patients/
+
+    Reverse direction of AgencySuggestedCaregiversView above — "find
+    THIS caregiver a suitable patient" (apps.care.matching.
+    suggest_patients_for_agency_caregiver), for the caregiver Kanban
+    card's own matching button once a caregiver's stage moves past
+    "تکمیل مدارک" (see that model's own docstring on why "ادامه
+    ثبت‌نام" stops being the relevant action at that point).
+
+    Same two-check pattern as the patient-facing view: is this actor
+    allowed to act for this agency, AND is this specific caregiver
+    actually one of this agency's own (AgencyCaregiverLink), not just
+    any caregiver id on the platform.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, agency_id, caregiver_id):
+        ctx = resolve_tenant_context(request, agency_id)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        agency = ctx.agency
+
+        caregiver_link = AgencyCaregiverLink.objects.filter(
+            agency=agency, caregiver_id=caregiver_id, status=AgencyLinkStatus.APPROVED,
+        ).select_related("caregiver").first()
+        if caregiver_link is None:
+            return Response({"detail": "این مراقب متعلق به این آژانس نیست."}, status=status.HTTP_404_NOT_FOUND)
+
+        caregiver = caregiver_link.caregiver
+        suggestions = suggest_patients_for_agency_caregiver(agency, caregiver)
+
+        return Response({
+            "caregiver_name": f"{caregiver.user.first_name} {caregiver.user.last_name}".strip() or caregiver.user.username,
             "suggestions": suggestions,
         })
 

@@ -43,3 +43,9 @@ export function formatJalaliDate(year: number | null, month: number | null, day:
 // is roughly Gregorian year - 621/622.
 const CURRENT_JALALI_YEAR = new Date().getFullYear() - 621
 export const JALALI_YEAR_RANGE = Array.from({ length: 80 }, (_, i) => CURRENT_JALALI_YEAR - 15 - i)
+
+// A forward-looking range for contract start/end dates (ascending,
+// starting at 1405 per the confirmed requirement) — JALALI_YEAR_RANGE
+// above only goes backward from ~1390, which is right for a birth
+// date but made a contract date (this year or later) unreachable.
+export const CONTRACT_JALALI_YEAR_RANGE = Array.from({ length: 20 }, (_, i) => 1405 + i)

@@ -1,6 +1,6 @@
 import { api } from "./api"
 import type { AgencyCaregiverLink, AgencyDashboard, AgencyFamilyLink, AgencyProfile } from "@/types/agency"
-import type { DashboardInsights } from "@/types/dashboard"
+import type { DashboardInsights, StaffDashboardData } from "@/types/dashboard"
 
 export const agencyService = {
   async me() {
@@ -21,6 +21,11 @@ export const agencyService = {
   async dashboardInsights() {
     const { data } = await api.get("/api/agencies/me/dashboard/insights/")
     return data as DashboardInsights
+  },
+
+  async staffDashboard() {
+    const { data } = await api.get("/api/agencies/me/dashboard/staff/")
+    return data as StaffDashboardData
   },
 
   async familyRoster() {

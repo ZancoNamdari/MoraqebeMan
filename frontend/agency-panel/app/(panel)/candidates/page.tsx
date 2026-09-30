@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { PinButton } from "@/components/agency/pin-button"
+import { usePinned } from "@/hooks/use-pinned"
 import {
   candidateTrackingService, type Candidate, type CandidateHistoryEntry, type CandidateResume,
 } from "@/services/candidate_tracking.service"
@@ -79,6 +81,8 @@ export default function CandidatesPage() {
   const [historyFor, setHistoryFor] = useState<number | null>(null)
   const [history, setHistory] = useState<CandidateHistoryEntry[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [pinnedOnly, setPinnedOnly] = useState(false)
+  const { pinned: pinnedIds, isPinned, toggle: togglePin } = usePinned("candidates")
 
   function refresh() {
     setLoading(true)
@@ -112,7 +116,8 @@ export default function CandidatesPage() {
     return acc
   }, {} as Record<string, number>)
 
-  const filteredCandidates = statusFilter ? candidates.filter((c) => c.status === statusFilter) : candidates
+  let filteredCandidates = statusFilter ? candidates.filter((c) => c.status === statusFilter) : candidates
+  if (pinnedOnly) filteredCandidates = filteredCandidates.filter((c) => pinnedIds.has(c.user_id))
 
   function toggleFilter(status: string) {
     setStatusFilter((current) => (current === status ? null : status))
@@ -217,14 +222,24 @@ export default function CandidatesPage() {
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-slate-900">بانک اطلاعات مراقبان</h1>
+        <h1 className="text-lg font-bold text-slate-900">بانک اطلاعات خدمت‌دهندگان</h1>
         {/* print:hidden — the print button itself has no business
             being on the printed page; window.print() renders whatever
             is currently in the DOM, so this is the whole "printable"
             implementation, no separate print view needed. */}
-        <Button size="sm" variant="outline" className="print:hidden" onClick={() => window.print()}>
-          چاپ فهرست
-        </Button>
+        <div className="flex items-center gap-2 print:hidden">
+          <Button
+            size="sm"
+            variant={pinnedOnly ? "default" : "outline"}
+            onClick={() => setPinnedOnly((v) => !v)}
+            disabled={pinnedIds.size === 0 && !pinnedOnly}
+          >
+            فقط پین‌شده‌ها{pinnedIds.size > 0 && ` (${pinnedIds.size})`}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => window.print()}>
+            چاپ فهرست
+          </Button>
+        </div>
       </div>
       {/* Only visible on the printed page — gives the sheet a
           timestamp since the on-screen header doesn't need one. */}
@@ -289,6 +304,7 @@ export default function CandidatesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-pink-100 bg-pink-50/70 text-xs font-semibold text-rose-900">
+                    <th className="w-8 p-3 print:hidden"></th>
                     <th className="p-3 text-right">نام</th>
                     <th className="p-3 text-right">کد ملی</th>
                     <th className="p-3 text-right">تلفن</th>
@@ -308,6 +324,9 @@ export default function CandidatesPage() {
                   {filteredCandidates.map((c, index) => (
                     <Fragment key={c.user_id}>
                       <tr className={`border-b border-pink-50 transition-colors last:border-0 hover:bg-pink-50/60 ${index % 2 === 1 ? "bg-pink-50/20" : ""}`}>
+                        <td className="p-3 print:hidden">
+                          <PinButton pinned={isPinned(c.user_id)} onToggle={() => togglePin(c.user_id)} />
+                        </td>
                         <td className="p-3 text-right font-medium text-rose-950">{c.full_name}</td>
                         <td className="p-3 text-right text-muted-foreground" dir="ltr">{c.national_id ? toPersianDigits(c.national_id) : "—"}</td>
                         <td className="p-3 text-right text-muted-foreground" dir="ltr">{toPersianDigits(c.phone_number)}</td>
@@ -343,7 +362,7 @@ export default function CandidatesPage() {
                       </tr>
                       {expandedId === c.user_id && (
                         <tr className="print:hidden">
-                          <td colSpan={13} className="bg-pink-50/40 p-4">
+                          <td colSpan={14} className="bg-pink-50/40 p-4">
                             <div className="grid gap-4 sm:grid-cols-3">
                               <div className="space-y-2">
                                 <p className="text-xs font-medium text-rose-900">ثبت نتیجه مصاحبه</p>

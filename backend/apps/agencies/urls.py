@@ -10,6 +10,7 @@ from .views import (
     AgencyComplaintsAboutOwnRosterView,
     AgencyDashboardInsightsView,
     AgencyDashboardView,
+    AgencyStaffDashboardView,
     AgencyFamilyRequestDecisionView,
     AgencyFamilyRequestsView,
     AgencyFamilyRosterView,
@@ -18,9 +19,14 @@ from .views import (
     AgencyCaregiverDocumentUploadView,
     AgencyCaregiverPipelineListView,
     AgencyCaregiverPipelineUpdateView,
+    AgencyPatientDetailView,
+    AgencyPatientDocumentUploadView,
     AgencyPatientListCreateView,
     AgencyPatientPipelineStatusView,
+    AgencyPatientQuestionnaireView,
+    AgencyPipelineStageListCreateView,
     AgencySuggestedCaregiversView,
+    AgencySuggestedPatientsView,
     AgencySupervisorDetailView,
     AgencySupervisorListCreateView,
     JoinAgencyAsCaregiverView,
@@ -42,6 +48,7 @@ urlpatterns = [
     path("agencies/me/", MyAgencyProfileView.as_view(), name="agencies-me"),
     path("agencies/me/dashboard/", AgencyDashboardView.as_view(), name="agencies-dashboard"),
     path("agencies/me/dashboard/insights/", AgencyDashboardInsightsView.as_view(), name="agencies-dashboard-insights"),
+    path("agencies/me/dashboard/staff/", AgencyStaffDashboardView.as_view(), name="agencies-dashboard-staff"),
     path("agencies/me/analytics/", AgencyAnalyticsView.as_view(), name="agencies-my-analytics"),
     path("agencies/me/families/", AgencyFamilyRosterView.as_view(), name="agencies-family-roster"),
     path("agencies/me/families/requests/", AgencyFamilyRequestsView.as_view(), name="agencies-family-requests"),
@@ -87,8 +94,20 @@ urlpatterns = [
     # a superuser.
     path("agencies/<int:agency_id>/patients/", AgencyPatientListCreateView.as_view(), name="agencies-patients"),
     path(
+        "agencies/<int:agency_id>/patients/<int:patient_id>/",
+        AgencyPatientDetailView.as_view(), name="agencies-patient-detail",
+    ),
+    path(
         "agencies/<int:agency_id>/patients/<int:patient_id>/pipeline-status/",
         AgencyPatientPipelineStatusView.as_view(), name="agencies-patient-pipeline-status",
+    ),
+    path(
+        "agencies/<int:agency_id>/patients/<int:patient_id>/questionnaire/",
+        AgencyPatientQuestionnaireView.as_view(), name="agencies-patient-questionnaire",
+    ),
+    path(
+        "agencies/<int:agency_id>/patients/<int:patient_id>/documents/<str:document_type>/",
+        AgencyPatientDocumentUploadView.as_view(), name="agencies-patient-document-upload",
     ),
     path(
         "agencies/<int:agency_id>/caregivers-pipeline/",
@@ -102,12 +121,23 @@ urlpatterns = [
         "agencies/<int:agency_id>/caregivers-pipeline/<int:caregiver_id>/documents/<str:document_type>/",
         AgencyCaregiverDocumentUploadView.as_view(), name="agencies-caregivers-pipeline-document-upload",
     ),
+    path(
+        "agencies/<int:agency_id>/pipeline-stages/<str:pipeline_type>/",
+        AgencyPipelineStageListCreateView.as_view(), name="agencies-pipeline-stages",
+    ),
 
     # Agency-scoped matching — candidates restricted to this agency's
     # own approved caregiver roster.
     path(
         "agencies/<int:agency_id>/patients/<int:patient_id>/suggest-caregivers/",
         AgencySuggestedCaregiversView.as_view(), name="agencies-suggest-caregivers",
+    ),
+
+    # Reverse direction — "find this caregiver a suitable patient",
+    # for the caregiver Kanban card's own matching action.
+    path(
+        "agencies/<int:agency_id>/caregivers-pipeline/<int:caregiver_id>/suggest-patients/",
+        AgencySuggestedPatientsView.as_view(), name="agencies-suggest-patients",
     ),
 
     # Read-only visibility into complaints about this agency's own

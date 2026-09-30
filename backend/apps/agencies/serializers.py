@@ -1,11 +1,20 @@
 from rest_framework import serializers
 
+from apps.accounts.jalali_fields import JalaliDateField
 from apps.families.models import RelationType
+from apps.caregivers.choices import EducationLevel, Gender
 from apps.caregivers.models import CaregiverDocumentType, CaregiverProfile
 from apps.caregivers.serializers import CaregiverDocumentUploadSerializer
 from apps.reminders.services import compute_active_reminders
 
-from .models import AgencyAdmin, AgencyCaregiverLink, AgencyFamilyLink, AgencyProfile, AgencySupervisor
+from .models import AgencyAdmin, AgencyCaregiverLink, AgencyFamilyLink, AgencyPipelineStage, AgencyProfile, AgencySupervisor
+
+
+class AgencyPipelineStageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AgencyPipelineStage
+        fields = ["id", "pipeline_type", "value", "label", "order"]
+        read_only_fields = ["id", "value", "order"]
 
 
 class AgencyProfileSerializer(serializers.ModelSerializer):
@@ -80,19 +89,44 @@ class AgencyCaregiverPipelineSerializer(serializers.ModelSerializer):
     # Kanban badge/reminder rules, this adds what the checklist
     # drawer's upload UI needs to actually show and act on.
     documents = serializers.SerializerMethodField()
+    # Every OTHER phone number on file for this caregiver besides
+    # their own login number (already in `phone_number` above) — the
+    # onboarding IdentityProfile's emergency/landline numbers (if that
+    # profile exists yet) plus their reference contacts. Read-only:
+    # these all come from the caregiver's own onboarding data, not
+    # something the agency panel edits.
+    extra_contacts = serializers.SerializerMethodField()
+    contract_start_date = JalaliDateField(required=False, allow_null=True)
+    contract_end_date = JalaliDateField(required=False, allow_null=True)
 
     class Meta:
         model = CaregiverProfile
         fields = [
-            "id", "user_id", "full_name", "phone_number", "agency_pipeline_status", "is_urgent", "tags", "process_milestones",
+            "id", "user_id", "full_name", "phone_number", "extra_contacts", "agency_pipeline_status", "is_urgent", "tags", "process_milestones",
             "doc_no_criminal_record", "doc_no_addiction_test", "doc_identity_verified",
             "doc_personal_photo", "doc_mental_health_test", "doc_promissory_note", "doc_id_card_received",
-            "documents", "active_reminders",
+            "documents", "active_reminders", "staff_notes", "contract_start_date", "contract_end_date",
         ]
-        read_only_fields = ["id", "user_id", "full_name", "phone_number", "documents", "active_reminders"]
+        read_only_fields = ["id", "user_id", "full_name", "phone_number", "extra_contacts", "documents", "active_reminders"]
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
+
+    def get_extra_contacts(self, obj):
+        contacts = []
+        identity = getattr(obj.user, "caregiver_identity_profile", None)
+        if identity is not None:
+            if identity.emergency_contact_phone:
+                label = "تماس اضطراری"
+                if identity.emergency_contact_relation:
+                    label = f"تماس اضطراری ({identity.emergency_contact_relation})"
+                contacts.append({"label": label, "phone": identity.emergency_contact_phone})
+            if identity.landline_phone:
+                contacts.append({"label": "تلفن ثابت", "phone": identity.landline_phone})
+        for ref in obj.references.all():
+            if ref.phone_number:
+                contacts.append({"label": f"معرف: {ref.full_name}", "phone": ref.phone_number})
+        return contacts
 
     def get_documents(self, obj):
         uploads_by_type = {upload.document_type: upload for upload in obj.document_uploads.all()}
@@ -182,6 +216,10 @@ class CreateAgencySupervisorSerializer(serializers.Serializer):
     )
     email = serializers.EmailField(required=False, allow_blank=True)
     position = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    gender = serializers.ChoiceField(choices=Gender.choices, required=False, allow_null=True)
+    birth_date = JalaliDateField(required=False, allow_null=True)
+    city_id = serializers.IntegerField(required=False, allow_null=True)
+    education_level = serializers.ChoiceField(choices=EducationLevel.choices, required=False, allow_null=True)
 
 
 class UpdateAgencySupervisorSerializer(serializers.Serializer):
@@ -196,6 +234,10 @@ class UpdateAgencySupervisorSerializer(serializers.Serializer):
         error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
     )
     position = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    gender = serializers.ChoiceField(choices=Gender.choices, required=False, allow_null=True)
+    birth_date = JalaliDateField(required=False, allow_null=True)
+    city_id = serializers.IntegerField(required=False, allow_null=True)
+    education_level = serializers.ChoiceField(choices=EducationLevel.choices, required=False, allow_null=True)
 
 
 class AgencySupervisorSerializer(serializers.ModelSerializer):
@@ -204,10 +246,15 @@ class AgencySupervisorSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     phone_number = serializers.CharField(source="user.phone_number", read_only=True)
     created_by_username = serializers.CharField(source="created_by.username", read_only=True, default=None)
+    city_name = serializers.CharField(source="city.name", read_only=True, default=None)
+    birth_date = JalaliDateField(read_only=True)
 
     class Meta:
         model = AgencySupervisor
-        fields = ["id", "user_id", "username", "full_name", "phone_number", "position", "created_by_username", "created_at"]
+        fields = [
+            "id", "user_id", "username", "full_name", "phone_number", "position", "created_by_username", "created_at",
+            "gender", "birth_date", "city_name", "education_level",
+        ]
         read_only_fields = fields
 
     def get_full_name(self, obj):
@@ -231,6 +278,10 @@ class CreateAgencyAdminSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True)
     position = serializers.CharField(max_length=100, required=False, allow_blank=True)
     supervisor_id = serializers.IntegerField()
+    gender = serializers.ChoiceField(choices=Gender.choices, required=False, allow_null=True)
+    birth_date = JalaliDateField(required=False, allow_null=True)
+    city_id = serializers.IntegerField(required=False, allow_null=True)
+    education_level = serializers.ChoiceField(choices=EducationLevel.choices, required=False, allow_null=True)
 
 
 class UpdateAgencyAdminSerializer(serializers.Serializer):
@@ -248,6 +299,10 @@ class UpdateAgencyAdminSerializer(serializers.Serializer):
     )
     position = serializers.CharField(max_length=100, required=False, allow_blank=True)
     supervisor_id = serializers.IntegerField(required=False)
+    gender = serializers.ChoiceField(choices=Gender.choices, required=False, allow_null=True)
+    birth_date = JalaliDateField(required=False, allow_null=True)
+    city_id = serializers.IntegerField(required=False, allow_null=True)
+    education_level = serializers.ChoiceField(choices=EducationLevel.choices, required=False, allow_null=True)
 
 
 class AgencyAdminSerializer(serializers.ModelSerializer):
@@ -258,12 +313,15 @@ class AgencyAdminSerializer(serializers.ModelSerializer):
     supervisor_id = serializers.IntegerField(source="supervisor.id", read_only=True)
     supervisor_name = serializers.SerializerMethodField()
     created_by_username = serializers.CharField(source="created_by.username", read_only=True, default=None)
+    city_name = serializers.CharField(source="city.name", read_only=True, default=None)
+    birth_date = JalaliDateField(read_only=True)
 
     class Meta:
         model = AgencyAdmin
         fields = [
             "id", "user_id", "username", "full_name", "phone_number", "position",
             "supervisor_id", "supervisor_name", "created_by_username", "created_at",
+            "gender", "birth_date", "city_name", "education_level",
         ]
         read_only_fields = fields
 

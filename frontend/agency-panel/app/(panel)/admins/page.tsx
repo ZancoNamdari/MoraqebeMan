@@ -9,12 +9,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Field, ChoiceSelect } from "@/components/wizard-forms/fields"
+import { LocationPicker, type LocationValue } from "@/components/wizard-forms/location-picker"
+import { JalaliDatePicker } from "@/components/wizard-forms/jalali-date-picker"
+import { GENDER, EDUCATION_LEVEL, labelForValue } from "@/lib/wizard-constants"
 import { agencyService } from "@/services/agency.service"
 import { agencyManagementService } from "@/services/agency_management.service"
 import { ROUTES } from "@/lib/routes"
 import type { AgencyAdmin, AgencySupervisor } from "@/types/agency_management"
 
-const emptyForm = { first_name: "", last_name: "", phone_number: "", position: "", supervisor_id: "" }
+const emptyForm = { first_name: "", last_name: "", phone_number: "", position: "", supervisor_id: "", gender: "", education_level: "", birth_date: "" }
+const emptyLocation: LocationValue = { province: null, city: null, district: null }
 
 export default function AdminsPage() {
   const { user, loading: authLoading } = useAuth(["agency", "agency_supervisor", "agency_admin"])
@@ -26,6 +31,7 @@ export default function AdminsPage() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
+  const [location, setLocation] = useState<LocationValue>(emptyLocation)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
@@ -62,9 +68,14 @@ export default function AdminsPage() {
         phone_number: form.phone_number,
         position: form.position,
         supervisor_id: Number(form.supervisor_id),
+        gender: form.gender || undefined,
+        birth_date: form.birth_date || undefined,
+        city_id: location.city ?? undefined,
+        education_level: form.education_level || undefined,
       })
       setAdmins((prev) => [created, ...prev])
       setForm(emptyForm)
+      setLocation(emptyLocation)
       setShowForm(false)
     } catch (err: any) {
       setError(err?.response?.data?.detail || "ثبت ادمین با خطا مواجه شد.")
@@ -118,6 +129,26 @@ export default function AdminsPage() {
               <Label htmlFor="position">سمت</Label>
               <Input id="position" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} placeholder="مثلاً ادمین خدمت‌گیرنده‌ها" />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="جنسیت">
+                <ChoiceSelect choices={GENDER} value={form.gender} onChange={(v) => setForm({ ...form, gender: v })} />
+              </Field>
+              <Field label="مدرک تحصیلی">
+                <ChoiceSelect choices={EDUCATION_LEVEL} value={form.education_level} onChange={(v) => setForm({ ...form, education_level: v })} />
+              </Field>
+            </div>
+
+            <Field label="تاریخ تولد">
+              <JalaliDatePicker value={form.birth_date} onChange={(v) => setForm({ ...form, birth_date: v })} />
+            </Field>
+
+            <LocationPicker
+              province={location.province}
+              city={location.city}
+              district={location.district}
+              onChange={setLocation}
+            />
+
             <div className="space-y-1.5">
               <Label htmlFor="supervisor_id">سوپروایزر مسئول</Label>
               <select
@@ -158,6 +189,13 @@ export default function AdminsPage() {
               {a.position && <p className="text-xs text-slate-500">{a.position}</p>}
               <p className="text-xs text-slate-500" dir="ltr">{a.phone_number}</p>
               <p className="mt-1 text-[11px] text-slate-500">زیر نظر: {a.supervisor_name}</p>
+              <p className="text-[11px] text-slate-400">
+                {[
+                  a.gender && labelForValue(GENDER, a.gender),
+                  a.education_level && labelForValue(EDUCATION_LEVEL, a.education_level),
+                  a.city_name,
+                ].filter(Boolean).join(" · ")}
+              </p>
               {a.created_by_username && (
                 <p className="text-[11px] text-slate-400">ثبت‌شده توسط: {a.created_by_username}</p>
               )}

@@ -61,8 +61,15 @@ class EpisodicService(models.Model):
     recipient_phone_number = models.CharField(max_length=20, blank=True, verbose_name="شماره تماس خدمت‌گیرنده")
     notes = models.TextField(blank=True, verbose_name="یادداشت")
 
+    # `choices=` deliberately dropped (kept `default=`) — an agency can
+    # now append its own custom stages past the 4 built-in ones (see
+    # apps.agencies.pipeline_stages' PipelineType.EPISODIC seed), so a
+    # DRF ModelSerializer touching this field must not reject a
+    # legitimately-added custom value. Same reasoning/pattern as
+    # PatientProfile.pipeline_status and CaregiverProfile.
+    # agency_pipeline_status.
     stage = models.CharField(
-        max_length=30, choices=EpisodicServiceStage.choices,
+        max_length=30,
         default=EpisodicServiceStage.PHONE_COORDINATION, db_index=True, verbose_name="مرحله",
     )
     assigned_caregiver = models.ForeignKey(
@@ -99,5 +106,9 @@ class EpisodicService(models.Model):
         return f"{self.recipient_full_name} — {self.get_stage_display()}"
 
     def stage_entered_at(self, stage_value):
+        # .get() (not a bracket subscript) — a custom stage appended
+        # past the 4 built-in ones has no timestamp field to anchor a
+        # reminder to, and that's fine: None here just means "no
+        # reminder rule can fire for this stage", never a KeyError.
         field_name = _STAGE_TIMESTAMP_FIELD.get(stage_value)
         return getattr(self, field_name) if field_name else None

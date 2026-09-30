@@ -72,7 +72,13 @@ class UpdateEpisodicServiceStageSerializer(serializers.Serializer):
     being force-required by stage, since an agency may also just update
     the caregiver on an already-dispatched card without changing stage.
     """
-    stage = serializers.ChoiceField(choices=EpisodicService._meta.get_field("stage").choices, required=False)
+    # A plain CharField, not a ChoiceField — `stage` no longer has a
+    # fixed `choices=` list on the model (an agency can append its own
+    # custom stages past the 4 built-in ones), so validating the value
+    # against THIS agency's own current stage list happens in the view
+    # (apps.agencies.pipeline_stages.stage_choices), same pattern as
+    # the patient/caregiver PATCH views.
+    stage = serializers.CharField(max_length=30, required=False)
     assigned_caregiver_id = serializers.IntegerField(required=False, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True)
     amount = serializers.DecimalField(max_digits=12, decimal_places=0, required=False, min_value=0)

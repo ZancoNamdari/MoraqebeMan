@@ -19,15 +19,8 @@ import { ROUTES } from "@/lib/routes"
  * whether it should be allowed to.
  *
  * Each panel now passes its own allowed role(s) into useAuth(), e.g.:
- *   useAuth(["admin", "superuser"])   // admin-panel, and every page
- *                                      // in this panel (supervisor-
- *                                      // panel is admin/superuser-
- *                                      // only — the caregiver-
- *                                      // registration wizard now
- *                                      // lives in agency-panel
- *                                      // instead, see its
- *                                      // caregivers/[id]/register)
- *   useAuth(["agency", "agency_supervisor", "agency_admin"])  // agency-panel
+ *   useAuth(["admin", "superuser"])   // admin-panel, supervisor-panel
+ *   useAuth(["agency", "agency_supervisor"])  // agency-panel
  *   useAuth(["superuser"])            // superuser-panel
  *   useAuth(["family"])               // family-panel
  * A mismatch logs the account out immediately (not just blocks one
@@ -41,20 +34,9 @@ export function useAuth(allowedRoles?: string[]) {
   const router = useRouter()
 
   useEffect(() => {
-    // Preserve where the person was headed (e.g. a caregiver-wizard
-    // deep link from agency-panel with its own ?id=...) so login can
-    // send them back there instead of always to the dashboard. Read
-    // straight from window.location (not next/navigation's
-    // useSearchParams) so this shared hook doesn't force every page
-    // that calls it to add its own Suspense boundary.
-    const next = `${window.location.pathname}${window.location.search}`
-    const loginWithNext = next && next !== ROUTES.dashboard
-      ? `${ROUTES.login}?next=${encodeURIComponent(next)}`
-      : ROUTES.login
-
     if (!authService.isLoggedIn()) {
       setLoading(false)
-      router.replace(loginWithNext)
+      router.replace(ROUTES.login)
       return
     }
     authService
@@ -69,7 +51,7 @@ export function useAuth(allowedRoles?: string[]) {
       })
       .catch(() => {
         authService.logout()
-        router.replace(loginWithNext)
+        router.replace(ROUTES.login)
       })
       .finally(() => setLoading(false))
   }, [router])

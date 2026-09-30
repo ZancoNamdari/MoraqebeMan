@@ -38,7 +38,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 }
 
 const EMPTY_IDENTITY: IdentityFormData = {
-  father_name: "", birth_certificate_number: "", birth_certificate_issue_place: "",
+  father_name: "", national_id: "", birth_certificate_number: "", birth_certificate_issue_place: "",
   birth_date: "", gender: "", marital_status: "", children_count: "", military_status: null,
   height_range: "", weight_range: "", ethnicities: [],
   has_chronic_disease: false, chronic_disease_types: [],
@@ -48,11 +48,12 @@ const EMPTY_IDENTITY: IdentityFormData = {
 }
 
 const EMPTY_WORK_PREFS: WorkPreferencesFormData = {
-  collaboration_types: [], work_status: "", family_presence_preference: "", accepted_gender: "",
+  collaboration_types: [], daily_work_hours: "", work_status: "", family_presence_preference: "", accepted_gender: "",
   accepted_age_ranges: [], offered_services: [], accepted_physical_conditions: [], lifting_capacity: "",
   service_locations: [], max_commute_time: "", available_days: [], available_shifts: [],
   commute_methods: [], smoking_status: "", pets_ok: null, holiday_work_ok: null, overnight_stay_ok: null,
-  terms_accepted: false, night_stay_until: "", has_night_time_limit: null, additional_notes: "", serves_all_areas: false,
+  terms_accepted: false, night_stay_until: "", has_night_time_limit: null, additional_notes: "",
+  requested_salary: "", serves_all_areas: false,
 }
 
 const EMPTY_EXPERIENCE: ExperienceFormData = {
@@ -280,6 +281,12 @@ function NewCaregiverWizardInner() {
     setError([]); setSaving(true)
     try {
       await caregiverService.saveReferences(caregiverId, references)
+      // requested_salary lives on the work-preferences record (Form
+      // 2's model) even though it's shown here on Form 4 — so saving
+      // this step also re-saves the whole work-preferences payload,
+      // same pattern Form 3 already uses to save two records
+      // (experience + skills) in one step.
+      await caregiverService.saveWorkPreferences(caregiverId, workPrefs)
       setStep(5)
     } catch (err: any) {
       showErrors(err, "ثبت معرف‌ها با خطا مواجه شد.")
@@ -373,6 +380,7 @@ function NewCaregiverWizardInner() {
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">🪪</span> فرم ۱ — اطلاعات هویتی</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="نام پدر"><Input value={identity.father_name} onChange={(e) => setIdentity({ ...identity, father_name: e.target.value })} /></Field>
+              <Field label="شماره ملی"><Input value={identity.national_id} onChange={(e) => setIdentity({ ...identity, national_id: e.target.value })} dir="ltr" maxLength={10} /></Field>
               <Field label="شماره شناسنامه"><Input value={identity.birth_certificate_number} onChange={(e) => setIdentity({ ...identity, birth_certificate_number: e.target.value })} /></Field>
               <Field label="محل صدور شناسنامه"><Input value={identity.birth_certificate_issue_place} onChange={(e) => setIdentity({ ...identity, birth_certificate_issue_place: e.target.value })} /></Field>
               <Field label="تاریخ تولد">
@@ -427,6 +435,15 @@ function NewCaregiverWizardInner() {
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">💼</span> فرم ۲ — شرایط همکاری</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="نوع همکاری"><CheckboxGroup choices={C.COLLABORATION_TYPE} value={workPrefs.collaboration_types} onChange={(v) => setWorkPrefs({ ...workPrefs, collaboration_types: v })} /></Field>
+              {workPrefs.collaboration_types.includes("daily") && (
+                <Field label="ساعات کاری مراقبت روزانه">
+                  <Input
+                    value={workPrefs.daily_work_hours}
+                    onChange={(e) => setWorkPrefs({ ...workPrefs, daily_work_hours: e.target.value })}
+                    placeholder="از ساعت ... تا ساعت ..."
+                  />
+                </Field>
+              )}
               <Field label="وضعیت کاری"><ChoiceSelect choices={C.WORK_STATUS} value={workPrefs.work_status} onChange={(v) => setWorkPrefs({ ...workPrefs, work_status: v })} /></Field>
               <Field label="حضور خانواده سالمند"><ChoiceSelect choices={C.FAMILY_PRESENCE_PREFERENCE} value={workPrefs.family_presence_preference} onChange={(v) => setWorkPrefs({ ...workPrefs, family_presence_preference: v })} /></Field>
               <Field label="جنسیت سالمند قابل قبول"><ChoiceSelect choices={C.ACCEPTED_GENDER} value={workPrefs.accepted_gender} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_gender: v })} /></Field>
@@ -556,6 +573,13 @@ function NewCaregiverWizardInner() {
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">📇</span> فرم ۴ — معرف‌ها</CardTitle><p className="text-sm text-muted-foreground">افزودن معرف اختیاری است — هر تعداد که در دسترس دارید کافی است.</p></CardHeader>
             <CardContent className="space-y-6">
+              <Field label="حقوق درخواستی">
+                <Input
+                  value={workPrefs.requested_salary}
+                  onChange={(e) => setWorkPrefs({ ...workPrefs, requested_salary: e.target.value })}
+                  placeholder="مبلغ یا بازه مدنظر را وارد کنید"
+                />
+              </Field>
               {references.map((ref, i) => (
                 <div key={i} className="space-y-3 rounded-md border p-3">
                   <p className="text-sm font-semibold">معرف {i + 1}</p>
@@ -666,7 +690,7 @@ function NewCaregiverWizardInner() {
             <>
               <Button
                 className="flex-1 bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/20 hover:from-primary hover:to-primary"
-                size="lg" onClick={handleStep5} disabled={saving || Object.keys(questionnaireAnswers).length < 16}
+                size="lg" onClick={handleStep5} disabled={saving || Object.keys(questionnaireAnswers).length < 4}
               >
                 {saving ? "در حال ذخیره..." : "ذخیره نهایی"}
               </Button>

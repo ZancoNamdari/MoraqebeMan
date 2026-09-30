@@ -4,6 +4,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.agencies.models import PipelineType
+from apps.agencies.pipeline_stages import stage_choices
 from apps.agencies.tenancy import agency_caregiver_profile_ids, resolve_tenant_context
 from apps.finance.models import BillingCycle, Invoice, InvoiceStatus, Payment
 from apps.reminders.services import agency_reminder_rules
@@ -130,6 +132,12 @@ class EpisodicServiceStageUpdateView(APIView):
             service.notes = data["notes"]
 
         new_stage = data.get("stage")
+        if new_stage:
+            valid_values = [value for value, _ in stage_choices(ctx.agency, PipelineType.EPISODIC)]
+            if new_stage not in valid_values:
+                return Response(
+                    {"detail": f"مقدار stage باید یکی از {valid_values} باشد."}, status=status.HTTP_400_BAD_REQUEST,
+                )
         if new_stage and new_stage != service.stage:
             if new_stage == EpisodicServiceStage.SETTLED and service.invoice_id is None:
                 missing = [f for f in ("amount", "method", "paid_at") if f not in data]
@@ -154,8 +162,12 @@ class EpisodicServiceStageUpdateView(APIView):
                 service.invoice = invoice
 
             service.stage = new_stage
-            field_name = _STAGE_TIMESTAMP_FIELD[new_stage]
-            if getattr(service, field_name) is None:
+            # A custom stage appended past the 4 built-in ones has no
+            # timestamp field to set — nothing to anchor a reminder to
+            # for it anyway, so this is simply skipped rather than a
+            # KeyError.
+            field_name = _STAGE_TIMESTAMP_FIELD.get(new_stage)
+            if field_name and getattr(service, field_name) is None:
                 setattr(service, field_name, jalali_now())
 
         service.save()

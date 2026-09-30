@@ -1,5 +1,11 @@
 import type { ActiveReminder } from "@/types/reminders"
 
+// gender/education_level use the same value strings as GENDER/EDUCATION_LEVEL
+// in lib/wizard-constants.ts (transcribed from backend/apps/caregivers/choices.py,
+// which apps.agencies's AgencySupervisor/AgencyAdmin models reuse directly —
+// see this session's dashboard work). Feeds the "پرسنل" dashboard's
+// gender/education/city breakdowns; all four are optional since existing
+// staff rows predate these fields.
 export interface AgencySupervisor {
   id: number
   user_id: number
@@ -9,6 +15,10 @@ export interface AgencySupervisor {
   position: string
   created_by_username: string | null
   created_at: string
+  gender: string | null
+  birth_date: string | null
+  city_name: string | null
+  education_level: string | null
 }
 
 export interface CreateAgencySupervisorPayload {
@@ -17,6 +27,10 @@ export interface CreateAgencySupervisorPayload {
   phone_number: string
   email?: string
   position?: string
+  gender?: string
+  birth_date?: string
+  city_id?: number
+  education_level?: string
 }
 
 export interface UpdateAgencySupervisorPayload {
@@ -24,6 +38,10 @@ export interface UpdateAgencySupervisorPayload {
   last_name?: string
   phone_number?: string
   position?: string
+  gender?: string
+  birth_date?: string
+  city_id?: number
+  education_level?: string
 }
 
 export interface AgencyAdmin {
@@ -37,6 +55,10 @@ export interface AgencyAdmin {
   supervisor_name: string
   created_by_username: string | null
   created_at: string
+  gender: string | null
+  birth_date: string | null
+  city_name: string | null
+  education_level: string | null
 }
 
 export interface CreateAgencyAdminPayload {
@@ -46,6 +68,10 @@ export interface CreateAgencyAdminPayload {
   email?: string
   position?: string
   supervisor_id: number
+  gender?: string
+  birth_date?: string
+  city_id?: number
+  education_level?: string
 }
 
 export interface UpdateAgencyAdminPayload {
@@ -54,6 +80,10 @@ export interface UpdateAgencyAdminPayload {
   phone_number?: string
   position?: string
   supervisor_id?: number
+  gender?: string
+  birth_date?: string
+  city_id?: number
+  education_level?: string
 }
 
 // One of the seven "تکمیل مدارک" checklist items' real file — see
@@ -76,6 +106,27 @@ export type CaregiverDocumentField =
   | "no_criminal_record" | "no_addiction_test" | "identity_verified"
   | "personal_photo" | "mental_health_test" | "promissory_note" | "id_card_received"
 
+// One column of an agency's own patient/caregiver Kanban board —
+// backed by apps.agencies.models.AgencyPipelineStage. Every agency
+// starts with the platform's original 7 stages per board and can
+// append its own to the end (see AgencyPipelineStageListCreateView).
+export interface AgencyPipelineStage {
+  id: number
+  pipeline_type: "patient" | "caregiver" | "episodic"
+  value: string
+  label: string
+  order: number
+}
+
+// One extra phone number on file for a caregiver or patient besides
+// their own primary number — an emergency contact, a landline, a
+// reference, or (for patients) an approved family member. Read-only:
+// always sourced from the person's own onboarding/family data.
+export interface ExtraContact {
+  label: string
+  phone: string
+}
+
 export interface AgencyCaregiverPipelineItem {
   id: number
   // The caregiver's platform User id — distinct from `id` above
@@ -85,6 +136,7 @@ export interface AgencyCaregiverPipelineItem {
   user_id: number
   full_name: string
   phone_number: string
+  extra_contacts: ExtraContact[]
   agency_pipeline_status: string
   is_urgent: boolean
   doc_no_criminal_record: boolean
@@ -103,6 +155,15 @@ export interface AgencyCaregiverPipelineItem {
   process_milestones: string[]
   created_by: string | null
   active_reminders: ActiveReminder[]
+  // Free-text internal note staff keep on this caregiver's kanban
+  // card — backed by CaregiverProfile.staff_notes, capped at 1000
+  // chars, never shown outside the agency panel.
+  staff_notes: string
+  // Set once this caregiver reaches "در حال مأموریت" — see
+  // CaregiverProfile.contract_start_date/contract_end_date's own
+  // docstrings. Jalali "YYYY-MM-DD" strings, or null until entered.
+  contract_start_date: string | null
+  contract_end_date: string | null
 }
 
 // Step-0-only, mirroring apps.caregivers.serializers.CreateCaregiverSerializer
@@ -136,6 +197,9 @@ export interface AgencyPatient {
   district_name: string | null
   postal_code: string
   emergency_contact_phone: string
+  // Every approved family member's own phone number on this
+  // patient's record — see PatientProfileSerializer.get_family_contacts.
+  family_contacts: ExtraContact[]
   guardianship_status: string
   guardian_details: string
   language_dialect: string
@@ -145,7 +209,15 @@ export interface AgencyPatient {
   created_by: string | null
   is_urgent: boolean
   tags: string[]
+  // Free-text internal note staff keep on this patient's kanban card
+  // — backed by PatientProfile.notes, internal-only.
+  notes: string
   needed_shifts: string[]
+  // Set once this patient reaches "قرارداد بسته و تایید شده" — see
+  // PatientProfile.contract_start_date/contract_end_date's own
+  // docstrings. Jalali "YYYY-MM-DD" strings, or null until entered.
+  contract_start_date: string | null
+  contract_end_date: string | null
   active_reminders: ActiveReminder[]
   created_at: string
   updated_at: string
@@ -172,6 +244,27 @@ export interface CreateAgencyPatientPayload {
 
 export type CreateAgencyPatientResponse = AgencyPatient & { family?: CreatedFamilyInfo }
 
+// Mirrors apps.families.serializers.PatientCompatibilityQuestionnaireSerializer
+// — twelve fixed fields, one per compatibility-questionnaire question.
+// Kept as a flat Record rather than a named interface at the call
+// site (same convention as CAREGIVER_QUESTIONNAIRE's answers map) so
+// lib/patient-compatibility-questionnaire.ts's question list stays
+// the single source of truth for which fields exist.
+export type PatientQuestionnaireAnswers = Record<string, string>
+
+export interface PatientDocumentUpload {
+  document_type: string
+  file: string
+  uploaded_by_name: string | null
+  uploaded_at: string
+}
+
+export const PATIENT_DOCUMENT_TYPES: [string, string][] = [
+  ["national_id_card", "کارت ملی"],
+  ["birth_certificate", "شناسنامه"],
+  ["personal_photo", "عکس پرسنلی"],
+]
+
 // Same shape as the platform-wide suggest-caregivers response — the
 // backend deliberately reuses one pipeline for both, see
 // apps.care.matching.agency_scoped's docstring.
@@ -197,4 +290,33 @@ export interface AgencySuggestionsResponse {
   patient_name: string
   patient_gender: string
   suggestions: AgencyCaregiverSuggestion[]
+}
+
+// Reverse direction — one of this agency's own patients (still
+// looking for a caregiver), scored for how well they'd suit ONE
+// specific caregiver. Same score fields as AgencyCaregiverSuggestion
+// (spread from that caregiver's own entry in the patient's ranking —
+// see suggest_patients_for_agency_caregiver's docstring), plus which
+// patient this row is about.
+export interface AgencyPatientSuggestion {
+  patient_id: number
+  patient_name: string
+  patient_gender: string
+  objective_fit_score: number | null
+  trait_match_score: number | null
+  caregiver_cfi: number | null
+  avg_rating: number | null
+  mcdm_score: number | null
+  match_confidence: "high" | "medium" | "low"
+  explanation: {
+    summary: string
+    strengths: string[]
+    weaknesses: string[]
+  }
+  [key: string]: unknown
+}
+
+export interface AgencyPatientSuggestionsResponse {
+  caregiver_name: string
+  suggestions: AgencyPatientSuggestion[]
 }
