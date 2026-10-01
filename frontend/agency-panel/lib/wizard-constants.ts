@@ -69,7 +69,15 @@ export const CHRONIC_DISEASE_TYPE: Choice[] = [
   ["joint_disease", "بیماری‌های مفصلی"],
   ["spine_disease", "بیماری‌های ستون فقرات"],
   ["neurological_disease", "بیماری عصبی"],
+  ["lower_back_disc", "دیسک کمر"],
+  ["psychological_issues", "مشکلات روحی و روانی"],
   ["other", "سایر"],
+]
+
+export const CLEANING_WILLINGNESS: Choice[] = [
+  ["none", "نظافت را انجام نمی‌دهد"],
+  ["light", "نظافت سبک انجام می‌دهد"],
+  ["heavy", "نظافت سنگین انجام می‌دهد"],
 ]
 
 export const MEDICATION_TYPE: Choice[] = [

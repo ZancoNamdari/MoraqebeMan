@@ -21,6 +21,7 @@ export interface CaregiverProgress {
 
 export interface IdentityFormData {
   father_name: string
+  national_id: string
   birth_certificate_number: string
   birth_certificate_issue_place: string
   birth_date: string // Jalali "YYYY-MM-DD"
@@ -35,6 +36,7 @@ export interface IdentityFormData {
   chronic_disease_types: string[]
   takes_permanent_medication: boolean
   medication_types: string[]
+  psychiatric_medication_detail: string
   emergency_contact_phone: string
   emergency_contact_relation: string
   landline_phone: string
@@ -47,6 +49,7 @@ export interface IdentityFormData {
 
 export interface WorkPreferencesFormData {
   collaboration_types: string[]
+  daily_work_hours: string
   work_status: string
   family_presence_preference: string
   accepted_gender: string
@@ -67,6 +70,9 @@ export interface WorkPreferencesFormData {
   night_stay_until: string
   has_night_time_limit: boolean | null
   additional_notes: string
+  requested_salary: string
+  cleaning_willingness: string
+  day_off_request: string
   serves_all_areas: boolean
 }
 

@@ -272,7 +272,7 @@ export default function CaregiverProfilePage() {
 
                   <Button
                     className="w-full"
-                    disabled={questionnaireSaving || Object.keys(questionnaireAnswers).length < 16}
+                    disabled={questionnaireSaving || Object.keys(questionnaireAnswers).length < 4}
                     onClick={handleSaveQuestionnaire}
                   >
                     {questionnaireSaving ? "در حال ذخیره..." : "ذخیره پرسشنامه"}

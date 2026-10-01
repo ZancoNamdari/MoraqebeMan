@@ -47,21 +47,22 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 }
 
 const EMPTY_IDENTITY: IdentityFormData = {
-  father_name: "", birth_certificate_number: "", birth_certificate_issue_place: "",
+  father_name: "", national_id: "", birth_certificate_number: "", birth_certificate_issue_place: "",
   birth_date: "", gender: "", marital_status: "", children_count: "", military_status: null,
   height_range: "", weight_range: "", ethnicities: [],
   has_chronic_disease: false, chronic_disease_types: [],
-  takes_permanent_medication: false, medication_types: [],
+  takes_permanent_medication: false, medication_types: [], psychiatric_medication_detail: "",
   emergency_contact_phone: "", emergency_contact_relation: "", landline_phone: "",
   province: null, city: null, district: null, postal_code: "", full_address: "",
 }
 
 const EMPTY_WORK_PREFS: WorkPreferencesFormData = {
-  collaboration_types: [], work_status: "", family_presence_preference: "", accepted_gender: "",
+  collaboration_types: [], daily_work_hours: "", work_status: "", family_presence_preference: "", accepted_gender: "",
   accepted_age_ranges: [], offered_services: [], accepted_physical_conditions: [], lifting_capacity: "",
   service_locations: [], max_commute_time: "", available_days: [], available_shifts: [],
   commute_methods: [], smoking_status: "", pets_ok: null, holiday_work_ok: null, overnight_stay_ok: null,
-  terms_accepted: false, night_stay_until: "", has_night_time_limit: null, additional_notes: "", serves_all_areas: false,
+  terms_accepted: false, night_stay_until: "", has_night_time_limit: null, additional_notes: "",
+  requested_salary: "", cleaning_willingness: "", day_off_request: "", serves_all_areas: false,
 }
 
 const EMPTY_EXPERIENCE: ExperienceFormData = {
@@ -330,6 +331,7 @@ export default function CaregiverRegistrationWizard() {
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">🪪</span> فرم ۱ — اطلاعات هویتی</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="نام پدر"><Input value={identity.father_name} onChange={(e) => setIdentity({ ...identity, father_name: e.target.value })} /></Field>
+              <Field label="کد ملی"><Input value={identity.national_id} onChange={(e) => setIdentity({ ...identity, national_id: e.target.value })} dir="ltr" /></Field>
               <Field label="شماره شناسنامه"><Input value={identity.birth_certificate_number} onChange={(e) => setIdentity({ ...identity, birth_certificate_number: e.target.value })} /></Field>
               <Field label="محل صدور شناسنامه"><Input value={identity.birth_certificate_issue_place} onChange={(e) => setIdentity({ ...identity, birth_certificate_issue_place: e.target.value })} /></Field>
               <Field label="تاریخ تولد">
@@ -352,6 +354,11 @@ export default function CaregiverRegistrationWizard() {
               {identity.has_chronic_disease && (
                 <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
                   <Field label="نوع بیماری" required><CheckboxGroup choices={C.CHRONIC_DISEASE_TYPE} value={identity.chronic_disease_types} onChange={(v) => setIdentity({ ...identity, chronic_disease_types: v })} /></Field>
+                  {identity.chronic_disease_types.includes("psychological_issues") && (
+                    <Field label="داروهای مصرفی برای مشکلات روحی/روانی">
+                      <Textarea value={identity.psychiatric_medication_detail} onChange={(e) => setIdentity({ ...identity, psychiatric_medication_detail: e.target.value })} />
+                    </Field>
+                  )}
                 </div>
               )}
               <Field label="آیا داروی دائمی مصرف می‌کند؟"><YesNo value={identity.takes_permanent_medication} onChange={(v) => setIdentity({ ...identity, takes_permanent_medication: !!v })} /></Field>
@@ -384,19 +391,24 @@ export default function CaregiverRegistrationWizard() {
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">💼</span> فرم ۲ — شرایط همکاری</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="نوع همکاری"><CheckboxGroup choices={C.COLLABORATION_TYPE} value={workPrefs.collaboration_types} onChange={(v) => setWorkPrefs({ ...workPrefs, collaboration_types: v })} /></Field>
+              {workPrefs.collaboration_types.includes("daily") && (
+                <Field label="ساعات کاری مراقبت روزانه"><Input value={workPrefs.daily_work_hours} onChange={(e) => setWorkPrefs({ ...workPrefs, daily_work_hours: e.target.value })} placeholder="مثلاً از ساعت ۸ تا ۱۶" /></Field>
+              )}
+              <Field label="حقوق درخواستی"><Input value={workPrefs.requested_salary} onChange={(e) => setWorkPrefs({ ...workPrefs, requested_salary: e.target.value })} /></Field>
               <Field label="وضعیت کاری"><ChoiceSelect choices={C.WORK_STATUS} value={workPrefs.work_status} onChange={(v) => setWorkPrefs({ ...workPrefs, work_status: v })} /></Field>
               <Field label="حضور خانواده سالمند"><ChoiceSelect choices={C.FAMILY_PRESENCE_PREFERENCE} value={workPrefs.family_presence_preference} onChange={(v) => setWorkPrefs({ ...workPrefs, family_presence_preference: v })} /></Field>
               <Field label="جنسیت سالمند قابل قبول"><ChoiceSelect choices={C.ACCEPTED_GENDER} value={workPrefs.accepted_gender} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_gender: v })} /></Field>
               <Field label="بازه سنی سالمند"><CheckboxGroup choices={C.ACCEPTED_AGE_RANGE} value={workPrefs.accepted_age_ranges} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_age_ranges: v })} /></Field>
               <Field label="خدمات قابل ارائه"><CheckboxGroup choices={C.OFFERED_SERVICE} value={workPrefs.offered_services} onChange={(v) => setWorkPrefs({ ...workPrefs, offered_services: v })} /></Field>
               <Field label="شرایط جسمانی سالمند قابل پذیرش"><CheckboxGroup choices={C.ACCEPTED_PHYSICAL_CONDITION} value={workPrefs.accepted_physical_conditions} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_physical_conditions: v })} /></Field>
+              <Field label="میزان انجام نظافت"><ChoiceSelect choices={C.CLEANING_WILLINGNESS} value={workPrefs.cleaning_willingness} onChange={(v) => setWorkPrefs({ ...workPrefs, cleaning_willingness: v })} /></Field>
               <Field label="محل ارائه خدمت"><CheckboxGroup choices={C.SERVICE_LOCATION} value={workPrefs.service_locations} onChange={(v) => setWorkPrefs({ ...workPrefs, service_locations: v })} /></Field>
               {(workPrefs.collaboration_types.includes("daily") || workPrefs.collaboration_types.includes("short_term")) && (
                 <Field label="حداکثر زمان رفت‌وآمد"><ChoiceSelect choices={C.MAX_COMMUTE_TIME} value={workPrefs.max_commute_time} onChange={(v) => setWorkPrefs({ ...workPrefs, max_commute_time: v })} /></Field>
               )}
               <Field label="روزهای کاری"><CheckboxGroup choices={C.WEEKDAY} value={workPrefs.available_days} onChange={(v) => setWorkPrefs({ ...workPrefs, available_days: v })} /></Field>
+              <Field label="روز درخواستی برای تعطیلی"><Input value={workPrefs.day_off_request} onChange={(e) => setWorkPrefs({ ...workPrefs, day_off_request: e.target.value })} placeholder="مثلاً جمعه‌ها" /></Field>
               <Field label="شیفت‌های کاری (شبانه‌روزی با بقیه هم‌زمان انتخاب نشود)" error={fieldErrors.available_shifts}><CheckboxGroup choices={C.SHIFT} value={workPrefs.available_shifts} onChange={(v) => setWorkPrefs({ ...workPrefs, available_shifts: v })} /></Field>
-              <Field label="شب تا ساعت چند می‌توانید بمانید؟"><ChoiceSelect choices={C.NIGHT_STAY_UNTIL} value={workPrefs.night_stay_until} onChange={(v) => setWorkPrefs({ ...workPrefs, night_stay_until: v })} /></Field>
               <Field label="آیا برای ماندن در شب محدودیت زمانی دارید؟"><YesNo value={workPrefs.has_night_time_limit} onChange={(v) => setWorkPrefs({ ...workPrefs, has_night_time_limit: v })} /></Field>
               <Field label="روش رفت‌وآمد"><CheckboxGroup choices={C.COMMUTE_METHOD} value={workPrefs.commute_methods} onChange={(v) => setWorkPrefs({ ...workPrefs, commute_methods: v })} /></Field>
               <Field label="وضعیت استعمال دخانیات"><ChoiceSelect choices={C.SMOKING_STATUS} value={workPrefs.smoking_status} onChange={(v) => setWorkPrefs({ ...workPrefs, smoking_status: v })} /></Field>
@@ -622,7 +634,7 @@ export default function CaregiverRegistrationWizard() {
             <>
               <Button
                 className="flex-1"
-                size="lg" onClick={handleStep5} disabled={saving || Object.keys(questionnaireAnswers).length < 16}
+                size="lg" onClick={handleStep5} disabled={saving || Object.keys(questionnaireAnswers).length < 4}
               >
                 {saving ? "در حال ذخیره..." : "ذخیره نهایی"}
               </Button>

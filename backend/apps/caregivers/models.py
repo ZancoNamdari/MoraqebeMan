@@ -9,6 +9,7 @@ from .choices import (
 
     AcceptedGender,
     AcquaintanceDuration,
+    CleaningWillingness,
     EducationLevel,
     EmergencyContactRelation,
     ExperienceRange,
@@ -68,6 +69,10 @@ class IdentityProfile(models.Model):
     chronic_disease_types = models.JSONField(default=list, blank=True, verbose_name="نوع بیماری‌های مزمن؟")
     takes_permanent_medication = models.BooleanField(null=True, blank=True, default=False, verbose_name="آیا دارویی به صورت دائمی مصرف می‌کند؟")
     medication_types = models.JSONField(default=list, blank=True, verbose_name="نوع داروها؟")
+    psychiatric_medication_detail = models.TextField(
+        blank=True, max_length=500, verbose_name="داروهای مصرفی برای مشکلات روحی/روانی",
+        help_text="فقط وقتی «مشکلات روحی و روانی» در نوع بیماری انتخاب شده باشد.",
+    )
     emergency_contact_phone = models.CharField(max_length=15, blank=True, verbose_name="شماره تماس اضطراری")
     emergency_contact_relation = models.CharField(
         max_length=20, choices=EmergencyContactRelation.choices, blank=True, verbose_name="نسبت با تماس اضطراری")
@@ -648,6 +653,13 @@ class CaregiverWorkPreferences(models.Model):
     has_night_time_limit = models.BooleanField(null=True, blank=True, default=None, verbose_name="محدودیت زمانی برای شب دارد")
     additional_notes = models.TextField(blank=True, max_length=500, verbose_name="توضیحات تکمیلی")
     requested_salary = models.CharField(max_length=100, blank=True, verbose_name="حقوق درخواستی")
+    cleaning_willingness = models.CharField(
+        max_length=10, choices=CleaningWillingness.choices, blank=True, verbose_name="میزان انجام نظافت",
+    )
+    day_off_request = models.CharField(
+        max_length=200, blank=True, verbose_name="روز درخواستی برای تعطیلی",
+        help_text="توضیح آزاد — مثلاً «جمعه‌ها» یا «هماهنگ می‌شود».",
+    )
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")

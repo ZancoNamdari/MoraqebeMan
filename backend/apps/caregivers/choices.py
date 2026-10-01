@@ -71,6 +71,8 @@ class ChronicDiseaseType(models.TextChoices):
     JOINT_DISEASE = "joint_disease", "بیماری‌های مفصلی"
     SPINE_DISEASE = "spine_disease", "بیماری‌های ستون فقرات"
     NEUROLOGICAL_DISEASE = "neurological_disease", "بیماری عصبی"
+    LOWER_BACK_DISC = "lower_back_disc", "دیسک کمر"
+    PSYCHOLOGICAL_ISSUES = "psychological_issues", "مشکلات روحی و روانی"
     OTHER = "other", "سایر"
 
 
@@ -92,6 +94,14 @@ class EmergencyContactRelation(models.TextChoices):
     BROTHER = "brother", "برادر"
     OTHER = "other", "سایر"
 
+
+
+class CleaningWillingness(models.TextChoices):
+    """Single-select — how much cleaning this caregiver is willing to
+    do, distinct from OfferedService's broader LIGHT_CLEANING option."""
+    NONE = "none", "نظافت را انجام نمی‌دهد"
+    LIGHT = "light", "نظافت سبک انجام می‌دهد"
+    HEAVY = "heavy", "نظافت سنگین انجام می‌دهد"
 
 
 class CollaborationType(models.TextChoices):

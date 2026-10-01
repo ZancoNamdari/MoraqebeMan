@@ -124,7 +124,7 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
             "birth_date", "gender", "marital_status", "children_count", "military_status",
             "height_range", "weight_range", "ethnicities",
             "has_chronic_disease", "chronic_disease_types",
-            "takes_permanent_medication", "medication_types",
+            "takes_permanent_medication", "medication_types", "psychiatric_medication_detail",
             "emergency_contact_phone", "emergency_contact_relation", "landline_phone",
             "province", "city", "district", "postal_code", "full_address",
             "created_at", "updated_at",
@@ -195,7 +195,8 @@ class CaregiverWorkPreferencesSerializer(serializers.ModelSerializer):
             "max_commute_time", "available_days", "available_shifts", "commute_methods",
             "smoking_status", "pets_ok", "holiday_work_ok", "overnight_stay_ok",
             "terms_accepted", "terms_accepted_at", "night_stay_until", "has_night_time_limit",
-            "additional_notes", "requested_salary", "created_at", "updated_at",
+            "additional_notes", "requested_salary", "cleaning_willingness", "day_off_request",
+            "created_at", "updated_at",
         ]
         read_only_fields = ["terms_accepted_at", "created_at", "updated_at"]
 
