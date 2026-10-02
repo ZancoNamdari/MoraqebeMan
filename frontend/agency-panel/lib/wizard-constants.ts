@@ -146,14 +146,20 @@ export const EMERGENCY_CONTACT_RELATION: Choice[] = [
   ["other", "سایر"],
 ]
 
+// Generic on purpose — this is the one Form 2 field every service
+// type shares (it drives daily_work_hours/max_commute_time's own
+// conditional display below), so its wording must never lean on
+// سالمند-only language the way it used to ("همراه سالمند در
+// بیمارستان/منزل") — a کودک‌یار or نظافت‌چی answers this exact same
+// list with their own job in mind.
 export const COLLABORATION_TYPE: Choice[] = [
-  ["daily", "مراقبت روزانه"],
-  ["night", "مراقبت شبانه"],
-  ["live_in", "مراقبت شبانه‌روزی (مقیم)"],
-  ["hospital_companion", "همراه سالمند در بیمارستان"],
-  ["home_companion", "همراه سالمند در منزل"],
-  ["short_term", "مراقبت موقت (چند روزه)"],
-  ["long_term", "مراقبت بلندمدت"],
+  ["daily", "کار روزانه (رفت‌وآمد)"],
+  ["night", "کار شبانه"],
+  ["live_in", "کار شبانه‌روزی (مقیم)"],
+  ["hospital_companion", "همراهی در بیمارستان"],
+  ["home_companion", "همراهی در منزل کارفرما"],
+  ["short_term", "همکاری موقت (چند روزه)"],
+  ["long_term", "همکاری بلندمدت"],
 ]
 
 export const WORK_STATUS: Choice[] = [
