@@ -29,7 +29,7 @@ export const CAREGIVER_QUESTIONNAIRE: CaregiverQuestionnaireSection[] = [
       },
       {
         field: "family_compatibility_level",
-        question: "سازگاری شما با خانواده سالمند چقدر است؟",
+        question: "سازگاری شما با خانواده یا کارفرمای محل کار چقدر است؟",
         options: [
           { value: "0", text: "سازگار نیستم" },
           { value: "50", text: "تا حدی سازگار هستم" },

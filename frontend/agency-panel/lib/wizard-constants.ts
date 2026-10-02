@@ -537,6 +537,12 @@ const CLEANING_FREQUENCY: Choice[] = [
   ["biweekly", "هر دو هفته یک‌بار"],
 ]
 
+const CLEANING_STANDARD_LEVEL: Choice[] = [
+  ["light", "نظافت سطحی و روزمره (گردگیری، جمع و جور کردن)"],
+  ["standard", "نظافت کامل هفتگی (حمام، آشپزخانه، شیشه‌ها)"],
+  ["deep", "نظافت عمقی و تخصصی (شستشوی موکت/مبل، ضدعفونی کامل)"],
+]
+
 const COOKING_CUISINE: Choice[] = [
   ["iranian", "غذای ایرانی"],
   ["fast_food", "فست‌فود"],
@@ -581,16 +587,24 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
     form2: [
       { key: "cleaning_frequency_preference", label: "تناوب ترجیحی نظافت", type: "choice", choices: CLEANING_FREQUENCY },
       { key: "brings_own_equipment", label: "وسایل نظافت را خودش می‌آورد", type: "bool" },
+      // Concrete standard instead of an abstract 0/50/100 "taste/care"
+      // score — a caregiver's cleaning standard is a real difference
+      // in what they'll do, so it gets a specific, pickable answer.
+      { key: "cleaning_standard_level", label: "سطح نظافتی که ارائه می‌دهد", type: "choice", choices: CLEANING_STANDARD_LEVEL },
       { key: "cooking_cuisines", label: "نوع غذاهایی که می‌تواند بپزد", type: "multi", choices: COOKING_CUISINE, showIf: ["cooking"] },
     ],
     form3: [
       { key: "cleaning_experience", label: "سابقه کار نظافتی", type: "choice", choices: EXPERIENCE_RANGE },
       { key: "cooking_experience", label: "سابقه آشپزی", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["cooking"] },
-      { key: "chemical_allergy", label: "حساسیت به مواد شوینده دارد", type: "bool" },
     ],
+    // Reframed to measure compatibility with the actual working
+    // conditions (per the confirmed request), not a vague personal
+    // trait — e.g. "دقت و سلیقه" told you nothing actionable; "آمادگی
+    // برای کار در شرایط دشوار" tells you whether to place this
+    // caregiver in a demanding home.
     questionnaire: [
-      { key: "cleanliness_standard_level", label: "دقت و سلیقه در تمیزکاری", type: "score" },
-      { key: "cooking_confidence_level", label: "اعتماد به کیفیت آشپزی خودش", type: "score", showIf: ["cooking"] },
+      { key: "harsh_conditions_compatibility_level", label: "سازگاری با شرایط دشوار کاری (خانه بزرگ، وسایل شکستنی، حضور حیوان خانگی)", type: "score" },
+      { key: "cleaning_chemicals_tolerance_level", label: "سازگاری با استفاده مستمر از مواد شوینده و بوهای تند", type: "score" },
     ],
   },
   madaryar: {
