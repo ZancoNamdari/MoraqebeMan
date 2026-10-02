@@ -33,6 +33,41 @@ function serviceTypeLabel(value: string) {
   return C.SERVICE_TYPE.find((c) => c[0] === value)?.[1] ?? value
 }
 
+// One distinct, fixed color per service type — never cycled/computed
+// — so the same type always reads as the same color across every
+// card and the filter dropdown's active-chip styling. Falls back to
+// the plain slate pair for any value that isn't one of the 6 known
+// types (shouldn't happen, but a caregiver's service_types comes
+// from the server).
+const SERVICE_TYPE_COLOR: Record<string, string> = {
+  salmandyar: "bg-sky-100 text-sky-700",
+  koodakyar: "bg-amber-100 text-amber-700",
+  nezafatchi: "bg-emerald-100 text-emerald-700",
+  madaryar: "bg-pink-100 text-pink-700",
+  parastar: "bg-violet-100 text-violet-700",
+  behyar: "bg-orange-100 text-orange-700",
+}
+
+// A more saturated dot to go with each badge's pale background above
+// — used in the filter dropdown where a solid dot reads better than
+// a pale fill at that size.
+const SERVICE_TYPE_DOT_COLOR: Record<string, string> = {
+  salmandyar: "bg-sky-500",
+  koodakyar: "bg-amber-500",
+  nezafatchi: "bg-emerald-500",
+  madaryar: "bg-pink-500",
+  parastar: "bg-violet-500",
+  behyar: "bg-orange-500",
+}
+
+function serviceTypeColor(value: string) {
+  return SERVICE_TYPE_COLOR[value] ?? "bg-slate-100 text-slate-700"
+}
+
+function serviceTypeDotColor(value: string) {
+  return SERVICE_TYPE_DOT_COLOR[value] ?? "bg-slate-400"
+}
+
 // "Sticky note" behavior for the card's note textarea — the box
 // itself grows to fit the text (including a fresh line from Enter)
 // instead of ever scrolling inside a fixed-height box. Resetting to
@@ -257,7 +292,7 @@ function CaregiverCard({ item, stages, onMove, moving, onAddTag, onRemoveTag, pi
           {item.service_types?.length > 0 && (
             <div className="mt-1 flex flex-wrap gap-1">
               {item.service_types.map((t) => (
-                <span key={t} className="inline-flex items-center rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-700">
+                <span key={t} className={cn("inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold", serviceTypeColor(t))}>
                   {serviceTypeLabel(t)}
                 </span>
               ))}
@@ -985,7 +1020,10 @@ function CaregiversPageInner() {
               <FilterDropdown label="نوع خدمت" active={filters.serviceTypes.length > 0} onClear={() => setFilters((f) => ({ ...f, serviceTypes: [] }))}>
                 {C.SERVICE_TYPE.map(([value, label]) => (
                   <DropdownOption key={value} selected={filters.serviceTypes.includes(value)} onClick={() => setFilters((f) => ({ ...f, serviceTypes: toggleInList(f.serviceTypes, value) }))}>
-                    {label}
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className={cn("h-2 w-2 shrink-0 rounded-full", serviceTypeDotColor(value))} />
+                      {label}
+                    </span>
                   </DropdownOption>
                 ))}
               </FilterDropdown>
