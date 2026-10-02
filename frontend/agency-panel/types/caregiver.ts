@@ -74,6 +74,10 @@ export interface WorkPreferencesFormData {
   cleaning_willingness: string
   day_off_request: string
   serves_all_areas: boolean
+  // {service_type: {field: value}} — extra Form 2 questions that only
+  // apply to one service type (see wizard-constants.ts's
+  // SERVICE_SPECIFIC_FORMS). One key per selected non-سالمندیار type.
+  service_specific_answers: Record<string, Record<string, unknown>>
 }
 
 export interface ServiceArea {
@@ -98,6 +102,10 @@ export interface ExperienceFormData {
   driving_for_patient_experience: boolean | null
   last_workplace: string
   additional_notes: string
+  // Same shape/purpose as WorkPreferencesFormData's field above, but
+  // for Form 3's (experience/skills step) extra per-service-type
+  // questions.
+  service_specific_answers: Record<string, Record<string, unknown>>
 }
 
 export interface SkillsFormData {

@@ -77,13 +77,14 @@ const EMPTY_WORK_PREFS: WorkPreferencesFormData = {
   commute_methods: [], smoking_status: "", pets_ok: null, holiday_work_ok: null, overnight_stay_ok: null,
   terms_accepted: false, night_stay_until: "", has_night_time_limit: null, additional_notes: "",
   requested_salary: "", cleaning_willingness: "", day_off_request: "", serves_all_areas: false,
+  service_specific_answers: {},
 }
 
 const EMPTY_EXPERIENCE: ExperienceFormData = {
   elderly_care_experience: "", other_services_experience: "", previous_workplaces: [],
   patients_cared_for_count: "", special_conditions_experience: [], live_in_experience: null,
   couple_care_experience: null, solo_elderly_care_experience: null, driving_for_patient_experience: null,
-  last_workplace: "", additional_notes: "",
+  last_workplace: "", additional_notes: "", service_specific_answers: {},
 }
 
 const EMPTY_SKILLS: SkillsFormData = {
@@ -122,7 +123,13 @@ export default function CaregiverRegistrationWizard() {
   const [experience, setExperience] = useState<ExperienceFormData>(EMPTY_EXPERIENCE)
   const [skills, setSkills] = useState<SkillsFormData>(EMPTY_SKILLS)
   const [references, setReferences] = useState<ReferenceFormData[]>([{ ...EMPTY_REFERENCE }])
-  const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, string>>({})
+  // Flat {field: "0"|"50"|"100"} for the 4 common questions, PLUS a
+  // nested service_specific_answers: {service_type: {field: value}}
+  // key for the per-type extras below — both flow through this one
+  // object untouched on load/save since the backend's GET/PUT already
+  // treat it as one flat payload (see caregiverWizardService's
+  // get/saveCompatibilityQuestionnaire).
+  const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, any>>({})
   const [serviceTypes, setServiceTypes] = useState<string[]>([])
   const [serviceSubtypes, setServiceSubtypes] = useState<Record<string, string[]>>({})
 
@@ -210,6 +217,83 @@ export default function CaregiverRegistrationWizard() {
     const parsed = parseApiErrors(data)
     setError(parsed.length > 0 ? parsed : [{ field: "detail", messages: [fallback] }])
     window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  // Sets one field inside a service type's own answers slot of a
+  // service_specific_answers: {service_type: {field: value}} dict —
+  // shared by the Form 2 (workPrefs), Form 3 (experience) and
+  // questionnaire sections below, which all store their per-type
+  // extras in exactly this shape.
+  function setServiceAnswer(
+    current: Record<string, Record<string, any>>,
+    onChange: (next: Record<string, Record<string, any>>) => void,
+    serviceType: string, field: string, value: any,
+  ) {
+    onChange({ ...current, [serviceType]: { ...(current[serviceType] ?? {}), [field]: value } })
+  }
+
+  // Renders one Field+control for a single ServiceSpecificField
+  // (SERVICE_SPECIFIC_FORMS entry), reused across Form 2/3/the
+  // questionnaire so each of those only needs to loop + call this.
+  function ServiceFieldControl({ field, value, onChange }: {
+    field: C.ServiceSpecificField
+    value: any
+    onChange: (value: any) => void
+  }) {
+    if (field.type === "choice") {
+      return <Field label={field.label}><ChoiceSelect choices={field.choices ?? []} value={value ?? ""} onChange={onChange} /></Field>
+    }
+    if (field.type === "multi") {
+      return <Field label={field.label}><CheckboxGroup choices={field.choices ?? []} value={value ?? []} onChange={onChange} /></Field>
+    }
+    if (field.type === "bool") {
+      return <Field label={field.label}><YesNo value={value ?? null} onChange={onChange} /></Field>
+    }
+    if (field.type === "score") {
+      return (
+        <Field label={field.label}>
+          <ChoiceSelect choices={C.SCORE_OPTIONS} value={value ?? ""} onChange={onChange} />
+        </Field>
+      )
+    }
+    return <Field label={field.label}><Input value={value ?? ""} onChange={(e) => onChange(e.target.value)} /></Field>
+  }
+
+  // One stacked section per selected non-سالمندیار service type, for
+  // a given form ("form2" | "form3" | "questionnaire") — each
+  // field's showIf is checked against that type's own chosen
+  // subtypes/specialties (serviceSubtypes[type], a flat list for
+  // every type including پرستار's merged subtype+specialty values).
+  function renderServiceSpecificSections(
+    formKey: "form2" | "form3" | "questionnaire",
+    current: Record<string, Record<string, any>>,
+    onChange: (next: Record<string, Record<string, any>>) => void,
+  ) {
+    const applicableTypes = serviceTypes.filter((t) => t !== "salmandyar" && C.SERVICE_SPECIFIC_FORMS[t]?.[formKey]?.length)
+    if (applicableTypes.length === 0) return null
+    return (
+      <>
+        {applicableTypes.map((type) => {
+          const typeLabel = C.SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
+          const chosenSubtypes = serviceSubtypes[type] ?? []
+          const fields = C.SERVICE_SPECIFIC_FORMS[type][formKey].filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
+          if (fields.length === 0) return null
+          return (
+            <div key={type}>
+              <SectionHeading>سوالات مخصوص {typeLabel}</SectionHeading>
+              {fields.map((f) => (
+                <ServiceFieldControl
+                  key={f.key}
+                  field={f}
+                  value={current[type]?.[f.key]}
+                  onChange={(v) => setServiceAnswer(current, onChange, type, f.key, v)}
+                />
+              ))}
+            </div>
+          )
+        })}
+      </>
+    )
   }
 
   async function handleStep0() {
@@ -553,6 +637,8 @@ export default function CaregiverRegistrationWizard() {
 
               <Field label="توضیحات تکمیلی (اختیاری)"><Textarea value={workPrefs.additional_notes} onChange={(e) => setWorkPrefs({ ...workPrefs, additional_notes: e.target.value })} /></Field>
 
+              {renderServiceSpecificSections("form2", workPrefs.service_specific_answers, (next) => setWorkPrefs({ ...workPrefs, service_specific_answers: next }))}
+
               <Field label="پذیرش قوانین و مسئولیت اطلاعات" required error={fieldErrors.terms_accepted}>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={workPrefs.terms_accepted} onChange={(e) => setWorkPrefs({ ...workPrefs, terms_accepted: e.target.checked })} className="accent-primary" />
@@ -605,6 +691,8 @@ export default function CaregiverRegistrationWizard() {
               <Field label="گواهینامه رانندگی"><YesNo value={skills.has_driving_license} onChange={(v) => setSkills({ ...skills, has_driving_license: v })} /></Field>
               <Field label="مهارت کار با تلفن هوشمند"><YesNo value={skills.can_use_smartphone} onChange={(v) => setSkills({ ...skills, can_use_smartphone: v })} /></Field>
               <Field label="توضیحات تکمیلی مهارت‌ها"><Textarea value={skills.additional_notes} onChange={(e) => setSkills({ ...skills, additional_notes: e.target.value })} /></Field>
+
+              {renderServiceSpecificSections("form3", experience.service_specific_answers, (next) => setExperience({ ...experience, service_specific_answers: next }))}
             </CardContent>
           </Card>
         )}
@@ -683,6 +771,43 @@ export default function CaregiverRegistrationWizard() {
                 </CardContent>
               </Card>
             ))}
+            {serviceTypes.filter((t) => t !== "salmandyar" && C.SERVICE_SPECIFIC_FORMS[t]?.questionnaire?.length).map((type) => {
+              const typeLabel = C.SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
+              const chosenSubtypes = serviceSubtypes[type] ?? []
+              const fields = C.SERVICE_SPECIFIC_FORMS[type].questionnaire.filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
+              if (fields.length === 0) return null
+              const typeAnswers = questionnaireAnswers.service_specific_answers?.[type] ?? {}
+              return (
+                <Card key={type}>
+                  <CardHeader><CardTitle className="text-xl text-foreground">سازگاری مخصوص {typeLabel}</CardTitle></CardHeader>
+                  <CardContent className="space-y-3">
+                    {fields.map((f) => (
+                      <div key={f.key} className="rounded-lg border border-border p-3">
+                        <p className="mb-4 text-lg font-medium">{f.label}</p>
+                        <div className="space-y-1.5">
+                          {C.SCORE_OPTIONS.map(([value, text]) => (
+                            <label key={value} className="flex cursor-pointer items-start gap-3 text-base">
+                              <input
+                                type="radio"
+                                name={`${type}.${f.key}`}
+                                checked={typeAnswers[f.key] === value}
+                                onChange={() => setServiceAnswer(
+                                  questionnaireAnswers.service_specific_answers ?? {},
+                                  (next) => setQuestionnaireAnswers((prev) => ({ ...prev, service_specific_answers: next })),
+                                  type, f.key, value,
+                                )}
+                                className="mt-0.5 h-4 w-4"
+                              />
+                              <span>{text}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         )}
       </main>

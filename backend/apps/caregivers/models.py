@@ -677,6 +677,17 @@ class CaregiverWorkPreferences(models.Model):
         max_length=200, blank=True, verbose_name="روز درخواستی برای تعطیلی",
         help_text="توضیح آزاد — مثلاً «جمعه‌ها» یا «هماهنگ می‌شود».",
     )
+    service_specific_answers = models.JSONField(
+        default=dict, blank=True, verbose_name="پاسخ‌های فرم ۲ مخصوص نوع خدمت",
+        help_text=(
+            'دیکشنری {نوع خدمت: {نام فیلد: مقدار}} — سوالات فرم ۲ که فقط برای '
+            "یک نوع خدمت خاص (کودک‌یار، نظافت‌چی، مادریار، پرستار، بهیار) معنا "
+            "دارند. سالمندیار سوال اضافه‌ای در این فرم ندارد چون همان فیلدهای "
+            "بالا، از ابتدا، مخصوص آن بوده‌اند. وقتی چند نوع خدمت هم‌زمان "
+            "انتخاب شده باشد، هر کدام کلید جدا خودش را در این دیکشنری دارد — "
+            "یکی جای دیگری را پاک نمی‌کند."
+        ),
+    )
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
@@ -724,6 +735,16 @@ class CaregiverExperience(models.Model):
     driving_for_patient_experience = models.BooleanField(null=True, blank=True,default=False, verbose_name="رانندگی برای بیمار")
     last_workplace = models.CharField(max_length=200, blank=True, verbose_name="آخرین محل فعالیت")
     additional_notes = models.TextField(blank=True, max_length=500, verbose_name="توضیحات تکمیلی")
+    service_specific_answers = models.JSONField(
+        default=dict, blank=True, verbose_name="پاسخ‌های فرم ۳ مخصوص نوع خدمت",
+        help_text=(
+            "همان ساختار service_specific_answers در CaregiverWorkPreferences، "
+            "اما برای سوالات فرم ۳ (سوابق و مهارت‌ها) مخصوص هر نوع خدمت — "
+            "تجربه و مهارت مخصوص کودک‌یار/نظافت‌چی/مادریار/پرستار/بهیار همگی "
+            "همین‌جا نگه داشته می‌شوند تا دو جدول اضافه برای مهارت‌های تخصصی "
+            "لازم نباشد."
+        ),
+    )
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
@@ -875,6 +896,16 @@ class CaregiverCompatibilityQuestionnaire(models.Model):
     clinical_compatibility_level = models.CharField(
         max_length=3, choices=ScoreAnswer.choices, default=ScoreAnswer.SOME,
         verbose_name="سازگاری بالینی",
+    )
+    service_specific_answers = models.JSONField(
+        default=dict, blank=True, verbose_name="پاسخ‌های سازگاری مخصوص نوع خدمت",
+        help_text=(
+            "همان ساختار service_specific_answers در CaregiverWorkPreferences، "
+            "اما برای چند سوال سازگاری اضافه که فقط برای یک نوع خدمت خاص معنا "
+            "دارند (مثلاً «میزان صبر با کودکان» فقط برای کودک‌یار) — هر مقدار "
+            "همان مقیاس ۰/۵۰/۱۰۰ (ScoreAnswer) بالا را دنبال می‌کند. ۴ سوال "
+            "عمومی بالا برای همه نوع‌های خدمت ثابت می‌ماند."
+        ),
     )
 
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="زمان تکمیل")

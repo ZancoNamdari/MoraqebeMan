@@ -472,3 +472,172 @@ export const PATIENT_AXIS_TO_CAREGIVER_SECTION: Record<string, string> = {
   "محور سبک زندگی": "سبک زندگی و محیط کاری",
   "محور تفاوت فرهنگی/نسلی": "انعطاف‌پذیری فرهنگی",
 }
+
+// ============================================================
+// Per-service-type extra questions for Form 2 (work preferences),
+// Form 3 (experience/skills) and the compatibility questionnaire.
+// سالمندیار has no entry here — its questions are the common fields
+// already built into those forms. For every OTHER selected service
+// type, the wizard renders one extra section per form built from
+// this schema; a caregiver with several types gets several sections
+// stacked, one per type (not merged/deduplicated), per the confirmed
+// requirement. Answers are stored server-side as a flat
+// {field: value} dict per type, nested under a service_specific_answers
+// JSON column — not a real column per field — so this schema is the
+// only place these questions are defined; keep it in sync with the
+// matching comment in backend/apps/caregivers/choices.py (which only
+// defines the fixed choice lists, not the schema itself).
+// ============================================================
+
+export type ServiceFieldType = "choice" | "multi" | "bool" | "text" | "score"
+
+export interface ServiceSpecificField {
+  key: string
+  label: string
+  type: ServiceFieldType
+  choices?: Choice[]
+  // Only rendered once one of these subtype/specialty values is
+  // present in that service type's own serviceSubtypes entry; omit
+  // to always show once the service type itself is selected.
+  showIf?: string[]
+}
+
+export const SCORE_OPTIONS: Choice[] = [
+  ["0", "هیچ‌وجه"],
+  ["50", "تا حدی"],
+  ["100", "کاملاً"],
+]
+
+const CHILD_AGE_RANGE: Choice[] = [
+  ["infant", "نوزاد و شیرخوار (۰ تا ۲ سال)"],
+  ["toddler", "کودک نوپا (۲ تا ۵ سال)"],
+  ["school_age", "سن مدرسه (۶ تا ۱۲ سال)"],
+  ["teen", "نوجوان (۱۳ تا ۱۸ سال)"],
+]
+
+const CHILDREN_COUNT_CAPACITY: Choice[] = [
+  ["one", "۱ کودک"],
+  ["two", "۲ کودک"],
+  ["three_plus", "۳ کودک یا بیشتر"],
+]
+
+const TUTORING_SUBJECT: Choice[] = [
+  ["math", "ریاضی"],
+  ["science", "علوم"],
+  ["literature", "ادبیات فارسی"],
+  ["english", "زبان انگلیسی"],
+  ["quran", "قرآن و دینی"],
+  ["other", "سایر"],
+]
+
+const CLEANING_FREQUENCY: Choice[] = [
+  ["daily", "روزانه"],
+  ["every_other_day", "یک روز در میان"],
+  ["weekly", "هفته‌ای یک‌بار"],
+  ["biweekly", "هر دو هفته یک‌بار"],
+]
+
+const COOKING_CUISINE: Choice[] = [
+  ["iranian", "غذای ایرانی"],
+  ["fast_food", "فست‌فود"],
+  ["diet_food", "غذای رژیمی"],
+  ["other", "سایر"],
+]
+
+const PREGNANCY_STAGE: Choice[] = [
+  ["early", "اوایل بارداری"],
+  ["mid", "اواسط بارداری"],
+  ["late", "اواخر بارداری"],
+]
+
+const NURSING_DEGREE_LEVEL: Choice[] = [
+  ["associate", "کاردانی"],
+  ["bachelor", "کارشناسی"],
+  ["master_plus", "کارشناسی ارشد و بالاتر"],
+]
+
+export const SERVICE_SPECIFIC_FORMS: Record<string, {
+  form2: ServiceSpecificField[]
+  form3: ServiceSpecificField[]
+  questionnaire: ServiceSpecificField[]
+}> = {
+  koodakyar: {
+    form2: [
+      { key: "accepted_child_age_ranges", label: "بازه سنی کودک قابل پذیرش", type: "multi", choices: CHILD_AGE_RANGE },
+      { key: "max_children_count", label: "حداکثر تعداد کودک قابل نگهداری هم‌زمان", type: "choice", choices: CHILDREN_COUNT_CAPACITY },
+      { key: "tutoring_subjects", label: "دروس قابل تدریس", type: "multi", choices: TUTORING_SUBJECT, showIf: ["homework_tutor"] },
+    ],
+    form3: [
+      { key: "childcare_experience", label: "سابقه مراقبت از کودک", type: "choice", choices: EXPERIENCE_RANGE },
+      { key: "tutoring_experience", label: "سابقه تدریس خصوصی", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["homework_tutor"] },
+      { key: "child_cpr_training", label: "آموزش کمک‌های اولیه/CPR کودک دیده است", type: "bool" },
+    ],
+    questionnaire: [
+      { key: "patience_with_children_level", label: "میزان صبر در برابر شیطنت و بازیگوشی کودک", type: "score" },
+      { key: "creative_engagement_level", label: "توانایی سرگرم‌کردن و بازی کردن با کودک", type: "score" },
+    ],
+  },
+  nezafatchi: {
+    form2: [
+      { key: "cleaning_frequency_preference", label: "تناوب ترجیحی نظافت", type: "choice", choices: CLEANING_FREQUENCY },
+      { key: "brings_own_equipment", label: "وسایل نظافت را خودش می‌آورد", type: "bool" },
+      { key: "cooking_cuisines", label: "نوع غذاهایی که می‌تواند بپزد", type: "multi", choices: COOKING_CUISINE, showIf: ["cooking"] },
+    ],
+    form3: [
+      { key: "cleaning_experience", label: "سابقه کار نظافتی", type: "choice", choices: EXPERIENCE_RANGE },
+      { key: "cooking_experience", label: "سابقه آشپزی", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["cooking"] },
+      { key: "chemical_allergy", label: "حساسیت به مواد شوینده دارد", type: "bool" },
+    ],
+    questionnaire: [
+      { key: "cleanliness_standard_level", label: "دقت و سلیقه در تمیزکاری", type: "score" },
+      { key: "cooking_confidence_level", label: "اعتماد به کیفیت آشپزی خودش", type: "score", showIf: ["cooking"] },
+    ],
+  },
+  madaryar: {
+    form2: [
+      { key: "night_shift_ok", label: "آمادگی برای شیفت شب نوزاد", type: "bool", showIf: ["newborn"] },
+      { key: "labor_accompaniment_ok", label: "آمادگی همراهی در زمان زایمان", type: "bool", showIf: ["labor"] },
+      { key: "preferred_pregnancy_stage", label: "مرحله ترجیحی بارداری برای همراهی", type: "choice", choices: PREGNANCY_STAGE, showIf: ["pregnancy"] },
+    ],
+    form3: [
+      { key: "newborn_care_experience", label: "سابقه مراقبت از نوزاد", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["newborn"] },
+      { key: "labor_support_experience", label: "سابقه همراهی در زایمان", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["labor"] },
+      { key: "breastfeeding_support_training", label: "آموزش حمایت از شیردهی دیده است", type: "bool" },
+    ],
+    questionnaire: [
+      { key: "gentleness_with_newborn_level", label: "لطافت و دقت در برخورد با نوزاد", type: "score" },
+      { key: "calmness_under_pressure_level", label: "آرامش در شرایط پراسترس (مثل لحظات زایمان)", type: "score" },
+    ],
+  },
+  parastar: {
+    form2: [
+      { key: "nursing_license_number", label: "شماره پروانه نظام پرستاری", type: "text" },
+      { key: "shift_rotation_ok", label: "آمادگی برای چرخش شیفت", type: "bool" },
+      { key: "can_administer_injections", label: "توانایی تزریقات", type: "bool" },
+    ],
+    form3: [
+      { key: "nursing_degree_level", label: "مقطع تحصیلی پرستاری", type: "choice", choices: NURSING_DEGREE_LEVEL },
+      { key: "years_of_clinical_experience", label: "سابقه کار بالینی", type: "choice", choices: EXPERIENCE_RANGE },
+      { key: "icu_experience", label: "سابقه کار در ICU", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["icu"] },
+      { key: "wound_care_experience", label: "سابقه مراقبت از زخم بستر", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["wound_care"] },
+      { key: "pediatric_nursing_experience", label: "سابقه پرستاری کودکان", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["pediatric"] },
+    ],
+    questionnaire: [
+      { key: "clinical_judgement_confidence_level", label: "اعتماد به قضاوت بالینی خودش", type: "score" },
+      { key: "emergency_stress_tolerance_level", label: "تحمل استرس در شرایط اورژانسی", type: "score" },
+    ],
+  },
+  behyar: {
+    form2: [
+      { key: "physical_tasks_comfort", label: "آمادگی برای کارهای فیزیکی (جابجایی و بلند کردن بیمار)", type: "bool" },
+      { key: "shift_rotation_ok", label: "آمادگی برای چرخش شیفت", type: "bool" },
+    ],
+    form3: [
+      { key: "aide_training_certificate", label: "گواهی آموزشی کمک‌بهیاری/بهیاری دارد", type: "bool" },
+      { key: "years_of_hospital_experience", label: "سابقه کار بیمارستانی", type: "choice", choices: EXPERIENCE_RANGE },
+    ],
+    questionnaire: [
+      { key: "physical_stamina_level", label: "استقامت فیزیکی برای کارهای سخت", type: "score" },
+    ],
+  },
+}

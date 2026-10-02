@@ -430,3 +430,65 @@ class NightStayUntil(models.TextChoices):
     UP_TO_MIDNIGHT = "up_to_midnight", "تا ۱۲ شب"
     UP_TO_2AM = "up_to_2am", "تا ۲ بامداد"
     UNTIL_MORNING = "until_morning", "تا صبح"
+
+
+# ============================================================
+# Per-service-type Form 2 / Form 3 / compatibility-questionnaire
+# extra questions — these are NOT real model fields (unlike
+# everything above). They're stored as free-form JSON under
+# service_specific_answers on CaregiverWorkPreferences/
+# CaregiverExperience/CaregiverCompatibilityQuestionnaire, keyed by
+# ServiceType, since the question set differs per service type (and
+# a caregiver can carry several at once) — see each model field's
+# own docstring. These TextChoices exist only so the handful of
+# choice-type questions below still validate against a fixed enum
+# instead of accepting arbitrary strings.
+# ============================================================
+
+
+class ChildAgeRange(models.TextChoices):
+    INFANT = "infant", "نوزاد و شیرخوار (۰ تا ۲ سال)"
+    TODDLER = "toddler", "کودک نوپا (۲ تا ۵ سال)"
+    SCHOOL_AGE = "school_age", "سن مدرسه (۶ تا ۱۲ سال)"
+    TEEN = "teen", "نوجوان (۱۳ تا ۱۸ سال)"
+
+
+class ChildrenCountCapacity(models.TextChoices):
+    ONE = "one", "۱ کودک"
+    TWO = "two", "۲ کودک"
+    THREE_PLUS = "three_plus", "۳ کودک یا بیشتر"
+
+
+class TutoringSubject(models.TextChoices):
+    MATH = "math", "ریاضی"
+    SCIENCE = "science", "علوم"
+    LITERATURE = "literature", "ادبیات فارسی"
+    ENGLISH = "english", "زبان انگلیسی"
+    QURAN = "quran", "قرآن و دینی"
+    OTHER = "other", "سایر"
+
+
+class CleaningFrequency(models.TextChoices):
+    DAILY = "daily", "روزانه"
+    EVERY_OTHER_DAY = "every_other_day", "یک روز در میان"
+    WEEKLY = "weekly", "هفته‌ای یک‌بار"
+    BIWEEKLY = "biweekly", "هر دو هفته یک‌بار"
+
+
+class CookingCuisine(models.TextChoices):
+    IRANIAN = "iranian", "غذای ایرانی"
+    FAST_FOOD = "fast_food", "فست‌فود"
+    DIET_FOOD = "diet_food", "غذای رژیمی"
+    OTHER = "other", "سایر"
+
+
+class PregnancyStage(models.TextChoices):
+    EARLY = "early", "اوایل بارداری"
+    MID = "mid", "اواسط بارداری"
+    LATE = "late", "اواخر بارداری"
+
+
+class NursingDegreeLevel(models.TextChoices):
+    ASSOCIATE = "associate", "کاردانی"
+    BACHELOR = "bachelor", "کارشناسی"
+    MASTER_PLUS = "master_plus", "کارشناسی ارشد و بالاتر"

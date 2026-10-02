@@ -208,6 +208,32 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
         return attrs
 
 
+_VALID_SERVICE_TYPES = {c[0] for c in ServiceType.choices}
+
+
+def _validate_service_specific_answers(value):
+    """
+    Shared shape-check for the service_specific_answers JSONField on
+    CaregiverWorkPreferences/CaregiverExperience/
+    CaregiverCompatibilityQuestionnaire — {service_type: {field: value}}.
+    Deliberately loose on the inner dict (doesn't re-validate every
+    per-type question's own choice list server-side, the way
+    _choice_list_field does for the fixed/common fields above) — the
+    per-type question set is still evolving and lives in the
+    frontend's wizard-constants; this only guards the one thing that
+    actually corrupts data if wrong: a top-level key that isn't a
+    real service type.
+    """
+    if not isinstance(value, dict):
+        raise serializers.ValidationError("باید یک دیکشنری {نوع خدمت: پاسخ‌ها} باشد.")
+    for service_type, answers in value.items():
+        if service_type not in _VALID_SERVICE_TYPES:
+            raise serializers.ValidationError(f"نوع خدمت نامعتبر: {service_type}")
+        if not isinstance(answers, dict):
+            raise serializers.ValidationError({service_type: "باید یک دیکشنری {نام فیلد: مقدار} باشد."})
+    return value
+
+
 def _choice_list_field(choices_class, **kwargs):
     """
     Every multi-select question in these forms is stored as a JSONField
@@ -244,9 +270,13 @@ class CaregiverWorkPreferencesSerializer(serializers.ModelSerializer):
             "smoking_status", "pets_ok", "holiday_work_ok", "overnight_stay_ok",
             "terms_accepted", "terms_accepted_at", "night_stay_until", "has_night_time_limit",
             "additional_notes", "requested_salary", "cleaning_willingness", "day_off_request",
+            "service_specific_answers",
             "created_at", "updated_at",
         ]
         read_only_fields = ["terms_accepted_at", "created_at", "updated_at"]
+
+    def validate_service_specific_answers(self, value):
+        return _validate_service_specific_answers(value)
 
     def validate_available_shifts(self, value):
         # Nested rule #2 from the request: 24h and specific-hour shifts
@@ -340,9 +370,13 @@ class CaregiverExperienceSerializer(serializers.ModelSerializer):
             "patients_cared_for_count", "special_conditions_experience",
             "live_in_experience", "couple_care_experience", "solo_elderly_care_experience",
             "driving_for_patient_experience", "last_workplace", "additional_notes",
+            "service_specific_answers",
             "created_at", "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
+
+    def validate_service_specific_answers(self, value):
+        return _validate_service_specific_answers(value)
 
 
 class CaregiverSkillsSerializer(serializers.ModelSerializer):
@@ -512,9 +546,13 @@ class CaregiverCompatibilityQuestionnaireSerializer(serializers.ModelSerializer)
         fields = [
             "religiosity_level", "family_compatibility_level",
             "patience_level", "clinical_compatibility_level",
+            "service_specific_answers",
             "section_scores", "overall_flexibility_score", "updated_at",
         ]
         read_only_fields = ["section_scores", "overall_flexibility_score", "updated_at"]
+
+    def validate_service_specific_answers(self, value):
+        return _validate_service_specific_answers(value)
 
     def get_section_scores(self, obj):
         return obj.section_scores()
