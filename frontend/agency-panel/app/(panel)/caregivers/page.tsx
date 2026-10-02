@@ -27,6 +27,11 @@ import { PinnedOnlyToggle } from "@/components/agency/pinned-only-toggle"
 import { usePinned } from "@/hooks/use-pinned"
 import type { AgencyCaregiverLink } from "@/types/agency"
 import type { AgencyCaregiverPipelineItem, CaregiverDocumentField, CaregiverDocumentReviewStatus } from "@/types/agency_management"
+import * as C from "@/lib/wizard-constants"
+
+function serviceTypeLabel(value: string) {
+  return C.SERVICE_TYPE.find((c) => c[0] === value)?.[1] ?? value
+}
 
 // "Sticky note" behavior for the card's note textarea — the box
 // itself grows to fit the text (including a fresh line from Enter)
@@ -108,6 +113,7 @@ const emptyCaregiverFilters = {
   tags: [] as string[],
   docsStatus: "" as "" | "complete" | "incomplete",
   createdBy: "" as string,
+  serviceTypes: [] as string[],
 }
 type CaregiverFilters = typeof emptyCaregiverFilters
 
@@ -116,7 +122,7 @@ function toggleInList(list: string[], value: string) {
 }
 
 function countActiveCaregiverFilters(f: CaregiverFilters) {
-  return (f.urgentOnly ? 1 : 0) + f.tags.length + (f.docsStatus ? 1 : 0) + (f.createdBy ? 1 : 0)
+  return (f.urgentOnly ? 1 : 0) + f.tags.length + (f.docsStatus ? 1 : 0) + (f.createdBy ? 1 : 0) + f.serviceTypes.length
 }
 
 function matchesCaregiverFilters(item: AgencyCaregiverPipelineItem, search: string, filters: CaregiverFilters) {
@@ -133,6 +139,7 @@ function matchesCaregiverFilters(item: AgencyCaregiverPipelineItem, search: stri
     if (filters.docsStatus === "incomplete" && complete) return false
   }
   if (filters.createdBy && item.created_by !== filters.createdBy) return false
+  if (filters.serviceTypes.length && !filters.serviceTypes.some((t) => (item.service_types || []).includes(t))) return false
   return true
 }
 
@@ -246,6 +253,15 @@ function CaregiverCard({ item, stages, onMove, moving, onAddTag, onRemoveTag, pi
               <span className="shrink-0">شماره تماس:</span>
               <span className="min-w-0 break-all" dir="ltr">{item.phone_number || item.extra_contacts?.[0]?.phone}</span>
             </p>
+          )}
+          {item.service_types?.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {item.service_types.map((t) => (
+                <span key={t} className="inline-flex items-center rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-700">
+                  {serviceTypeLabel(t)}
+                </span>
+              ))}
+            </div>
           )}
           {isEndingSoon && (
             <span className="mt-1.5 mr-1 inline-flex items-center gap-0.5 rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-700">
@@ -965,6 +981,14 @@ function CaregiversPageInner() {
                   ))}
                 </FilterDropdown>
               )}
+
+              <FilterDropdown label="نوع خدمت" active={filters.serviceTypes.length > 0} onClear={() => setFilters((f) => ({ ...f, serviceTypes: [] }))}>
+                {C.SERVICE_TYPE.map(([value, label]) => (
+                  <DropdownOption key={value} selected={filters.serviceTypes.includes(value)} onClick={() => setFilters((f) => ({ ...f, serviceTypes: toggleInList(f.serviceTypes, value) }))}>
+                    {label}
+                  </DropdownOption>
+                ))}
+              </FilterDropdown>
 
               {availableCreators.length > 0 && (
                 <FilterDropdown label="ثبت‌شده توسط" active={!!filters.createdBy} onClear={() => setFilters((f) => ({ ...f, createdBy: "" }))}>

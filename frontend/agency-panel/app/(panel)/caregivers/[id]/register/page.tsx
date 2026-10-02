@@ -34,7 +34,21 @@ import type {
 // from the Kanban card ("+ افزودن خدمت‌دهنده" in caregivers/page.tsx),
 // so there's no "step 0: create account" branch to a brand-new id;
 // step 0 here is edit-only (fixing a typo in the name/phone).
-const STEPS = ["اطلاعات پایه", "فرم ۱ — هویتی", "فرم ۲ — شرایط همکاری", "فرم ۳ — سوابق و مهارت", "فرم ۴ — معرف‌ها", "پرسشنامه سازگاری (اختیاری)"]
+const STEPS = ["اطلاعات پایه", "نوع خدمت", "فرم ۱ — هویتی", "فرم ۲ — شرایط همکاری", "فرم ۳ — سوابق و مهارت", "فرم ۴ — معرف‌ها", "پرسشنامه سازگاری (اختیاری)"]
+
+// service type -> its subtype choice list (SALMANDYAR has none —
+// it's the original, already-built flow with no subtypes of its own).
+const SUBTYPE_CHOICES_BY_SERVICE_TYPE: Record<string, C.Choice[]> = {
+  koodakyar: C.KOODAKYAR_SUBTYPE,
+  nezafatchi: C.NEZAFATCHI_SUBTYPE,
+  madaryar: C.MADARYAR_SUBTYPE,
+  // parastar's own subtype choice PLUS, only once "specialized_nurse"
+  // is picked, the specialty list — handled specially in the render
+  // below rather than flattened here, since that second list is
+  // conditional on a specific value within this same type.
+  parastar: C.PARASTAR_SUBTYPE,
+  behyar: C.BEHYAR_SUBTYPE,
+}
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -109,6 +123,8 @@ export default function CaregiverRegistrationWizard() {
   const [skills, setSkills] = useState<SkillsFormData>(EMPTY_SKILLS)
   const [references, setReferences] = useState<ReferenceFormData[]>([{ ...EMPTY_REFERENCE }])
   const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, string>>({})
+  const [serviceTypes, setServiceTypes] = useState<string[]>([])
+  const [serviceSubtypes, setServiceSubtypes] = useState<Record<string, string[]>>({})
 
   // Load whatever's already saved for this (always pre-existing)
   // caregiver — same resume-in-progress logic as the original wizard.
@@ -120,6 +136,10 @@ export default function CaregiverRegistrationWizard() {
       setPhone(info.phone_number)
     }).catch(() => {})
     caregiverWizardService.progress(caregiverId).then((p) => setCaregiverName(p.full_name))
+    caregiverWizardService.getServiceTypes(caregiverId).then((st) => {
+      setServiceTypes(st.service_types)
+      setServiceSubtypes(st.service_subtypes)
+    }).catch(() => {})
     caregiverWizardService.getIdentity(caregiverId).then(setIdentity).catch(() => {})
     caregiverWizardService.getWorkPreferences(caregiverId).then(setWorkPrefs).catch(() => {})
     caregiverWizardService.listServiceAreas(caregiverId).then(setAreas).catch(() => {})
@@ -132,8 +152,9 @@ export default function CaregiverRegistrationWizard() {
       const { section_scores, overall_flexibility_score, updated_at, ...answers } = data
       setQuestionnaireAnswers(answers)
     }).catch(() => {})
-    // Land straight on Form 1 — the account already exists. Every
-    // step (including this one) stays reachable via the step
+    // Land straight on the service-type step — the account already
+    // exists, so there's no "step 0: create account" to show first.
+    // Every step (including this one) stays reachable via the step
     // indicator.
     setStep(1)
   }, [caregiverId])
@@ -146,11 +167,12 @@ export default function CaregiverRegistrationWizard() {
     advanceRef.current = () => {
       if (saving) return
       if (step === 0) handleStep0()
-      else if (step === 1) handleStep1()
-      else if (step === 2) handleStep2()
-      else if (step === 3) handleStep3()
-      else if (step === 4) handleStep4()
-      else if (step === 5) handleStep5()
+      else if (step === 1) handleServiceTypesStep()
+      else if (step === 2) handleStep1()
+      else if (step === 3) handleStep2()
+      else if (step === 4) handleStep3()
+      else if (step === 5) handleStep4()
+      else if (step === 6) handleStep5()
     }
   })
 
@@ -203,11 +225,23 @@ export default function CaregiverRegistrationWizard() {
     }
   }
 
+  async function handleServiceTypesStep() {
+    setError([]); setSaving(true)
+    try {
+      await caregiverWizardService.saveServiceTypes(caregiverId, { service_types: serviceTypes, service_subtypes: serviceSubtypes })
+      setStep(2)
+    } catch (err: any) {
+      showErrors(err, "خطا در ذخیره نوع خدمت.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function handleStep1() {
     setError([]); setSaving(true)
     try {
       await caregiverWizardService.saveIdentity(caregiverId, identity)
-      setStep(2)
+      setStep(3)
     } catch (err: any) {
       showErrors(err, "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
     } finally {
@@ -226,7 +260,7 @@ export default function CaregiverRegistrationWizard() {
     setError([]); setSaving(true)
     try {
       await caregiverWizardService.saveWorkPreferences(caregiverId, workPrefs)
-      setStep(3)
+      setStep(4)
     } catch (err: any) {
       showErrors(err, "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
     } finally {
@@ -239,7 +273,7 @@ export default function CaregiverRegistrationWizard() {
     try {
       await caregiverWizardService.saveExperience(caregiverId, experience)
       await caregiverWizardService.saveSkills(caregiverId, skills)
-      setStep(4)
+      setStep(5)
     } catch (err: any) {
       showErrors(err, "لطفاً همه فیلدهای الزامی را تکمیل کنید.")
     } finally {
@@ -251,7 +285,7 @@ export default function CaregiverRegistrationWizard() {
     setError([]); setSaving(true)
     try {
       await caregiverWizardService.saveReferences(caregiverId, references)
-      setStep(5)
+      setStep(6)
     } catch (err: any) {
       showErrors(err, "ثبت معرف‌ها با خطا مواجه شد.")
     } finally {
@@ -328,6 +362,61 @@ export default function CaregiverRegistrationWizard() {
 
         {step === 1 && (
           <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">🏷️</span> نوع خدمت</CardTitle><p className="text-sm text-muted-foreground">این خدمت‌دهنده چه نوع خدمتی ارائه می‌دهد؟ می‌توانید بیش از یک مورد را انتخاب کنید.</p></CardHeader>
+            <CardContent className="space-y-4">
+              <Field label="نوع خدمت" required>
+                <CheckboxGroup
+                  choices={C.SERVICE_TYPE}
+                  value={serviceTypes}
+                  onChange={(v) => {
+                    setServiceTypes(v)
+                    // drop any subtype selections for a type that just got unchecked
+                    setServiceSubtypes((prev) => {
+                      const next: Record<string, string[]> = {}
+                      for (const t of v) if (prev[t]) next[t] = prev[t]
+                      return next
+                    })
+                  }}
+                />
+              </Field>
+              {serviceTypes.map((type) => {
+                const subtypeChoices = SUBTYPE_CHOICES_BY_SERVICE_TYPE[type]
+                if (!subtypeChoices) return null
+                const typeLabel = C.SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
+                const selectedSubtypes = serviceSubtypes[type] ?? []
+                return (
+                  <div key={type} className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
+                    <Field label={`زیرشاخه — ${typeLabel}`}>
+                      <CheckboxGroup
+                        choices={subtypeChoices}
+                        value={selectedSubtypes}
+                        onChange={(v) => setServiceSubtypes({ ...serviceSubtypes, [type]: v })}
+                      />
+                    </Field>
+                    {type === "parastar" && selectedSubtypes.includes("specialized_nurse") && (
+                      <Field label="زمینه تخصصی پرستار">
+                        {/* backend stores parastar's subtype + specialty values together
+                            in one flat list under the "parastar" key, so specialty picks
+                            are merged into the same array rather than a separate key. */}
+                        <CheckboxGroup
+                          choices={C.PARASTAR_SPECIALTY}
+                          value={selectedSubtypes.filter((s) => C.PARASTAR_SPECIALTY.some((c) => c[0] === s))}
+                          onChange={(v) => {
+                            const baseSubtypes = selectedSubtypes.filter((s) => C.PARASTAR_SUBTYPE.some((c) => c[0] === s))
+                            setServiceSubtypes({ ...serviceSubtypes, parastar: [...baseSubtypes, ...v] })
+                          }}
+                        />
+                      </Field>
+                    )}
+                  </div>
+                )
+              })}
+            </CardContent>
+          </Card>
+        )}
+
+        {step === 2 && (
+          <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">🪪</span> فرم ۱ — اطلاعات هویتی</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <Field label="نام پدر"><Input value={identity.father_name} onChange={(e) => setIdentity({ ...identity, father_name: e.target.value })} /></Field>
@@ -386,7 +475,7 @@ export default function CaregiverRegistrationWizard() {
           </Card>
         )}
 
-        {step === 2 && (
+        {step === 3 && (
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">💼</span> فرم ۲ — شرایط همکاری</CardTitle></CardHeader>
             <CardContent className="space-y-4">
@@ -474,7 +563,7 @@ export default function CaregiverRegistrationWizard() {
           </Card>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">🎓</span> فرم ۳ — سوابق کاری و مهارت‌ها</CardTitle></CardHeader>
             <CardContent className="space-y-4">
@@ -520,7 +609,7 @@ export default function CaregiverRegistrationWizard() {
           </Card>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">📇</span> فرم ۴ — معرف‌ها</CardTitle><p className="text-sm text-muted-foreground">افزودن معرف اختیاری است — هر تعداد که در دسترس دارید کافی است.</p></CardHeader>
             <CardContent className="space-y-6">
@@ -563,7 +652,7 @@ export default function CaregiverRegistrationWizard() {
           </Card>
         )}
 
-        {step === 5 && (
+        {step === 6 && (
           <div className="space-y-4">
             <p className="rounded-lg border border-dashed border-border bg-secondary/40 p-3 text-base text-muted-foreground">
               این پرسشنامه اختیاری است — تکمیل آن در تأیید یا رد پروفایل مراقب تأثیری ندارد، فقط کیفیت پیشنهاد مراقب در بخش «تطابق» را بهبود می‌دهد. هر زمان می‌توانید آن را رد کنید و بعداً تکمیل کنید.
@@ -611,26 +700,31 @@ export default function CaregiverRegistrationWizard() {
             </Button>
           )}
           {step === 1 && (
-            <Button className="flex-1" size="lg" onClick={handleStep1} disabled={saving}>
+            <Button className="flex-1" size="lg" onClick={handleServiceTypesStep} disabled={saving || serviceTypes.length === 0}>
               {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 2 && (
-            <Button className="flex-1" size="lg" onClick={handleStep2} disabled={saving}>
+            <Button className="flex-1" size="lg" onClick={handleStep1} disabled={saving}>
               {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 3 && (
-            <Button className="flex-1" size="lg" onClick={handleStep3} disabled={saving}>
+            <Button className="flex-1" size="lg" onClick={handleStep2} disabled={saving}>
               {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 4 && (
-            <Button className="flex-1" size="lg" onClick={handleStep4} disabled={saving}>
+            <Button className="flex-1" size="lg" onClick={handleStep3} disabled={saving}>
               {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 5 && (
+            <Button className="flex-1" size="lg" onClick={handleStep4} disabled={saving}>
+              {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
+            </Button>
+          )}
+          {step === 6 && (
             <>
               <Button
                 className="flex-1"

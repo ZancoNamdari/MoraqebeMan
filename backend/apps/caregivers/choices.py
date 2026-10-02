@@ -2,6 +2,59 @@ from django.db import models
 
 
 
+class ServiceType(models.TextChoices):
+    """Multi-select — the service category/categories this caregiver
+    offers. One caregiver can hold several at once (e.g. both
+    SALMANDYAR and KOODAKYAR) — this is NOT a fork into separate
+    profiles; it's a tag set on the one CaregiverProfile, so the same
+    caregiver shows up in each matching type's pool/list under a
+    single, unique registration (CaregiverProfile.id), never
+    duplicated with a different id per type."""
+    SALMANDYAR = "salmandyar", "سالمندیار"
+    KOODAKYAR = "koodakyar", "کودک‌یار"
+    NEZAFATCHI = "nezafatchi", "نظافت‌چی"
+    MADARYAR = "madaryar", "مادریار"
+    PARASTAR = "parastar", "پرستار"
+    BEHYAR = "behyar", "بهیار"
+
+
+class KoodakyarSubtype(models.TextChoices):
+    HOMEWORK_TUTOR = "homework_tutor", "پرستار درس و مشق"
+    LIVE_IN_HOUSEWORK_CHILDCARE = "live_in_housework_childcare", "پرستار شبانه‌روزی کارهای خانه و بچه"
+
+
+class NezafatchiSubtype(models.TextChoices):
+    OUTSIDE_HOME = "outside_home", "خدمات بیرون از خانه"
+    INSIDE_HOME = "inside_home", "خدمات داخل خانه"
+    COOKING = "cooking", "آشپزی"
+
+
+class MadaryarSubtype(models.TextChoices):
+    NEWBORN = "newborn", "نوزاد"
+    PREGNANCY = "pregnancy", "دوران بارداری"
+    LABOR = "labor", "در شرف زایمان"
+
+
+class ParastarSubtype(models.TextChoices):
+    NURSING_SPECIALIST = "nursing_specialist", "کارشناس پرستاری"
+    SPECIALIZED_NURSE = "specialized_nurse", "پرستار تخصصی"
+
+
+class ParastarSpecialty(models.TextChoices):
+    """Only meaningful when ParastarSubtype.SPECIALIZED_NURSE is
+    selected."""
+    ICU = "icu", "ICU کار"
+    WOUND_CARE = "wound_care", "زخم بستر کار"
+    PEDIATRIC = "pediatric", "کودکان کار"
+    OTHER = "other", "سایر"
+
+
+class BehyarSubtype(models.TextChoices):
+    AIDE_HELPER = "aide_helper", "کمک بهیار"
+    NURSE_HELPER = "nurse_helper", "کمک پرستار"
+    BEHYAR = "behyar", "بهیار"
+
+
 class Gender(models.TextChoices):
     FEMALE = "female", "زن"
     MALE = "male", "مرد"

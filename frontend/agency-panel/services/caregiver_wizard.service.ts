@@ -61,6 +61,16 @@ export const caregiverWizardService = {
     return data
   },
 
+  async getServiceTypes(userId: number) {
+    const { data } = await api.get(`${base}/${userId}/service-types/`)
+    return data as { service_types: string[]; service_subtypes: Record<string, string[]> }
+  },
+
+  async saveServiceTypes(userId: number, payload: { service_types: string[]; service_subtypes: Record<string, string[]> }) {
+    const { data } = await api.put(`${base}/${userId}/service-types/`, payload)
+    return data
+  },
+
   async getIdentity(userId: number) {
     const { data } = await api.get(`${base}/${userId}/identity/`)
     return data as IdentityFormData

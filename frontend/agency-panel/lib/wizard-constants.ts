@@ -3,6 +3,54 @@
 
 export type Choice = [string, string]
 
+// Service type/subtype — the new required step right after
+// name/family/phone, before Form 1. A caregiver can hold several
+// SERVICE_TYPE values at once (checkbox, not radio) — see
+// CaregiverProfile.service_types' backend docstring.
+export const SERVICE_TYPE: Choice[] = [
+  ["salmandyar", "سالمندیار"],
+  ["koodakyar", "کودک‌یار"],
+  ["nezafatchi", "نظافت‌چی"],
+  ["madaryar", "مادریار"],
+  ["parastar", "پرستار"],
+  ["behyar", "بهیار"],
+]
+
+export const KOODAKYAR_SUBTYPE: Choice[] = [
+  ["homework_tutor", "پرستار درس و مشق"],
+  ["live_in_housework_childcare", "پرستار شبانه‌روزی کارهای خانه و بچه"],
+]
+
+export const NEZAFATCHI_SUBTYPE: Choice[] = [
+  ["outside_home", "خدمات بیرون از خانه"],
+  ["inside_home", "خدمات داخل خانه"],
+  ["cooking", "آشپزی"],
+]
+
+export const MADARYAR_SUBTYPE: Choice[] = [
+  ["newborn", "نوزاد"],
+  ["pregnancy", "دوران بارداری"],
+  ["labor", "در شرف زایمان"],
+]
+
+export const PARASTAR_SUBTYPE: Choice[] = [
+  ["nursing_specialist", "کارشناس پرستاری"],
+  ["specialized_nurse", "پرستار تخصصی"],
+]
+
+export const PARASTAR_SPECIALTY: Choice[] = [
+  ["icu", "ICU کار"],
+  ["wound_care", "زخم بستر کار"],
+  ["pediatric", "کودکان کار"],
+  ["other", "سایر"],
+]
+
+export const BEHYAR_SUBTYPE: Choice[] = [
+  ["aide_helper", "کمک بهیار"],
+  ["nurse_helper", "کمک پرستار"],
+  ["behyar", "بهیار"],
+]
+
 export const GENDER: Choice[] = [
   ["female", "زن"],
   ["male", "مرد"],

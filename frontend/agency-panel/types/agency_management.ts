@@ -164,6 +164,8 @@ export interface AgencyCaregiverPipelineItem {
   // docstrings. Jalali "YYYY-MM-DD" strings, or null until entered.
   contract_start_date: string | null
   contract_end_date: string | null
+  service_types: string[]
+  service_subtypes: Record<string, string[]>
 }
 
 // Step-0-only, mirroring apps.caregivers.serializers.CreateCaregiverSerializer

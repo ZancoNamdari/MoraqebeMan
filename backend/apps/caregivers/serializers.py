@@ -7,10 +7,58 @@ from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, Collaboration
                       OfferedService, ServiceLocation, Shift, Weekday, CommuteMethod,
                       CommunicationSkill, CaregivingSkill, MobilityAssistanceAbility,
                       HouseholdSkill, ForeignLanguage, LocalLanguage,
-                      PreviousWorkplace, SpecialConditionExperience, TrainingCourse, Gender)    
+                      PreviousWorkplace, SpecialConditionExperience, TrainingCourse, Gender,
+                      ServiceType, KoodakyarSubtype, NezafatchiSubtype, MadaryarSubtype,
+                      ParastarSubtype, ParastarSpecialty, BehyarSubtype)
 from .models import (CaregiverWorkPreferences, CaregiverServiceArea, CaregiverExperience,
                      CaregiverSkills, CaregiverReference, IdentityProfile, CaregiverCompatibilityQuestionnaire,
                      BlacklistAppeal, CaregiverDocumentUpload)
+
+
+# Which subtype values are valid for each ServiceType — PARASTAR
+# accepts both its own subtype (nursing_specialist/specialized_nurse)
+# AND, when SPECIALIZED_NURSE is among them, a specialty tag
+# (icu/wound_care/pediatric/other) in the same flat list, since this
+# is a tag set, not a nested structure.
+_SUBTYPE_CHOICES_BY_SERVICE_TYPE = {
+    ServiceType.SALMANDYAR: [],
+    ServiceType.KOODAKYAR: [c[0] for c in KoodakyarSubtype.choices],
+    ServiceType.NEZAFATCHI: [c[0] for c in NezafatchiSubtype.choices],
+    ServiceType.MADARYAR: [c[0] for c in MadaryarSubtype.choices],
+    ServiceType.PARASTAR: [c[0] for c in ParastarSubtype.choices] + [c[0] for c in ParastarSpecialty.choices],
+    ServiceType.BEHYAR: [c[0] for c in BehyarSubtype.choices],
+}
+
+
+class CaregiverServiceTypesSerializer(serializers.Serializer):
+    """
+    The structured type/subtype tag set chosen right after step 0
+    (name/phone), before Form 1 — see CaregiverProfile.service_types'
+    own docstring for why this is a tag set on one profile rather
+    than a fork into per-type profiles.
+    """
+    service_types = serializers.ListField(
+        child=serializers.ChoiceField(choices=ServiceType.choices), allow_empty=True, required=False,
+    )
+    service_subtypes = serializers.DictField(
+        child=serializers.ListField(child=serializers.CharField()), required=False,
+    )
+
+    def validate(self, attrs):
+        service_types = attrs.get("service_types", [])
+        service_subtypes = attrs.get("service_subtypes", {})
+        for service_type, subtypes in service_subtypes.items():
+            if service_type not in _SUBTYPE_CHOICES_BY_SERVICE_TYPE:
+                raise serializers.ValidationError({"service_subtypes": f"نوع خدمت نامعتبر: {service_type}"})
+            allowed = _SUBTYPE_CHOICES_BY_SERVICE_TYPE[service_type]
+            invalid = [s for s in subtypes if s not in allowed]
+            if invalid:
+                raise serializers.ValidationError({"service_subtypes": f"زیرشاخه نامعتبر برای {service_type}: {invalid}"})
+        # Drop subtypes for any service type the caller didn't (or no
+        # longer) select, rather than leaving stale sub-selections
+        # behind when someone unchecks a type and re-saves.
+        attrs["service_subtypes"] = {k: v for k, v in service_subtypes.items() if k in service_types}
+        return attrs
 
 
 class CreateBlacklistAppealSerializer(serializers.Serializer):
@@ -362,6 +410,8 @@ class CaregiverFullProfileSerializer(serializers.Serializer):
     rejection_reason = serializers.CharField(allow_blank=True)
     blacklist_reason = serializers.CharField(allow_blank=True)
     needs_more_docs_note = serializers.CharField(allow_blank=True)
+    service_types = serializers.ListField(child=serializers.CharField(), required=False)
+    service_subtypes = serializers.DictField(required=False)
     identity = serializers.DictField(allow_null=True)
     work_preferences = CaregiverWorkPreferencesSerializer(allow_null=True)
     service_areas = CaregiverServiceAreaSerializer(many=True)

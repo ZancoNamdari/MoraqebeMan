@@ -48,6 +48,7 @@ from .serializers import (
     CaregiverReferenceListSerializer,
     CaregiverReferenceSerializer,
     CaregiverServiceAreaSerializer,
+    CaregiverServiceTypesSerializer,
     CaregiverSkillsSerializer,
     CaregiverWorkPreferencesSerializer,
     SupervisorCaregiverWorkPreferencesSerializer,
@@ -218,6 +219,8 @@ class SupervisorCaregiverFullProfileView(APIView):
             "rejection_reason": profile.rejection_reason,
             "blacklist_reason": profile.blacklist_reason,
             "needs_more_docs_note": profile.needs_more_docs_note,
+            "service_types": profile.service_types,
+            "service_subtypes": profile.service_subtypes,
             "identity": _get_identity_dict(user_id),
             "work_preferences": getattr(profile, "work_preferences", None),
             "service_areas": profile.service_areas.all(),
@@ -362,6 +365,41 @@ class SupervisorCaregiverListView(APIView):
             "username": user.username,
             "full_name": user.get_full_name(),
         }, status=status.HTTP_201_CREATED)
+
+
+class SupervisorServiceTypesView(APIView):
+    """
+    GET/PUT /api/supervisor/caregivers/<user_id>/service-types/ — the
+    new required step right after basic info (name/phone), before
+    Form 1. Lives directly on CaregiverProfile (like serves_all_areas)
+    rather than a separate sub-model, since it's a tag set, not a form
+    with its own lifecycle.
+    """
+    permission_classes = [IsAdminOrSuperuserOrAgencyStaff]
+
+    def get(self, request, user_id):
+        profile = _get_target_profile(request, user_id)
+        if profile is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        return Response({
+            "service_types": profile.service_types,
+            "service_subtypes": profile.service_subtypes,
+        })
+
+    def put(self, request, user_id):
+        profile = _get_target_profile(request, user_id)
+        if profile is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CaregiverServiceTypesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile.service_types = serializer.validated_data.get("service_types", [])
+        profile.service_subtypes = serializer.validated_data.get("service_subtypes", {})
+        profile.save(update_fields=["service_types", "service_subtypes"])
+        audit.caregiver_updated(request.user.id, user_id, section="service_types")
+        return Response({
+            "service_types": profile.service_types,
+            "service_subtypes": profile.service_subtypes,
+        })
 
 
 class SupervisorIdentityView(APIView):

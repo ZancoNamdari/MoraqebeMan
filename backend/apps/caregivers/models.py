@@ -285,6 +285,23 @@ class CaregiverProfile(models.Model):
         default=list, blank=True, verbose_name="برچسب‌ها",
         help_text="برچسب‌های آزاد آژانس روی این مراقب — مثلاً دسته خدمت (پرستار، بهیار، سالمندیار) یا هر برچسب دیگری، برای دسته‌بندی و فیلتر آینده کاریز.",
     )
+    # The structured counterpart to the free-form `tags` above —
+    # chosen right after step 0 (name/phone), before Form 1. A
+    # caregiver can hold several service types at once (checkbox,
+    # not radio): one CaregiverProfile, one unique id, appearing in
+    # every selected type's pool/list — never duplicated per type.
+    # Form 1 (identity) and Form 4 (references) stay identical across
+    # every service type on purpose (per explicit decision), so no
+    # schema fork is needed there; only this tag set drives which
+    # pool(s) a caregiver shows up in.
+    service_types = models.JSONField(
+        default=list, blank=True, verbose_name="نوع خدمت",
+        help_text="یک یا چند مورد از: سالمندیار، کودک‌یار، نظافت‌چی، مادریار، پرستار، بهیار.",
+    )
+    service_subtypes = models.JSONField(
+        default=dict, blank=True, verbose_name="زیرشاخه نوع خدمت",
+        help_text="دیکشنری {نوع خدمت: [زیرشاخه‌های انتخابی]} — مثلاً {\"nezafatchi\": [\"cooking\", \"inside_home\"]}.",
+    )
     # The seven checklist items specific to the "تکمیل مدارک"
     # (DOCUMENTS_IN_PROGRESS) pipeline stage — kept as plain booleans
     # directly on the profile rather than a separate model, since
