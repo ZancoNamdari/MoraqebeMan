@@ -23,6 +23,7 @@ from .choices import (
     MilitaryStatus,
     NightStayUntil,
     PatientsCaredForCount,
+    PayBasis,
     PhysicalAbility,
     ReferenceRelationType,
     SmokingStatus,
@@ -73,8 +74,16 @@ class IdentityProfile(models.Model):
     ethnicities = models.JSONField(default=list, blank=True, verbose_name="قومیت / زبان مادری")
     has_chronic_disease = models.BooleanField(null=True, blank=True, default=False, verbose_name="آیا بیماری مزمن دارد؟")
     chronic_disease_types = models.JSONField(default=list, blank=True, verbose_name="نوع بیماری‌های مزمن؟")
+    chronic_disease_detail = models.CharField(
+        max_length=300, blank=True, verbose_name="توضیح نوع بیماری",
+        help_text="متن آزاد — نام دقیق بیماری، کنار لیست انتخابی chronic_disease_types.",
+    )
     takes_permanent_medication = models.BooleanField(null=True, blank=True, default=False, verbose_name="آیا دارویی به صورت دائمی مصرف می‌کند؟")
     medication_types = models.JSONField(default=list, blank=True, verbose_name="نوع داروها؟")
+    medication_detail = models.CharField(
+        max_length=300, blank=True, verbose_name="توضیح نوع دارو",
+        help_text="متن آزاد — نام دقیق دارو، کنار لیست انتخابی medication_types.",
+    )
     psychiatric_medication_detail = models.TextField(
         blank=True, max_length=500, verbose_name="داروهای مصرفی برای مشکلات روحی/روانی",
         help_text="فقط وقتی «مشکلات روحی و روانی» در نوع بیماری انتخاب شده باشد.",
@@ -673,19 +682,33 @@ class CaregiverWorkPreferences(models.Model):
     # Universal fields — previously koodakyar-only service_specific_
     # answers entries, promoted to real columns on an explicit
     # decision that these questions (family situation, pets, travel)
-    # apply to every caregiver type, not just کودک‌یار. Family-
-    # situation questions ask the CAREGIVER's own willingness to work
-    # in that household situation, never anything about her own family.
-    ok_with_single_father = models.BooleanField(null=True, blank=True, default=None, verbose_name="تمایل به کار نزد پدر مجرد")
-    ok_with_single_mother = models.BooleanField(null=True, blank=True, default=None, verbose_name="تمایل به کار نزد مادر تنها (بدون همسر)")
-    ok_with_father_absent_at_home = models.BooleanField(null=True, blank=True, default=None, verbose_name="تمایل به کار در خانواده‌ای که پدر در ساعات کاری در منزل نیست")
-    ok_with_grandparent_or_relative_at_home = models.BooleanField(null=True, blank=True, default=None, verbose_name="تمایل به کار در خانواده‌ای که پدربزرگ/مادربزرگ یا یکی از اقوام هم در منزل حضور دارد")
-    ok_with_home_camera = models.BooleanField(null=True, blank=True, default=None, verbose_name="تمایل به کار در منزلی که دوربین مداربسته دارد")
-    pets_dog_ok = models.BooleanField(null=True, blank=True, default=None, verbose_name="سازگاری با حضور سگ در منزل")
-    pets_cat_ok = models.BooleanField(null=True, blank=True, default=None, verbose_name="سازگاری با حضور گربه در منزل")
+    # apply to every caregiver type, not just کودک‌یار.
+    #
+    # Phrased as "آیا مشکلی دارید؟" (do you have a problem with X),
+    # per an explicit correction — True means the caregiver DOES have
+    # a problem with that situation (i.e. is NOT a fit for it), not
+    # "is willing". This is the opposite polarity from the earlier
+    # "ok_with_*"/"*_ok" naming, which asked the same things backwards.
+    problem_with_single_father = models.BooleanField(null=True, blank=True, default=None, verbose_name="مشکل با کار نزد پدر مجرد")
+    problem_with_single_mother = models.BooleanField(null=True, blank=True, default=None, verbose_name="مشکل با کار نزد مادر تنها (بدون همسر)")
+    problem_with_father_present_at_home = models.BooleanField(null=True, blank=True, default=None, verbose_name="مشکل با کار در خانه‌ای که پدر در ساعات کاری در منزل است")
+    problem_with_grandparent_or_relative_at_home = models.BooleanField(null=True, blank=True, default=None, verbose_name="مشکل با کار در خانه‌ای که پدربزرگ/مادربزرگ یا یکی از اقوام هم حضور دارد")
+    problem_with_home_camera = models.BooleanField(null=True, blank=True, default=None, verbose_name="مشکل با کار در منزلی که دوربین مداربسته دارد")
+    problem_with_dog = models.BooleanField(null=True, blank=True, default=None, verbose_name="مشکل با حضور سگ در منزل")
+    problem_with_cat = models.BooleanField(null=True, blank=True, default=None, verbose_name="مشکل با حضور گربه در منزل")
     pets_other_notes = models.CharField(max_length=200, blank=True, verbose_name="سایر حیوانات خانگی")
-    travel_domestic_ok = models.BooleanField(null=True, blank=True, default=None, verbose_name="آمادگی سفر همراه خانواده در داخل ایران")
-    travel_international_ok = models.BooleanField(null=True, blank=True, default=None, verbose_name="آمادگی سفر همراه خانواده به خارج از کشور")
+    problem_with_domestic_travel = models.BooleanField(null=True, blank=True, default=None, verbose_name="مشکل با سفر همراه خانواده در داخل ایران")
+    problem_with_international_travel = models.BooleanField(null=True, blank=True, default=None, verbose_name="مشکل با سفر همراه خانواده به خارج از کشور")
+    # Only meaningful when has_night_time_limit=False (caregiver is
+    # willing to stay the whole night) — a separate, concrete question
+    # about accommodation, not just a general "problem" framing.
+    problem_without_private_room = models.BooleanField(
+        null=True, blank=True, default=None, verbose_name="مشکل با نبود اتاق شخصی در صورت ماندن شب",
+    )
+    pay_basis = models.CharField(
+        max_length=20, choices=PayBasis.choices, blank=True, verbose_name="مبنای دریافت حقوق",
+        help_text="فیلد عمومی — قبلاً سوال مجزا در کودک‌یار و مادریار بود، حالا یکی، کنار حقوق درخواستی.",
+    )
     terms_accepted = models.BooleanField(default=False,verbose_name="پذیرش قوانین")
     terms_accepted_at = jmodels.jDateTimeField(null=True,blank=True,verbose_name="زمان پذیرش قوانین")
     night_stay_until = models.CharField(max_length=20, choices=NightStayUntil.choices, blank=True, verbose_name="حداکثر زمان ماندن در شب")
@@ -799,6 +822,10 @@ class CaregiverSkills(models.Model):
     local_languages = models.JSONField(default=list, blank=True, verbose_name="زبان‌های محلی")
     english_level = models.CharField(max_length=20, choices=LanguageLevel.choices, blank=True, verbose_name="میزان تسلط به زبان انگلیسی")
     arabic_level = models.CharField(max_length=20, choices=LanguageLevel.choices, blank=True, verbose_name="میزان تسلط به زبان عربی")
+    other_languages_detail = models.CharField(
+        max_length=300, blank=True, verbose_name="سایر زبان‌ها و سطح آن‌ها",
+        help_text="متن آزاد — مثلاً «ترکی استانبولی - متوسط».",
+    )
     has_driving_license = models.BooleanField(null=True, blank=True, default=False, verbose_name="گواهینامه رانندگی")
     can_use_smartphone = models.BooleanField(null=True, blank=True, default=False, verbose_name="توانایی استفاده از تلفن هوشمند")
     additional_notes = models.TextField(blank=True, max_length=500, verbose_name="توضیحات تکمیلی")

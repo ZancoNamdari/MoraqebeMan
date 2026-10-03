@@ -581,7 +581,7 @@ const CHILD_CONDITION: Choice[] = [
   ["autism", "اوتیسم"],
   ["physical_disability", "معلولیت جسمی"],
   ["speech_therapy_needed", "نیاز به گفتاردرمانی"],
-  ["diaper_dependent_disability", "وابسته به پوشک به دلیل معلولیت"],
+  ["diaper_dependent_disability", "معلول حرکتی (پوشکی)"],
   ["none", "هیچ‌کدام — کودک عادی"],
 ]
 
@@ -590,7 +590,8 @@ const CHILD_SPECIAL_NEEDS_EXPERIENCE: Choice[] = [
   ["physical_disability", "تجربه کار با کودک دارای معلولیت جسمی"],
   ["speech_disorder", "تجربه کار با کودک دارای اختلال گفتار"],
   ["developmental_delay", "تجربه کار با کودک دارای تأخیر رشدی"],
-  ["diaper_dependent", "تجربه کار با کودک وابسته به پوشک"],
+  ["diaper_dependent", "تجربه کار با کودک معلول حرکتی (پوشکی)"],
+  ["other", "سایر"],
 ]
 
 const TUTOR_ROLE_TYPE: Choice[] = [
@@ -619,7 +620,7 @@ const NAIL_STYLE: Choice[] = [
   ["long_polished", "بلند و لاک‌شده"],
 ]
 
-const PAY_BASIS: Choice[] = [
+export const PAY_BASIS: Choice[] = [
   ["hourly", "ساعتی"],
   ["shift", "شیفتی"],
   ["daily", "روزانه"],
@@ -650,7 +651,9 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "accepted_child_age_ranges", label: "بازه سنی کودک قابل پذیرش", type: "multi", choices: CHILD_AGE_RANGE },
       { key: "max_children_count", label: "حداکثر تعداد کودک قابل نگهداری هم‌زمان", type: "choice", choices: CHILDREN_COUNT_CAPACITY },
       { key: "accepted_child_conditions", label: "ویژگی‌های خاص کودک قابل پذیرش", type: "multi", choices: CHILD_CONDITION },
-      { key: "pay_basis", label: "مبنای دریافت حقوق", type: "choice", choices: PAY_BASIS },
+      // pay_basis moved to the universal WorkPreferences fields, next
+      // to "حقوق درخواستی" — it was identical across koodakyar/
+      // madaryar anyway.
       // general_childcare + live_in_housework_childcare — hands-on
       // daily-care tasks (homework_tutor's role doesn't cover these)
       { key: "daily_feeding_ok", label: "آمادگی غذا دادن به کودک", type: "bool", showIf: ["general_childcare", "live_in_housework_childcare"] },
@@ -663,21 +666,23 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       // homework_tutor only
       { key: "tutor_role_type", label: "نوع نقش تدریس", type: "choice", choices: TUTOR_ROLE_TYPE, showIf: ["homework_tutor"] },
       { key: "tutoring_subjects", label: "دروس قابل تدریس", type: "multi", choices: TUTORING_SUBJECT, showIf: ["homework_tutor"] },
+      { key: "tutoring_subjects_other_detail", label: "سایر دروس (اگر «سایر» را انتخاب کردید، اینجا بنویسید)", type: "text", showIf: ["homework_tutor"] },
       { key: "after_school_pickup_ok", label: "امکان رفتن دنبال کودک از مدرسه", type: "bool", showIf: ["homework_tutor"] },
-      { key: "after_school_care_ok", label: "آمادگی نگهداری کودک بعد از ساعت مدرسه (after school care)", type: "bool", showIf: ["homework_tutor"] },
       // live_in_housework_childcare only
       { key: "household_tasks_capable", label: "کارهای خانه قابل انجام در کنار نگهداری کودک", type: "multi", choices: HOUSEHOLD_TASK_FOR_CHILDCARE, showIf: ["live_in_housework_childcare"] },
     ],
     form3: [
       { key: "childcare_experience", label: "سابقه مراقبت از کودک", type: "choice", choices: EXPERIENCE_RANGE },
       { key: "preschool_experience", label: "سابقه کار در مهدکودک", type: "choice", choices: EXPERIENCE_RANGE },
-      { key: "currently_babysitting_elsewhere", label: "هم‌اکنون جای دیگری هم بچه‌داری می‌کند", type: "bool" },
+      { key: "currently_babysitting_elsewhere", label: "هم‌اکنون جای دیگری هم مشغول به کار هستید؟", type: "bool" },
       { key: "child_cpr_training", label: "آموزش کمک‌های اولیه/CPR کودک دیده است", type: "bool" },
       { key: "child_related_training_courses", label: "دوره‌های آموزشی مرتبط با کودک گذرانده‌شده", type: "multi", choices: CHILD_RELATED_TRAINING_COURSE },
+      { key: "child_related_training_courses_other_detail", label: "دوره دیگری هم گذرانده‌اید؟ (اختیاری)", type: "text" },
       { key: "has_speech_therapy_training", label: "آموزش یا تجربه گفتاردرمانی دارد", type: "bool" },
       // Separate from "accepted_child_conditions" above (willingness
       // to accept) — this is actual prior experience with each condition.
       { key: "child_special_needs_experience", label: "تجربه کار با کودکان دارای شرایط خاص", type: "multi", choices: CHILD_SPECIAL_NEEDS_EXPERIENCE },
+      { key: "child_special_needs_experience_other_detail", label: "اگر «سایر» را انتخاب کردید، توضیح دهید", type: "text" },
       { key: "has_visible_tattoo", label: "تتوی قابل مشاهده دارد", type: "bool" },
       { key: "nail_style", label: "وضعیت ناخن", type: "choice", choices: NAIL_STYLE },
       // homework_tutor only
@@ -723,7 +728,7 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
   },
   madaryar: {
     form2: [
-      { key: "pay_basis", label: "مبنای دریافت حقوق", type: "choice", choices: PAY_BASIS },
+      // pay_basis moved to the universal WorkPreferences fields.
       { key: "night_shift_ok", label: "آمادگی برای شیفت شب نوزاد", type: "bool", showIf: ["newborn"] },
       { key: "labor_accompaniment_ok", label: "آمادگی همراهی در زمان زایمان", type: "bool", showIf: ["labor"] },
       { key: "readiness_for_off_hours_presence", label: "آمادگی حضور در ساعات غیراداری", type: "bool", showIf: ["labor"] },

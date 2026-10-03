@@ -496,6 +496,17 @@ class NursingDegreeLevel(models.TextChoices):
     MASTER_PLUS = "master_plus", "کارشناسی ارشد و بالاتر"
 
 
+class PayBasis(models.TextChoices):
+    """Universal now (Form 2's common section, next to
+    requested_salary) — used to be duplicated as a koodakyar/madaryar-
+    only service_specific_answers entry, but it's the same question
+    for every service type."""
+    HOURLY = "hourly", "ساعتی"
+    SHIFT = "shift", "شیفتی"
+    DAILY = "daily", "روزانه"
+    MONTHLY = "monthly", "ماهانه"
+
+
 class LanguageLevel(models.TextChoices):
     """Now a universal field on CaregiverSkills (english_level/
     arabic_level) rather than a koodakyar-only service_specific_

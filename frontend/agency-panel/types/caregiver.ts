@@ -36,8 +36,10 @@ export interface IdentityFormData {
   ethnicities: string[]
   has_chronic_disease: boolean
   chronic_disease_types: string[]
+  chronic_disease_detail: string
   takes_permanent_medication: boolean
   medication_types: string[]
+  medication_detail: string
   psychiatric_medication_detail: string
   emergency_contact_phone: string
   emergency_contact_relation: string
@@ -68,17 +70,21 @@ export interface WorkPreferencesFormData {
   pets_ok: boolean | null
   holiday_work_ok: boolean | null
   overnight_stay_ok: boolean | null
-  // Universal fields (apply to every service type, not just کودک‌یار)
-  ok_with_single_father: boolean | null
-  ok_with_single_mother: boolean | null
-  ok_with_father_absent_at_home: boolean | null
-  ok_with_grandparent_or_relative_at_home: boolean | null
-  ok_with_home_camera: boolean | null
-  pets_dog_ok: boolean | null
-  pets_cat_ok: boolean | null
+  // Universal fields (apply to every service type, not just کودک‌یار).
+  // Phrased as "آیا مشکلی دارید؟" — true means the caregiver DOES
+  // have a problem with that situation, not "is willing".
+  problem_with_single_father: boolean | null
+  problem_with_single_mother: boolean | null
+  problem_with_father_present_at_home: boolean | null
+  problem_with_grandparent_or_relative_at_home: boolean | null
+  problem_with_home_camera: boolean | null
+  problem_with_dog: boolean | null
+  problem_with_cat: boolean | null
   pets_other_notes: string
-  travel_domestic_ok: boolean | null
-  travel_international_ok: boolean | null
+  problem_with_domestic_travel: boolean | null
+  problem_with_international_travel: boolean | null
+  problem_without_private_room: boolean | null
+  pay_basis: string
   terms_accepted: boolean
   night_stay_until: string
   has_night_time_limit: boolean | null
@@ -134,6 +140,7 @@ export interface SkillsFormData {
   local_languages: string[]
   english_level: string
   arabic_level: string
+  other_languages_detail: string
   has_driving_license: boolean | null
   can_use_smartphone: boolean | null
   additional_notes: string
