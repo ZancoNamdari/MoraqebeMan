@@ -614,11 +614,6 @@ const CHILD_RELATED_TRAINING_COURSE: Choice[] = [
   ["special_needs_training", "آموزش ویژه (اوتیسم و نیازهای خاص)"],
 ]
 
-const NAIL_STYLE: Choice[] = [
-  ["short_bare", "کوتاه و بدون لاک"],
-  ["short_polished", "کوتاه با لاک ساده"],
-  ["long_polished", "بلند و لاک‌شده"],
-]
 
 export const PAY_BASIS: Choice[] = [
   ["hourly", "ساعتی"],
@@ -684,7 +679,7 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "child_special_needs_experience", label: "تجربه کار با کودکان دارای شرایط خاص", type: "multi", choices: CHILD_SPECIAL_NEEDS_EXPERIENCE },
       { key: "child_special_needs_experience_other_detail", label: "اگر «سایر» را انتخاب کردید، توضیح دهید", type: "text" },
       { key: "has_visible_tattoo", label: "تتوی قابل مشاهده دارد", type: "bool" },
-      { key: "nail_style", label: "وضعیت ناخن", type: "choice", choices: NAIL_STYLE },
+      { key: "has_acrylic_nails", label: "آیا ناخن کاشته‌شده دارید؟", type: "bool" },
       // homework_tutor only
       { key: "tutoring_experience", label: "سابقه تدریس خصوصی", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["homework_tutor"] },
       { key: "speaks_without_accent", label: "بدون لهجه صحبت می‌کند", type: "bool", showIf: ["homework_tutor"] },
