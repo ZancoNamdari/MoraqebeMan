@@ -44,6 +44,8 @@ export const PARASTAR_SPECIALTY: Choice[] = [
   ["icu", "ICU کار"],
   ["wound_care", "زخم بستر کار"],
   ["pediatric", "کودکان کار"],
+  ["midwifery", "مامایی"],
+  ["emergency", "اورژانس"],
   ["other", "سایر"],
 ]
 
@@ -575,6 +577,60 @@ const PROPERTY_SIZE_RANGE: Choice[] = [
   ["over_400", "بالای ۴۰۰ متر"],
 ]
 
+// Patient diagnoses/conditions a پرستار has cared for. wound_care/
+// icu/pediatric/midwifery/emergency experience already have their
+// own showIf-gated question tied to ParastarSpecialty, so they're
+// not repeated here.
+const PARASTAR_CONDITION_EXPERIENCE: Choice[] = [
+  ["diabetes", "دیابت"],
+  ["stroke", "سکته مغزی"],
+  ["parkinsons", "پارکینسون"],
+  ["alzheimers", "آلزایمر"],
+  ["heart_disease", "بیماری قلبی"],
+  ["ms", "ام‌اس (MS)"],
+  ["hepatitis", "هپاتیت"],
+  ["hiv_aids", "ایدز (HIV)"],
+  ["cancer", "سرطان"],
+  ["lung_disease", "بیماری ریوی"],
+  ["osteoporosis_fracture", "پوکی استخوان / شکستگی"],
+  ["femur_fracture", "شکستگی استخوان ران (فمور)"],
+  ["pelvis_fracture", "شکستگی لگن"],
+  ["paralysis", "فلج"],
+  ["biliary_disease", "بیماری صفراوی"],
+  ["vascular_stenosis", "تنگی عروق"],
+  ["amputation", "قطع عضو"],
+  ["dialysis", "دیالیز"],
+  ["psp", "PSP (فلج فوق‌هسته‌ای پیش‌رونده)"],
+  ["blind", "نابینایی"],
+  ["infection_general", "عفونت عمومی"],
+  ["skin_infection", "عفونت پوستی"],
+  ["vaginal_infection", "عفونت واژینال"],
+  ["infected_bleeding_wound", "زخم خونریزی‌دار و عفونی"],
+  ["diabetic_foot_ulcer", "زخم پای دیابتی"],
+  ["depression", "افسردگی"],
+  ["post_hysterectomy", "پس از عمل برداشتن رحم"],
+  ["post_miscarriage", "پس از سقط جنین"],
+  ["post_ivf", "پس از IVF"],
+  ["post_eye_surgery", "پس از عمل چشم"],
+]
+
+// Clinical procedures/skills a پرستار can perform. Injections
+// already have their own universal bool (can_administer_injections),
+// so not repeated here.
+const PARASTAR_PROCEDURE_ABILITY: Choice[] = [
+  ["tube_feeding_gavage", "تغذیه با گاواژ (لوله)"],
+  ["oxygen_therapy", "اکسیژن‌درمانی"],
+  ["catheter_care", "مراقبت از سوند"],
+  ["pacemaker_patient_care", "مراقبت از بیمار دارای پیس‌میکر"],
+  ["vital_signs_monitoring", "کنترل قند، فشار و اکسیژن خون"],
+  ["insulin_injection", "تزریق انسولین"],
+  ["iv_serum_therapy", "سرم‌تراپی"],
+  ["wound_dressing", "پانسمان زخم"],
+  ["suture_removal", "بخیه و کشیدن بخیه"],
+  ["diaper_changing", "تغییر پوشک"],
+  ["iodine_therapy", "یددرمانی"],
+]
+
 const PREGNANCY_STAGE: Choice[] = [
   ["early", "اوایل بارداری"],
   ["mid", "اواسط بارداری"],
@@ -847,6 +903,11 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "nursing_license_number", label: "شماره پروانه نظام پرستاری", type: "text" },
       { key: "shift_rotation_ok", label: "آمادگی برای چرخش شیفت", type: "bool" },
       { key: "can_administer_injections", label: "توانایی تزریقات", type: "bool" },
+      { key: "works_alongside_aide_ok", label: "آمادگی همکاری در کنار کمک‌بهیار", type: "bool" },
+      { key: "hospital_surgery_accompaniment_ok", label: "آمادگی همراهی در بیمارستان حین عمل جراحی", type: "bool" },
+      { key: "home_care_for_hospital_averse_patients_ok", label: "آمادگی مراقبت در منزل از بیمارانی که تمایل به رفتن به بیمارستان ندارند", type: "bool" },
+      { key: "pre_surgery_shaving_ok", label: "آمادگی انجام اصلاح موی بدن قبل از عمل (شیو)", type: "bool" },
+      { key: "special_patient_washing_ok", label: "آمادگی شست‌وشوی خاص بیمار", type: "bool" },
     ],
     form3: [
       { key: "nursing_degree_level", label: "مقطع تحصیلی پرستاری", type: "choice", choices: NURSING_DEGREE_LEVEL },
@@ -854,6 +915,10 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "icu_experience", label: "سابقه کار در ICU", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["icu"] },
       { key: "wound_care_experience", label: "سابقه مراقبت از زخم بستر", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["wound_care"] },
       { key: "pediatric_nursing_experience", label: "سابقه پرستاری کودکان", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["pediatric"] },
+      { key: "midwifery_experience", label: "سابقه مامایی", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["midwifery"] },
+      { key: "emergency_nursing_experience", label: "سابقه کار در اورژانس", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["emergency"] },
+      { key: "patient_condition_experience", label: "تجربه مراقبت از بیماران با شرایط زیر", type: "multi", choices: PARASTAR_CONDITION_EXPERIENCE },
+      { key: "clinical_procedures_ability", label: "توانایی انجام اقدامات بالینی زیر", type: "multi", choices: PARASTAR_PROCEDURE_ABILITY },
     ],
     questionnaire: [
       { key: "clinical_judgement_confidence_level", label: "اعتماد به قضاوت بالینی خودش", type: "score" },

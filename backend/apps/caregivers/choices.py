@@ -48,6 +48,8 @@ class ParastarSpecialty(models.TextChoices):
     ICU = "icu", "ICU کار"
     WOUND_CARE = "wound_care", "زخم بستر کار"
     PEDIATRIC = "pediatric", "کودکان کار"
+    MIDWIFERY = "midwifery", "مامایی"
+    EMERGENCY = "emergency", "اورژانس"
     OTHER = "other", "سایر"
 
 
@@ -511,6 +513,60 @@ class NursingDegreeLevel(models.TextChoices):
     ASSOCIATE = "associate", "کاردانی"
     BACHELOR = "bachelor", "کارشناسی"
     MASTER_PLUS = "master_plus", "کارشناسی ارشد و بالاتر"
+
+
+class ParastarConditionExperience(models.TextChoices):
+    """Multi-select — patient diagnoses/conditions this پرستار has
+    cared for. wound_care/icu/pediatric/midwifery/emergency
+    experience already have their own showIf-gated question tied to
+    ParastarSpecialty, so they're not repeated here."""
+    DIABETES = "diabetes", "دیابت"
+    STROKE = "stroke", "سکته مغزی"
+    PARKINSONS = "parkinsons", "پارکینسون"
+    ALZHEIMERS = "alzheimers", "آلزایمر"
+    HEART_DISEASE = "heart_disease", "بیماری قلبی"
+    MS = "ms", "ام‌اس (MS)"
+    HEPATITIS = "hepatitis", "هپاتیت"
+    HIV_AIDS = "hiv_aids", "ایدز (HIV)"
+    CANCER = "cancer", "سرطان"
+    LUNG_DISEASE = "lung_disease", "بیماری ریوی"
+    OSTEOPOROSIS_FRACTURE = "osteoporosis_fracture", "پوکی استخوان / شکستگی"
+    FEMUR_FRACTURE = "femur_fracture", "شکستگی استخوان ران (فمور)"
+    PELVIS_FRACTURE = "pelvis_fracture", "شکستگی لگن"
+    PARALYSIS = "paralysis", "فلج"
+    BILIARY_DISEASE = "biliary_disease", "بیماری صفراوی"
+    VASCULAR_STENOSIS = "vascular_stenosis", "تنگی عروق"
+    AMPUTATION = "amputation", "قطع عضو"
+    DIALYSIS = "dialysis", "دیالیز"
+    PSP = "psp", "PSP (فلج فوق‌هسته‌ای پیش‌رونده)"
+    BLIND = "blind", "نابینایی"
+    INFECTION_GENERAL = "infection_general", "عفونت عمومی"
+    SKIN_INFECTION = "skin_infection", "عفونت پوستی"
+    VAGINAL_INFECTION = "vaginal_infection", "عفونت واژینال"
+    INFECTED_BLEEDING_WOUND = "infected_bleeding_wound", "زخم خونریزی‌دار و عفونی"
+    DIABETIC_FOOT_ULCER = "diabetic_foot_ulcer", "زخم پای دیابتی"
+    DEPRESSION = "depression", "افسردگی"
+    POST_HYSTERECTOMY = "post_hysterectomy", "پس از عمل برداشتن رحم"
+    POST_MISCARRIAGE = "post_miscarriage", "پس از سقط جنین"
+    POST_IVF = "post_ivf", "پس از IVF"
+    POST_EYE_SURGERY = "post_eye_surgery", "پس از عمل چشم"
+
+
+class ParastarProcedureAbility(models.TextChoices):
+    """Multi-select — clinical procedures/skills this پرستار can
+    perform. Injections already have their own universal bool
+    (can_administer_injections), so not repeated here."""
+    TUBE_FEEDING_GAVAGE = "tube_feeding_gavage", "تغذیه با گاواژ (لوله)"
+    OXYGEN_THERAPY = "oxygen_therapy", "اکسیژن‌درمانی"
+    CATHETER_CARE = "catheter_care", "مراقبت از سوند"
+    PACEMAKER_PATIENT_CARE = "pacemaker_patient_care", "مراقبت از بیمار دارای پیس‌میکر"
+    VITAL_SIGNS_MONITORING = "vital_signs_monitoring", "کنترل قند، فشار و اکسیژن خون"
+    INSULIN_INJECTION = "insulin_injection", "تزریق انسولین"
+    IV_SERUM_THERAPY = "iv_serum_therapy", "سرم‌تراپی"
+    WOUND_DRESSING = "wound_dressing", "پانسمان زخم"
+    SUTURE_REMOVAL = "suture_removal", "بخیه و کشیدن بخیه"
+    DIAPER_CHANGING = "diaper_changing", "تغییر پوشک"
+    IODINE_THERAPY = "iodine_therapy", "یددرمانی"
 
 
 class PayBasis(models.TextChoices):
