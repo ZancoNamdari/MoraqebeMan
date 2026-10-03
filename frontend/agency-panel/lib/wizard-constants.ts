@@ -558,6 +558,13 @@ const COOKING_CUISINE: Choice[] = [
   ["other", "سایر"],
 ]
 
+const PROPERTY_SIZE_RANGE: Choice[] = [
+  ["under_100", "تا ۱۰۰ متر"],
+  ["100_200", "۱۰۰ تا ۲۰۰ متر"],
+  ["200_400", "۲۰۰ تا ۴۰۰ متر"],
+  ["over_400", "بالای ۴۰۰ متر"],
+]
+
 const PREGNANCY_STAGE: Choice[] = [
   ["early", "اوایل بارداری"],
   ["mid", "اواسط بارداری"],
@@ -700,12 +707,41 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
   nezafatchi: {
     form2: [
       { key: "cleaning_frequency_preference", label: "تناوب ترجیحی نظافت", type: "choice", choices: CLEANING_FREQUENCY },
+      { key: "one_time_jobs_ok", label: "آمادگی برای کارهای مقطعی (مانند نظافت پس از ساخت‌وساز یا اسباب‌کشی)", type: "bool" },
       { key: "brings_own_equipment", label: "وسایل نظافت را خودش می‌آورد", type: "bool" },
       // Concrete standard instead of an abstract 0/50/100 "taste/care"
       // score — a caregiver's cleaning standard is a real difference
       // in what they'll do, so it gets a specific, pickable answer.
       { key: "cleaning_standard_level", label: "سطح نظافتی که ارائه می‌دهد", type: "choice", choices: CLEANING_STANDARD_LEVEL },
+      { key: "has_assistant", label: "برای کارهای سنگین نیروی کمکی دارد", type: "bool" },
+      { key: "heavy_physical_work_ok", label: "توان بدنی برای کارهای نظافتی سنگین (زور بازو)", type: "bool" },
+      { key: "preferred_property_size", label: "حداکثر متراژ محل مورد قبول برای نظافت", type: "choice", choices: PROPERTY_SIZE_RANGE },
+      { key: "shopping_errands_ok", label: "آمادگی برای خرید مایحتاج منزل", type: "bool" },
+      // خدمات داخل خانه
+      { key: "hosting_duties_ok", label: "آمادگی برای پذیرایی از مهمان (سرو چای، میوه و غیره)", type: "bool", showIf: ["inside_home"] },
+      { key: "wall_cleaning_ok", label: "آمادگی برای دیوارشویی", type: "bool", showIf: ["inside_home"] },
+      { key: "glass_cleaning_ok", label: "آمادگی برای شیشه‌شویی", type: "bool", showIf: ["inside_home"] },
+      { key: "full_deep_cleaning_ok", label: "آمادگی برای خانه‌تکونی کامل", type: "bool", showIf: ["inside_home"] },
+      { key: "dusting_ironing_ok", label: "آمادگی برای گردگیری و اتوکشی", type: "bool", showIf: ["inside_home"] },
+      { key: "dishwashing_ok", label: "آمادگی برای ظرف‌شویی", type: "bool", showIf: ["inside_home"] },
+      { key: "laundry_ok", label: "آمادگی برای شست‌وشو و لباسشویی", type: "bool", showIf: ["inside_home"] },
+      { key: "furniture_moving_ok", label: "آمادگی برای جابجایی وسایل منزل", type: "bool", showIf: ["inside_home"] },
+      { key: "plant_care_ok", label: "آمادگی برای رسیدگی به گل و گیاه", type: "bool", showIf: ["inside_home"] },
+      { key: "yard_cleaning_ok", label: "آمادگی برای نظافت و رسیدگی به حیاط", type: "bool", showIf: ["inside_home"] },
+      { key: "villa_cleaning_ok", label: "آمادگی برای نظافت ویلا", type: "bool", showIf: ["inside_home"] },
+      { key: "cooking_help_ok", label: "آمادگی برای کمک در آشپزی (در حد کمک، نه پخت کامل غذا)", type: "bool", showIf: ["inside_home"] },
+      // خدمات بیرون از خانه
+      { key: "parking_cleaning_ok", label: "آمادگی برای نظافت پارکینگ", type: "bool", showIf: ["outside_home"] },
+      { key: "staircase_cleaning_ok", label: "آمادگی برای نظافت راه‌پله", type: "bool", showIf: ["outside_home"] },
+      { key: "office_clinic_cleaning_ok", label: "آمادگی برای نظافت شرکت و مطب", type: "bool", showIf: ["outside_home"] },
+      { key: "warehouse_cleaning_ok", label: "آمادگی برای نظافت انبار", type: "bool", showIf: ["outside_home"] },
+      { key: "janitor_work_ok", label: "آمادگی برای سرایداری (نگهبانی و نظافت ساختمان/مجتمع)", type: "bool", showIf: ["outside_home"] },
+      { key: "janitor_with_family_ok", label: "آمادگی برای سرایداری خانوادگی (به‌همراه همسر/خانواده)", type: "bool", showIf: ["outside_home"] },
+      { key: "is_non_iranian_national", label: "تابعیت غیرایرانی دارد", type: "bool", showIf: ["outside_home"] },
+      // آشپزی
       { key: "cooking_cuisines", label: "نوع غذاهایی که می‌تواند بپزد", type: "multi", choices: COOKING_CUISINE, showIf: ["cooking"] },
+      { key: "cooking_skill_level", label: "سطح کیفیت دستپخت (طبخ غذا)", type: "choice", choices: PHYSICAL_ABILITY, showIf: ["cooking"] },
+      { key: "ok_without_cooking_duty", label: "آمادگی برای کار در منازلی که نیاز به آشپزی ندارند", type: "bool", showIf: ["cooking"] },
     ],
     form3: [
       { key: "cleaning_experience", label: "سابقه کار نظافتی", type: "choice", choices: EXPERIENCE_RANGE },
@@ -719,6 +755,9 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
     questionnaire: [
       { key: "harsh_conditions_compatibility_level", label: "سازگاری با شرایط دشوار کاری (خانه بزرگ، وسایل شکستنی، حضور حیوان خانگی)", type: "score" },
       { key: "cleaning_chemicals_tolerance_level", label: "سازگاری با استفاده مستمر از مواد شوینده و بوهای تند", type: "score" },
+      { key: "discipline_level", label: "انضباط و منظم بودن در کار", type: "score" },
+      { key: "personal_cleanliness_level", label: "تمیزی و آراستگی ظاهری شخصی", type: "score" },
+      { key: "punctuality_level", label: "وقت‌شناسی", type: "score" },
     ],
   },
   madaryar: {

@@ -484,6 +484,13 @@ class CookingCuisine(models.TextChoices):
     OTHER = "other", "سایر"
 
 
+class PropertySizeRange(models.TextChoices):
+    UNDER_100 = "under_100", "تا ۱۰۰ متر"
+    R100_200 = "100_200", "۱۰۰ تا ۲۰۰ متر"
+    R200_400 = "200_400", "۲۰۰ تا ۴۰۰ متر"
+    OVER_400 = "over_400", "بالای ۴۰۰ متر"
+
+
 class PregnancyStage(models.TextChoices):
     EARLY = "early", "اوایل بارداری"
     MID = "mid", "اواسط بارداری"
