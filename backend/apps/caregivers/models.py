@@ -16,6 +16,7 @@ from .choices import (
     FamilyPresencePreference,
     Gender,
     HeightRange,
+    LanguageLevel,
     LiftingCapacity,
     MaritalStatus,
     MaxCommuteTime,
@@ -58,6 +59,11 @@ class IdentityProfile(models.Model):
     gender = models.CharField(max_length=10, choices=Gender.choices, blank=True, verbose_name="جنسیت")
     marital_status = models.CharField(max_length=20, choices=MaritalStatus.choices, blank=True, verbose_name="وضعیت تأهل")
     children_count = models.CharField(max_length=20, choices=ChildrenCount.choices, blank=True, verbose_name="تعداد فرزندان")
+    has_children = models.BooleanField(null=True, blank=True, default=None, verbose_name="آیا خودتان فرزند دارید؟")
+    currently_caring_for_own_child = models.BooleanField(
+        null=True, blank=True, default=None, verbose_name="آیا در حال حاضر از فرزند خود مراقبت می‌کند؟",
+        help_text="برای سنجش هم‌زمانی مراقبت از فرزند خودش با کار — فقط وقتی has_children=True معنا دارد.",
+    )
     military_status = models.CharField(
         max_length=30, choices=MilitaryStatus.choices, null=True, blank=True,
         verbose_name="وضعیت نظام وظیفه", help_text="فقط برای جنسیت مرد",
@@ -664,6 +670,22 @@ class CaregiverWorkPreferences(models.Model):
     pets_ok = models.BooleanField(null=True, blank=True,default=False, verbose_name="پذیرش حیوان خانگی")
     holiday_work_ok = models.BooleanField(null=True, blank=True,default=True, verbose_name="کار در تعطیلات")
     overnight_stay_ok = models.BooleanField(null=True, blank=True,default=False, verbose_name="اقامت شبانه")
+    # Universal fields — previously koodakyar-only service_specific_
+    # answers entries, promoted to real columns on an explicit
+    # decision that these questions (family situation, pets, travel)
+    # apply to every caregiver type, not just کودک‌یار. Family-
+    # situation questions ask the CAREGIVER's own willingness to work
+    # in that household situation, never anything about her own family.
+    ok_with_single_father = models.BooleanField(null=True, blank=True, default=None, verbose_name="تمایل به کار نزد پدر مجرد")
+    ok_with_single_mother = models.BooleanField(null=True, blank=True, default=None, verbose_name="تمایل به کار نزد مادر تنها (بدون همسر)")
+    ok_with_father_absent_at_home = models.BooleanField(null=True, blank=True, default=None, verbose_name="تمایل به کار در خانواده‌ای که پدر در ساعات کاری در منزل نیست")
+    ok_with_grandparent_or_relative_at_home = models.BooleanField(null=True, blank=True, default=None, verbose_name="تمایل به کار در خانواده‌ای که پدربزرگ/مادربزرگ یا یکی از اقوام هم در منزل حضور دارد")
+    ok_with_home_camera = models.BooleanField(null=True, blank=True, default=None, verbose_name="تمایل به کار در منزلی که دوربین مداربسته دارد")
+    pets_dog_ok = models.BooleanField(null=True, blank=True, default=None, verbose_name="سازگاری با حضور سگ در منزل")
+    pets_cat_ok = models.BooleanField(null=True, blank=True, default=None, verbose_name="سازگاری با حضور گربه در منزل")
+    pets_other_notes = models.CharField(max_length=200, blank=True, verbose_name="سایر حیوانات خانگی")
+    travel_domestic_ok = models.BooleanField(null=True, blank=True, default=None, verbose_name="آمادگی سفر همراه خانواده در داخل ایران")
+    travel_international_ok = models.BooleanField(null=True, blank=True, default=None, verbose_name="آمادگی سفر همراه خانواده به خارج از کشور")
     terms_accepted = models.BooleanField(default=False,verbose_name="پذیرش قوانین")
     terms_accepted_at = jmodels.jDateTimeField(null=True,blank=True,verbose_name="زمان پذیرش قوانین")
     night_stay_until = models.CharField(max_length=20, choices=NightStayUntil.choices, blank=True, verbose_name="حداکثر زمان ماندن در شب")
@@ -775,6 +797,8 @@ class CaregiverSkills(models.Model):
     household_skills = models.JSONField(default=list, blank=True, verbose_name="مهارت‌های خانگی")
     foreign_languages = models.JSONField(default=list, blank=True, verbose_name="زبان‌های خارجی")
     local_languages = models.JSONField(default=list, blank=True, verbose_name="زبان‌های محلی")
+    english_level = models.CharField(max_length=20, choices=LanguageLevel.choices, blank=True, verbose_name="میزان تسلط به زبان انگلیسی")
+    arabic_level = models.CharField(max_length=20, choices=LanguageLevel.choices, blank=True, verbose_name="میزان تسلط به زبان عربی")
     has_driving_license = models.BooleanField(null=True, blank=True, default=False, verbose_name="گواهینامه رانندگی")
     can_use_smartphone = models.BooleanField(null=True, blank=True, default=False, verbose_name="توانایی استفاده از تلفن هوشمند")
     additional_notes = models.TextField(blank=True, max_length=500, verbose_name="توضیحات تکمیلی")

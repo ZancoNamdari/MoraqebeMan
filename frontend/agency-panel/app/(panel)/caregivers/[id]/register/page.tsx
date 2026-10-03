@@ -62,7 +62,8 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 const EMPTY_IDENTITY: IdentityFormData = {
   father_name: "", national_id: "", birth_certificate_number: "", birth_certificate_issue_place: "",
-  birth_date: "", gender: "", marital_status: "", children_count: "", military_status: null,
+  birth_date: "", gender: "", marital_status: "", children_count: "",
+  has_children: null, currently_caring_for_own_child: null, military_status: null,
   height_range: "", weight_range: "", ethnicities: [],
   has_chronic_disease: false, chronic_disease_types: [],
   takes_permanent_medication: false, medication_types: [], psychiatric_medication_detail: "",
@@ -75,6 +76,10 @@ const EMPTY_WORK_PREFS: WorkPreferencesFormData = {
   accepted_age_ranges: [], offered_services: [], accepted_physical_conditions: [], lifting_capacity: "",
   service_locations: [], max_commute_time: "", available_days: [], available_shifts: [],
   commute_methods: [], smoking_status: "", pets_ok: null, holiday_work_ok: null, overnight_stay_ok: null,
+  ok_with_single_father: null, ok_with_single_mother: null, ok_with_father_absent_at_home: null,
+  ok_with_grandparent_or_relative_at_home: null, ok_with_home_camera: null,
+  pets_dog_ok: null, pets_cat_ok: null, pets_other_notes: "",
+  travel_domestic_ok: null, travel_international_ok: null,
   terms_accepted: false, night_stay_until: "", has_night_time_limit: null, additional_notes: "",
   requested_salary: "", cleaning_willingness: "", day_off_request: "", serves_all_areas: false,
   service_specific_answers: {},
@@ -90,7 +95,8 @@ const EMPTY_EXPERIENCE: ExperienceFormData = {
 const EMPTY_SKILLS: SkillsFormData = {
   education_level: "", field_of_study: "", training_courses: [], communication_skills: [],
   caregiving_skills: [], physical_ability: "", mobility_assistance_ability: [], household_skills: [],
-  foreign_languages: [], local_languages: [], has_driving_license: null, can_use_smartphone: null,
+  foreign_languages: [], local_languages: [], english_level: "", arabic_level: "",
+  has_driving_license: null, can_use_smartphone: null,
   additional_notes: "",
 }
 
@@ -513,6 +519,10 @@ export default function CaregiverRegistrationWizard() {
               <Field label="جنسیت"><ChoiceSelect choices={C.GENDER} value={identity.gender} onChange={(v) => setIdentity({ ...identity, gender: v })} /></Field>
               <Field label="وضعیت تأهل"><ChoiceSelect choices={C.MARITAL_STATUS} value={identity.marital_status} onChange={(v) => setIdentity({ ...identity, marital_status: v })} /></Field>
               <Field label="تعداد فرزندان"><ChoiceSelect choices={C.CHILDREN_COUNT} value={identity.children_count} onChange={(v) => setIdentity({ ...identity, children_count: v })} /></Field>
+              <Field label="آیا خودتان فرزند دارید؟"><YesNo value={identity.has_children} onChange={(v) => setIdentity({ ...identity, has_children: v })} /></Field>
+              {identity.has_children && (
+                <Field label="آیا در حال حاضر از فرزند خود مراقبت می‌کنید؟"><YesNo value={identity.currently_caring_for_own_child} onChange={(v) => setIdentity({ ...identity, currently_caring_for_own_child: v })} /></Field>
+              )}
               {identity.gender === "male" && (
                 <Field label="وضعیت نظام وظیفه"><ChoiceSelect choices={C.MILITARY_STATUS} value={identity.military_status || ""} onChange={(v) => setIdentity({ ...identity, military_status: v })} /></Field>
               )}
@@ -592,6 +602,19 @@ export default function CaregiverRegistrationWizard() {
               <Field label="پذیرش حیوان خانگی در محل کار"><YesNo value={workPrefs.pets_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, pets_ok: v })} /></Field>
               <Field label="امکان کار در تعطیلات"><YesNo value={workPrefs.holiday_work_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, holiday_work_ok: v })} /></Field>
               <Field label="امکان شب‌مانی"><YesNo value={workPrefs.overnight_stay_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, overnight_stay_ok: v })} /></Field>
+
+              {/* Universal — common to every service type, moved out of
+                  کودک‌یار-only per the full-redesign request. */}
+              <Field label="تمایل به کار نزد پدر مجرد"><YesNo value={workPrefs.ok_with_single_father} onChange={(v) => setWorkPrefs({ ...workPrefs, ok_with_single_father: v })} /></Field>
+              <Field label="تمایل به کار نزد مادر تنها (بدون همسر)"><YesNo value={workPrefs.ok_with_single_mother} onChange={(v) => setWorkPrefs({ ...workPrefs, ok_with_single_mother: v })} /></Field>
+              <Field label="تمایل به کار در خانواده‌ای که پدر در ساعات کاری در منزل نیست"><YesNo value={workPrefs.ok_with_father_absent_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, ok_with_father_absent_at_home: v })} /></Field>
+              <Field label="تمایل به کار در خانواده‌ای که پدربزرگ/مادربزرگ یا یکی از اقوام هم در منزل حضور دارد"><YesNo value={workPrefs.ok_with_grandparent_or_relative_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, ok_with_grandparent_or_relative_at_home: v })} /></Field>
+              <Field label="تمایل به کار در منزلی که دوربین مداربسته دارد"><YesNo value={workPrefs.ok_with_home_camera} onChange={(v) => setWorkPrefs({ ...workPrefs, ok_with_home_camera: v })} /></Field>
+              <Field label="سازگاری با حضور سگ در منزل"><YesNo value={workPrefs.pets_dog_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, pets_dog_ok: v })} /></Field>
+              <Field label="سازگاری با حضور گربه در منزل"><YesNo value={workPrefs.pets_cat_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, pets_cat_ok: v })} /></Field>
+              <Field label="سایر حیوانات خانگی (اختیاری)"><Input value={workPrefs.pets_other_notes} onChange={(e) => setWorkPrefs({ ...workPrefs, pets_other_notes: e.target.value })} placeholder="مثلاً پرنده، ماهی" /></Field>
+              <Field label="آمادگی سفر همراه خانواده در داخل ایران"><YesNo value={workPrefs.travel_domestic_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, travel_domestic_ok: v })} /></Field>
+              <Field label="آمادگی سفر همراه خانواده به خارج از کشور"><YesNo value={workPrefs.travel_international_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, travel_international_ok: v })} /></Field>
 
               <div className="rounded-md border p-3">
                 <p className="mb-2 text-sm font-medium">مناطق خدماتی</p>
@@ -689,6 +712,8 @@ export default function CaregiverRegistrationWizard() {
               {skills.education_level !== "diploma" && skills.education_level !== "under_diploma" && (
                 <Field label="زبان خارجی"><CheckboxGroup choices={C.FOREIGN_LANGUAGE} value={skills.foreign_languages} onChange={(v) => setSkills({ ...skills, foreign_languages: v })} /></Field>
               )}
+              <Field label="میزان تسلط به زبان انگلیسی"><ChoiceSelect choices={C.LANGUAGE_LEVEL} value={skills.english_level} onChange={(v) => setSkills({ ...skills, english_level: v })} /></Field>
+              <Field label="میزان تسلط به زبان عربی"><ChoiceSelect choices={C.LANGUAGE_LEVEL} value={skills.arabic_level} onChange={(v) => setSkills({ ...skills, arabic_level: v })} /></Field>
               {serviceTypes.includes("salmandyar") && (
                 <>
                   <Field label="دوره‌های آموزشی گذرانده‌شده"><CheckboxGroup choices={C.TRAINING_COURSE} value={skills.training_courses} onChange={(v) => setSkills({ ...skills, training_courses: v })} /></Field>

@@ -19,6 +19,7 @@ class ServiceType(models.TextChoices):
 
 
 class KoodakyarSubtype(models.TextChoices):
+    GENERAL_CHILDCARE = "general_childcare", "مراقبت و نگهداری عمومی کودک"
     HOMEWORK_TUTOR = "homework_tutor", "پرستار درس و مشق"
     LIVE_IN_HOUSEWORK_CHILDCARE = "live_in_housework_childcare", "پرستار شبانه‌روزی کارهای خانه و بچه"
 
@@ -33,6 +34,7 @@ class MadaryarSubtype(models.TextChoices):
     NEWBORN = "newborn", "نوزاد"
     PREGNANCY = "pregnancy", "دوران بارداری"
     LABOR = "labor", "در شرف زایمان"
+    POSTPARTUM = "postpartum", "پس از زایمان"
 
 
 class ParastarSubtype(models.TextChoices):
@@ -492,3 +494,14 @@ class NursingDegreeLevel(models.TextChoices):
     ASSOCIATE = "associate", "کاردانی"
     BACHELOR = "bachelor", "کارشناسی"
     MASTER_PLUS = "master_plus", "کارشناسی ارشد و بالاتر"
+
+
+class LanguageLevel(models.TextChoices):
+    """Now a universal field on CaregiverSkills (english_level/
+    arabic_level) rather than a koodakyar-only service_specific_
+    answers entry — language level is relevant across every service
+    type, not just childcare."""
+    NONE = "none", "هیچ"
+    BASIC = "basic", "مقدماتی"
+    INTERMEDIATE = "intermediate", "متوسط"
+    FLUENT = "fluent", "پیشرفته / روان"

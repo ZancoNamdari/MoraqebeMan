@@ -17,6 +17,7 @@ export const SERVICE_TYPE: Choice[] = [
 ]
 
 export const KOODAKYAR_SUBTYPE: Choice[] = [
+  ["general_childcare", "مراقبت و نگهداری عمومی کودک"],
   ["homework_tutor", "پرستار درس و مشق"],
   ["live_in_housework_childcare", "پرستار شبانه‌روزی کارهای خانه و بچه"],
 ]
@@ -31,6 +32,7 @@ export const MADARYAR_SUBTYPE: Choice[] = [
   ["newborn", "نوزاد"],
   ["pregnancy", "دوران بارداری"],
   ["labor", "در شرف زایمان"],
+  ["postpartum", "پس از زایمان"],
 ]
 
 export const PARASTAR_SUBTYPE: Choice[] = [
@@ -568,7 +570,7 @@ const NURSING_DEGREE_LEVEL: Choice[] = [
   ["master_plus", "کارشناسی ارشد و بالاتر"],
 ]
 
-const LANGUAGE_LEVEL: Choice[] = [
+export const LANGUAGE_LEVEL: Choice[] = [
   ["none", "هیچ"],
   ["basic", "مقدماتی"],
   ["intermediate", "متوسط"],
@@ -581,6 +583,14 @@ const CHILD_CONDITION: Choice[] = [
   ["speech_therapy_needed", "نیاز به گفتاردرمانی"],
   ["diaper_dependent_disability", "وابسته به پوشک به دلیل معلولیت"],
   ["none", "هیچ‌کدام — کودک عادی"],
+]
+
+const CHILD_SPECIAL_NEEDS_EXPERIENCE: Choice[] = [
+  ["autism", "تجربه کار با کودک مبتلا به اوتیسم"],
+  ["physical_disability", "تجربه کار با کودک دارای معلولیت جسمی"],
+  ["speech_disorder", "تجربه کار با کودک دارای اختلال گفتار"],
+  ["developmental_delay", "تجربه کار با کودک دارای تأخیر رشدی"],
+  ["diaper_dependent", "تجربه کار با کودک وابسته به پوشک"],
 ]
 
 const TUTOR_ROLE_TYPE: Choice[] = [
@@ -629,26 +639,27 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
   questionnaire: ServiceSpecificField[]
 }> = {
   koodakyar: {
-    // Fields with no showIf apply to BOTH کودک‌یار subtypes
-    // (homework_tutor and live_in_housework_childcare) — only the
-    // ones that are clearly specific to one subtype are gated.
+    // Fields with no showIf apply to all THREE کودک‌یار subtypes
+    // (general_childcare, homework_tutor, live_in_housework_childcare).
+    // Family-situation/pets/travel questions used to live here but
+    // were promoted to real universal WorkPreferences fields (Form 2's
+    // common section, register/page.tsx step 3) since they apply to
+    // every caregiver type, not just کودک‌یار. Likewise english_level/
+    // arabic_level moved to the universal Skills form.
     form2: [
       { key: "accepted_child_age_ranges", label: "بازه سنی کودک قابل پذیرش", type: "multi", choices: CHILD_AGE_RANGE },
       { key: "max_children_count", label: "حداکثر تعداد کودک قابل نگهداری هم‌زمان", type: "choice", choices: CHILDREN_COUNT_CAPACITY },
       { key: "accepted_child_conditions", label: "ویژگی‌های خاص کودک قابل پذیرش", type: "multi", choices: CHILD_CONDITION },
       { key: "pay_basis", label: "مبنای دریافت حقوق", type: "choice", choices: PAY_BASIS },
-      // Family-composition acceptance — these ask the CAREGIVER's own
-      // willingness to work in that household situation, not
-      // anything about her own family.
-      { key: "ok_with_single_father", label: "تمایل به کار نزد پدر مجرد", type: "bool" },
-      { key: "ok_with_single_mother", label: "تمایل به کار نزد مادر تنها (بدون همسر)", type: "bool" },
-      { key: "ok_with_father_absent_at_home", label: "تمایل به کار در خانواده‌ای که پدر در ساعات کاری در منزل نیست", type: "bool" },
-      { key: "ok_with_grandparent_or_relative_at_home", label: "تمایل به کار در خانواده‌ای که پدربزرگ/مادربزرگ یا یکی از اقوام هم در منزل حضور دارد", type: "bool" },
-      { key: "ok_with_home_camera", label: "تمایل به کار در منزلی که دوربین مداربسته دارد", type: "bool" },
-      { key: "pets_dog_ok", label: "مشکلی با حضور سگ در منزل ندارد", type: "bool" },
-      { key: "pets_cat_ok", label: "مشکلی با حضور گربه در منزل ندارد", type: "bool" },
-      { key: "travel_domestic_ok", label: "آمادگی سفر همراه خانواده در داخل ایران", type: "bool" },
-      { key: "travel_international_ok", label: "آمادگی سفر همراه خانواده به خارج از کشور", type: "bool" },
+      // general_childcare + live_in_housework_childcare — hands-on
+      // daily-care tasks (homework_tutor's role doesn't cover these)
+      { key: "daily_feeding_ok", label: "آمادگی غذا دادن به کودک", type: "bool", showIf: ["general_childcare", "live_in_housework_childcare"] },
+      { key: "bathing_child_ok", label: "آمادگی حمام کردن کودک", type: "bool", showIf: ["general_childcare", "live_in_housework_childcare"] },
+      { key: "dressing_child_ok", label: "آمادگی لباس پوشاندن کودک", type: "bool", showIf: ["general_childcare", "live_in_housework_childcare"] },
+      { key: "putting_to_sleep_ok", label: "آمادگی خواباندن کودک", type: "bool", showIf: ["general_childcare", "live_in_housework_childcare"] },
+      { key: "play_and_entertainment_ok", label: "آمادگی بازی و سرگرمی با کودک", type: "bool", showIf: ["general_childcare", "live_in_housework_childcare"] },
+      { key: "outdoor_outings_ok", label: "آمادگی بردن کودک به پارک یا کلاس", type: "bool", showIf: ["general_childcare", "live_in_housework_childcare"] },
+      { key: "diaper_changing_ok", label: "آمادگی برای تغییر پوشک", type: "bool", showIf: ["general_childcare", "live_in_housework_childcare"] },
       // homework_tutor only
       { key: "tutor_role_type", label: "نوع نقش تدریس", type: "choice", choices: TUTOR_ROLE_TYPE, showIf: ["homework_tutor"] },
       { key: "tutoring_subjects", label: "دروس قابل تدریس", type: "multi", choices: TUTORING_SUBJECT, showIf: ["homework_tutor"] },
@@ -656,7 +667,6 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "after_school_care_ok", label: "آمادگی نگهداری کودک بعد از ساعت مدرسه (after school care)", type: "bool", showIf: ["homework_tutor"] },
       // live_in_housework_childcare only
       { key: "household_tasks_capable", label: "کارهای خانه قابل انجام در کنار نگهداری کودک", type: "multi", choices: HOUSEHOLD_TASK_FOR_CHILDCARE, showIf: ["live_in_housework_childcare"] },
-      { key: "diaper_changing_ok", label: "آمادگی برای تغییر پوشک", type: "bool", showIf: ["live_in_housework_childcare"] },
     ],
     form3: [
       { key: "childcare_experience", label: "سابقه مراقبت از کودک", type: "choice", choices: EXPERIENCE_RANGE },
@@ -665,8 +675,9 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "child_cpr_training", label: "آموزش کمک‌های اولیه/CPR کودک دیده است", type: "bool" },
       { key: "child_related_training_courses", label: "دوره‌های آموزشی مرتبط با کودک گذرانده‌شده", type: "multi", choices: CHILD_RELATED_TRAINING_COURSE },
       { key: "has_speech_therapy_training", label: "آموزش یا تجربه گفتاردرمانی دارد", type: "bool" },
-      { key: "english_level", label: "میزان تسلط به زبان انگلیسی", type: "choice", choices: LANGUAGE_LEVEL },
-      { key: "arabic_level", label: "میزان تسلط به زبان عربی", type: "choice", choices: LANGUAGE_LEVEL },
+      // Separate from "accepted_child_conditions" above (willingness
+      // to accept) — this is actual prior experience with each condition.
+      { key: "child_special_needs_experience", label: "تجربه کار با کودکان دارای شرایط خاص", type: "multi", choices: CHILD_SPECIAL_NEEDS_EXPERIENCE },
       { key: "has_visible_tattoo", label: "تتوی قابل مشاهده دارد", type: "bool" },
       { key: "nail_style", label: "وضعیت ناخن", type: "choice", choices: NAIL_STYLE },
       // homework_tutor only
@@ -715,17 +726,42 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "pay_basis", label: "مبنای دریافت حقوق", type: "choice", choices: PAY_BASIS },
       { key: "night_shift_ok", label: "آمادگی برای شیفت شب نوزاد", type: "bool", showIf: ["newborn"] },
       { key: "labor_accompaniment_ok", label: "آمادگی همراهی در زمان زایمان", type: "bool", showIf: ["labor"] },
+      { key: "readiness_for_off_hours_presence", label: "آمادگی حضور در ساعات غیراداری", type: "bool", showIf: ["labor"] },
       { key: "preferred_pregnancy_stage", label: "مرحله ترجیحی بارداری برای همراهی", type: "choice", choices: PREGNANCY_STAGE, showIf: ["pregnancy"] },
+      { key: "outside_home_accompaniment_ok", label: "آمادگی همراهی مادر باردار بیرون از منزل", type: "bool", showIf: ["pregnancy"] },
     ],
     form3: [
       { key: "breastfeeding_support_training", label: "آموزش حمایت از شیردهی دیده است", type: "bool" },
+      // newborn
       { key: "newborn_care_experience", label: "سابقه مراقبت از نوزاد", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["newborn"] },
       { key: "weaning_support_experience", label: "تجربه کمک به از شیر/پوشک گرفتن نوزاد", type: "bool", showIf: ["newborn"] },
+      { key: "bottle_feeding_ok", label: "آمادگی شیر دادن با شیشه", type: "bool", showIf: ["newborn"] },
+      { key: "burping_ok", label: "آمادگی آروغ‌گیری نوزاد", type: "bool", showIf: ["newborn"] },
+      { key: "soothing_newborn_ok", label: "آمادگی آرام کردن نوزاد", type: "bool", showIf: ["newborn"] },
+      { key: "newborn_bathing_ok", label: "آمادگی حمام نوزاد", type: "bool", showIf: ["newborn"] },
+      { key: "night_waking_readiness", label: "آمادگی برای بیدار شدن‌های شبانه مکرر", type: "bool", showIf: ["newborn"] },
+      { key: "newborn_cpr_training", label: "دوره CPR نوزاد دیده است", type: "bool", showIf: ["newborn"] },
+      { key: "newborn_first_aid_training", label: "دوره کمک‌های اولیه نوزاد دیده است", type: "bool", showIf: ["newborn"] },
+      { key: "newborn_care_course", label: "دوره مراقبت از نوزاد گذرانده است", type: "bool", showIf: ["newborn"] },
+      // pregnancy
+      { key: "pregnancy_care_experience", label: "سابقه مراقبت از مادر باردار", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["pregnancy"] },
+      { key: "medical_visit_accompaniment_experience", label: "تجربه همراهی برای مراجعه پزشکی", type: "bool", showIf: ["pregnancy"] },
+      { key: "daily_support_experience", label: "تجربه کمک در امور روزمره مادر باردار", type: "bool", showIf: ["pregnancy"] },
+      { key: "housework_for_pregnant_mother_experience", label: "تجربه انجام امور منزل برای مادر باردار", type: "bool", showIf: ["pregnancy"] },
+      // labor
       { key: "labor_support_experience", label: "سابقه همراهی در زایمان", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["labor"] },
+      { key: "hospital_accompaniment_experience", label: "سابقه همراهی تا بیمارستان و حضور در آن", type: "bool", showIf: ["labor"] },
+      { key: "older_sibling_care_during_labor_experience", label: "تجربه مراقبت از فرزند بزرگ‌تر هنگام زایمان مادر", type: "bool", showIf: ["labor"] },
+      // postpartum
+      { key: "postpartum_care_experience", label: "سابقه مراقبت از مادر پس از زایمان", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["postpartum"] },
+      { key: "natural_birth_recovery_experience", label: "تجربه مراقبت پس از زایمان طبیعی", type: "bool", showIf: ["postpartum"] },
+      { key: "csection_recovery_experience", label: "تجربه مراقبت پس از سزارین", type: "bool", showIf: ["postpartum"] },
+      { key: "simultaneous_mother_newborn_care_experience", label: "تجربه مراقبت هم‌زمان از مادر و نوزاد", type: "bool", showIf: ["postpartum"] },
     ],
     questionnaire: [
-      { key: "gentleness_with_newborn_level", label: "لطافت و دقت در برخورد با نوزاد", type: "score" },
+      { key: "gentleness_with_newborn_level", label: "لطافت و دقت در برخورد با نوزاد", type: "score", showIf: ["newborn", "postpartum"] },
       { key: "calmness_under_pressure_level", label: "آرامش در شرایط پراسترس (مثل لحظات زایمان)", type: "score" },
+      { key: "night_wakefulness_tolerance_level", label: "تحمل بیداری شبانه", type: "score", showIf: ["newborn", "postpartum"] },
       // Asked as the CAREGIVER's own comfort/compatibility with the
       // mother's situation — never a question about the caregiver's
       // own reproductive history.

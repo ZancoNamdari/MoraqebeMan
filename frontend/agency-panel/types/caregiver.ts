@@ -28,6 +28,8 @@ export interface IdentityFormData {
   gender: string
   marital_status: string
   children_count: string
+  has_children: boolean | null
+  currently_caring_for_own_child: boolean | null
   military_status: string | null
   height_range: string
   weight_range: string
@@ -66,6 +68,17 @@ export interface WorkPreferencesFormData {
   pets_ok: boolean | null
   holiday_work_ok: boolean | null
   overnight_stay_ok: boolean | null
+  // Universal fields (apply to every service type, not just کودک‌یار)
+  ok_with_single_father: boolean | null
+  ok_with_single_mother: boolean | null
+  ok_with_father_absent_at_home: boolean | null
+  ok_with_grandparent_or_relative_at_home: boolean | null
+  ok_with_home_camera: boolean | null
+  pets_dog_ok: boolean | null
+  pets_cat_ok: boolean | null
+  pets_other_notes: string
+  travel_domestic_ok: boolean | null
+  travel_international_ok: boolean | null
   terms_accepted: boolean
   night_stay_until: string
   has_night_time_limit: boolean | null
@@ -119,6 +132,8 @@ export interface SkillsFormData {
   household_skills: string[]
   foreign_languages: string[]
   local_languages: string[]
+  english_level: string
+  arabic_level: string
   has_driving_license: boolean | null
   can_use_smartphone: boolean | null
   additional_notes: string
