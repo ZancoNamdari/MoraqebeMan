@@ -266,17 +266,20 @@ export default function CaregiverRegistrationWizard() {
     return <Field label={field.label}><Input value={value ?? ""} onChange={(e) => onChange(e.target.value)} /></Field>
   }
 
-  // One stacked section per selected non-سالمندیار service type, for
-  // a given form ("form2" | "form3" | "questionnaire") — each
-  // field's showIf is checked against that type's own chosen
-  // subtypes/specialties (serviceSubtypes[type], a flat list for
-  // every type including پرستار's merged subtype+specialty values).
+  // One stacked section per selected service type, for a given form
+  // ("form2" | "form3" | "questionnaire") — each field's showIf is
+  // checked against that type's own chosen subtypes/specialties
+  // (serviceSubtypes[type], a flat list for every type including
+  // پرستار's merged subtype+specialty values). سالمندیار is included
+  // here too now (it has its own SERVICE_SPECIFIC_FORMS.salmandyar
+  // entry) alongside its existing universal/real-model-field
+  // sections below — those aren't duplicated here.
   function renderServiceSpecificSections(
     formKey: "form2" | "form3" | "questionnaire",
     current: Record<string, Record<string, any>>,
     onChange: (next: Record<string, Record<string, any>>) => void,
   ) {
-    const applicableTypes = serviceTypes.filter((t) => t !== "salmandyar" && C.SERVICE_SPECIFIC_FORMS[t]?.[formKey]?.length)
+    const applicableTypes = serviceTypes.filter((t) => C.SERVICE_SPECIFIC_FORMS[t]?.[formKey]?.length)
     if (applicableTypes.length === 0) return null
     return (
       <>
@@ -833,7 +836,7 @@ export default function CaregiverRegistrationWizard() {
                 </CardContent>
               </Card>
             ))}
-            {serviceTypes.filter((t) => t !== "salmandyar" && C.SERVICE_SPECIFIC_FORMS[t]?.questionnaire?.length).map((type) => {
+            {serviceTypes.filter((t) => C.SERVICE_SPECIFIC_FORMS[t]?.questionnaire?.length).map((type) => {
               const typeLabel = C.SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
               const chosenSubtypes = serviceSubtypes[type] ?? []
               const fields = C.SERVICE_SPECIFIC_FORMS[type].questionnaire.filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))

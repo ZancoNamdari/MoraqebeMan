@@ -310,6 +310,16 @@ export const SPECIAL_CONDITION_EXPERIENCE: Choice[] = [
   ["cancer", "سرطان"],
   ["hospital_care", "مراقبت بیمارستانی"],
   ["diaper_dependent", "پوشکی"],
+  ["lower_back_disc", "دیسک کمر"],
+  ["blind", "نابینایی"],
+  ["physically_strong_build", "قوی‌البنیه (دشوار برای جابجایی و کنترل)"],
+  ["fracture", "شکستگی استخوان"],
+  ["depression", "افسردگی"],
+  ["needs_companionship", "تنها و نیازمند هم‌صحبتی (هم‌دم)"],
+  ["speech_impairment", "اختلال گفتار و تکلم"],
+  ["respiratory_problem", "مشکلات تنفسی"],
+  ["restlessness", "بی‌قراری (مانند زوال عقل)"],
+  ["incontinence", "بی‌اختیاری ادرار و مدفوع"],
   ["none", "هیچ‌کدام"],
 ]
 
@@ -641,6 +651,31 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
   form3: ServiceSpecificField[]
   questionnaire: ServiceSpecificField[]
 }> = {
+  // سالمندیار predates this per-type JSON mechanism — most of its
+  // questions were already promoted to real model fields (see the
+  // hand-written {serviceTypes.includes("salmandyar") && ...} blocks
+  // in the register page). These are the newer additions that don't
+  // warrant their own migration, so they live here like every other
+  // type's extra questions.
+  salmandyar: {
+    form2: [
+      { key: "has_assistant", label: "برای کارهای سنگین نیروی کمکی دارد", type: "bool" },
+      { key: "night_wakefulness_ok", label: "آمادگی برای بیداری‌های شبانه مکرر", type: "bool" },
+      { key: "toileting_hygiene_assistance_ok", label: "آمادگی برای کمک در طهارت و نظافت فردی سالمند", type: "bool" },
+      { key: "bedpan_assistance_ok", label: "آمادگی برای کمک با لگن (سالمند بستری)", type: "bool" },
+      { key: "park_outing_accompaniment_ok", label: "آمادگی برای همراهی سالمند در پیاده‌روی و پارک", type: "bool" },
+      { key: "willing_to_relocate_other_cities", label: "آمادگی برای کار در شهرهای دیگر", type: "bool" },
+      { key: "ok_with_second_elderly_spouse_present", label: "آمادگی برای مراقبت در حضور همسر سالمند (زوج سالمند)", type: "bool" },
+    ],
+    form3: [
+      { key: "catheter_care_experience", label: "تجربه مراقبت از سالمند دارای سوند", type: "bool" },
+      { key: "physiotherapy_assistance_experience", label: "تجربه همراهی/کمک در تمرینات فیزیوتراپی", type: "bool" },
+      { key: "is_literate", label: "باسواد است (قادر به خواندن و نوشتن)", type: "bool" },
+      { key: "has_acrylic_nails", label: "ناخن کاشته‌شده دارد", type: "bool" },
+      { key: "has_tattoo", label: "دارای تاتو است", type: "bool" },
+    ],
+    questionnaire: [],
+  },
   koodakyar: {
     // Fields with no showIf apply to all THREE کودک‌یار subtypes
     // (general_childcare, homework_tutor, live_in_housework_childcare).

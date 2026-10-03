@@ -171,6 +171,17 @@ export const SPECIAL_CONDITION_EXPERIENCE: Choice[] = [
   ["severe_osteoporosis", "پوکی استخوان شدید"],
   ["cancer", "سرطان"],
   ["hospital_care", "مراقبت بیمارستانی"],
+  ["diaper_dependent", "پوشکی"],
+  ["lower_back_disc", "دیسک کمر"],
+  ["blind", "نابینایی"],
+  ["physically_strong_build", "قوی‌البنیه (دشوار برای جابجایی و کنترل)"],
+  ["fracture", "شکستگی استخوان"],
+  ["depression", "افسردگی"],
+  ["needs_companionship", "تنها و نیازمند هم‌صحبتی (هم‌دم)"],
+  ["speech_impairment", "اختلال گفتار و تکلم"],
+  ["respiratory_problem", "مشکلات تنفسی"],
+  ["restlessness", "بی‌قراری (مانند زوال عقل)"],
+  ["incontinence", "بی‌اختیاری ادرار و مدفوع"],
   ["none", "هیچ‌کدام"],
 ]
 

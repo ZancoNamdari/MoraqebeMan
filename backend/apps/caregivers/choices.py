@@ -311,6 +311,16 @@ class SpecialConditionExperience(models.TextChoices):
     CANCER = "cancer", "سرطان"
     HOSPITAL_CARE = "hospital_care", "مراقبت بیمارستانی"
     DIAPER_DEPENDENT = "diaper_dependent", "پوشکی"
+    LOWER_BACK_DISC = "lower_back_disc", "دیسک کمر"
+    BLIND = "blind", "نابینایی"
+    PHYSICALLY_STRONG_BUILD = "physically_strong_build", "قوی‌البنیه (دشوار برای جابجایی و کنترل)"
+    FRACTURE = "fracture", "شکستگی استخوان"
+    DEPRESSION = "depression", "افسردگی"
+    NEEDS_COMPANIONSHIP = "needs_companionship", "تنها و نیازمند هم‌صحبتی (هم‌دم)"
+    SPEECH_IMPAIRMENT = "speech_impairment", "اختلال گفتار و تکلم"
+    RESPIRATORY_PROBLEM = "respiratory_problem", "مشکلات تنفسی"
+    RESTLESSNESS = "restlessness", "بی‌قراری (مانند زوال عقل)"
+    INCONTINENCE = "incontinence", "بی‌اختیاری ادرار و مدفوع"
     NONE = "none", "هیچ‌کدام"
 
 class EducationLevel(models.TextChoices):
