@@ -130,6 +130,7 @@ const DOC_CHECKLIST = [
   { field: "doc_mental_health_test", docType: "mental_health_test", label: "آزمون سلامت روان" },
   { field: "doc_promissory_note", docType: "promissory_note", label: "دریافت سفته/ضمانت" },
   { field: "doc_id_card_received", docType: "id_card_received", label: "دریافت مدرک شناسایی" },
+  { field: "doc_residency_documents", docType: "residency_documents", label: "مدارک اقامت اتباع (پاسپورت/اقامت)" },
 ] as const satisfies readonly { field: keyof AgencyCaregiverPipelineItem; docType: CaregiverDocumentField; label: string }[]
 
 const DOC_STATUS_LABEL: Record<CaregiverDocumentReviewStatus, string> = {

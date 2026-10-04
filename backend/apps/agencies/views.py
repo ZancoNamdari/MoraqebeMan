@@ -1507,6 +1507,7 @@ class AgencyCaregiverPipelineUpdateView(APIView):
         editable_bool_fields = [
             "is_urgent", "doc_no_criminal_record", "doc_no_addiction_test", "doc_identity_verified",
             "doc_personal_photo", "doc_mental_health_test", "doc_promissory_note", "doc_id_card_received",
+            "doc_residency_documents",
         ]
         for field in editable_bool_fields:
             if field in request.data:

@@ -73,6 +73,11 @@ class IdentityProfile(models.Model):
     height_range = models.CharField(max_length=20, choices=HeightRange.choices, blank=True, verbose_name="قد")
     weight_range = models.CharField(max_length=20, choices=WeightRange.choices, blank=True, verbose_name="وزن")
     ethnicities = models.JSONField(default=list, blank=True, verbose_name="قومیت / زبان مادری")
+    # اتباع — پرسیده می‌شود برای همه نوع خدمت، نه فقط نظافت‌چی؛ در صورت
+    # بله، آپلود مدارک (پاسپورت/اقامت) از طریق چک‌لیست مدارک پنل آژانس
+    # انجام می‌شود (CaregiverDocumentType.RESIDENCY_DOCUMENTS).
+    is_non_iranian_national = models.BooleanField(null=True, blank=True, default=False, verbose_name="تابعیت غیرایرانی (اتباع) دارد")
+    nationality_country = models.CharField(max_length=100, blank=True, verbose_name="اهل کدام کشور است", help_text="فقط در صورت تابعیت غیرایرانی.")
     has_chronic_disease = models.BooleanField(null=True, blank=True, default=False, verbose_name="آیا بیماری مزمن دارد؟")
     chronic_disease_types = models.JSONField(default=list, blank=True, verbose_name="نوع بیماری‌های مزمن؟")
     chronic_disease_detail = models.CharField(
@@ -173,8 +178,8 @@ class CaregiverProcessMilestone(models.TextChoices):
 
 class CaregiverDocumentType(models.TextChoices):
     """
-    One-to-one with the seven doc_* booleans on CaregiverProfile below
-    — this is the upload+review record BEHIND each of those flags;
+    One-to-one with the doc_* booleans on CaregiverProfile below —
+    this is the upload+review record BEHIND each of those flags;
     the boolean itself stays the fast-read summary everywhere it's
     already used (Kanban badge count, reminder rules), and is kept in
     sync automatically whenever a CaregiverDocumentUpload's status
@@ -185,6 +190,9 @@ class CaregiverDocumentType(models.TextChoices):
     IDENTITY_VERIFIED = "identity_verified", "تأیید مدارک هویتی"
     PERSONAL_PHOTO = "personal_photo", "عکس پرسنلی"
     MENTAL_HEALTH_TEST = "mental_health_test", "آزمون سلامت روان"
+    # فقط برای مراقبانی که در فرم هویتی «تابعیت غیرایرانی» را تأیید
+    # کرده‌اند — پاسپورت/مدت اقامت/مجوز کار.
+    RESIDENCY_DOCUMENTS = "residency_documents", "مدارک اقامت اتباع (پاسپورت/اقامت)"
     PROMISSORY_NOTE = "promissory_note", "دریافت سفته/ضمانت"
     ID_CARD_RECEIVED = "id_card_received", "دریافت مدرک شناسایی"
 
@@ -334,6 +342,7 @@ class CaregiverProfile(models.Model):
     doc_mental_health_test = models.BooleanField(default=False, verbose_name="آزمون سلامت روان")
     doc_promissory_note = models.BooleanField(default=False, verbose_name="دریافت سفته/ضمانت")
     doc_id_card_received = models.BooleanField(default=False, verbose_name="دریافت مدرک شناسایی")
+    doc_residency_documents = models.BooleanField(default=False, verbose_name="مدارک اقامت اتباع")
     created_by = models.ForeignKey(
         "accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="created_caregivers", verbose_name="ثبت‌شده توسط",

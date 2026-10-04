@@ -604,26 +604,6 @@ const COOKING_CUISINE: Choice[] = [
   ["other", "سایر"],
 ]
 
-const COOKING_ABILITY: Choice[] = [
-  ["ingredient_prep", "آماده‌سازی مواد"],
-  ["chopping", "خرد کردن"],
-  ["rice_cooking", "پخت برنج"],
-  ["stew", "خورشت"],
-  ["kabob", "کباب"],
-  ["soup", "سوپ"],
-  ["salad", "سالاد"],
-  ["dessert", "دسر"],
-  ["food_freezing", "فریز کردن غذا"],
-  ["multi_day_meal_prep", "آماده‌سازی غذای چند روز"],
-]
-
-const COOKING_INTEREST_LEVEL: Choice[] = [
-  ["yes", "بله"],
-  ["somewhat", "تا حدی"],
-  ["only_if_requested", "فقط در صورت درخواست"],
-  ["no", "خیر"],
-]
-
 // سرایداری / سرایداری خانوادگی / سرایداری مجردی — این یکی هنوز به‌عنوان
 // یک دنباله واقعی پرسیده می‌شود (نه یک تسک‌لیست اضافی).
 const JANITOR_RESIDENCY: Choice[] = [
@@ -645,13 +625,6 @@ const GENERAL_CLEANING_SKILL: Choice[] = [
   ["gathering_items", "جمع‌آوری وسایل"],
   ["bathroom_washing", "شست‌وشوی سرویس بهداشتی"],
   ["kitchen_washing", "شست‌وشوی آشپزخانه"],
-]
-
-const CAMERA_TOLERANCE: Choice[] = [
-  ["no_problem", "بله، مشکلی ندارم"],
-  ["public_areas_only", "فقط در فضاهای عمومی"],
-  ["prefer_not", "ترجیح می‌دهم نباشد"],
-  ["no", "خیر"],
 ]
 
 const PROPERTY_SIZE_RANGE: Choice[] = [
@@ -1017,14 +990,13 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       // score — a caregiver's cleaning standard is a real difference
       // in what they'll do, so it gets a specific, pickable answer.
       { key: "cleaning_standard_level", label: "سطح نظافتی که ارائه می‌دهد", type: "choice", choices: CLEANING_STANDARD_LEVEL },
-      { key: "has_assistant", label: "برای کارهای سنگین نیروی کمکی دارد", type: "bool" },
       { key: "heavy_physical_work_ok", label: "توان بدنی برای کارهای نظافتی سنگین (زور بازو)", type: "bool" },
       // Property size, not a client age range — نظافت‌چی works for a
       // property/employer, not an elderly patient.
       { key: "preferred_property_size", label: "حداکثر متراژ محل مورد قبول برای نظافت", type: "choice", choices: PROPERTY_SIZE_RANGE },
-      { key: "camera_tolerance_level", label: "آمادگی برای کار در محل دارای دوربین مداربسته", type: "choice", choices: CAMERA_TOLERANCE },
       // محل ارائه خدمات — جایگزین سؤال سن/شرایط جسمی کارفرما که اینجا
-      // موضوعیت ندارد.
+      // موضوعیت ندارد. سؤال دوربین مداربسته دیگر اینجا تکرار نمی‌شود —
+      // همان سؤال عمومی «مشکلی با دوربین مداربسته» در فرم ۲ کافی است.
       { key: "service_locations", label: "محل‌هایی که آمادگی ارائه خدمت در آن‌ها را دارد", type: "multi", choices: [
         ["home", "منزل (آپارتمان)"],
         ["villa", "ویلا"],
@@ -1035,10 +1007,8 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
         ["yard", "حیاط"],
         ["other", "سایر"],
       ] },
-      { key: "is_non_iranian_national", label: "تابعیت غیرایرانی دارد", type: "bool" },
-      // اتباع — فقط در صورت تابعیت غیرایرانی پرسیده می‌شود.
-      { key: "nationality_country", label: "اهل کدام کشور است", type: "text", showIfField: { key: "is_non_iranian_national", oneOf: ["true"] } },
-      { key: "residency_documents_detail", label: "مدارک مرتبط با اتباع (پاسپورت، مدت اقامت و مجوز کار)", type: "text", showIfField: { key: "is_non_iranian_national", oneOf: ["true"] } },
+      // اتباع بودن حالا در فرم ۱ (هویتی) به‌صورت عمومی برای همه نوع
+      // خدمت پرسیده می‌شود، نه اینجا — رجوع کنید به identity.is_non_iranian_national.
       // زیرشاخه‌های واقعی نظافت‌چی فقط همین ۳ تاست؛ بقیه نقش‌ها
       // («پذیرایی»، «سرایداری»، «نظافت ویلا» و...) دیگر زیرشاخه‌های
       // مستقل نیستند، بلکه فعالیت‌هایی هستند که داخل خدمات داخل/خارج
@@ -1057,7 +1027,6 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
         ["parking_cleaning", "نظافت پارکینگ"],
         ["staircase_cleaning", "نظافت راه‌پله"],
         ["workplace_cleaning", "نظافت شرکت / دفتر / مطب / کلینیک"],
-        ["janitor", "سرایداری"],
         ["janitor_family", "سرایداری خانوادگی"],
         ["janitor_single", "سرایداری مجردی"],
         ["shopping_errands", "خرید و انجام امور بیرون از منزل"],
@@ -1069,16 +1038,13 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "client_facing_environment_ok", label: "آمادگی برای کار در محیط دارای ارباب‌رجوع", type: "bool", showIfField: { key: "outdoor_activities", oneOf: ["workplace_cleaning"] } },
       { key: "workplace_confidentiality_ok", label: "رعایت محرمانگی محیط کاری", type: "bool", showIfField: { key: "outdoor_activities", oneOf: ["workplace_cleaning"] } },
       // سرایداری / سرایداری خانوادگی / سرایداری مجردی
-      { key: "janitor_residency", label: "وضعیت اقامت در محل سرایداری", type: "choice", choices: JANITOR_RESIDENCY, showIfField: { key: "outdoor_activities", oneOf: ["janitor", "janitor_family", "janitor_single"] } },
+      { key: "janitor_residency", label: "وضعیت اقامت در محل سرایداری", type: "choice", choices: JANITOR_RESIDENCY, showIfField: { key: "outdoor_activities", oneOf: ["janitor_family", "janitor_single"] } },
       { key: "janitor_family_spouse_present", label: "امکان حضور همسر در محل سرایداری", type: "bool", showIfField: { key: "outdoor_activities", oneOf: ["janitor_family"] } },
       { key: "janitor_family_children_present", label: "امکان حضور فرزندان در محل سرایداری", type: "bool", showIfField: { key: "outdoor_activities", oneOf: ["janitor_family"] } },
       { key: "janitor_family_member_count", label: "تعداد اعضای خانواده", type: "text", showIfField: { key: "outdoor_activities", oneOf: ["janitor_family"] } },
       // آشپزی
       { key: "cooking_cuisines", label: "نوع غذاهایی که می‌تواند بپزد", type: "multi", choices: COOKING_CUISINE, showIf: ["cooking"] },
       { key: "cooking_skill_level", label: "سطح آشپزی", type: "choice", choices: COOKING_SKILL_LEVEL, showIf: ["cooking"] },
-      { key: "cooking_abilities", label: "توانایی‌های آشپزی", type: "multi", choices: COOKING_ABILITY, showIf: ["cooking"] },
-      { key: "cooking_interest_level", label: "میزان علاقه به آشپزی", type: "choice", choices: COOKING_INTEREST_LEVEL, showIf: ["cooking"] },
-      { key: "ok_without_cooking_duty", label: "آمادگی برای کار در منازلی که نیاز به آشپزی ندارند", type: "bool", showIf: ["cooking"] },
     ],
     form3: [
       // سوابق کار بر اساس محیط — form4's location-based experience,
@@ -1143,7 +1109,7 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "food_hygiene_compliance_level", label: "رعایت بهداشت مواد غذایی", type: "score", showIf: ["cooking"] },
       { key: "hosting_etiquette_level", label: "ادب، ظاهر مرتب و برخورد مناسب هنگام پذیرایی", type: "score", showIfField: { key: "indoor_activities", oneOf: ["hosting"] } },
       { key: "workplace_protocol_compliance_level", label: "رعایت محرمانگی و پروتکل‌های محیط کاری", type: "score", showIfField: { key: "outdoor_activities", oneOf: ["workplace_cleaning"] } },
-      { key: "janitor_reliability_level", label: "مسئولیت‌پذیری، استقلال و پیگیری در سرایداری", type: "score", showIfField: { key: "outdoor_activities", oneOf: ["janitor", "janitor_family", "janitor_single"] } },
+      { key: "janitor_reliability_level", label: "مسئولیت‌پذیری، استقلال و پیگیری در سرایداری", type: "score", showIfField: { key: "outdoor_activities", oneOf: ["janitor_family", "janitor_single"] } },
       { key: "villa_independent_responsibility_level", label: "استقلال کاری و مسئولیت‌پذیری در ویلاداری", type: "score", showIfField: { key: "indoor_activities", oneOf: ["villa_cleaning"] } },
     ],
   },

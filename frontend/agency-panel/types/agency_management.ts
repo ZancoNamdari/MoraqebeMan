@@ -105,6 +105,7 @@ export interface CaregiverDocumentUpload {
 export type CaregiverDocumentField =
   | "no_criminal_record" | "no_addiction_test" | "identity_verified"
   | "personal_photo" | "mental_health_test" | "promissory_note" | "id_card_received"
+  | "residency_documents"
 
 // One column of an agency's own patient/caregiver Kanban board —
 // backed by apps.agencies.models.AgencyPipelineStage. Every agency
@@ -146,10 +147,11 @@ export interface AgencyCaregiverPipelineItem {
   doc_mental_health_test: boolean
   doc_promissory_note: boolean
   doc_id_card_received: boolean
+  doc_residency_documents: boolean
   // Keyed by CaregiverDocumentField (e.g. "no_criminal_record", NOT
   // the "doc_" prefixed booleans above) — the file/status detail
-  // behind each of those seven fast-read booleans; null for a
-  // document type that has never been uploaded.
+  // behind each of those fast-read booleans; null for a document
+  // type that has never been uploaded.
   documents: Record<CaregiverDocumentField, CaregiverDocumentUpload | null>
   tags: string[]
   process_milestones: string[]

@@ -29,6 +29,7 @@ export interface CaregiverDocumentUpload {
 export type CaregiverDocumentField =
   | "no_criminal_record" | "no_addiction_test" | "identity_verified"
   | "personal_photo" | "mental_health_test" | "promissory_note" | "id_card_received"
+  | "residency_documents"
 
 export interface CaregiverFullProfile {
   is_approved: boolean

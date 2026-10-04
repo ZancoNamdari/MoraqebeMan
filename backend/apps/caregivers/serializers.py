@@ -171,6 +171,7 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
             "father_name", "national_id", "birth_certificate_number", "birth_certificate_issue_place",
             "birth_date", "gender", "marital_status", "children_count", "military_status",
             "height_range", "weight_range", "ethnicities",
+            "is_non_iranian_national", "nationality_country",
             "has_chronic_disease", "chronic_disease_types", "chronic_disease_detail",
             "takes_permanent_medication", "medication_types", "medication_detail", "psychiatric_medication_detail",
             "emergency_contact_phone", "emergency_contact_relation", "landline_phone",

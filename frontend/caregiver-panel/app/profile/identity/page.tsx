@@ -22,7 +22,7 @@ import { ROUTES } from "@/lib/routes"
 const emptyForm: MyIdentityProfile = {
   full_name: "", father_name: "", birth_certificate_number: "", birth_certificate_issue_place: "",
   birth_date: null, gender: "", marital_status: "", children_count: "", military_status: "",
-  height_range: "", weight_range: "", ethnicities: [],
+  height_range: "", weight_range: "", ethnicities: [], is_non_iranian_national: null, nationality_country: "",
   has_chronic_disease: null, chronic_disease_types: [],
   takes_permanent_medication: null, medication_types: [],
   emergency_contact_phone: "", emergency_contact_relation: "", landline_phone: "",
@@ -149,6 +149,13 @@ export default function IdentityFormPage() {
                 <Field label="قومیت (می‌توانید چند مورد انتخاب کنید)">
                   <CheckboxGroup choices={ETHNICITY} value={form.ethnicities || []} onChange={(v) => set("ethnicities", v)} />
                 </Field>
+                <Field label="آیا تابعیت غیرایرانی (اتباع) دارید؟"><YesNo value={form.is_non_iranian_national ?? null} onChange={(v) => set("is_non_iranian_national", v)} /></Field>
+                {form.is_non_iranian_national && (
+                  <>
+                    <Field label="اهل کدام کشور هستید؟"><Input value={form.nationality_country || ""} onChange={(e) => set("nationality_country", e.target.value)} /></Field>
+                    <p className="-mt-2 text-xs text-muted-foreground">مدارک پاسپورت/اقامت را از طریق پشتیبانی یا پنل آژانس ارسال کنید.</p>
+                  </>
+                )}
               </CardContent>
             </Card>
 

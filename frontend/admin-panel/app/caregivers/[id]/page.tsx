@@ -31,6 +31,7 @@ const DOC_CHECKLIST: { docType: CaregiverDocumentField; label: string }[] = [
   { docType: "mental_health_test", label: "آزمون سلامت روان" },
   { docType: "promissory_note", label: "دریافت سفته/ضمانت" },
   { docType: "id_card_received", label: "دریافت مدرک شناسایی" },
+  { docType: "residency_documents", label: "مدارک اقامت اتباع (پاسپورت/اقامت)" },
 ]
 
 const DOC_STATUS_LABEL: Record<string, string> = { pending: "در انتظار بررسی", approved: "تأیید شده", rejected: "رد شده" }

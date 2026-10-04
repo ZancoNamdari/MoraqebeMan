@@ -64,7 +64,7 @@ const EMPTY_IDENTITY: IdentityFormData = {
   father_name: "", national_id: "", birth_certificate_number: "", birth_certificate_issue_place: "",
   birth_date: "", gender: "", marital_status: "", children_count: "",
   has_children: null, currently_caring_for_own_child: null, military_status: null,
-  height_range: "", weight_range: "", ethnicities: [],
+  height_range: "", weight_range: "", ethnicities: [], is_non_iranian_national: null, nationality_country: "",
   has_chronic_disease: false, chronic_disease_types: [], chronic_disease_detail: "",
   takes_permanent_medication: false, medication_types: [], medication_detail: "", psychiatric_medication_detail: "",
   emergency_contact_phone: "", emergency_contact_relation: "", landline_phone: "",
@@ -574,6 +574,13 @@ export default function CaregiverRegistrationWizard() {
               <Field label="قد"><ChoiceSelect choices={C.HEIGHT_RANGE} value={identity.height_range} onChange={(v) => setIdentity({ ...identity, height_range: v })} /></Field>
               <Field label="وزن"><ChoiceSelect choices={C.WEIGHT_RANGE} value={identity.weight_range} onChange={(v) => setIdentity({ ...identity, weight_range: v })} /></Field>
               <Field label="قومیت / زبان مادری"><CheckboxGroup choices={C.ETHNICITY} value={identity.ethnicities} onChange={(v) => setIdentity({ ...identity, ethnicities: v })} /></Field>
+              <Field label="آیا تابعیت غیرایرانی (اتباع) دارید؟"><YesNo value={identity.is_non_iranian_national} onChange={(v) => setIdentity({ ...identity, is_non_iranian_national: v })} /></Field>
+              {identity.is_non_iranian_national && (
+                <>
+                  <Field label="اهل کدام کشور هستید؟"><Input value={identity.nationality_country} onChange={(e) => setIdentity({ ...identity, nationality_country: e.target.value })} /></Field>
+                  <p className="-mt-2 text-xs text-muted-foreground">مدارک پاسپورت/اقامت از بخش «مدارک» در کاریز خدمت‌دهنده آپلود می‌شود.</p>
+                </>
+              )}
 
               <SectionHeading>وضعیت سلامت</SectionHeading>
               <Field label="آیا بیماری زمینه‌ای دارد؟" required><YesNo value={identity.has_chronic_disease} onChange={(v) => setIdentity({ ...identity, has_chronic_disease: !!v })} /></Field>
@@ -663,8 +670,15 @@ export default function CaregiverRegistrationWizard() {
               {identity.gender === "male" && (
                 <Field label="آیا مشکلی با کار نزد مادر تنها (بدون همسر) دارید؟"><YesNo value={workPrefs.problem_with_single_mother} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_single_mother: v })} /></Field>
               )}
-              <Field label="آیا مشکلی با کار در خانه‌ای که پدر در ساعات کاری در منزل است دارید؟"><YesNo value={workPrefs.problem_with_father_present_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_father_present_at_home: v })} /></Field>
-              <Field label="آیا مشکلی با کار در خانه‌ای که پدربزرگ/مادربزرگ یا یکی از اقوام هم حضور دارد دارید؟"><YesNo value={workPrefs.problem_with_grandparent_or_relative_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_grandparent_or_relative_at_home: v })} /></Field>
+              {/* برای نظافت‌چیِ خالص بی‌اهمیت است (طبق تأیید صریح) —
+                  فقط وقتی حداقل یک نوع خدمت دیگر هم انتخاب شده نشان
+                  داده می‌شود. */}
+              {serviceTypes.some((t) => t !== "nezafatchi") && (
+                <>
+                  <Field label="آیا مشکلی با کار در خانه‌ای که پدر در ساعات کاری در منزل است دارید؟"><YesNo value={workPrefs.problem_with_father_present_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_father_present_at_home: v })} /></Field>
+                  <Field label="آیا مشکلی با کار در خانه‌ای که پدربزرگ/مادربزرگ یا یکی از اقوام هم حضور دارد دارید؟"><YesNo value={workPrefs.problem_with_grandparent_or_relative_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_grandparent_or_relative_at_home: v })} /></Field>
+                </>
+              )}
               <Field label="آیا مشکلی با کار در منزلی که دوربین مداربسته دارد، دارید؟"><YesNo value={workPrefs.problem_with_home_camera} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_home_camera: v })} /></Field>
               <Field label="آیا مشکلی با حضور سگ در منزل دارید؟"><YesNo value={workPrefs.problem_with_dog} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_dog: v })} /></Field>
               <Field label="آیا مشکلی با حضور گربه در منزل دارید؟"><YesNo value={workPrefs.problem_with_cat} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_cat: v })} /></Field>

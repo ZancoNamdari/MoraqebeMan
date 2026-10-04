@@ -106,6 +106,7 @@ class AgencyCaregiverPipelineSerializer(serializers.ModelSerializer):
             "service_types", "service_subtypes",
             "doc_no_criminal_record", "doc_no_addiction_test", "doc_identity_verified",
             "doc_personal_photo", "doc_mental_health_test", "doc_promissory_note", "doc_id_card_received",
+            "doc_residency_documents",
             "documents", "active_reminders", "staff_notes", "contract_start_date", "contract_end_date",
         ]
         read_only_fields = ["id", "user_id", "full_name", "phone_number", "extra_contacts", "documents", "active_reminders"]
