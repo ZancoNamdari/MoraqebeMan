@@ -47,7 +47,7 @@ export const CAREGIVER_QUESTIONNAIRE: CaregiverQuestionnaireSection[] = [
       },
       {
         field: "clinical_compatibility_level",
-        question: "میزان سازگاری بالینی شما (رعایت دستورات پزشکی و شرایط درمانی سالمند) چقدر است؟",
+        question: "میزان سازگاری بالینی (یعنی آشنایی حداقلی با مسائل درمانی و پزشکی و رعایت دستورات پزشکی و شرایط درمانی سالمند) شما چقدر است؟",
         options: [
           { value: "0", text: "سازگار نیستم" },
           { value: "50", text: "تا حدی سازگار هستم" },

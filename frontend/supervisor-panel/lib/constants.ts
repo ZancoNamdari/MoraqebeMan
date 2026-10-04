@@ -50,7 +50,10 @@ export const WEIGHT_RANGE: Choice[] = [
 
 export const ETHNICITY: Choice[] = [
   ["fars", "فارس"],
-  ["azeri_turk", "ترک آذری"],
+  ["turk_tabriz", "ترک تبریزی"],
+  ["turk_zanjan", "ترک زنجانی"],
+  ["turk_ardabil", "ترک اردبیلی"],
+  ["turk_other", "سایر مناطق ترک‌نشین (آذری)"],
   ["kurd", "کرد"],
   ["lor", "لر"],
   ["gilak", "گیلک"],
@@ -248,7 +251,6 @@ export const SPECIAL_CONDITION_EXPERIENCE: Choice[] = [
   ["diaper_dependent", "پوشکی"],
   ["lower_back_disc", "دیسک کمر"],
   ["blind", "نابینایی"],
-  ["physically_strong_build", "قوی‌البنیه (دشوار برای جابجایی و کنترل)"],
   ["fracture", "شکستگی استخوان"],
   ["depression", "افسردگی"],
   ["needs_companionship", "تنها و نیازمند هم‌صحبتی (هم‌دم)"],

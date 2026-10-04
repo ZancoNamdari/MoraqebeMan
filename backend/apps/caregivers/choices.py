@@ -129,7 +129,11 @@ class WeightRange(models.TextChoices):
 class Ethnicity(models.TextChoices):
     """Multi-select in the form — stored as a JSON list of these values."""
     FARS = "fars", "فارس"
-    AZERI_TURK = "azeri_turk", "ترک آذری"
+    # قومیت ترک به‌جای یک گزینه کلی، به شهر مرتبط می‌شود.
+    TURK_TABRIZ = "turk_tabriz", "ترک تبریزی"
+    TURK_ZANJAN = "turk_zanjan", "ترک زنجانی"
+    TURK_ARDABIL = "turk_ardabil", "ترک اردبیلی"
+    TURK_OTHER = "turk_other", "سایر مناطق ترک‌نشین (آذری)"
     KURD = "kurd", "کرد"
     LOR = "lor", "لر"
     GILAK = "gilak", "گیلک"
@@ -336,7 +340,6 @@ class SpecialConditionExperience(models.TextChoices):
     DIAPER_DEPENDENT = "diaper_dependent", "پوشکی"
     LOWER_BACK_DISC = "lower_back_disc", "دیسک کمر"
     BLIND = "blind", "نابینایی"
-    PHYSICALLY_STRONG_BUILD = "physically_strong_build", "قوی‌البنیه (دشوار برای جابجایی و کنترل)"
     FRACTURE = "fracture", "شکستگی استخوان"
     DEPRESSION = "depression", "افسردگی"
     NEEDS_COMPANIONSHIP = "needs_companionship", "تنها و نیازمند هم‌صحبتی (هم‌دم)"

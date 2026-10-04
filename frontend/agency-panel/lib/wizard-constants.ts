@@ -118,7 +118,12 @@ export const WEIGHT_RANGE: Choice[] = [
 
 export const ETHNICITY: Choice[] = [
   ["fars", "فارس"],
-  ["azeri_turk", "ترک آذری"],
+  // قومیت ترک به‌جای یک گزینه کلی، به شهر مرتبط می‌شود — برای
+  // Matching دقیق‌تر با خانواده‌های هم‌شهر/هم‌زبان.
+  ["turk_tabriz", "ترک تبریزی"],
+  ["turk_zanjan", "ترک زنجانی"],
+  ["turk_ardabil", "ترک اردبیلی"],
+  ["turk_other", "سایر مناطق ترک‌نشین (آذری)"],
   ["kurd", "کرد"],
   ["lor", "لر"],
   ["gilak", "گیلک"],
@@ -330,7 +335,6 @@ export const SPECIAL_CONDITION_EXPERIENCE: Choice[] = [
   ["diaper_dependent", "پوشکی"],
   ["lower_back_disc", "دیسک کمر"],
   ["blind", "نابینایی"],
-  ["physically_strong_build", "قوی‌البنیه (دشوار برای جابجایی و کنترل)"],
   ["fracture", "شکستگی استخوان"],
   ["depression", "افسردگی"],
   ["needs_companionship", "تنها و نیازمند هم‌صحبتی (هم‌دم)"],
@@ -412,6 +416,15 @@ export const FOREIGN_LANGUAGE: Choice[] = [
   ["english", "انگلیسی"],
   ["arabic", "عربی"],
   ["turkish", "ترکی استانبولی"],
+  ["french", "فرانسوی"],
+  ["german", "آلمانی"],
+  ["russian", "روسی"],
+  ["chinese", "چینی"],
+  ["spanish", "اسپانیایی"],
+  ["italian", "ایتالیایی"],
+  ["urdu", "اردو"],
+  ["pashto", "پشتو"],
+  ["armenian", "ارمنی"],
   ["other", "سایر"],
 ]
 
@@ -1046,47 +1059,11 @@ const CARE_EXPERIENCE_LEVEL: Choice[] = [
   ["fully_proficient", "کاملاً مسلط هستم"],
 ]
 
-// The elderly person's actual prescribed diet comes from the
-// family/doctor (customer-side data, not caregiver-side); this only
-// asks whether the caregiver CAN execute each diet type.
-const DIETARY_EXECUTION_ABILITY: Choice[] = [
-  ["low_salt", "غذای کم‌نمک"],
-  ["low_fat", "غذای کم‌چرب"],
-  ["diabetic", "غذای دیابتی"],
-  ["soft", "غذای نرم"],
-  ["puree", "غذای پوره‌شده"],
-  ["other_prescribed", "سایر رژیم‌های تجویزشده"],
-]
-
-const OUTSIDE_ACCOMPANIMENT_ACTIVITY: Choice[] = [
-  ["walking", "پیاده‌روی"],
-  ["park", "پارک"],
-  ["shopping", "خرید"],
-  ["doctor_visit", "مراجعه پزشکی"],
-  ["physiotherapy", "فیزیوتراپی"],
-  ["lab", "آزمایشگاه"],
-  ["pharmacy", "داروخانه"],
-  ["party", "مهمانی"],
-  ["intracity_trip", "سفر داخل شهر"],
-]
-
 const ACCOMPANIMENT_TRANSPORT_METHOD: Choice[] = [
   ["on_foot", "پیاده"],
   ["public_transport", "حمل‌ونقل عمومی"],
   ["family_car", "خودرو خانواده"],
   ["personal_car", "خودرو شخصی"],
-]
-
-// Kept separate from willing_to_relocate_other_cities (a work-location
-// preference) — this is about accompanying the elderly person ON a
-// trip, which is its own willingness with its own gradations.
-const TRAVEL_ACCOMPANIMENT_WILLINGNESS: Choice[] = [
-  ["none", "آمادگی ندارم"],
-  ["intracity", "سفر داخل شهر"],
-  ["intraprovince", "سفر داخل استان"],
-  ["other_cities", "سفر به شهرهای دیگر"],
-  ["multi_day", "سفر چندروزه"],
-  ["long_trip", "سفر طولانی"],
 ]
 
 const VEHICLE_ABILITY: Choice[] = [
@@ -1110,10 +1087,10 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
   // type's extra questions.
   salmandyar: {
     form2: [
-      { key: "has_assistant", label: "برای کارهای سنگین نیروی کمکی دارد", type: "bool" },
+      { key: "has_assistant", label: "آیا نیاز به نیروی کمکی برای انجام امور دارید؟", type: "bool" },
       { key: "night_wakefulness_ok", label: "آمادگی برای بیداری‌های شبانه مکرر", type: "bool" },
       { key: "toileting_hygiene_assistance_ok", label: "آمادگی برای کمک در طهارت و نظافت فردی سالمند", type: "bool" },
-      { key: "bedpan_assistance_ok", label: "آمادگی برای کمک با لگن (سالمند بستری)", type: "bool" },
+      { key: "bedpan_assistance_ok", label: "آیا مشکلی با کمک به سالمند نیازمند استفاده از لگن جهت امور شخصی دارید؟", type: "bool" },
       { key: "park_outing_accompaniment_ok", label: "آمادگی برای همراهی سالمند در پیاده‌روی و پارک", type: "bool" },
       { key: "willing_to_relocate_other_cities", label: "آمادگی برای کار در شهرهای دیگر (محل کار دائم)", type: "bool" },
       { key: "ok_with_second_elderly_spouse_present", label: "آمادگی برای مراقبت در حضور همسر سالمند (زوج سالمند)", type: "bool" },
@@ -1122,17 +1099,14 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       // بلی/خیر ساده (پیشنهاد صریح سند).
       { key: "grooming_assistance_level", label: "کمک به اصلاح و آراستگی سالمند", type: "choice", choices: CARE_EXPERIENCE_LEVEL },
       { key: "adult_diaper_changing_level", label: "تعویض پوشک بزرگسال", type: "choice", choices: CARE_EXPERIENCE_LEVEL },
-      // حرکت و جابه‌جایی — عصا جدا از واکر/ویلچر (که در
-      // CAREGIVING_SKILL/MOBILITY_ASSISTANCE_ABILITY پوشش داده شده‌اند)
-      { key: "cane_assistance_experience", label: "تجربه کار با عصا", type: "bool" },
       // غذا و تغذیه — توانایی اجرای رژیم، نه نوع رژیم سالمند (که از
-      // سمت خانواده/پزشک گرفته می‌شود)
-      { key: "dietary_execution_abilities", label: "توانایی تهیه/اجرای این نوع رژیم‌های غذایی", type: "multi", choices: DIETARY_EXECUTION_ABILITY },
-      // همراهی خارج از منزل و سفر
-      { key: "outside_accompaniment_activities", label: "آمادگی همراهی سالمند در این موارد", type: "multi", choices: OUTSIDE_ACCOMPANIMENT_ACTIVITY },
+      // سمت خانواده/پزشک گرفته می‌شود). ساده شد به یک بلی/خیر.
+      { key: "dietary_execution_ok", label: "آیا توانایی تهیه و اجرای رژیم‌های غذایی خاص (کم‌نمک، دیابتی و مانند آن) را دارید؟", type: "bool" },
+      // همراهی خارج از منزل — به‌جای فهرست فعالیت‌ها، همراهی برای
+      // مراجعه به مراکز درمانی (نقطه حساس‌تر) به‌صورت بلی/خیر پرسیده
+      // می‌شود؛ وسیله رفت‌وآمد همچنان جدا می‌ماند.
+      { key: "medical_accompaniment_ok", label: "آیا آمادگی همراهی سالمند در مراجعه به مراکز درمانی را دارید؟", type: "bool" },
       { key: "accompaniment_transport_methods", label: "وسیله رفت‌وآمد هنگام همراهی", type: "multi", choices: ACCOMPANIMENT_TRANSPORT_METHOD },
-      { key: "travel_accompaniment_willingness", label: "آمادگی سفر همراه سالمند", type: "choice", choices: TRAVEL_ACCOMPANIMENT_WILLINGNESS },
-      { key: "overnight_during_travel_ok", label: "امکان شب‌مانی در سفر همراه سالمند", type: "bool" },
       // ظاهر — به‌جای ارزش‌گذاری روی ظاهر، سازگاری با استاندارد
       // موردنظر خانواده پرسیده می‌شود (پیشنهاد صریح سند)
       { key: "appearance_standard_compliance_ok", label: "امکان رعایت استاندارد ظاهری و پوشش موردنظر خانواده", type: "bool" },
@@ -1145,34 +1119,32 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
     form3: [
       { key: "catheter_care_experience", label: "تجربه مراقبت از سالمند دارای سوند", type: "bool" },
       { key: "physiotherapy_assistance_experience", label: "تجربه همراهی/کمک در تمرینات فیزیوتراپی", type: "bool" },
-      { key: "is_literate", label: "باسواد است (قادر به خواندن و نوشتن)", type: "bool" },
       { key: "has_acrylic_nails", label: "ناخن کاشته‌شده دارد", type: "bool" },
-      { key: "has_tattoo", label: "دارای تاتو است", type: "bool" },
+      { key: "has_tattoo", label: "دارای تتو است", type: "bool" },
+      // اگر دوره یا مهارتی داشتند که در چک‌لیست‌های بالا نبود.
+      { key: "training_courses_other_detail", label: "دوره آموزشی دیگری هم گذرانده‌اید؟ (اگر در لیست بالا نبود)", type: "text" },
+      { key: "caregiving_skills_other_detail", label: "مهارت مراقبتی دیگری هم دارید؟ (اگر در لیست بالا نبود)", type: "text" },
     ],
     // قبلاً خالی بود — سازگاری عمومی و اختصاصی سالمندیار طبق فرم ۱۵
-    // سند، مثل Cleaner/Caregiverهای دیگر از ۱ تا ۵.
+    // سند، مثل Cleaner/Caregiverهای دیگر از ۱ تا ۵. مواردی که با
+    // سازگاری عمومی (CAREGIVER_QUESTIONNAIRE) هم‌پوشانی داشتند یا به
+    // اندازه کافی مشخص نبودند حذف شدند؛ بقیه به‌صورت سؤال واقعی
+    // (نه صرفاً یک صفت) نوشته شدند.
     questionnaire: [
-      { key: "patience_level", label: "صبوری", type: "score" },
-      { key: "kindness_level", label: "مهربانی", type: "score" },
-      { key: "calmness_level", label: "آرامش", type: "score" },
-      { key: "responsibility_level", label: "مسئولیت‌پذیری", type: "score" },
-      { key: "orderliness_level", label: "نظم", type: "score" },
-      { key: "punctuality_level", label: "وقت‌شناسی", type: "score" },
-      { key: "attention_to_detail_level", label: "توجه به جزئیات", type: "score" },
-      { key: "independent_work_ability_level", label: "توانایی کار مستقل", type: "score" },
-      { key: "communication_ability_level", label: "توانایی برقراری ارتباط", type: "score" },
-      { key: "empathy_level", label: "همدلی", type: "score" },
-      { key: "harsh_conditions_tolerance_level", label: "تحمل شرایط دشوار", type: "score" },
-      { key: "stress_management_level", label: "توانایی مدیریت استرس", type: "score" },
+      { key: "kindness_level", label: "چقدر مهربان است؟", type: "score" },
+      { key: "calmness_level", label: "چقدر آرام است؟", type: "score" },
+      { key: "responsibility_level", label: "چقدر مسئولیت‌پذیر است؟", type: "score" },
+      { key: "orderliness_level", label: "چقدر منظم است؟", type: "score" },
+      { key: "punctuality_level", label: "چقدر وقت‌شناس است؟", type: "score" },
+      { key: "attention_to_detail_level", label: "چقدر به جزئیات توجه می‌کند؟", type: "score" },
+      { key: "communication_ability_level", label: "چقدر توانایی برقراری ارتباط دارد؟", type: "score" },
+      { key: "harsh_conditions_tolerance_level", label: "چقدر تحمل شرایط دشوار را دارد؟", type: "score" },
+      { key: "stress_management_level", label: "چقدر توانایی مدیریت استرس را دارد؟", type: "score" },
       // اختصاصی سالمندیار
-      { key: "repeated_questions_patience_level", label: "صبر در برابر تکرار سؤال‌ها", type: "score" },
-      { key: "restlessness_calmness_level", label: "آرامش در برابر بی‌قراری سالمند", type: "score" },
-      { key: "elderly_communication_ability_level", label: "توانایی ارتباط با سالمند", type: "score" },
-      { key: "daily_activity_accompaniment_level", label: "توانایی همراهی سالمند در فعالیت‌های روزانه", type: "score" },
-      { key: "elderly_privacy_respect_level", label: "توانایی حفظ حریم خصوصی سالمند", type: "score" },
-      { key: "companionship_and_empathy_level", label: "توانایی ایجاد حس همراهی و همدلی", type: "score" },
-      { key: "night_wakefulness_tolerance_level", label: "تحمل بیداری شبانه", type: "score" },
-      { key: "low_ability_elderly_work_level", label: "توانایی کار با سالمند کم‌توان", type: "score" },
+      { key: "repeated_questions_patience_level", label: "چقدر در برابر تکرار سؤال‌های سالمند صبور است؟", type: "score" },
+      { key: "restlessness_calmness_level", label: "چقدر در برابر بی‌قراری سالمند آرام می‌ماند؟", type: "score" },
+      { key: "elderly_communication_ability_level", label: "چقدر توانایی ارتباط با سالمند را دارد؟", type: "score" },
+      { key: "companionship_and_empathy_level", label: "چقدر توانایی ایجاد حس همراهی و همدلی دارد؟", type: "score" },
     ],
   },
   koodakyar: {

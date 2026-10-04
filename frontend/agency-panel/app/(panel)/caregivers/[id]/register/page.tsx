@@ -129,6 +129,23 @@ export default function CaregiverRegistrationWizard() {
   const [newArea, setNewArea] = useState<ServiceArea>({ province: null, city: null, district: null })
   const [experience, setExperience] = useState<ExperienceFormData>(EMPTY_EXPERIENCE)
   const [skills, setSkills] = useState<SkillsFormData>(EMPTY_SKILLS)
+  // Per-language proficiency for any foreign language selected besides
+  // English/Arabic (which have their own dedicated model fields) —
+  // keyed by language code, rendered as one level Select per selected
+  // language instead of asking the caregiver to type "Language - Level"
+  // into free text. Composed into skills.other_languages_detail.
+  const [otherLangLevels, setOtherLangLevels] = useState<Record<string, string>>({})
+  // Free text for the "سایر" (other) foreign-language option only —
+  // kept separate from otherLangLevels so the two don't stomp each
+  // other when composing other_languages_detail.
+  const [otherLangFreeText, setOtherLangFreeText] = useState("")
+  const composeOtherLanguagesDetail = (levels: Record<string, string>, freeText: string, languages: string[]) => {
+    const dropdownPart = languages
+      .filter((c) => c !== "english" && c !== "arabic" && c !== "other" && levels[c])
+      .map((c) => `${C.FOREIGN_LANGUAGE.find((x) => x[0] === c)?.[1] || c} - ${C.LANGUAGE_LEVEL.find((l) => l[0] === levels[c])?.[1] || levels[c]}`)
+      .join("، ")
+    return [dropdownPart, freeText].filter(Boolean).join(dropdownPart && freeText ? "، " : "")
+  }
   const [references, setReferences] = useState<ReferenceFormData[]>([{ ...EMPTY_REFERENCE }])
   // Flat {field: "0"|"50"|"100"} for the 4 common questions, PLUS a
   // nested service_specific_answers: {service_type: {field: value}}
@@ -605,22 +622,27 @@ export default function CaregiverRegistrationWizard() {
               <Field label="روزهای کاری"><CheckboxGroup choices={C.WEEKDAY} value={workPrefs.available_days} onChange={(v) => setWorkPrefs({ ...workPrefs, available_days: v })} /></Field>
               <Field label="روز درخواستی برای تعطیلی"><Input value={workPrefs.day_off_request} onChange={(e) => setWorkPrefs({ ...workPrefs, day_off_request: e.target.value })} placeholder="مثلاً جمعه‌ها" /></Field>
               <Field label="شیفت‌های کاری (شبانه‌روزی با بقیه هم‌زمان انتخاب نشود)" error={fieldErrors.available_shifts}><CheckboxGroup choices={C.SHIFT} value={workPrefs.available_shifts} onChange={(v) => setWorkPrefs({ ...workPrefs, available_shifts: v })} /></Field>
-              <Field label="آیا برای ماندن در شب محدودیت زمانی دارید؟"><YesNo value={workPrefs.has_night_time_limit} onChange={(v) => setWorkPrefs({ ...workPrefs, has_night_time_limit: v })} /></Field>
-              {workPrefs.has_night_time_limit === false && (
-                <Field label="آیا اگر اتاق شخصی در اختیار شما نباشد مشکلی دارید؟"><YesNo value={workPrefs.problem_without_private_room} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_without_private_room: v })} /></Field>
+              {(workPrefs.available_shifts.includes("night") || workPrefs.available_shifts.includes("24h")) && (
+                <Field label="آیا به فضا یا اتاق شخصی نیاز دارید؟"><YesNo value={workPrefs.problem_without_private_room} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_without_private_room: v })} /></Field>
               )}
               <Field label="روش رفت‌وآمد"><CheckboxGroup choices={C.COMMUTE_METHOD} value={workPrefs.commute_methods} onChange={(v) => setWorkPrefs({ ...workPrefs, commute_methods: v })} /></Field>
               <Field label="وضعیت استعمال دخانیات"><ChoiceSelect choices={C.SMOKING_STATUS} value={workPrefs.smoking_status} onChange={(v) => setWorkPrefs({ ...workPrefs, smoking_status: v })} /></Field>
-              <Field label="پذیرش حیوان خانگی در محل کار"><YesNo value={workPrefs.pets_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, pets_ok: v })} /></Field>
               <Field label="امکان کار در تعطیلات"><YesNo value={workPrefs.holiday_work_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, holiday_work_ok: v })} /></Field>
-              <Field label="امکان شب‌مانی"><YesNo value={workPrefs.overnight_stay_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, overnight_stay_ok: v })} /></Field>
 
               {/* Universal — common to every service type, moved out of
                   کودک‌یار-only per the full-redesign request. Phrased
                   as "آیا مشکلی دارید؟" — true means the caregiver DOES
                   have a problem with that situation. */}
-              <Field label="آیا مشکلی با کار نزد پدر مجرد دارید؟"><YesNo value={workPrefs.problem_with_single_father} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_single_father: v })} /></Field>
-              <Field label="آیا مشکلی با کار نزد مادر تنها (بدون همسر) دارید؟"><YesNo value={workPrefs.problem_with_single_mother} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_single_mother: v })} /></Field>
+              {/* فقط یکی از این دو پرسیده می‌شود، بر اساس جنسیت خود
+                  مراقب (که در فرم ۱ پرسیده شده): مراقب مرد نزد مادر
+                  تنها، و مراقب زن نزد پدر مجرد — سؤال حساس آن ترکیب
+                  است، نه هر دو ترکیب هم‌زمان. */}
+              {identity.gender === "female" && (
+                <Field label="آیا مشکلی با کار نزد پدر مجرد دارید؟"><YesNo value={workPrefs.problem_with_single_father} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_single_father: v })} /></Field>
+              )}
+              {identity.gender === "male" && (
+                <Field label="آیا مشکلی با کار نزد مادر تنها (بدون همسر) دارید؟"><YesNo value={workPrefs.problem_with_single_mother} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_single_mother: v })} /></Field>
+              )}
               <Field label="آیا مشکلی با کار در خانه‌ای که پدر در ساعات کاری در منزل است دارید؟"><YesNo value={workPrefs.problem_with_father_present_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_father_present_at_home: v })} /></Field>
               <Field label="آیا مشکلی با کار در خانه‌ای که پدربزرگ/مادربزرگ یا یکی از اقوام هم حضور دارد دارید؟"><YesNo value={workPrefs.problem_with_grandparent_or_relative_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_grandparent_or_relative_at_home: v })} /></Field>
               <Field label="آیا مشکلی با کار در منزلی که دوربین مداربسته دارد، دارید؟"><YesNo value={workPrefs.problem_with_home_camera} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_home_camera: v })} /></Field>
@@ -726,7 +748,17 @@ export default function CaregiverRegistrationWizard() {
               {skills.education_level !== "diploma" && skills.education_level !== "under_diploma" && (
                 <Field label="زبان خارجی"><CheckboxGroup choices={C.FOREIGN_LANGUAGE} value={skills.foreign_languages} onChange={(v) => setSkills({ ...skills, foreign_languages: v })} /></Field>
               )}
-              <Field label="میزان تسلط به زبان انگلیسی"><ChoiceSelect choices={C.LANGUAGE_LEVEL} value={skills.english_level} onChange={(v) => setSkills({ ...skills, english_level: v })} /></Field>
+              {/* بسیاری از افراد اصلاً انگلیسی نمی‌دانند — مثل عربی،
+                  اول بلی/خیر پرسیده می‌شود، نه مستقیم سطح تسلط. */}
+              <Field label="آیا زبان انگلیسی می‌دانید؟">
+                <YesNo
+                  value={skills.english_level !== ""}
+                  onChange={(v) => setSkills({ ...skills, english_level: v ? (skills.english_level || "basic") : "" })}
+                />
+              </Field>
+              {skills.english_level !== "" && (
+                <Field label="میزان تسلط به زبان انگلیسی"><ChoiceSelect choices={C.LANGUAGE_LEVEL} value={skills.english_level} onChange={(v) => setSkills({ ...skills, english_level: v })} /></Field>
+              )}
               <Field label="آیا زبان عربی می‌دانید؟">
                 <YesNo
                   value={skills.arabic_level !== ""}
@@ -736,11 +768,40 @@ export default function CaregiverRegistrationWizard() {
               {skills.arabic_level !== "" && (
                 <Field label="میزان تسلط به زبان عربی"><ChoiceSelect choices={C.LANGUAGE_LEVEL} value={skills.arabic_level} onChange={(v) => setSkills({ ...skills, arabic_level: v })} /></Field>
               )}
-              <Field label="سایر زبان‌ها و سطح آن‌ها (اختیاری)"><Input value={skills.other_languages_detail} onChange={(e) => setSkills({ ...skills, other_languages_detail: e.target.value })} placeholder="مثلاً ترکی استانبولی - متوسط" /></Field>
+              {/* هر زبان دیگری که در «زبان خارجی» انتخاب شده (غیر از
+                  انگلیسی/عربی که فیلد اختصاصی خود را دارند) سطح تسلط
+                  جدا دارد، به‌جای تایپ آزاد «زبان - سطح». */}
+              {skills.foreign_languages.filter((code) => code !== "english" && code !== "arabic" && code !== "other").map((code) => {
+                const label = C.FOREIGN_LANGUAGE.find((c) => c[0] === code)?.[1] || code
+                return (
+                  <Field key={code} label={`میزان تسلط به زبان ${label}`}>
+                    <ChoiceSelect
+                      choices={C.LANGUAGE_LEVEL}
+                      value={otherLangLevels[code] || ""}
+                      onChange={(v) => {
+                        const nextLevels = { ...otherLangLevels, [code]: v }
+                        setOtherLangLevels(nextLevels)
+                        setSkills({ ...skills, other_languages_detail: composeOtherLanguagesDetail(nextLevels, otherLangFreeText, skills.foreign_languages) })
+                      }}
+                    />
+                  </Field>
+                )
+              })}
+              {skills.foreign_languages.includes("other") && (
+                <Field label="توضیح سایر زبان و سطح آن (اختیاری)">
+                  <Input
+                    value={otherLangFreeText}
+                    onChange={(e) => {
+                      setOtherLangFreeText(e.target.value)
+                      setSkills({ ...skills, other_languages_detail: composeOtherLanguagesDetail(otherLangLevels, e.target.value, skills.foreign_languages) })
+                    }}
+                    placeholder="مثلاً زبان و سطح آن را بنویسید"
+                  />
+                </Field>
+              )}
               {serviceTypes.includes("salmandyar") && (
                 <>
                   <Field label="دوره‌های آموزشی گذرانده‌شده"><CheckboxGroup choices={C.TRAINING_COURSE} value={skills.training_courses} onChange={(v) => setSkills({ ...skills, training_courses: v })} /></Field>
-                  <Field label="مهارت‌های ارتباطی"><CheckboxGroup choices={C.COMMUNICATION_SKILL} value={skills.communication_skills} onChange={(v) => setSkills({ ...skills, communication_skills: v })} /></Field>
                   <Field label="مهارت‌های مراقبتی"><CheckboxGroup choices={C.CAREGIVING_SKILL} value={skills.caregiving_skills} onChange={(v) => setSkills({ ...skills, caregiving_skills: v })} /></Field>
                   <Field label="توانایی جابجایی سالمند"><CheckboxGroup choices={C.MOBILITY_ASSISTANCE_ABILITY} value={skills.mobility_assistance_ability} onChange={(v) => setSkills({ ...skills, mobility_assistance_ability: v })} /></Field>
                   <Field label="مهارت‌های خانگی"><CheckboxGroup choices={C.HOUSEHOLD_SKILL} value={skills.household_skills} onChange={(v) => setSkills({ ...skills, household_skills: v })} /></Field>
