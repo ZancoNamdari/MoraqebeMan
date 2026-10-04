@@ -902,6 +902,67 @@ const PARASTAR_PROCEDURE_ABILITY: Choice[] = [
   ["suture_removal", "بخیه و کشیدن بخیه"],
   ["diaper_changing", "تغییر پوشک"],
   ["iodine_therapy", "یددرمانی"],
+  ["immobile_patient_care", "مراقبت از بیمار بی‌حرکت"],
+  ["patient_transfer", "جابه‌جایی بیمار"],
+  ["appointment_accompaniment", "همراهی بیمار برای ویزیت و درمان"],
+  ["physiotherapy_assistance", "فیزیوتراپی و کمک به انجام تمرینات تجویزشده"],
+  ["dialysis_accompaniment", "دیالیز و همراهی بیمار دیالیزی"],
+]
+
+// Which age/patient groups this پرستار has experience caring for —
+// a coarser, faster-to-answer complement to the diagnosis-level
+// PARASTAR_CONDITION_EXPERIENCE list below.
+const PARASTAR_PATIENT_GROUP: Choice[] = [
+  ["elderly", "سالمند"],
+  ["adult", "بزرگسال"],
+  ["child", "کودک"],
+  ["newborn", "نوزاد"],
+  ["mother", "مادر"],
+  ["post_op_patient", "بیمار بعد از عمل"],
+  ["home_bound_patient", "بیمار بستری در منزل"],
+  ["emergency_patient", "بیمار اورژانسی"],
+  ["intensive_care_patient", "بیمار نیازمند مراقبت ویژه"],
+]
+
+// Shared between the two equipment multi-selects below — the
+// document's own 3-tier "بدون تجربه/تجربه دارد/کاملاً مسلط" scale is
+// approximated here as two independent multi-selects (has used it at
+// all / is fully proficient with it) rather than one field per piece
+// of equipment, to keep the question count manageable.
+const PARASTAR_EQUIPMENT: Choice[] = [
+  ["blood_glucose_meter", "دستگاه قند خون"],
+  ["blood_pressure_meter", "فشارسنج"],
+  ["pulse_oximeter", "پالس‌اکسی‌متر"],
+  ["oxygen_device", "دستگاه اکسیژن"],
+  ["suction_device", "دستگاه ساکشن"],
+  ["iv_equipment", "تجهیزات سرم‌تراپی"],
+  ["gavage_equipment", "تجهیزات گاواژ"],
+  ["catheter_equipment", "تجهیزات سوند"],
+  ["other_equipment", "سایر تجهیزات پزشکی"],
+]
+
+const PARASTAR_MEDICATION_TREATMENT_ABILITY: Choice[] = [
+  ["medication_administration_per_order", "دارو دادن طبق دستور پزشک"],
+  ["chemo_care_nursing_scope", "مراقبت پرستاری از بیمار شیمی‌درمانی/سرطانی طبق دستور مرکز درمانی"],
+  ["post_treatment_care", "مراقبت بعد از درمان"],
+]
+
+const PARASTAR_WOUND_CARE_ABILITY: Choice[] = [
+  ["surgical_wound_care", "مراقبت از زخم جراحی"],
+  ["simple_dressing", "پانسمان ساده"],
+  ["infected_wound_dressing", "پانسمان زخم عفونی"],
+  ["open_wound_care", "مراقبت از زخم باز"],
+  ["skin_care", "مراقبت از پوست"],
+  ["urgent_referral_recognition", "تشخیص موارد نیازمند ارجاع فوری"],
+]
+
+const PARASTAR_MOTHER_CHILD_CARE_ABILITY: Choice[] = [
+  ["pregnant_mother_care", "مراقبت از مادر باردار"],
+  ["postpartum_care", "مراقبت پس از زایمان"],
+  ["newborn_care", "مراقبت از نوزاد"],
+  ["sick_child_care", "مراقبت از کودک بیمار"],
+  ["child_emergency_care", "اورژانس کودک"],
+  ["post_op_child_care", "مراقبت پس از عمل کودک"],
 ]
 
 const PREGNANCY_STAGE: Choice[] = [
@@ -1376,17 +1437,36 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "home_care_for_hospital_averse_patients_ok", label: "آمادگی مراقبت در منزل از بیمارانی که تمایل به رفتن به بیمارستان ندارند", type: "bool" },
       { key: "pre_surgery_shaving_ok", label: "آمادگی انجام اصلاح موی بدن قبل از عمل (شیو)", type: "bool" },
       { key: "special_patient_washing_ok", label: "آمادگی شست‌وشوی خاص بیمار", type: "bool" },
+      // مراقبت‌های بیمارستانی و جراحی — همراهی حین عمل از قبل وجود
+      // داشت؛ این‌ها مراحل دیگر همون مسیر هستند.
+      { key: "ward_companion_ok", label: "آمادگی همراهی بیمار در بخش بیمارستان", type: "bool" },
+      { key: "pre_op_care_ok", label: "آمادگی مراقبت قبل از عمل", type: "bool" },
+      { key: "post_op_care_ok", label: "آمادگی مراقبت بعد از عمل", type: "bool" },
+      { key: "discharge_and_home_transfer_ok", label: "آمادگی همراهی ترخیص و انتقال بیمار به منزل", type: "bool" },
+      { key: "physiotherapy_assistance_ability", label: "توانایی کمک در فیزیوتراپی و تمرینات تجویزشده", type: "bool" },
+      { key: "dialysis_accompaniment_ability", label: "توانایی همراهی بیمار دیالیزی", type: "bool" },
     ],
     form3: [
       { key: "nursing_degree_level", label: "مقطع تحصیلی پرستاری", type: "choice", choices: NURSING_DEGREE_LEVEL },
       { key: "years_of_clinical_experience", label: "سابقه کار بالینی", type: "choice", choices: EXPERIENCE_RANGE },
+      // گروه بیمارانی که تجربه مراقبت از آن‌ها را دارد — جدا از
+      // تخصص‌های ICU/زخم بستر/کودکان/مامایی/اورژانس که سابقه
+      // اختصاصی خودشان را پایین‌تر دارند.
+      { key: "patient_group_experience", label: "گروه بیمارانی که تجربه مراقبت از آن‌ها را دارد", type: "multi", choices: PARASTAR_PATIENT_GROUP },
       { key: "icu_experience", label: "سابقه کار در ICU", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["icu"] },
       { key: "wound_care_experience", label: "سابقه مراقبت از زخم بستر", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["wound_care"] },
       { key: "pediatric_nursing_experience", label: "سابقه پرستاری کودکان", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["pediatric"] },
       { key: "midwifery_experience", label: "سابقه مامایی", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["midwifery"] },
       { key: "emergency_nursing_experience", label: "سابقه کار در اورژانس", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["emergency"] },
+      { key: "mother_child_care_abilities", label: "توانایی‌های مراقبت از مادر و کودک", type: "multi", choices: PARASTAR_MOTHER_CHILD_CARE_ABILITY, showIf: ["midwifery", "pediatric"] },
       { key: "patient_condition_experience", label: "تجربه مراقبت از بیماران با شرایط زیر", type: "multi", choices: PARASTAR_CONDITION_EXPERIENCE },
       { key: "clinical_procedures_ability", label: "توانایی انجام اقدامات بالینی زیر", type: "multi", choices: PARASTAR_PROCEDURE_ABILITY },
+      { key: "medication_treatment_abilities", label: "توانایی‌های دارویی و درمانی", type: "multi", choices: PARASTAR_MEDICATION_TREATMENT_ABILITY },
+      { key: "wound_care_abilities", label: "توانایی‌های زخم و پانسمان", type: "multi", choices: PARASTAR_WOUND_CARE_ABILITY },
+      // تجهیزات پزشکی — تقریبی از مقیاس سه‌سطحی سند («بدون تجربه/
+      // تجربه دارد/کاملاً مسلط») با دو چک‌لیست مستقل.
+      { key: "medical_equipment_experience", label: "تجهیزات پزشکی که با آن‌ها کار کرده است", type: "multi", choices: PARASTAR_EQUIPMENT },
+      { key: "medical_equipment_mastery", label: "تجهیزات پزشکی که کاملاً به آن‌ها مسلط است", type: "multi", choices: PARASTAR_EQUIPMENT },
     ],
     questionnaire: [
       { key: "clinical_judgement_confidence_level", label: "اعتماد به قضاوت بالینی خودش", type: "score" },
