@@ -96,7 +96,7 @@ const EMPTY_EXPERIENCE: ExperienceFormData = {
 const EMPTY_SKILLS: SkillsFormData = {
   education_level: "", field_of_study: "", training_courses: [], communication_skills: [],
   caregiving_skills: [], physical_ability: "", mobility_assistance_ability: [], household_skills: [],
-  foreign_languages: [], local_languages: [], english_level: "", arabic_level: "", other_languages_detail: "",
+  foreign_languages: [], local_languages: [], local_language_fluency: "", english_level: "", arabic_level: "", other_languages_detail: "",
   has_driving_license: null, can_use_smartphone: null,
   additional_notes: "",
 }
@@ -291,6 +291,23 @@ export default function CaregiverRegistrationWizard() {
   // here too now (it has its own SERVICE_SPECIFIC_FORMS.salmandyar
   // entry) alongside its existing universal/real-model-field
   // sections below — those aren't duplicated here.
+  // showIfField checks a sibling field's CURRENT stored value (within
+  // the same service_specific_answers[type] bucket) instead of the
+  // top-level subtype list — needed for a field that depends on an
+  // activity checkbox (e.g. hosting_etiquette_level depending on
+  // indoor_activities including "hosting") rather than a service
+  // subtype.
+  function matchesShowIfField(f: C.ServiceSpecificField, typeAnswers: Record<string, any>) {
+    if (!f.showIfField) return true
+    const v = typeAnswers?.[f.showIfField.key]
+    // A bool-type sibling field (e.g. is_non_iranian_national) stores a
+    // real boolean, not "true"/"false" strings — normalize so oneOf can
+    // still match it with string literals.
+    const raw = typeof v === "boolean" ? String(v) : v
+    const values: string[] = Array.isArray(raw) ? raw : raw != null ? [raw] : []
+    return values.some((x) => f.showIfField!.oneOf.includes(x))
+  }
+
   function renderServiceSpecificSections(
     formKey: "form2" | "form3" | "questionnaire",
     current: Record<string, Record<string, any>>,
@@ -303,7 +320,10 @@ export default function CaregiverRegistrationWizard() {
         {applicableTypes.map((type) => {
           const typeLabel = C.SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
           const chosenSubtypes = serviceSubtypes[type] ?? []
-          const fields = C.SERVICE_SPECIFIC_FORMS[type][formKey].filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
+          const typeAnswers = current[type] ?? {}
+          const fields = C.SERVICE_SPECIFIC_FORMS[type][formKey]
+            .filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
+            .filter((f) => matchesShowIfField(f, typeAnswers))
           if (fields.length === 0) return null
           return (
             <div key={type}>
@@ -809,6 +829,9 @@ export default function CaregiverRegistrationWizard() {
               )}
               <Field label="توانایی جسمی"><ChoiceSelect choices={C.PHYSICAL_ABILITY} value={skills.physical_ability} onChange={(v) => setSkills({ ...skills, physical_ability: v })} /></Field>
               <Field label="زبان محلی"><CheckboxGroup choices={C.LOCAL_LANGUAGE} value={skills.local_languages} onChange={(v) => setSkills({ ...skills, local_languages: v })} /></Field>
+              {skills.local_languages.length > 0 && (
+                <Field label="سطح تسلط به زبان(های) محلی"><ChoiceSelect choices={C.LOCAL_LANGUAGE_FLUENCY} value={skills.local_language_fluency} onChange={(v) => setSkills({ ...skills, local_language_fluency: v })} /></Field>
+              )}
               <Field label="گواهینامه رانندگی"><YesNo value={skills.has_driving_license} onChange={(v) => setSkills({ ...skills, has_driving_license: v })} /></Field>
               <Field label="مهارت کار با تلفن هوشمند"><YesNo value={skills.can_use_smartphone} onChange={(v) => setSkills({ ...skills, can_use_smartphone: v })} /></Field>
               <Field label="توضیحات تکمیلی مهارت‌ها"><Textarea value={skills.additional_notes} onChange={(e) => setSkills({ ...skills, additional_notes: e.target.value })} /></Field>
@@ -900,7 +923,13 @@ export default function CaregiverRegistrationWizard() {
             {serviceTypes.filter((t) => C.SERVICE_SPECIFIC_FORMS[t]?.questionnaire?.length).map((type) => {
               const typeLabel = C.SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
               const chosenSubtypes = serviceSubtypes[type] ?? []
-              const fields = C.SERVICE_SPECIFIC_FORMS[type].questionnaire.filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
+              // showIfField here checks form2's own answers (where
+              // activity checkboxes like indoor_activities/
+              // outdoor_activities live), not the questionnaire's.
+              const form2Answers = workPrefs.service_specific_answers[type] ?? {}
+              const fields = C.SERVICE_SPECIFIC_FORMS[type].questionnaire
+                .filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
+                .filter((f) => matchesShowIfField(f, form2Answers))
               if (fields.length === 0) return null
               const typeAnswers = questionnaireAnswers.service_specific_answers?.[type] ?? {}
               return (

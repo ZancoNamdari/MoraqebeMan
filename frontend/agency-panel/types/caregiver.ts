@@ -138,6 +138,7 @@ export interface SkillsFormData {
   household_skills: string[]
   foreign_languages: string[]
   local_languages: string[]
+  local_language_fluency: string
   english_level: string
   arabic_level: string
   other_languages_detail: string

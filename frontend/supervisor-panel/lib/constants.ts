@@ -350,6 +350,11 @@ export const LOCAL_LANGUAGE: Choice[] = [
   ["other", "سایر"],
 ]
 
+export const LOCAL_LANGUAGE_FLUENCY: Choice[] = [
+  ["understand_only", "فقط متوجه می‌شود"],
+  ["can_converse", "می‌تواند مکالمه کند"],
+]
+
 export const REFERENCE_RELATION_TYPE: Choice[] = [
   ["family", "خانواده"],
   ["friends", "دوستان"],

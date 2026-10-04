@@ -108,6 +108,7 @@ export interface SkillsFormData {
   household_skills: string[]
   foreign_languages: string[]
   local_languages: string[]
+  local_language_fluency: string
   has_driving_license: boolean | null
   can_use_smartphone: boolean | null
   additional_notes: string

@@ -18,6 +18,7 @@ from .choices import (
     HeightRange,
     LanguageLevel,
     LiftingCapacity,
+    LocalLanguageFluency,
     MaritalStatus,
     MaxCommuteTime,
     MilitaryStatus,
@@ -820,6 +821,10 @@ class CaregiverSkills(models.Model):
     household_skills = models.JSONField(default=list, blank=True, verbose_name="مهارت‌های خانگی")
     foreign_languages = models.JSONField(default=list, blank=True, verbose_name="زبان‌های خارجی")
     local_languages = models.JSONField(default=list, blank=True, verbose_name="زبان‌های محلی")
+    local_language_fluency = models.CharField(
+        max_length=20, choices=LocalLanguageFluency.choices, blank=True,
+        verbose_name="سطح تسلط به زبان(های) محلی",
+    )
     english_level = models.CharField(max_length=20, choices=LanguageLevel.choices, blank=True, verbose_name="میزان تسلط به زبان انگلیسی")
     arabic_level = models.CharField(max_length=20, choices=LanguageLevel.choices, blank=True, verbose_name="میزان تسلط به زبان عربی")
     other_languages_detail = models.CharField(

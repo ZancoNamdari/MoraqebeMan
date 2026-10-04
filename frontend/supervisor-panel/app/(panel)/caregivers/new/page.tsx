@@ -66,7 +66,7 @@ const EMPTY_EXPERIENCE: ExperienceFormData = {
 const EMPTY_SKILLS: SkillsFormData = {
   education_level: "", field_of_study: "", training_courses: [], communication_skills: [],
   caregiving_skills: [], physical_ability: "", mobility_assistance_ability: [], household_skills: [],
-  foreign_languages: [], local_languages: [], has_driving_license: null, can_use_smartphone: null,
+  foreign_languages: [], local_languages: [], local_language_fluency: "", has_driving_license: null, can_use_smartphone: null,
   additional_notes: "",
 }
 
@@ -562,6 +562,9 @@ function NewCaregiverWizardInner() {
               <Field label="توانایی جابجایی سالمند"><CheckboxGroup choices={C.MOBILITY_ASSISTANCE_ABILITY} value={skills.mobility_assistance_ability} onChange={(v) => setSkills({ ...skills, mobility_assistance_ability: v })} /></Field>
               <Field label="مهارت‌های خانگی"><CheckboxGroup choices={C.HOUSEHOLD_SKILL} value={skills.household_skills} onChange={(v) => setSkills({ ...skills, household_skills: v })} /></Field>
               <Field label="زبان محلی"><CheckboxGroup choices={C.LOCAL_LANGUAGE} value={skills.local_languages} onChange={(v) => setSkills({ ...skills, local_languages: v })} /></Field>
+              {skills.local_languages.length > 0 && (
+                <Field label="سطح تسلط به زبان(های) محلی"><ChoiceSelect choices={C.LOCAL_LANGUAGE_FLUENCY} value={skills.local_language_fluency} onChange={(v) => setSkills({ ...skills, local_language_fluency: v })} /></Field>
+              )}
               <Field label="گواهینامه رانندگی"><YesNo value={skills.has_driving_license} onChange={(v) => setSkills({ ...skills, has_driving_license: v })} /></Field>
               <Field label="مهارت کار با تلفن هوشمند"><YesNo value={skills.can_use_smartphone} onChange={(v) => setSkills({ ...skills, can_use_smartphone: v })} /></Field>
               <Field label="توضیحات تکمیلی مهارت‌ها"><Textarea value={skills.additional_notes} onChange={(e) => setSkills({ ...skills, additional_notes: e.target.value })} /></Field>

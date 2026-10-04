@@ -25,30 +25,15 @@ class KoodakyarSubtype(models.TextChoices):
 
 
 class NezafatchiSubtype(models.TextChoices):
-    """Multi-select — which cleaning/housekeeping roles this نظافت‌چی
-    offers. Replaces the old 3-way outside_home/inside_home/cooking
-    split with the full role list, since each role opens its own
-    specialized question set (see SERVICE_SPECIFIC_FORMS.nezafatchi
-    in the frontend)."""
-    HOME_CLEANING = "home_cleaning", "نظافت منزل"
-    DEEP_CLEANING = "deep_cleaning", "خانه‌تکانی کامل"
-    OFFICE_CLEANING = "office_cleaning", "نظافت شرکت و دفتر"
-    CLINIC_CLEANING = "clinic_cleaning", "نظافت مطب و مراکز خدماتی"
-    VILLA_CLEANING = "villa_cleaning", "نظافت ویلا"
-    YARD_CLEANING = "yard_cleaning", "نظافت حیاط و محوطه"
-    STAIRCASE_CLEANING = "staircase_cleaning", "نظافت راه‌پله"
-    PARKING_CLEANING = "parking_cleaning", "نظافت پارکینگ"
-    WAREHOUSE_CLEANING = "warehouse_cleaning", "نظافت انبار"
-    LAUNDRY = "laundry", "شست‌وشو و لاندری"
+    """Multi-select — the 3 main نظافت‌چی branches. Finer-grained
+    activities (deep cleaning, hosting, laundry, janitor work, etc.)
+    are asked as activity checklists within the indoor/outdoor
+    sections of SERVICE_SPECIFIC_FORMS.nezafatchi in the frontend,
+    not as their own subtypes — most of them were never worth their
+    own top-level branch."""
+    OUTSIDE_HOME = "outside_home", "خدمات بیرون از خانه"
+    INSIDE_HOME = "inside_home", "خدمات داخل خانه"
     COOKING = "cooking", "آشپزی"
-    COOKING_HELP = "cooking_help", "کمک در آشپزی"
-    HOSTING = "hosting", "پذیرایی"
-    SHOPPING_ERRANDS = "shopping_errands", "خرید و انجام امور بیرون"
-    FURNITURE_MOVING = "furniture_moving", "جابه‌جایی وسایل"
-    PLANT_CARE = "plant_care", "گل و گیاه"
-    JANITOR = "janitor", "سرایداری"
-    JANITOR_FAMILY = "janitor_family", "سرایداری خانوادگی"
-    JANITOR_SINGLE = "janitor_single", "سرایداری مجردی"
 
 
 class MadaryarSubtype(models.TextChoices):
@@ -613,3 +598,11 @@ class LanguageLevel(models.TextChoices):
     BASIC = "basic", "مقدماتی"
     INTERMEDIATE = "intermediate", "متوسط"
     FLUENT = "fluent", "پیشرفته / روان"
+
+
+class LocalLanguageFluency(models.TextChoices):
+    """How well the caregiver handles the local language(s)/dialect(s)
+    they selected — just understanding it versus being able to hold a
+    conversation in it."""
+    UNDERSTAND_ONLY = "understand_only", "فقط متوجه می‌شود"
+    CAN_CONVERSE = "can_converse", "می‌تواند مکالمه کند"

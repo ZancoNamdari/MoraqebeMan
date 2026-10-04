@@ -400,7 +400,7 @@ class CaregiverSkillsSerializer(serializers.ModelSerializer):
             "education_level", "field_of_study", "training_courses",
             "communication_skills", "caregiving_skills", "physical_ability",
             "mobility_assistance_ability", "household_skills",
-            "foreign_languages", "local_languages", "english_level", "arabic_level", "other_languages_detail",
+            "foreign_languages", "local_languages", "local_language_fluency", "english_level", "arabic_level", "other_languages_detail",
             "has_driving_license", "can_use_smartphone",
             "additional_notes",
             "created_at", "updated_at",
