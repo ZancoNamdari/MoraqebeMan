@@ -25,9 +25,30 @@ class KoodakyarSubtype(models.TextChoices):
 
 
 class NezafatchiSubtype(models.TextChoices):
-    OUTSIDE_HOME = "outside_home", "خدمات بیرون از خانه"
-    INSIDE_HOME = "inside_home", "خدمات داخل خانه"
+    """Multi-select — which cleaning/housekeeping roles this نظافت‌چی
+    offers. Replaces the old 3-way outside_home/inside_home/cooking
+    split with the full role list, since each role opens its own
+    specialized question set (see SERVICE_SPECIFIC_FORMS.nezafatchi
+    in the frontend)."""
+    HOME_CLEANING = "home_cleaning", "نظافت منزل"
+    DEEP_CLEANING = "deep_cleaning", "خانه‌تکانی کامل"
+    OFFICE_CLEANING = "office_cleaning", "نظافت شرکت و دفتر"
+    CLINIC_CLEANING = "clinic_cleaning", "نظافت مطب و مراکز خدماتی"
+    VILLA_CLEANING = "villa_cleaning", "نظافت ویلا"
+    YARD_CLEANING = "yard_cleaning", "نظافت حیاط و محوطه"
+    STAIRCASE_CLEANING = "staircase_cleaning", "نظافت راه‌پله"
+    PARKING_CLEANING = "parking_cleaning", "نظافت پارکینگ"
+    WAREHOUSE_CLEANING = "warehouse_cleaning", "نظافت انبار"
+    LAUNDRY = "laundry", "شست‌وشو و لاندری"
     COOKING = "cooking", "آشپزی"
+    COOKING_HELP = "cooking_help", "کمک در آشپزی"
+    HOSTING = "hosting", "پذیرایی"
+    SHOPPING_ERRANDS = "shopping_errands", "خرید و انجام امور بیرون"
+    FURNITURE_MOVING = "furniture_moving", "جابه‌جایی وسایل"
+    PLANT_CARE = "plant_care", "گل و گیاه"
+    JANITOR = "janitor", "سرایداری"
+    JANITOR_FAMILY = "janitor_family", "سرایداری خانوادگی"
+    JANITOR_SINGLE = "janitor_single", "سرایداری مجردی"
 
 
 class MadaryarSubtype(models.TextChoices):

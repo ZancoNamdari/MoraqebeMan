@@ -23,9 +23,25 @@ export const KOODAKYAR_SUBTYPE: Choice[] = [
 ]
 
 export const NEZAFATCHI_SUBTYPE: Choice[] = [
-  ["outside_home", "خدمات بیرون از خانه"],
-  ["inside_home", "خدمات داخل خانه"],
+  ["home_cleaning", "نظافت منزل"],
+  ["deep_cleaning", "خانه‌تکانی کامل"],
+  ["office_cleaning", "نظافت شرکت و دفتر"],
+  ["clinic_cleaning", "نظافت مطب و مراکز خدماتی"],
+  ["villa_cleaning", "نظافت ویلا"],
+  ["yard_cleaning", "نظافت حیاط و محوطه"],
+  ["staircase_cleaning", "نظافت راه‌پله"],
+  ["parking_cleaning", "نظافت پارکینگ"],
+  ["warehouse_cleaning", "نظافت انبار"],
+  ["laundry", "شست‌وشو و لاندری"],
   ["cooking", "آشپزی"],
+  ["cooking_help", "کمک در آشپزی"],
+  ["hosting", "پذیرایی"],
+  ["shopping_errands", "خرید و انجام امور بیرون"],
+  ["furniture_moving", "جابه‌جایی وسایل"],
+  ["plant_care", "گل و گیاه"],
+  ["janitor", "سرایداری"],
+  ["janitor_family", "سرایداری خانوادگی"],
+  ["janitor_single", "سرایداری مجردی"],
 ]
 
 export const MADARYAR_SUBTYPE: Choice[] = [
@@ -565,9 +581,266 @@ const CLEANING_STANDARD_LEVEL: Choice[] = [
 
 const COOKING_CUISINE: Choice[] = [
   ["iranian", "غذای ایرانی"],
-  ["fast_food", "فست‌فود"],
+  ["traditional", "غذای سنتی"],
+  ["simple_daily", "غذای ساده روزمره"],
+  ["formal_ceremonial", "غذای مجلسی"],
+  ["western", "غذای فرنگی"],
   ["diet_food", "غذای رژیمی"],
+  ["baby_food", "غذای کودک"],
+  ["vegetarian", "غذاهای گیاهی"],
+  ["pastry_dessert", "شیرینی و دسر"],
+  ["fast_food", "فست‌فود"],
   ["other", "سایر"],
+]
+
+const COOKING_ABILITY: Choice[] = [
+  ["ingredient_prep", "آماده‌سازی مواد"],
+  ["chopping", "خرد کردن"],
+  ["rice_cooking", "پخت برنج"],
+  ["stew", "خورشت"],
+  ["kabob", "کباب"],
+  ["soup", "سوپ"],
+  ["salad", "سالاد"],
+  ["dessert", "دسر"],
+  ["food_freezing", "فریز کردن غذا"],
+  ["multi_day_meal_prep", "آماده‌سازی غذای چند روز"],
+]
+
+const COOKING_INTEREST_LEVEL: Choice[] = [
+  ["yes", "بله"],
+  ["somewhat", "تا حدی"],
+  ["only_if_requested", "فقط در صورت درخواست"],
+  ["no", "خیر"],
+]
+
+const COOKING_HELP_TASK: Choice[] = [
+  ["washing_ingredients", "شستن مواد غذایی"],
+  ["chopping", "خرد کردن"],
+  ["ingredient_prep", "آماده‌سازی مواد"],
+  ["dishwashing_during_cooking", "شستن ظروف حین آشپزی"],
+  ["kitchen_tidying", "مرتب کردن آشپزخانه"],
+  ["table_clearing", "جمع کردن میز"],
+  ["table_setting_prep", "آماده‌سازی سفره"],
+  ["food_packaging", "بسته‌بندی غذا"],
+  ["pantry_organizing", "نگهداری و مرتب‌سازی مواد غذایی"],
+]
+
+const HOSTING_TASK: Choice[] = [
+  ["table_setup", "آماده‌سازی میز"],
+  ["table_setting", "چیدن میز"],
+  ["serving_food", "سرو غذا"],
+  ["guest_hosting", "پذیرایی از مهمان"],
+  ["dish_collection", "جمع‌آوری ظروف"],
+  ["dishwashing", "شستن ظروف"],
+  ["drink_prep", "آماده‌سازی نوشیدنی"],
+  ["post_party_tidying", "مرتب‌سازی بعد از مهمانی"],
+]
+
+const HOSTING_GUEST_COUNT: Choice[] = [
+  ["under_5", "کمتر از ۵ نفر"],
+  ["5_10", "۵ تا ۱۰ نفر"],
+  ["10_20", "۱۰ تا ۲۰ نفر"],
+  ["over_20", "بیشتر از ۲۰ نفر"],
+]
+
+const HOSTING_EVENT_TYPE: Choice[] = [
+  ["family_party", "مهمانی خانوادگی"],
+  ["formal_party", "مهمانی رسمی"],
+  ["ceremony", "مراسم"],
+  ["villa_hosting", "پذیرایی در ویلا"],
+  ["company_hosting", "پذیرایی در شرکت"],
+]
+
+const LAUNDRY_TASK: Choice[] = [
+  ["hand_washing", "شست‌وشوی دستی"],
+  ["washing_machine", "ماشین لباسشویی"],
+  ["sorting", "تفکیک لباس"],
+  ["stain_removal", "لکه‌بری"],
+  ["drying", "خشک‌کردن"],
+  ["ironing", "اتوکشی"],
+  ["folding", "تا کردن لباس"],
+  ["closet_organizing", "مرتب کردن کمد"],
+]
+
+const LAUNDRY_ITEM: Choice[] = [
+  ["curtains", "پرده"],
+  ["blankets", "پتو"],
+  ["sheets", "ملحفه"],
+  ["towels", "حوله"],
+  ["tablecloths", "رومیزی"],
+  ["upholstery_covers", "روکش مبلمان"],
+]
+
+const DEEP_CLEANING_EQUIPMENT: Choice[] = [
+  ["vacuum", "جاروبرقی"],
+  ["mop", "تی"],
+  ["steam_cleaner", "بخارشوی"],
+  ["glass_cleaner_tool", "شیشه‌شوی"],
+  ["specialized_tools", "ابزارهای نظافت تخصصی"],
+]
+
+const DEEP_CLEANING_TASK: Choice[] = [
+  ["wall_washing", "شستن دیوار"],
+  ["glass_cleaning", "تمیز کردن شیشه"],
+  ["window_cleaning", "تمیز کردن پنجره"],
+  ["door_frame_cleaning", "تمیز کردن در و چارچوب"],
+  ["cabinet_cleaning", "تمیز کردن کابینت"],
+  ["cabinet_interior_cleaning", "تمیز کردن داخل کابینت"],
+  ["fridge_cleaning", "تمیز کردن یخچال"],
+  ["oven_cleaning", "تمیز کردن فر"],
+  ["hood_cleaning", "تمیز کردن هود"],
+  ["stove_cleaning", "تمیز کردن اجاق"],
+  ["bathroom_deep_cleaning", "تمیز کردن سرویس بهداشتی و حمام"],
+  ["descaling", "جرم‌گیری و رسوب‌زدایی"],
+  ["deep_dusting", "گردگیری عمیق"],
+  ["behind_furniture_cleaning", "نظافت پشت و زیر وسایل"],
+]
+
+const YARD_TASK: Choice[] = [
+  ["yard_sweeping", "جارو کردن حیاط"],
+  ["yard_washing", "شست‌وشوی حیاط"],
+  ["leaf_collection", "جمع‌آوری برگ"],
+  ["floor_cleaning", "تمیز کردن کف"],
+  ["yard_wall_washing", "شست‌وشوی دیوار حیاط"],
+  ["surrounding_area_cleaning", "نظافت محوطه"],
+]
+
+const PARKING_TASK: Choice[] = [
+  ["sweeping", "جارو"],
+  ["washing", "شست‌وشو"],
+  ["trash_collection", "جمع‌آوری زباله"],
+  ["corner_cleaning", "تمیز کردن گوشه‌ها"],
+  ["building_parking_cleaning", "نظافت پارکینگ ساختمان"],
+]
+
+const STAIRCASE_TASK: Choice[] = [
+  ["sweeping", "جارو"],
+  ["mopping", "تی"],
+  ["stair_washing", "شستن پله"],
+  ["railing_cleaning", "تمیز کردن نرده"],
+  ["wall_cleaning", "تمیز کردن دیوار"],
+  ["stairwell_window_cleaning", "تمیز کردن پنجره‌های راه‌پله"],
+]
+
+const PLANT_CARE_TASK: Choice[] = [
+  ["watering", "آبیاری"],
+  ["pruning", "هرس"],
+  ["repotting", "تعویض گلدان"],
+  ["fertilizing", "کوددهی"],
+  ["leaf_cleaning", "تمیز کردن برگ"],
+  ["watering_needs_assessment", "تشخیص نیاز آبی گیاه"],
+  ["apartment_plant_care", "نگهداری گیاهان آپارتمانی"],
+  ["yard_greenery_care", "نگهداری فضای سبز حیاط"],
+]
+
+const WORKPLACE_TYPE: Choice[] = [
+  ["company", "شرکت"],
+  ["office", "دفتر"],
+  ["medical_office", "مطب"],
+  ["clinic", "کلینیک"],
+  ["store", "فروشگاه"],
+  ["service_center", "مرکز خدماتی"],
+]
+
+const WORKPLACE_CLEANING_TASK: Choice[] = [
+  ["desk_cleaning", "نظافت میزها"],
+  ["floor_cleaning", "نظافت کف"],
+  ["glass_cleaning", "شیشه"],
+  ["restroom_cleaning", "سرویس بهداشتی"],
+  ["kitchenette_cleaning", "آشپزخانه/آبدارخانه"],
+  ["hosting", "پذیرایی"],
+  ["trash_emptying", "تخلیه سطل‌ها"],
+  ["tidying", "مرتب‌سازی"],
+  ["public_area_cleaning", "نظافت فضاهای عمومی"],
+]
+
+const ERRAND_TRANSPORT_METHOD: Choice[] = [
+  ["on_foot", "پیاده"],
+  ["public_transport", "حمل‌ونقل عمومی"],
+  ["motorcycle", "موتور"],
+  ["car", "خودرو"],
+]
+
+const MOVING_TASK: Choice[] = [
+  ["packing", "بسته‌بندی وسایل"],
+  ["unpacking", "باز کردن وسایل"],
+  ["arranging", "چیدن وسایل"],
+  ["in_home_moving", "جابه‌جایی داخل خانه"],
+  ["move_assistance", "کمک در اسباب‌کشی"],
+]
+
+const JANITOR_LOCATION_TYPE: Choice[] = [
+  ["building", "ساختمان"],
+  ["complex", "مجتمع"],
+  ["villa", "ویلا"],
+  ["garden", "باغ"],
+  ["private_property", "ملک شخصی"],
+]
+
+const JANITOR_TASK: Choice[] = [
+  ["common_area_cleaning", "نظافت مشاعات"],
+  ["parking", "پارکینگ"],
+  ["staircase", "راه‌پله"],
+  ["yard", "حیاط"],
+  ["grounds", "محوطه"],
+  ["trash_handling", "رسیدگی به زباله"],
+  ["entry_exit_control", "کنترل ورود و خروج"],
+  ["package_receiving", "دریافت بسته"],
+  ["initial_building_issue_handling", "رسیدگی اولیه به مشکلات ساختمان"],
+  ["building_related_shopping", "خریدهای مربوط به ساختمان"],
+  ["green_space_care", "رسیدگی به فضای سبز"],
+]
+
+const JANITOR_RESIDENCY: Choice[] = [
+  ["live_in", "اقامت در محل"],
+  ["not_live_in", "بدون اقامت"],
+  ["independent_room", "اتاق مستقل"],
+  ["independent_unit", "واحد مستقل"],
+]
+
+const VILLA_TASK: Choice[] = [
+  ["villa_interior_cleaning", "نظافت داخل ویلا"],
+  ["villa_kitchen_cleaning", "نظافت آشپزخانه"],
+  ["villa_rooms_cleaning", "نظافت اتاق‌ها"],
+  ["villa_bathrooms_cleaning", "نظافت سرویس‌ها"],
+  ["villa_glass_cleaning", "شیشه"],
+  ["villa_wall_cleaning", "دیوار"],
+  ["villa_yard_cleaning", "حیاط"],
+  ["villa_parking_cleaning", "پارکینگ"],
+  ["villa_pool_cleaning", "استخر (در صورت نیاز)"],
+  ["villa_greenery_care", "فضای سبز"],
+  ["pre_guest_arrival_prep", "آماده‌سازی ویلا قبل از ورود مهمان"],
+  ["post_guest_departure_cleaning", "نظافت بعد از خروج مهمان"],
+]
+
+const SHOPPING_TASK: Choice[] = [
+  ["grocery_shopping", "خرید مواد غذایی"],
+  ["cleaning_supplies_shopping", "خرید لوازم شوینده"],
+  ["daily_shopping", "خرید روزمره"],
+  ["store_visits", "مراجعه به فروشگاه"],
+  ["order_pickup", "تحویل گرفتن سفارش"],
+  ["outside_errands", "انجام امور بیرون از منزل"],
+]
+
+const GENERAL_CLEANING_SKILL: Choice[] = [
+  ["daily_cleaning", "نظافت روزمره"],
+  ["deep_cleaning", "نظافت عمیق"],
+  ["dusting", "گردگیری"],
+  ["washing", "شست‌وشو"],
+  ["sweeping", "جارو"],
+  ["mopping", "تی‌کشیدن"],
+  ["dishwashing", "شستن ظروف"],
+  ["tidying", "مرتب‌سازی"],
+  ["gathering_items", "جمع‌آوری وسایل"],
+  ["bathroom_washing", "شست‌وشوی سرویس بهداشتی"],
+  ["kitchen_washing", "شست‌وشوی آشپزخانه"],
+]
+
+const CAMERA_TOLERANCE: Choice[] = [
+  ["no_problem", "بله، مشکلی ندارم"],
+  ["public_areas_only", "فقط در فضاهای عمومی"],
+  ["prefer_not", "ترجیح می‌دهم نباشد"],
+  ["no", "خیر"],
 ]
 
 const PROPERTY_SIZE_RANGE: Choice[] = [
@@ -702,6 +975,67 @@ const COOKING_SKILL_LEVEL: Choice[] = [
   ["excellent", "عالی"],
 ]
 
+// "تجربه ندارم / تجربه دارم / آموزش دیده‌ام / کاملاً مسلط هستم" — per
+// the سالمندیار redesign document's own explicit suggestion, used for
+// the more sensitive personal-care tasks instead of a plain yes/no.
+const CARE_EXPERIENCE_LEVEL: Choice[] = [
+  ["none", "تجربه ندارم"],
+  ["experienced", "تجربه دارم"],
+  ["trained", "آموزش دیده‌ام"],
+  ["fully_proficient", "کاملاً مسلط هستم"],
+]
+
+// The elderly person's actual prescribed diet comes from the
+// family/doctor (customer-side data, not caregiver-side); this only
+// asks whether the caregiver CAN execute each diet type.
+const DIETARY_EXECUTION_ABILITY: Choice[] = [
+  ["low_salt", "غذای کم‌نمک"],
+  ["low_fat", "غذای کم‌چرب"],
+  ["diabetic", "غذای دیابتی"],
+  ["soft", "غذای نرم"],
+  ["puree", "غذای پوره‌شده"],
+  ["other_prescribed", "سایر رژیم‌های تجویزشده"],
+]
+
+const OUTSIDE_ACCOMPANIMENT_ACTIVITY: Choice[] = [
+  ["walking", "پیاده‌روی"],
+  ["park", "پارک"],
+  ["shopping", "خرید"],
+  ["doctor_visit", "مراجعه پزشکی"],
+  ["physiotherapy", "فیزیوتراپی"],
+  ["lab", "آزمایشگاه"],
+  ["pharmacy", "داروخانه"],
+  ["party", "مهمانی"],
+  ["intracity_trip", "سفر داخل شهر"],
+]
+
+const ACCOMPANIMENT_TRANSPORT_METHOD: Choice[] = [
+  ["on_foot", "پیاده"],
+  ["public_transport", "حمل‌ونقل عمومی"],
+  ["family_car", "خودرو خانواده"],
+  ["personal_car", "خودرو شخصی"],
+]
+
+// Kept separate from willing_to_relocate_other_cities (a work-location
+// preference) — this is about accompanying the elderly person ON a
+// trip, which is its own willingness with its own gradations.
+const TRAVEL_ACCOMPANIMENT_WILLINGNESS: Choice[] = [
+  ["none", "آمادگی ندارم"],
+  ["intracity", "سفر داخل شهر"],
+  ["intraprovince", "سفر داخل استان"],
+  ["other_cities", "سفر به شهرهای دیگر"],
+  ["multi_day", "سفر چندروزه"],
+  ["long_trip", "سفر طولانی"],
+]
+
+const VEHICLE_ABILITY: Choice[] = [
+  ["owns_personal_car", "خودرو شخصی دارم"],
+  ["has_driving_license", "گواهینامه دارم"],
+  ["can_drive_family_car", "امکان رانندگی با خودروی خانواده را دارم"],
+  ["can_use_car_for_accompaniment", "امکان استفاده از خودرو برای همراهی سالمند را دارم"],
+  ["no_vehicle", "خودرو ندارم"],
+]
+
 export const SERVICE_SPECIFIC_FORMS: Record<string, {
   form2: ServiceSpecificField[]
   form3: ServiceSpecificField[]
@@ -720,8 +1054,32 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "toileting_hygiene_assistance_ok", label: "آمادگی برای کمک در طهارت و نظافت فردی سالمند", type: "bool" },
       { key: "bedpan_assistance_ok", label: "آمادگی برای کمک با لگن (سالمند بستری)", type: "bool" },
       { key: "park_outing_accompaniment_ok", label: "آمادگی برای همراهی سالمند در پیاده‌روی و پارک", type: "bool" },
-      { key: "willing_to_relocate_other_cities", label: "آمادگی برای کار در شهرهای دیگر", type: "bool" },
+      { key: "willing_to_relocate_other_cities", label: "آمادگی برای کار در شهرهای دیگر (محل کار دائم)", type: "bool" },
       { key: "ok_with_second_elderly_spouse_present", label: "آمادگی برای مراقبت در حضور همسر سالمند (زوج سالمند)", type: "bool" },
+      { key: "ok_with_another_caregiver_present", label: "آمادگی برای کار در حضور مراقب دیگری در منزل", type: "bool" },
+      // مراقبت شخصی — موارد حساس‌تر با مقیاس تجربه چهارسطحی به‌جای
+      // بلی/خیر ساده (پیشنهاد صریح سند).
+      { key: "grooming_assistance_level", label: "کمک به اصلاح و آراستگی سالمند", type: "choice", choices: CARE_EXPERIENCE_LEVEL },
+      { key: "adult_diaper_changing_level", label: "تعویض پوشک بزرگسال", type: "choice", choices: CARE_EXPERIENCE_LEVEL },
+      // حرکت و جابه‌جایی — عصا جدا از واکر/ویلچر (که در
+      // CAREGIVING_SKILL/MOBILITY_ASSISTANCE_ABILITY پوشش داده شده‌اند)
+      { key: "cane_assistance_experience", label: "تجربه کار با عصا", type: "bool" },
+      // غذا و تغذیه — توانایی اجرای رژیم، نه نوع رژیم سالمند (که از
+      // سمت خانواده/پزشک گرفته می‌شود)
+      { key: "dietary_execution_abilities", label: "توانایی تهیه/اجرای این نوع رژیم‌های غذایی", type: "multi", choices: DIETARY_EXECUTION_ABILITY },
+      // همراهی خارج از منزل و سفر
+      { key: "outside_accompaniment_activities", label: "آمادگی همراهی سالمند در این موارد", type: "multi", choices: OUTSIDE_ACCOMPANIMENT_ACTIVITY },
+      { key: "accompaniment_transport_methods", label: "وسیله رفت‌وآمد هنگام همراهی", type: "multi", choices: ACCOMPANIMENT_TRANSPORT_METHOD },
+      { key: "travel_accompaniment_willingness", label: "آمادگی سفر همراه سالمند", type: "choice", choices: TRAVEL_ACCOMPANIMENT_WILLINGNESS },
+      { key: "overnight_during_travel_ok", label: "امکان شب‌مانی در سفر همراه سالمند", type: "bool" },
+      // ظاهر — به‌جای ارزش‌گذاری روی ظاهر، سازگاری با استاندارد
+      // موردنظر خانواده پرسیده می‌شود (پیشنهاد صریح سند)
+      { key: "appearance_standard_compliance_ok", label: "امکان رعایت استاندارد ظاهری و پوشش موردنظر خانواده", type: "bool" },
+      { key: "short_nails_ok", label: "آمادگی برای کوتاه نگه‌داشتن ناخن در صورت درخواست خانواده", type: "bool" },
+      { key: "specific_dress_code_ok", label: "آمادگی برای رعایت پوشش مشخص موردنظر خانواده", type: "bool" },
+      { key: "no_specific_perfume_ok", label: "آمادگی برای عدم استفاده از عطر خاص در صورت درخواست خانواده", type: "bool" },
+      // ماشین — جای یک بلی/خیر ساده، چند حالت کاربردی‌تر
+      { key: "vehicle_abilities", label: "وضعیت خودرو و رانندگی", type: "multi", choices: VEHICLE_ABILITY },
     ],
     form3: [
       { key: "catheter_care_experience", label: "تجربه مراقبت از سالمند دارای سوند", type: "bool" },
@@ -730,7 +1088,31 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "has_acrylic_nails", label: "ناخن کاشته‌شده دارد", type: "bool" },
       { key: "has_tattoo", label: "دارای تاتو است", type: "bool" },
     ],
-    questionnaire: [],
+    // قبلاً خالی بود — سازگاری عمومی و اختصاصی سالمندیار طبق فرم ۱۵
+    // سند، مثل Cleaner/Caregiverهای دیگر از ۱ تا ۵.
+    questionnaire: [
+      { key: "patience_level", label: "صبوری", type: "score" },
+      { key: "kindness_level", label: "مهربانی", type: "score" },
+      { key: "calmness_level", label: "آرامش", type: "score" },
+      { key: "responsibility_level", label: "مسئولیت‌پذیری", type: "score" },
+      { key: "orderliness_level", label: "نظم", type: "score" },
+      { key: "punctuality_level", label: "وقت‌شناسی", type: "score" },
+      { key: "attention_to_detail_level", label: "توجه به جزئیات", type: "score" },
+      { key: "independent_work_ability_level", label: "توانایی کار مستقل", type: "score" },
+      { key: "communication_ability_level", label: "توانایی برقراری ارتباط", type: "score" },
+      { key: "empathy_level", label: "همدلی", type: "score" },
+      { key: "harsh_conditions_tolerance_level", label: "تحمل شرایط دشوار", type: "score" },
+      { key: "stress_management_level", label: "توانایی مدیریت استرس", type: "score" },
+      // اختصاصی سالمندیار
+      { key: "repeated_questions_patience_level", label: "صبر در برابر تکرار سؤال‌ها", type: "score" },
+      { key: "restlessness_calmness_level", label: "آرامش در برابر بی‌قراری سالمند", type: "score" },
+      { key: "elderly_communication_ability_level", label: "توانایی ارتباط با سالمند", type: "score" },
+      { key: "daily_activity_accompaniment_level", label: "توانایی همراهی سالمند در فعالیت‌های روزانه", type: "score" },
+      { key: "elderly_privacy_respect_level", label: "توانایی حفظ حریم خصوصی سالمند", type: "score" },
+      { key: "companionship_and_empathy_level", label: "توانایی ایجاد حس همراهی و همدلی", type: "score" },
+      { key: "night_wakefulness_tolerance_level", label: "تحمل بیداری شبانه", type: "score" },
+      { key: "low_ability_elderly_work_level", label: "توانایی کار با سالمند کم‌توان", type: "score" },
+    ],
   },
   koodakyar: {
     // Fields with no showIf apply to all THREE کودک‌یار subtypes
@@ -808,34 +1190,98 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "heavy_physical_work_ok", label: "توان بدنی برای کارهای نظافتی سنگین (زور بازو)", type: "bool" },
       { key: "preferred_property_size", label: "حداکثر متراژ محل مورد قبول برای نظافت", type: "choice", choices: PROPERTY_SIZE_RANGE },
       { key: "shopping_errands_ok", label: "آمادگی برای خرید مایحتاج منزل", type: "bool" },
-      // خدمات داخل خانه
-      { key: "hosting_duties_ok", label: "آمادگی برای پذیرایی از مهمان (سرو چای، میوه و غیره)", type: "bool", showIf: ["inside_home"] },
-      { key: "wall_cleaning_ok", label: "آمادگی برای دیوارشویی", type: "bool", showIf: ["inside_home"] },
-      { key: "glass_cleaning_ok", label: "آمادگی برای شیشه‌شویی", type: "bool", showIf: ["inside_home"] },
-      { key: "full_deep_cleaning_ok", label: "آمادگی برای خانه‌تکونی کامل", type: "bool", showIf: ["inside_home"] },
-      { key: "dusting_ironing_ok", label: "آمادگی برای گردگیری و اتوکشی", type: "bool", showIf: ["inside_home"] },
-      { key: "dishwashing_ok", label: "آمادگی برای ظرف‌شویی", type: "bool", showIf: ["inside_home"] },
-      { key: "laundry_ok", label: "آمادگی برای شست‌وشو و لباسشویی", type: "bool", showIf: ["inside_home"] },
-      { key: "furniture_moving_ok", label: "آمادگی برای جابجایی وسایل منزل", type: "bool", showIf: ["inside_home"] },
-      { key: "plant_care_ok", label: "آمادگی برای رسیدگی به گل و گیاه", type: "bool", showIf: ["inside_home"] },
-      { key: "yard_cleaning_ok", label: "آمادگی برای نظافت و رسیدگی به حیاط", type: "bool", showIf: ["inside_home"] },
-      { key: "villa_cleaning_ok", label: "آمادگی برای نظافت ویلا", type: "bool", showIf: ["inside_home"] },
-      { key: "cooking_help_ok", label: "آمادگی برای کمک در آشپزی (در حد کمک، نه پخت کامل غذا)", type: "bool", showIf: ["inside_home"] },
-      // خدمات بیرون از خانه
-      { key: "parking_cleaning_ok", label: "آمادگی برای نظافت پارکینگ", type: "bool", showIf: ["outside_home"] },
-      { key: "staircase_cleaning_ok", label: "آمادگی برای نظافت راه‌پله", type: "bool", showIf: ["outside_home"] },
-      { key: "office_clinic_cleaning_ok", label: "آمادگی برای نظافت شرکت و مطب", type: "bool", showIf: ["outside_home"] },
-      { key: "warehouse_cleaning_ok", label: "آمادگی برای نظافت انبار", type: "bool", showIf: ["outside_home"] },
-      { key: "janitor_work_ok", label: "آمادگی برای سرایداری (نگهبانی و نظافت ساختمان/مجتمع)", type: "bool", showIf: ["outside_home"] },
-      { key: "janitor_with_family_ok", label: "آمادگی برای سرایداری خانوادگی (به‌همراه همسر/خانواده)", type: "bool", showIf: ["outside_home"] },
-      { key: "is_non_iranian_national", label: "تابعیت غیرایرانی دارد", type: "bool", showIf: ["outside_home"] },
+      { key: "camera_tolerance_level", label: "آمادگی برای کار در محل دارای دوربین مداربسته", type: "choice", choices: CAMERA_TOLERANCE },
+      { key: "is_non_iranian_national", label: "تابعیت غیرایرانی دارد", type: "bool" },
+      // نظافت منزل
+      { key: "home_cleaning_types", label: "نوع نظافت منزل قابل انجام", type: "multi", choices: [
+        ["daily_cleaning", "نظافت روزمره"],
+        ["deep_cleaning", "نظافت عمیق"],
+        ["full_housecleaning", "خانه‌تکانی کامل"],
+        ["pre_move_cleaning", "نظافت قبل از اسباب‌کشی"],
+        ["post_move_cleaning", "نظافت بعد از اسباب‌کشی"],
+        ["pre_post_party_cleaning", "نظافت قبل/بعد از مهمانی"],
+      ], showIf: ["home_cleaning"] },
+      // خانه‌تکانی کامل
+      { key: "deep_cleaning_equipment", label: "تجهیزات نظافتی که با آن‌ها کار می‌کند", type: "multi", choices: DEEP_CLEANING_EQUIPMENT, showIf: ["deep_cleaning"] },
+      { key: "deep_cleaning_tasks", label: "مهارت‌های جزئی خانه‌تکانی", type: "multi", choices: DEEP_CLEANING_TASK, showIf: ["deep_cleaning"] },
       // آشپزی
       { key: "cooking_cuisines", label: "نوع غذاهایی که می‌تواند بپزد", type: "multi", choices: COOKING_CUISINE, showIf: ["cooking"] },
-      { key: "cooking_skill_level", label: "سطح کیفیت دستپخت (طبخ غذا)", type: "choice", choices: PHYSICAL_ABILITY, showIf: ["cooking"] },
+      { key: "cooking_skill_level", label: "سطح آشپزی", type: "choice", choices: COOKING_SKILL_LEVEL, showIf: ["cooking"] },
+      { key: "cooking_abilities", label: "توانایی‌های آشپزی", type: "multi", choices: COOKING_ABILITY, showIf: ["cooking"] },
+      { key: "cooking_interest_level", label: "میزان علاقه به آشپزی", type: "choice", choices: COOKING_INTEREST_LEVEL, showIf: ["cooking"] },
       { key: "ok_without_cooking_duty", label: "آمادگی برای کار در منازلی که نیاز به آشپزی ندارند", type: "bool", showIf: ["cooking"] },
+      // کمک در آشپزی
+      { key: "cooking_help_tasks", label: "موارد قابل کمک در آشپزی", type: "multi", choices: COOKING_HELP_TASK, showIf: ["cooking_help"] },
+      // پذیرایی
+      { key: "hosting_tasks", label: "خدمات پذیرایی قابل انجام", type: "multi", choices: HOSTING_TASK, showIf: ["hosting"] },
+      { key: "hosting_max_guest_count", label: "حداکثر حجم پذیرایی تجربه‌شده", type: "choice", choices: HOSTING_GUEST_COUNT, showIf: ["hosting"] },
+      { key: "hosting_event_types", label: "آمادگی پذیرایی در این موقعیت‌ها", type: "multi", choices: HOSTING_EVENT_TYPE, showIf: ["hosting"] },
+      // شست‌وشو و لاندری
+      { key: "laundry_tasks", label: "خدمات شست‌وشو قابل انجام", type: "multi", choices: LAUNDRY_TASK, showIf: ["laundry"] },
+      { key: "laundry_items", label: "سایر اقلام قابل شست‌وشو", type: "multi", choices: LAUNDRY_ITEM, showIf: ["laundry"] },
+      { key: "fabric_type_recognition_ok", label: "آشنایی با مواد شوینده و تشخیص نوع پارچه", type: "bool", showIf: ["laundry"] },
+      // نظافت حیاط و محوطه
+      { key: "yard_tasks", label: "خدمات نظافت حیاط قابل انجام", type: "multi", choices: YARD_TASK, showIf: ["yard_cleaning"] },
+      // نظافت پارکینگ
+      { key: "parking_tasks", label: "خدمات نظافت پارکینگ قابل انجام", type: "multi", choices: PARKING_TASK, showIf: ["parking_cleaning"] },
+      // نظافت راه‌پله
+      { key: "staircase_tasks", label: "خدمات نظافت راه‌پله قابل انجام", type: "multi", choices: STAIRCASE_TASK, showIf: ["staircase_cleaning"] },
+      // گل و گیاه
+      { key: "plant_care_tasks", label: "خدمات گل و گیاه قابل انجام", type: "multi", choices: PLANT_CARE_TASK, showIf: ["plant_care"] },
+      // نظافت شرکت و دفتر / نظافت مطب و مراکز خدماتی
+      { key: "workplace_types", label: "نوع محیط کاری قابل قبول", type: "multi", choices: WORKPLACE_TYPE, showIf: ["office_cleaning", "clinic_cleaning"] },
+      { key: "workplace_cleaning_tasks", label: "مهارت‌های نظافت محیط کاری", type: "multi", choices: WORKPLACE_CLEANING_TASK, showIf: ["office_cleaning", "clinic_cleaning"] },
+      { key: "client_facing_environment_ok", label: "آمادگی برای کار در محیط دارای ارباب‌رجوع", type: "bool", showIf: ["office_cleaning", "clinic_cleaning"] },
+      { key: "medical_office_environment_ok", label: "آمادگی برای کار در محیط پزشکی/مطب", type: "bool", showIf: ["clinic_cleaning"] },
+      { key: "workplace_confidentiality_ok", label: "رعایت محرمانگی محیط کاری", type: "bool", showIf: ["office_cleaning", "clinic_cleaning"] },
+      // خرید و انجام امور بیرون
+      { key: "shopping_tasks", label: "خدمات خرید و امور بیرون قابل انجام", type: "multi", choices: SHOPPING_TASK, showIf: ["shopping_errands"] },
+      { key: "errand_transport_method", label: "وسیله رفت‌وآمد برای انجام امور بیرون", type: "choice", choices: ERRAND_TRANSPORT_METHOD, showIf: ["shopping_errands"] },
+      // جابه‌جایی وسایل
+      { key: "moving_tasks", label: "خدمات جابه‌جایی وسایل قابل انجام", type: "multi", choices: MOVING_TASK, showIf: ["furniture_moving"] },
+      // Per the document's own explicit recommendation — this is a
+      // more useful signal than asking height/weight directly.
+      { key: "physical_limitation_for_moving", label: "محدودیت جسمی برای جابه‌جایی وسایل دارد", type: "bool", showIf: ["furniture_moving"] },
+      // سرایداری / سرایداری خانوادگی / سرایداری مجردی
+      { key: "janitor_location_types", label: "نوع محل سرایداری", type: "multi", choices: JANITOR_LOCATION_TYPE, showIf: ["janitor", "janitor_family", "janitor_single"] },
+      { key: "janitor_tasks", label: "وظایف سرایداری قابل انجام", type: "multi", choices: JANITOR_TASK, showIf: ["janitor", "janitor_family", "janitor_single"] },
+      { key: "janitor_residency", label: "وضعیت اقامت در محل سرایداری", type: "choice", choices: JANITOR_RESIDENCY, showIf: ["janitor", "janitor_family", "janitor_single"] },
+      { key: "janitor_family_spouse_present", label: "امکان حضور همسر در محل سرایداری", type: "bool", showIf: ["janitor_family"] },
+      { key: "janitor_family_children_present", label: "امکان حضور فرزندان در محل سرایداری", type: "bool", showIf: ["janitor_family"] },
+      { key: "janitor_family_member_count", label: "تعداد اعضای خانواده", type: "text", showIf: ["janitor_family"] },
+      // نظافت ویلا
+      { key: "villa_tasks", label: "خدمات ویلاداری/نظافت ویلا قابل انجام", type: "multi", choices: VILLA_TASK, showIf: ["villa_cleaning"] },
     ],
     form3: [
-      { key: "cleaning_experience", label: "سابقه کار نظافتی", type: "choice", choices: EXPERIENCE_RANGE },
+      // سوابق کار بر اساس محیط — form4's location-based experience,
+      // kept as one multi-select instead of a separate scored field
+      // per location (the role-specific forms already scope the
+      // detailed skills per location).
+      { key: "cleaning_work_locations_experience", label: "سابقه کار نظافتی در این محیط‌ها", type: "multi", choices: [
+        ["home", "نظافت منزل"],
+        ["company", "شرکت"],
+        ["medical_office", "مطب"],
+        ["office", "دفتر"],
+        ["villa", "ویلا"],
+        ["building", "ساختمان"],
+        ["janitor", "سرایداری"],
+        ["warehouse", "انبار"],
+        ["full_housecleaning", "خانه‌تکانی"],
+      ] },
+      { key: "cleaning_experience", label: "مدت سابقه کار نظافتی", type: "choice", choices: EXPERIENCE_RANGE },
+      // مهارت‌های عمومی — general cleaning + dishwashing skills that
+      // apply across roles rather than being tied to one subtype
+      // (folds the document's separate "ظروف" form into this list).
+      { key: "general_cleaning_skills", label: "مهارت‌های عمومی نظافت", type: "multi", choices: GENERAL_CLEANING_SKILL },
+      { key: "dishwashing_skills", label: "مهارت‌های ظرف‌شویی", type: "multi", choices: [
+        ["hand_washing", "شستن ظروف با دست"],
+        ["dishwasher_machine", "استفاده از ماشین ظرفشویی"],
+        ["delicate_dishware", "شستن ظروف حساس"],
+        ["party_dishware", "شستن ظروف مهمانی"],
+        ["pot_scrubbing", "شست‌وشوی قابلمه"],
+        ["sink_cleaning", "تمیز کردن سینک و اطراف آن"],
+        ["dish_organizing", "مرتب‌سازی ظروف"],
+      ] },
       { key: "cooking_experience", label: "سابقه آشپزی", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["cooking"] },
     ],
     // Reframed to measure compatibility with the actual working
@@ -843,12 +1289,34 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
     // trait — e.g. "دقت و سلیقه" told you nothing actionable; "آمادگی
     // برای کار در شرایط دشوار" tells you whether to place this
     // caregiver in a demanding home.
+    //
+    // "سریع کار کردن" is kept separate from "دقیق کار کردن" per the
+    // document's own note — someone fast is not necessarily thorough.
     questionnaire: [
       { key: "harsh_conditions_compatibility_level", label: "سازگاری با شرایط دشوار کاری (خانه بزرگ، وسایل شکستنی، حضور حیوان خانگی)", type: "score" },
       { key: "cleaning_chemicals_tolerance_level", label: "سازگاری با استفاده مستمر از مواد شوینده و بوهای تند", type: "score" },
       { key: "discipline_level", label: "انضباط و منظم بودن در کار", type: "score" },
       { key: "personal_cleanliness_level", label: "تمیزی و آراستگی ظاهری شخصی", type: "score" },
       { key: "punctuality_level", label: "وقت‌شناسی", type: "score" },
+      { key: "work_cleanliness_precision_level", label: "دقت در تمیزکاری", type: "score" },
+      { key: "responsibility_level", label: "مسئولیت‌پذیری", type: "score" },
+      { key: "work_speed_level", label: "سرعت کار", type: "score" },
+      { key: "attention_to_detail_level", label: "دقت در جزئیات", type: "score" },
+      { key: "long_duration_work_tolerance_level", label: "توانایی کار طولانی‌مدت", type: "score" },
+      { key: "physical_work_tolerance_level", label: "تحمل کار فیزیکی", type: "score" },
+      { key: "flexibility_level", label: "انعطاف‌پذیری", type: "score" },
+      { key: "hygiene_compliance_level", label: "رعایت بهداشت", type: "score" },
+      { key: "trustworthiness_level", label: "امانت‌داری", type: "score" },
+      { key: "respectful_behavior_level", label: "برخورد محترمانه", type: "score" },
+      { key: "independent_work_ability_level", label: "توانایی کار مستقل", type: "score" },
+      { key: "instruction_following_precision_level", label: "توانایی دریافت دستور و اجرای دقیق", type: "score" },
+      { key: "household_privacy_respect_level", label: "رعایت حریم خصوصی منزل", type: "score" },
+      // اختصاصی بر اساس Role
+      { key: "food_hygiene_compliance_level", label: "رعایت بهداشت مواد غذایی", type: "score", showIf: ["cooking"] },
+      { key: "hosting_etiquette_level", label: "ادب، ظاهر مرتب و برخورد مناسب هنگام پذیرایی", type: "score", showIf: ["hosting"] },
+      { key: "workplace_protocol_compliance_level", label: "رعایت محرمانگی و پروتکل‌های محیط کاری", type: "score", showIf: ["office_cleaning", "clinic_cleaning"] },
+      { key: "janitor_reliability_level", label: "مسئولیت‌پذیری، استقلال و پیگیری در سرایداری", type: "score", showIf: ["janitor", "janitor_family", "janitor_single"] },
+      { key: "villa_independent_responsibility_level", label: "استقلال کاری و مسئولیت‌پذیری در ویلاداری", type: "score", showIf: ["villa_cleaning"] },
     ],
   },
   madaryar: {
