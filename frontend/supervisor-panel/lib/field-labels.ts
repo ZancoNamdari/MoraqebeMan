@@ -7,7 +7,10 @@ export const FIELD_LABELS: Record<string, string> = {
   first_name: "نام", last_name: "نام خانوادگی", phone_number: "شماره موبایل",
   // Identity (Form 1)
   father_name: "نام پدر", birth_certificate_number: "شماره شناسنامه",
-  birth_certificate_issue_place: "محل صدور شناسنامه", birth_date: "تاریخ تولد",
+  birth_certificate_issue_place: "محل صدور شناسنامه",
+  birth_certificate_issue_province: "استان محل صدور شناسنامه", birth_certificate_issue_city: "شهر محل صدور شناسنامه",
+  nursing_license_number: "شماره پروانه نظام پرستاری", extra_phone_numbers: "سایر شماره‌های تماس",
+  birth_date: "تاریخ تولد",
   gender: "جنسیت", marital_status: "وضعیت تأهل", children_count: "تعداد فرزندان",
   military_status: "وضعیت نظام وظیفه", height_range: "قد", weight_range: "وزن",
   ethnicities: "قومیت / زبان مادری", has_chronic_disease: "بیماری زمینه‌ای",

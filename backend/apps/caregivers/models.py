@@ -56,7 +56,22 @@ class IdentityProfile(models.Model):
     father_name = models.CharField(max_length=150, blank=True, verbose_name="نام پدر")
     national_id = models.CharField(max_length=10, blank=True, verbose_name="شماره ملی")
     birth_certificate_number = models.CharField(max_length=30, blank=True, verbose_name="شماره شناسنامه")
-    birth_certificate_issue_place = models.CharField(max_length=150, blank=True, verbose_name="محل صدور شناسنامه")
+    # Legacy free-text column — no longer shown in any form (replaced
+    # by the two FKs below, a real province/city picker like the
+    # residence-address fields, so it's not hard to type/pick). Left
+    # in place rather than dropped, to avoid losing already-filled data.
+    birth_certificate_issue_place = models.CharField(max_length=150, blank=True, verbose_name="محل صدور شناسنامه (قدیمی)")
+    birth_certificate_issue_province = models.ForeignKey(
+        "locations.Province", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+", verbose_name="استان محل صدور شناسنامه",
+    )
+    birth_certificate_issue_city = models.ForeignKey(
+        "locations.City", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+", verbose_name="شهر محل صدور شناسنامه",
+    )
+    # آزاد برای افزودن هر تعداد شماره تماس دیگر که لازم باشد — فهرستی
+    # از رشته‌ها، نه فقط یک شماره ثابت.
+    extra_phone_numbers = models.JSONField(default=list, blank=True, verbose_name="سایر شماره‌های تماس")
     birth_date = jmodels.jDateField(null=True, blank=True, verbose_name="تاریخ تولد")
     gender = models.CharField(max_length=10, choices=Gender.choices, blank=True, verbose_name="جنسیت")
     marital_status = models.CharField(max_length=20, choices=MaritalStatus.choices, blank=True, verbose_name="وضعیت تأهل")
@@ -78,6 +93,9 @@ class IdentityProfile(models.Model):
     # انجام می‌شود (CaregiverDocumentType.RESIDENCY_DOCUMENTS).
     is_non_iranian_national = models.BooleanField(null=True, blank=True, default=False, verbose_name="تابعیت غیرایرانی (اتباع) دارد")
     nationality_country = models.CharField(max_length=100, blank=True, verbose_name="اهل کدام کشور است", help_text="فقط در صورت تابعیت غیرایرانی.")
+    # فقط برای پرستار پرسیده می‌شود — قبلاً در service_specific_answers
+    # پرستار بود، به فرم ۱ منتقل شد.
+    nursing_license_number = models.CharField(max_length=50, blank=True, verbose_name="شماره پروانه نظام پرستاری")
     has_chronic_disease = models.BooleanField(null=True, blank=True, default=False, verbose_name="آیا بیماری مزمن دارد؟")
     chronic_disease_types = models.JSONField(default=list, blank=True, verbose_name="نوع بیماری‌های مزمن؟")
     chronic_disease_detail = models.CharField(

@@ -289,19 +289,29 @@ export default function CaregiverDetailPage() {
             )}
 
             <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-sm text-rose-900">تکمیل مدارک ({DOC_CHECKLIST.filter((d) => profile.documents?.[d.docType]?.status === "approved").length} از {DOC_CHECKLIST.length})</CardTitle></CardHeader>
-              <CardContent className="space-y-2">
-                {DOC_CHECKLIST.map((d) => (
-                  <DocumentReviewRow
-                    key={d.docType}
-                    userId={userId}
-                    docType={d.docType}
-                    label={d.label}
-                    upload={profile.documents?.[d.docType]}
-                    onReviewed={refresh}
-                  />
-                ))}
-              </CardContent>
+              {(() => {
+                // مدارک اقامت اتباع فقط برای کسانی که در فرم هویتی
+                // تابعیت غیرایرانی را تأیید کرده‌اند نشان داده می‌شود.
+                const isNonIranian = Boolean(profile.identity?.is_non_iranian_national)
+                const checklist = isNonIranian ? DOC_CHECKLIST : DOC_CHECKLIST.filter((d) => d.docType !== "residency_documents")
+                return (
+                  <>
+                    <CardHeader><CardTitle className="text-sm text-rose-900">تکمیل مدارک ({checklist.filter((d) => profile.documents?.[d.docType]?.status === "approved").length} از {checklist.length})</CardTitle></CardHeader>
+                    <CardContent className="space-y-2">
+                      {checklist.map((d) => (
+                        <DocumentReviewRow
+                          key={d.docType}
+                          userId={userId}
+                          docType={d.docType}
+                          label={d.label}
+                          upload={profile.documents?.[d.docType]}
+                          onReviewed={refresh}
+                        />
+                      ))}
+                    </CardContent>
+                  </>
+                )
+              })()}
             </Card>
 
             <Card className="border-pink-100">

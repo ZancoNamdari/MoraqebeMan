@@ -15,6 +15,10 @@ export interface LocationValue {
 interface Props extends LocationValue {
   onChange: (values: LocationValue) => void
   districtRequired?: boolean
+  // Hides the district/neighborhood combobox and its column — for
+  // pickers where only province+city matters (e.g. birth certificate
+  // issue place), not a full residence address.
+  hideDistrict?: boolean
 }
 
 /**
@@ -32,7 +36,7 @@ interface Props extends LocationValue {
  * instead of a free-text input that would fail validation on submit.
  * The field stays optional either way.
  */
-export function LocationPicker({ province, city, district, onChange, districtRequired }: Props) {
+export function LocationPicker({ province, city, district, onChange, districtRequired, hideDistrict }: Props) {
   const [provinces, setProvinces] = useState<Province[]>([])
   const [cities, setCities] = useState<City[]>([])
   const [districts, setDistricts] = useState<District[]>([])
@@ -58,7 +62,7 @@ export function LocationPicker({ province, city, district, onChange, districtReq
   }, [city])
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className={hideDistrict ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "grid grid-cols-1 gap-3 sm:grid-cols-3"}>
       <Field label="استان">
         <Combobox
           options={provinces}
@@ -79,26 +83,28 @@ export function LocationPicker({ province, city, district, onChange, districtReq
         />
       </Field>
 
-      <Field label="منطقه / محله" required={districtRequired}>
-        {districts.length > 0 ? (
-          <Combobox
-            options={districts}
-            value={district}
-            disabled={!city}
-            onChange={(id) => onChange({ province, city, district: id })}
-            placeholder="جستجوی منطقه..."
-          />
-        ) : (
-          <Combobox
-            options={[]}
-            value={null}
-            disabled
-            disabledPlaceholder={city ? "منطقه‌ای برای این شهر ثبت نشده" : "ابتدا شهر را انتخاب کنید"}
-            onChange={() => {}}
-            placeholder=""
-          />
-        )}
-      </Field>
+      {!hideDistrict && (
+        <Field label="منطقه / محله" required={districtRequired}>
+          {districts.length > 0 ? (
+            <Combobox
+              options={districts}
+              value={district}
+              disabled={!city}
+              onChange={(id) => onChange({ province, city, district: id })}
+              placeholder="جستجوی منطقه..."
+            />
+          ) : (
+            <Combobox
+              options={[]}
+              value={null}
+              disabled
+              disabledPlaceholder={city ? "منطقه‌ای برای این شهر ثبت نشده" : "ابتدا شهر را انتخاب کنید"}
+              onChange={() => {}}
+              placeholder=""
+            />
+          )}
+        </Field>
+      )}
     </div>
   )
 }

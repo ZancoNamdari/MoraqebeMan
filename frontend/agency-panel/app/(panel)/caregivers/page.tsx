@@ -140,8 +140,15 @@ const DOC_STATUS_COLOR: Record<CaregiverDocumentReviewStatus, string> = {
   pending: "text-amber-700 bg-amber-100", approved: "text-emerald-700 bg-emerald-100", rejected: "text-red-700 bg-red-100",
 }
 
+// The residency-documents row only applies to اتباع (non-Iranian)
+// caregivers — an Iranian caregiver keeps the original 7-item
+// checklist, never an unexplained 8th row with nothing to upload.
+function docChecklistFor(item: AgencyCaregiverPipelineItem) {
+  return item.is_non_iranian_national ? DOC_CHECKLIST : DOC_CHECKLIST.filter((d) => d.field !== "doc_residency_documents")
+}
+
 function docsCompletedCount(item: AgencyCaregiverPipelineItem) {
-  return DOC_CHECKLIST.filter((d) => item[d.field]).length
+  return docChecklistFor(item).filter((d) => item[d.field]).length
 }
 
 const emptyCaregiverFilters = {
@@ -170,7 +177,7 @@ function matchesCaregiverFilters(item: AgencyCaregiverPipelineItem, search: stri
   if (filters.urgentOnly && !item.is_urgent) return false
   if (filters.tags.length && !filters.tags.some((t) => item.tags.includes(t))) return false
   if (filters.docsStatus) {
-    const complete = docsCompletedCount(item) === DOC_CHECKLIST.length
+    const complete = docsCompletedCount(item) === docChecklistFor(item).length
     if (filters.docsStatus === "complete" && !complete) return false
     if (filters.docsStatus === "incomplete" && complete) return false
   }
@@ -338,7 +345,7 @@ function CaregiverCard({ item, stages, onMove, moving, onAddTag, onRemoveTag, pi
 
       {isDocsStage && (
         <p className="mt-1.5 text-xs font-medium text-purple-700">
-          {docsCompletedCount(item)}/{DOC_CHECKLIST.length} مدرک تکمیل شده
+          {docsCompletedCount(item)}/{docChecklistFor(item).length} مدرک تکمیل شده
         </p>
       )}
 
@@ -613,7 +620,7 @@ function DocumentChecklistDrawer({ item, agencyId, canReview, onUpdated }: {
     <div className="rounded-lg border border-purple-200 bg-purple-50/40 p-3">
       <p className="mb-2 text-xs font-bold text-purple-900">{item.full_name} — چک‌لیست مدارک</p>
       <div className="space-y-1.5">
-        {DOC_CHECKLIST.map((d) => (
+        {docChecklistFor(item).map((d) => (
           <DocumentChecklistRow
             key={d.field}
             item={item}

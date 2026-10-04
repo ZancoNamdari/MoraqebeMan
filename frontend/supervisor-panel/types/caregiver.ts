@@ -23,7 +23,9 @@ export interface IdentityFormData {
   father_name: string
   national_id: string
   birth_certificate_number: string
-  birth_certificate_issue_place: string
+  birth_certificate_issue_province: number | null
+  birth_certificate_issue_city: number | null
+  extra_phone_numbers: string[]
   birth_date: string // Jalali "YYYY-MM-DD"
   gender: string
   marital_status: string

@@ -148,6 +148,9 @@ export interface AgencyCaregiverPipelineItem {
   doc_promissory_note: boolean
   doc_id_card_received: boolean
   doc_residency_documents: boolean
+  // Only true caregivers get the extra "مدارک اقامت اتباع" checklist
+  // row — Iranian caregivers keep the original 7-item checklist.
+  is_non_iranian_national: boolean
   // Keyed by CaregiverDocumentField (e.g. "no_criminal_record", NOT
   // the "doc_" prefixed booleans above) — the file/status detail
   // behind each of those fast-read booleans; null for a document

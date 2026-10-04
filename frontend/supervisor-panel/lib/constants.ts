@@ -93,15 +93,35 @@ export const EMERGENCY_CONTACT_RELATION: Choice[] = [
   ["other", "سایر"],
 ]
 
+// Generic on purpose — shared by every service type, not just
+// سالمندیار — see getCollaborationTypeChoices below for the
+// role-aware wording actually rendered.
 export const COLLABORATION_TYPE: Choice[] = [
-  ["daily", "مراقبت روزانه"],
-  ["night", "مراقبت شبانه"],
-  ["live_in", "مراقبت شبانه‌روزی (مقیم)"],
-  ["hospital_companion", "همراه سالمند در بیمارستان"],
-  ["home_companion", "همراه سالمند در منزل"],
-  ["short_term", "مراقبت موقت (چند روزه)"],
-  ["long_term", "مراقبت بلندمدت"],
+  ["daily", "کار روزانه (رفت‌وآمد)"],
+  ["night", "کار شبانه"],
+  ["live_in", "کار شبانه‌روزی (مقیم)"],
+  ["hospital_companion", "همراهی در بیمارستان"],
+  ["home_companion", "همراهی در منزل کارفرما"],
+  ["short_term", "همکاری موقت (چند روزه)"],
+  ["long_term", "همکاری بلندمدت"],
 ]
+
+// COLLABORATION_TYPE's wording depends on who the caregiver actually
+// works for — "کارفرما" only makes sense for نظافت‌چی (a property/
+// employer, no patient); every other type should name who they're
+// caring for (سالمند/کودک/نوزاد/بیمار). "همراهی در بیمارستان" is
+// dropped entirely when نظافت‌چی is the ONLY selected type.
+export function getCollaborationTypeChoices(serviceTypes: string[]): Choice[] {
+  const cleanerOnly = serviceTypes.length > 0 && serviceTypes.every((t) => t === "nezafatchi")
+  let subject = "کارفرما"
+  if (serviceTypes.includes("salmandyar")) subject = "سالمند"
+  else if (serviceTypes.includes("koodakyar")) subject = "کودک"
+  else if (serviceTypes.includes("madaryar")) subject = "نوزاد/مادر"
+  else if (serviceTypes.includes("parastar") || serviceTypes.includes("behyar")) subject = "بیمار"
+  return COLLABORATION_TYPE
+    .filter((c) => !(cleanerOnly && c[0] === "hospital_companion"))
+    .map((c) => (c[0] === "home_companion" ? [c[0], `همراهی در منزل ${subject}`] as Choice : c))
+}
 
 export const WORK_STATUS: Choice[] = [
   ["full_time", "تمام‌وقت"],

@@ -20,7 +20,9 @@ import { parseJalaliDate, formatJalaliDate, daysInJalaliMonth, PERSIAN_MONTH_LIS
 import { ROUTES } from "@/lib/routes"
 
 const emptyForm: MyIdentityProfile = {
-  full_name: "", father_name: "", birth_certificate_number: "", birth_certificate_issue_place: "",
+  full_name: "", father_name: "", birth_certificate_number: "",
+  birth_certificate_issue_province: null, birth_certificate_issue_city: null,
+  extra_phone_numbers: [],
   birth_date: null, gender: "", marital_status: "", children_count: "", military_status: "",
   height_range: "", weight_range: "", ethnicities: [], is_non_iranian_national: null, nationality_country: "",
   has_chronic_disease: null, chronic_disease_types: [],
@@ -42,6 +44,8 @@ export default function IdentityFormPage() {
   const [provinces, setProvinces] = useState<Province[]>([])
   const [cities, setCities] = useState<City[]>([])
   const [districts, setDistricts] = useState<District[]>([])
+  // محل صدور شناسنامه — استان/شهر مستقل از استان/شهر محل سکونت بالا.
+  const [bcCities, setBcCities] = useState<City[]>([])
 
   const birthParts = parseJalaliDate(form.birth_date || "")
 
@@ -64,6 +68,11 @@ export default function IdentityFormPage() {
     if (form.city) locationService.districts(form.city).then(setDistricts)
     else setDistricts([])
   }, [form.city])
+
+  useEffect(() => {
+    if (form.birth_certificate_issue_province) locationService.cities(form.birth_certificate_issue_province).then(setBcCities)
+    else setBcCities([])
+  }, [form.birth_certificate_issue_province])
 
   if (authLoading || !user) return null
 
@@ -114,10 +123,26 @@ export default function IdentityFormPage() {
               <CardContent className="space-y-3">
                 <Field label="نام کامل"><Input value={form.full_name} disabled /></Field>
                 <Field label="نام پدر"><Input value={form.father_name} onChange={(e) => set("father_name", e.target.value)} /></Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="شماره شناسنامه"><Input value={form.birth_certificate_number} onChange={(e) => set("birth_certificate_number", e.target.value)} /></Field>
-                  <Field label="محل صدور شناسنامه"><Input value={form.birth_certificate_issue_place} onChange={(e) => set("birth_certificate_issue_place", e.target.value)} /></Field>
-                </div>
+                <Field label="شماره شناسنامه"><Input value={form.birth_certificate_number} onChange={(e) => set("birth_certificate_number", e.target.value)} /></Field>
+                <Field label="محل صدور شناسنامه">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select
+                      value={form.birth_certificate_issue_province ?? ""}
+                      onChange={(e) => { set("birth_certificate_issue_province", Number(e.target.value) || null); set("birth_certificate_issue_city", null) }}
+                    >
+                      <option value="">استان</option>
+                      {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </Select>
+                    <Select
+                      value={form.birth_certificate_issue_city ?? ""}
+                      onChange={(e) => set("birth_certificate_issue_city", Number(e.target.value) || null)}
+                      disabled={!form.birth_certificate_issue_province}
+                    >
+                      <option value="">شهر</option>
+                      {bcCities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </Select>
+                  </div>
+                </Field>
                 <Field label="تاریخ تولد (شمسی)">
                   <div className="grid grid-cols-3 gap-2">
                     <Select value={birthParts.day ?? ""} onChange={(e) => setBirthPart("day", Number(e.target.value))}>
@@ -189,6 +214,34 @@ export default function IdentityFormPage() {
                   <Field label="نسبت"><ChoiceSelect choices={EMERGENCY_CONTACT_RELATION} value={form.emergency_contact_relation || ""} onChange={(v) => set("emergency_contact_relation", v)} /></Field>
                 </div>
                 <Field label="تلفن ثابت"><Input dir="ltr" value={form.landline_phone} onChange={(e) => set("landline_phone", e.target.value)} /></Field>
+                <Field label="سایر شماره‌های تماس">
+                  <div className="space-y-2">
+                    {(form.extra_phone_numbers || []).map((num, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input
+                          dir="ltr" value={num}
+                          onChange={(e) => {
+                            const next = [...(form.extra_phone_numbers || [])]
+                            next[i] = e.target.value
+                            set("extra_phone_numbers", next)
+                          }}
+                        />
+                        <Button
+                          type="button" variant="outline" size="sm"
+                          onClick={() => set("extra_phone_numbers", (form.extra_phone_numbers || []).filter((_, j) => j !== i))}
+                        >
+                          حذف
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button" variant="outline" size="sm"
+                      onClick={() => set("extra_phone_numbers", [...(form.extra_phone_numbers || []), ""])}
+                    >
+                      + افزودن شماره
+                    </Button>
+                  </div>
+                </Field>
 
                 <div className="grid grid-cols-3 gap-3">
                   <Field label="استان">

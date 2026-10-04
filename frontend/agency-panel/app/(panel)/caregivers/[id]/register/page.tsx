@@ -61,7 +61,9 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 }
 
 const EMPTY_IDENTITY: IdentityFormData = {
-  father_name: "", national_id: "", birth_certificate_number: "", birth_certificate_issue_place: "",
+  father_name: "", national_id: "", birth_certificate_number: "",
+  birth_certificate_issue_province: null, birth_certificate_issue_city: null,
+  nursing_license_number: "", extra_phone_numbers: [],
   birth_date: "", gender: "", marital_status: "", children_count: "",
   has_children: null, currently_caring_for_own_child: null, military_status: null,
   height_range: "", weight_range: "", ethnicities: [], is_non_iranian_national: null, nationality_country: "",
@@ -553,7 +555,16 @@ export default function CaregiverRegistrationWizard() {
               <Field label="نام پدر"><Input value={identity.father_name} onChange={(e) => setIdentity({ ...identity, father_name: e.target.value })} /></Field>
               <Field label="کد ملی"><Input value={identity.national_id} onChange={(e) => setIdentity({ ...identity, national_id: e.target.value })} dir="ltr" /></Field>
               <Field label="شماره شناسنامه"><Input value={identity.birth_certificate_number} onChange={(e) => setIdentity({ ...identity, birth_certificate_number: e.target.value })} /></Field>
-              <Field label="محل صدور شناسنامه"><Input value={identity.birth_certificate_issue_place} onChange={(e) => setIdentity({ ...identity, birth_certificate_issue_place: e.target.value })} /></Field>
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">محل صدور شناسنامه</p>
+                <LocationPicker
+                  province={identity.birth_certificate_issue_province}
+                  city={identity.birth_certificate_issue_city}
+                  district={null}
+                  hideDistrict
+                  onChange={(v) => setIdentity({ ...identity, birth_certificate_issue_province: v.province, birth_certificate_issue_city: v.city })}
+                />
+              </div>
               <Field label="تاریخ تولد">
                 <JalaliDatePicker value={identity.birth_date} onChange={(v) => setIdentity({ ...identity, birth_date: v })} />
               </Field>
@@ -607,6 +618,38 @@ export default function CaregiverRegistrationWizard() {
               <Field label="شماره تماس اضطراری"><Input value={identity.emergency_contact_phone} onChange={(e) => setIdentity({ ...identity, emergency_contact_phone: e.target.value })} dir="ltr" /></Field>
               <Field label="نسبت فرد اضطراری"><ChoiceSelect choices={C.EMERGENCY_CONTACT_RELATION} value={identity.emergency_contact_relation} onChange={(v) => setIdentity({ ...identity, emergency_contact_relation: v })} /></Field>
               <Field label="تلفن ثابت"><Input value={identity.landline_phone} onChange={(e) => setIdentity({ ...identity, landline_phone: e.target.value })} dir="ltr" /></Field>
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">سایر شماره‌های تماس</p>
+                <div className="space-y-2">
+                  {identity.extra_phone_numbers.map((num, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Input
+                        value={num} dir="ltr"
+                        onChange={(e) => {
+                          const next = [...identity.extra_phone_numbers]
+                          next[i] = e.target.value
+                          setIdentity({ ...identity, extra_phone_numbers: next })
+                        }}
+                      />
+                      <Button
+                        type="button" variant="outline" size="sm"
+                        onClick={() => setIdentity({ ...identity, extra_phone_numbers: identity.extra_phone_numbers.filter((_, j) => j !== i) })}
+                      >
+                        حذف
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button" variant="outline" size="sm"
+                    onClick={() => setIdentity({ ...identity, extra_phone_numbers: [...identity.extra_phone_numbers, ""] })}
+                  >
+                    + افزودن شماره
+                  </Button>
+                </div>
+              </div>
+              {serviceTypes.includes("parastar") && (
+                <Field label="شماره پروانه نظام پرستاری"><Input value={identity.nursing_license_number} onChange={(e) => setIdentity({ ...identity, nursing_license_number: e.target.value })} /></Field>
+              )}
 
               <SectionHeading>محل سکونت</SectionHeading>
               <LocationPicker
@@ -625,7 +668,7 @@ export default function CaregiverRegistrationWizard() {
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">💼</span> فرم ۲ — شرایط همکاری</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <Field label="نوع همکاری"><CheckboxGroup choices={C.COLLABORATION_TYPE} value={workPrefs.collaboration_types} onChange={(v) => setWorkPrefs({ ...workPrefs, collaboration_types: v })} /></Field>
+              <Field label="نوع همکاری"><CheckboxGroup choices={C.getCollaborationTypeChoices(serviceTypes)} value={workPrefs.collaboration_types} onChange={(v) => setWorkPrefs({ ...workPrefs, collaboration_types: v })} /></Field>
               {workPrefs.collaboration_types.includes("daily") && (
                 <Field label="ساعات کاری مراقبت روزانه"><Input value={workPrefs.daily_work_hours} onChange={(e) => setWorkPrefs({ ...workPrefs, daily_work_hours: e.target.value })} placeholder="مثلاً از ساعت ۸ تا ۱۶" /></Field>
               )}

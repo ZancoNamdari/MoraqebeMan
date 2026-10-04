@@ -168,13 +168,14 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
         model = IdentityProfile
         fields = [
             "full_name",
-            "father_name", "national_id", "birth_certificate_number", "birth_certificate_issue_place",
+            "father_name", "national_id", "birth_certificate_number",
+            "birth_certificate_issue_province", "birth_certificate_issue_city",
             "birth_date", "gender", "marital_status", "children_count", "military_status",
             "height_range", "weight_range", "ethnicities",
-            "is_non_iranian_national", "nationality_country",
+            "is_non_iranian_national", "nationality_country", "nursing_license_number",
             "has_chronic_disease", "chronic_disease_types", "chronic_disease_detail",
             "takes_permanent_medication", "medication_types", "medication_detail", "psychiatric_medication_detail",
-            "emergency_contact_phone", "emergency_contact_relation", "landline_phone",
+            "emergency_contact_phone", "emergency_contact_relation", "landline_phone", "extra_phone_numbers",
             "province", "city", "district", "postal_code", "full_address",
             "has_children", "currently_caring_for_own_child",
             "created_at", "updated_at",

@@ -171,6 +171,25 @@ export const COLLABORATION_TYPE: Choice[] = [
   ["long_term", "همکاری بلندمدت"],
 ]
 
+// COLLABORATION_TYPE's wording depends on who the caregiver actually
+// works for — "کارفرما" only makes sense for نظافت‌چی (a property/
+// employer, no patient); every other type should name who they're
+// caring for (سالمند/کودک/نوزاد/بیمار). "همراهی در بیمارستان" is
+// dropped entirely when نظافت‌چی is the ONLY selected type — cleaning
+// work has no hospital context (same pattern used elsewhere for
+// نظافت‌چی-only gating).
+export function getCollaborationTypeChoices(serviceTypes: string[]): Choice[] {
+  const cleanerOnly = serviceTypes.length > 0 && serviceTypes.every((t) => t === "nezafatchi")
+  let subject = "کارفرما"
+  if (serviceTypes.includes("salmandyar")) subject = "سالمند"
+  else if (serviceTypes.includes("koodakyar")) subject = "کودک"
+  else if (serviceTypes.includes("madaryar")) subject = "نوزاد/مادر"
+  else if (serviceTypes.includes("parastar") || serviceTypes.includes("behyar")) subject = "بیمار"
+  return COLLABORATION_TYPE
+    .filter((c) => !(cleanerOnly && c[0] === "hospital_companion"))
+    .map((c) => (c[0] === "home_companion" ? [c[0], `همراهی در منزل ${subject}`] as Choice : c))
+}
+
 export const WORK_STATUS: Choice[] = [
   ["full_time", "تمام‌وقت"],
   ["part_time", "پاره‌وقت"],
@@ -865,7 +884,6 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "park_outing_accompaniment_ok", label: "آمادگی برای همراهی سالمند در پیاده‌روی و پارک", type: "bool" },
       { key: "willing_to_relocate_other_cities", label: "آمادگی برای کار در شهرهای دیگر (محل کار دائم)", type: "bool" },
       { key: "ok_with_second_elderly_spouse_present", label: "آمادگی برای مراقبت در حضور همسر سالمند (زوج سالمند)", type: "bool" },
-      { key: "ok_with_another_caregiver_present", label: "آمادگی برای کار در حضور مراقب دیگری در منزل", type: "bool" },
       // مراقبت شخصی — موارد حساس‌تر با مقیاس تجربه چهارسطحی به‌جای
       // بلی/خیر ساده (پیشنهاد صریح سند).
       { key: "grooming_assistance_level", label: "کمک به اصلاح و آراستگی سالمند", type: "choice", choices: CARE_EXPERIENCE_LEVEL },
@@ -1162,12 +1180,12 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
   },
   parastar: {
     form2: [
-      { key: "nursing_license_number", label: "شماره پروانه نظام پرستاری", type: "text" },
+      // شماره پروانه نظام پرستاری حالا در فرم ۱ (هویتی) پرسیده می‌شود.
       { key: "shift_rotation_ok", label: "آمادگی برای چرخش شیفت", type: "bool" },
       { key: "can_administer_injections", label: "توانایی تزریقات", type: "bool" },
       { key: "works_alongside_aide_ok", label: "آمادگی همکاری در کنار کمک‌بهیار", type: "bool" },
       { key: "hospital_surgery_accompaniment_ok", label: "آمادگی همراهی در بیمارستان حین عمل جراحی", type: "bool" },
-      { key: "home_care_for_hospital_averse_patients_ok", label: "آمادگی مراقبت در منزل از بیمارانی که تمایل به رفتن به بیمارستان ندارند", type: "bool" },
+      { key: "averse_hospitals_detail", label: "آیا بیمارستانی هست که قصد رفتن به آن را ندارید؟ (در صورت وجود، نام ببرید)", type: "text" },
       { key: "pre_surgery_shaving_ok", label: "آمادگی انجام اصلاح موی بدن قبل از عمل (شیو)", type: "bool" },
       { key: "special_patient_washing_ok", label: "آمادگی شست‌وشوی خاص بیمار", type: "bool" },
       // مراقبت‌های بیمارستانی و جراحی — همراهی حین عمل از قبل وجود
@@ -1210,6 +1228,7 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
     form2: [
       { key: "physical_tasks_comfort", label: "آمادگی برای کارهای فیزیکی (جابجایی و بلند کردن بیمار)", type: "bool" },
       { key: "shift_rotation_ok", label: "آمادگی برای چرخش شیفت", type: "bool" },
+      { key: "averse_hospitals_detail", label: "آیا بیمارستانی هست که قصد رفتن به آن را ندارید؟ (در صورت وجود، نام ببرید)", type: "text" },
     ],
     form3: [
       { key: "aide_training_certificate", label: "گواهی آموزشی کمک‌بهیاری/بهیاری دارد", type: "bool" },

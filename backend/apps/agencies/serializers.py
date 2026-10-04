@@ -98,21 +98,29 @@ class AgencyCaregiverPipelineSerializer(serializers.ModelSerializer):
     extra_contacts = serializers.SerializerMethodField()
     contract_start_date = JalaliDateField(required=False, allow_null=True)
     contract_end_date = JalaliDateField(required=False, allow_null=True)
+    # Drives whether agency-panel's checklist drawer shows the extra
+    # "مدارک اقامت اتباع" row at all — Iranian caregivers keep the
+    # original 7-item checklist.
+    is_non_iranian_national = serializers.SerializerMethodField()
 
     class Meta:
         model = CaregiverProfile
         fields = [
             "id", "user_id", "full_name", "phone_number", "extra_contacts", "agency_pipeline_status", "is_urgent", "tags", "process_milestones",
-            "service_types", "service_subtypes",
+            "service_types", "service_subtypes", "is_non_iranian_national",
             "doc_no_criminal_record", "doc_no_addiction_test", "doc_identity_verified",
             "doc_personal_photo", "doc_mental_health_test", "doc_promissory_note", "doc_id_card_received",
             "doc_residency_documents",
             "documents", "active_reminders", "staff_notes", "contract_start_date", "contract_end_date",
         ]
-        read_only_fields = ["id", "user_id", "full_name", "phone_number", "extra_contacts", "documents", "active_reminders"]
+        read_only_fields = ["id", "user_id", "full_name", "phone_number", "extra_contacts", "documents", "active_reminders", "is_non_iranian_national"]
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
+
+    def get_is_non_iranian_national(self, obj):
+        identity = getattr(obj.user, "caregiver_identity_profile", None)
+        return bool(identity and identity.is_non_iranian_national)
 
     def get_extra_contacts(self, obj):
         contacts = []
