@@ -727,22 +727,7 @@ export default function CaregiverRegistrationWizard() {
                 </FormSection>
               )}
               <FormSection title="شرایط محیط کار">
-                <Field label="وضعیت استعمال دخانیات"><ChoiceSelect choices={C.SMOKING_STATUS} value={workPrefs.smoking_status} onChange={(v) => setWorkPrefs({ ...workPrefs, smoking_status: v })} /></Field>
-                {identity.gender === "female" && (
-                  <Field label="آیا مشکلی با کار نزد پدر مجرد دارید؟"><YesNo value={workPrefs.problem_with_single_father} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_single_father: v })} /></Field>
-                )}
-                {identity.gender === "male" && (
-                  <Field label="آیا مشکلی با کار نزد مادر تنها (بدون همسر) دارید؟"><YesNo value={workPrefs.problem_with_single_mother} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_single_mother: v })} /></Field>
-                )}
-                {/* برای نظافت‌چیِ خالص بی‌اهمیت است (طبق تأیید صریح) —
-                    فقط وقتی حداقل یک نوع خدمت دیگر هم انتخاب شده نشان
-                    داده می‌شود. */}
-                {serviceTypes.some((t) => t !== "nezafatchi") && (
-                  <>
-                    <Field label="آیا مشکلی با کار در خانه‌ای که پدر در ساعات کاری در منزل است دارید؟"><YesNo value={workPrefs.problem_with_father_present_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_father_present_at_home: v })} /></Field>
-                    <Field label="آیا مشکلی با کار در خانه‌ای که پدربزرگ/مادربزرگ یا یکی از اقوام هم حضور دارد دارید؟"><YesNo value={workPrefs.problem_with_grandparent_or_relative_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_grandparent_or_relative_at_home: v })} /></Field>
-                  </>
-                )}
+                <Field label="آیا سیگاری هستید؟"><YesNo value={workPrefs.smoking_status ? workPrefs.smoking_status !== "none" : null} onChange={(v) => setWorkPrefs({ ...workPrefs, smoking_status: v ? (workPrefs.smoking_status === "occasional" ? "occasional" : "regular") : "none" })} /></Field>
                 <Field label="آیا مشکلی با کار در منزلی که دوربین مداربسته دارد، دارید؟"><YesNo value={workPrefs.problem_with_home_camera} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_home_camera: v })} /></Field>
                 <Field label="آیا مشکلی با حضور سگ در منزل دارید؟"><YesNo value={workPrefs.problem_with_dog} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_dog: v })} /></Field>
                 <Field label="آیا مشکلی با حضور گربه در منزل دارید؟"><YesNo value={workPrefs.problem_with_cat} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_cat: v })} /></Field>
@@ -750,6 +735,18 @@ export default function CaregiverRegistrationWizard() {
                 <Field label="آیا مشکلی با سفر همراه خانواده در داخل ایران دارید؟"><YesNo value={workPrefs.problem_with_domestic_travel} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_domestic_travel: v })} /></Field>
                 <Field label="آیا مشکلی با سفر همراه خانواده به خارج از کشور دارید؟"><YesNo value={workPrefs.problem_with_international_travel} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_international_travel: v })} /></Field>
               </FormSection>
+              {serviceTypes.includes("salmandyar") && (
+                <FormSection title="شرایط محیط کار — مخصوص سالمندیاران">
+                  {identity.gender === "female" && (
+                    <Field label="آیا مشکلی با کار نزد پدر مجرد دارید؟"><YesNo value={workPrefs.problem_with_single_father} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_single_father: v })} /></Field>
+                  )}
+                  {identity.gender === "male" && (
+                    <Field label="آیا مشکلی با کار نزد مادر تنها (بدون همسر) دارید؟"><YesNo value={workPrefs.problem_with_single_mother} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_single_mother: v })} /></Field>
+                  )}
+                  <Field label="آیا مشکلی با کار در خانه‌ای که پدر در ساعات کاری در منزل است دارید؟"><YesNo value={workPrefs.problem_with_father_present_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_father_present_at_home: v })} /></Field>
+                  <Field label="آیا مشکلی با کار در خانه‌ای که پدربزرگ/مادربزرگ یا یکی از اقوام هم حضور دارد دارید؟"><YesNo value={workPrefs.problem_with_grandparent_or_relative_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_grandparent_or_relative_at_home: v })} /></Field>
+                </FormSection>
+              )}
               <FormSection title="مناطق خدماتی">
                 <div>
                   <label className="mb-3 flex cursor-pointer items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">

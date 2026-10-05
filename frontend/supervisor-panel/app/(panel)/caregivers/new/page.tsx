@@ -525,7 +525,7 @@ function NewCaregiverWizardInner() {
                 <Field label="محل ارائه خدمت"><CheckboxGroup choices={C.SERVICE_LOCATION} value={workPrefs.service_locations} onChange={(v) => setWorkPrefs({ ...workPrefs, service_locations: v })} /></Field>
               </FormSection>
               <FormSection title="شرایط محیط کار">
-                <Field label="وضعیت استعمال دخانیات"><ChoiceSelect choices={C.SMOKING_STATUS} value={workPrefs.smoking_status} onChange={(v) => setWorkPrefs({ ...workPrefs, smoking_status: v })} /></Field>
+                <Field label="آیا سیگاری هستید؟"><YesNo value={workPrefs.smoking_status ? workPrefs.smoking_status !== "none" : null} onChange={(v) => setWorkPrefs({ ...workPrefs, smoking_status: v ? (workPrefs.smoking_status === "occasional" ? "occasional" : "regular") : "none" })} /></Field>
                 <Field label="پذیرش حیوان خانگی در محل کار"><YesNo value={workPrefs.pets_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, pets_ok: v })} /></Field>
               </FormSection>
               <FormSection title="مناطق خدماتی">
