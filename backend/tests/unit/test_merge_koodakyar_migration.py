@@ -89,6 +89,15 @@ class IdentityEthnicityAndAgeTests(TestCase):
         self.assertEqual(ident.ethnicities, ["turk", "kurd"])
         self.assertEqual(ident.ethnicity_details, {"turk": ["tabrizi", "zanjani"]})
 
+    def test_removed_ethnicities_map_to_other(self):
+        m = importlib.import_module("apps.caregivers.migrations.0035_remove_ethnicities_tat_assyrian_jewish")
+        ident = self._identity(4, ethnicities=["tat", "jewish", "fars", "assyrian"],
+                               ethnicity_details={"tat": ["other"], "fars": ["gilaki_neighbor", "tehrani"]})
+        m.forwards(django_apps, None)
+        ident.refresh_from_db()
+        self.assertEqual(ident.ethnicities, ["other", "fars"])
+        self.assertEqual(ident.ethnicity_details, {"fars": ["other", "tehrani"]})
+
     def test_serializer_validates_subgroups_and_drops_unselected_main(self):
         from apps.caregivers.serializers import IdentityProfileSerializer
         ok = IdentityProfileSerializer(data={

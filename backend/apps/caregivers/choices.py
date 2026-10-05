@@ -131,13 +131,10 @@ class Ethnicity(models.TextChoices):
     GILAK = "gilak", "گیلک"
     MAZANDARANI = "mazandarani", "مازندرانی"
     BALOCH = "baloch", "بلوچ"
-    ARAB = "arab", "عرب خوزستان"
+    ARAB = "arab", "عرب"
     TURKMEN = "turkmen", "ترکمن"
     TALESH = "talesh", "تالشی"
-    TAT = "tat", "تات"
     ARMENIAN = "armenian", "ارمنی"
-    ASSYRIAN = "assyrian", "آشوری"
-    JEWISH = "jewish", "یهودی ایرانی"
     QASHQAI = "qashqai", "قشقایی"
     BAKHTIARI = "bakhtiari", "بختیاری"
     OTHER = "other", "سایر"
@@ -150,7 +147,7 @@ ETHNICITY_SUBGROUPS = {
     "fars": [
         ("tehrani", "تهرانی"), ("khorasani", "خراسانی"), ("isfahani", "اصفهانی"), ("shirazi", "شیرازی"),
         ("yazdi", "یزدی"), ("kermani", "کرمانی"), ("qomi", "قمی"), ("kashani", "کاشانی"),
-        ("gilaki_neighbor", "گیلکی‌مجاور"), ("other", "سایر"),
+        ("other", "سایر"),
     ],
     "turk": [
         ("tabrizi", "تبریزی"), ("ardabili", "اردبیلی"), ("urmiaei", "ارومیه‌ای"), ("zanjani", "زنجانی"),
@@ -189,18 +186,9 @@ ETHNICITY_SUBGROUPS = {
         ("talesh_north", "تالش شمالی"), ("asalem", "اسالم"), ("masal", "ماسال"),
         ("surrounding_areas", "مناطق اطراف"), ("other", "سایر"),
     ],
-    "tat": [
-        ("qazvin_takestan", "قزوین/تاکستان"), ("alborz_zanjan_areas", "برخی مناطق البرز و زنجان"), ("other", "سایر"),
-    ],
     "armenian": [
         ("tehran", "ارمنی‌های تهران"), ("isfahan", "ارمنی‌های اصفهان"), ("azerbaijan", "ارمنی‌های آذربایجان"),
         ("other", "سایر"),
-    ],
-    "assyrian": [
-        ("northwest", "شمال‌غرب"), ("tehran", "تهران"), ("other", "سایر"),
-    ],
-    "jewish": [
-        ("tehran", "تهران"), ("shiraz", "شیراز"), ("isfahan", "اصفهان"), ("other", "سایر"),
     ],
     "qashqai": [
         ("shiraz", "شیراز"), ("firuzabad", "فیروزآباد"), ("kazerun", "کازرون"),
