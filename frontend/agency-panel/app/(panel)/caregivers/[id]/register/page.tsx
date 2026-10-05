@@ -726,17 +726,6 @@ export default function CaregiverRegistrationWizard() {
                     </>
                 </FormSection>
               )}
-              <FormSection title="رفت‌وآمد و تعطیلات">
-                {["daily", "hourly", "hospital_companion", "shift"].some((t) => workPrefs.collaboration_types.includes(t)) && (
-                  <Field label="حداکثر زمان رفت‌وآمد"><ChoiceSelect choices={C.MAX_COMMUTE_TIME} value={workPrefs.max_commute_time} onChange={(v) => setWorkPrefs({ ...workPrefs, max_commute_time: v })} /></Field>
-                )}
-                <Field label="روز درخواستی برای تعطیلی"><Input value={workPrefs.day_off_request} onChange={(e) => setWorkPrefs({ ...workPrefs, day_off_request: e.target.value })} placeholder="مثلاً جمعه‌ها" /></Field>
-                {(workPrefs.collaboration_types.includes("night") || workPrefs.collaboration_types.includes("live_in")) && (
-                  <Field label="آیا به فضا یا اتاق شخصی نیاز دارید؟"><YesNo value={workPrefs.problem_without_private_room} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_without_private_room: v })} /></Field>
-                )}
-                <Field label="روش رفت‌وآمد"><CheckboxGroup choices={C.COMMUTE_METHOD} value={workPrefs.commute_methods} onChange={(v) => setWorkPrefs({ ...workPrefs, commute_methods: v })} /></Field>
-                <Field label="امکان کار در تعطیلات"><YesNo value={workPrefs.holiday_work_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, holiday_work_ok: v })} /></Field>
-              </FormSection>
               <FormSection title="شرایط محیط کار">
                 <Field label="وضعیت استعمال دخانیات"><ChoiceSelect choices={C.SMOKING_STATUS} value={workPrefs.smoking_status} onChange={(v) => setWorkPrefs({ ...workPrefs, smoking_status: v })} /></Field>
                 {identity.gender === "female" && (
