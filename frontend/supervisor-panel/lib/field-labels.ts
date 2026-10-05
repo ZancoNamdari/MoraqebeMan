@@ -18,7 +18,7 @@ export const FIELD_LABELS: Record<string, string> = {
   province: "استان", city: "شهر", district: "منطقه", postal_code: "کد پستی",
   full_address: "نشانی کامل",
   // Work preferences (Form 2)
-  collaboration_types: "نوع همکاری", work_status: "وضعیت کاری",
+  collaboration_types: "نوع همکاری", collaboration_schedule: "روز و ساعت نوع همکاری", requested_salary_range: "حقوق درخواستی",
   family_presence_preference: "حضور خانواده", accepted_gender: "جنسیت قابل قبول",
   accepted_age_ranges: "بازه سنی", offered_services: "خدمات قابل ارائه",
   accepted_physical_conditions: "شرایط جسمانی", lifting_capacity: "توانایی جابجایی",

@@ -7,8 +7,11 @@ from tests.factories.auth_helpers import make_authenticated_user
 from tests.factories.user_factory import make_user
 
 VALID_WORK_PREFS = {
-    "collaboration_types": ["daily", "night"],
-    "work_status": "full_time",
+    "collaboration_types": ["long_term", "daily", "night"],
+    "collaboration_schedule": {
+        "daily": {"days": ["saturday"], "from": "08:00", "to": "16:00"},
+        "night": {"days": ["sunday"], "from": "20:00", "to": "06:00"},
+    },
     "family_presence_preference": "no_preference",
     "accepted_gender": "no_preference",
     "accepted_age_ranges": ["60_70", "over_80"],
@@ -16,8 +19,6 @@ VALID_WORK_PREFS = {
     "accepted_physical_conditions": ["independent"],
     "lifting_capacity": "up_to_50kg",
     "service_locations": ["patient_home"],
-    "available_days": ["saturday", "all_days"],
-    "available_shifts": ["morning", "afternoon"],
     "terms_accepted": True,
 }
 
@@ -75,16 +76,23 @@ class WorkPreferencesTests(TestCase):
         response = self.client.put("/api/caregivers/me/work-preferences/", VALID_WORK_PREFS, format="json")
         self.assertEqual(response.status_code, 201)
 
-    def test_24h_shift_cannot_combine_with_specific_shifts(self):
-        bad = dict(VALID_WORK_PREFS, available_shifts=["24h", "morning"])
-        response = self.client.put("/api/caregivers/me/work-preferences/", bad, format="json")
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("available_shifts", response.data)
+    def test_availability_is_derived_from_collaboration_schedule(self):
+        response = self.client.put("/api/caregivers/me/work-preferences/", VALID_WORK_PREFS, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["available_days"], ["saturday", "sunday"])
+        self.assertEqual(response.data["available_shifts"], ["morning", "afternoon", "night"])
 
-    def test_24h_alone_is_valid(self):
-        ok = dict(VALID_WORK_PREFS, available_shifts=["24h"])
+    def test_live_in_derives_24h_shift(self):
+        ok = dict(VALID_WORK_PREFS, collaboration_types=["long_term", "live_in"], collaboration_schedule={})
         response = self.client.put("/api/caregivers/me/work-preferences/", ok, format="json")
         self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["available_shifts"], ["24h"])
+
+    def test_invalid_schedule_time_rejected(self):
+        bad = dict(VALID_WORK_PREFS, collaboration_schedule={"daily": {"days": ["saturday"], "from": "25:00", "to": "16:00"}})
+        response = self.client.put("/api/caregivers/me/work-preferences/", bad, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("collaboration_schedule", response.data)
 
     def test_terms_not_accepted_rejected(self):
         bad = dict(VALID_WORK_PREFS, terms_accepted=False)
@@ -92,7 +100,7 @@ class WorkPreferencesTests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_invalid_choice_value_rejected(self):
-        bad = dict(VALID_WORK_PREFS, work_status="not_a_real_status")
+        bad = dict(VALID_WORK_PREFS, collaboration_types=["not_a_real_type"])
         response = self.client.put("/api/caregivers/me/work-preferences/", bad, format="json")
         self.assertEqual(response.status_code, 400)
 

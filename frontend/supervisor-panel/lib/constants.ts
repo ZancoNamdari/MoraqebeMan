@@ -227,47 +227,44 @@ export const EMERGENCY_CONTACT_RELATION: Choice[] = [
   ["other", "سایر"],
 ]
 
-// Generic on purpose — shared by every service type, not just
-// سالمندیار — see getCollaborationTypeChoices below for the
-// role-aware wording actually rendered.
-export const COLLABORATION_TYPE: Choice[] = [
-  ["daily", "کار روزانه (رفت‌وآمد)"],
-  ["night", "کار شبانه"],
-  ["live_in", "کار شبانه‌روزی (مقیم)"],
-  ["hospital_companion", "همراهی در بیمارستان"],
-  ["home_companion", "همراهی در منزل کارفرما"],
-  ["short_term", "همکاری موقت (چند روزه)"],
-  ["long_term", "همکاری بلندمدت"],
+// نوع همکاری — برای همه‌ی نقش‌ها یکسان، دو سطح:
+//   بلندمدت ⇒ شبانه‌روزی / روزانه / شبانه / ماهانه
+//   کوتاه‌مدت (مقطعی) ⇒ ساعتی / بیمارستان / شیفتی
+// کلید گروه و زیرگروه هر دو در collaboration_types ذخیره می‌شوند؛ روز/ساعت هر
+// زیرگروه در collaboration_schedule (هم‌گام با backend: choices.CollaborationMode).
+export const COLLABORATION_GROUP: Choice[] = [
+  ["long_term", "بلندمدت"],
+  ["short_term", "کوتاه‌مدت (مقطعی)"],
 ]
+export const COLLABORATION_LONG_TERM: Choice[] = [
+  ["live_in", "شبانه‌روزی (مقیم)"],
+  ["daily", "روزانه"],
+  ["night", "شبانه"],
+  ["monthly", "ماهانه"],
+]
+export const COLLABORATION_SHORT_TERM: Choice[] = [
+  ["hourly", "ساعتی"],
+  ["hospital_companion", "بیمارستان"],
+  ["shift", "شیفتی"],
+]
+// برای نمایش برچسب‌ها (پروفایل / بررسی)
+export const COLLABORATION_TYPE: Choice[] = [
+  ...COLLABORATION_GROUP, ...COLLABORATION_LONG_TERM, ...COLLABORATION_SHORT_TERM,
+]
+// زیرگروه‌هایی که «روز + بازه‌ی ساعت» می‌پرسند؛ shift «روز + شیفت»؛ monthly «تاریخ مدنظر».
+export const COLLABORATION_DAYS_HOURS = ["daily", "night", "hourly", "hospital_companion"]
 
-// COLLABORATION_TYPE's wording depends on who the caregiver actually
-// works for — "کارفرما" only makes sense for نظافت‌چی (a property/
-// employer, no patient); every other type should name who they're
-// caring for (سالمند/کودک/نوزاد/بیمار). "همراهی در بیمارستان" is
-// dropped entirely when نظافت‌چی is the ONLY selected type.
-export function getCollaborationTypeChoices(
-  serviceTypes: string[],
-  serviceSubtypes: Record<string, string[]> = {},
-): Choice[] {
-  const cleanerOnly = serviceTypes.length > 0 && serviceTypes.every((t) => t === "nezafatchi")
-  const subjects: string[] = []
-  if (serviceTypes.includes("salmandyar")) subjects.push("سالمند")
-  if (serviceTypes.includes("madaryar")) {
-    // مادریار شامل نوزاد و کودک است — واژه از روی زیرشاخه‌ی انتخابی.
-    const subs = serviceSubtypes.madaryar ?? []
-    const hasNewborn = subs.includes("newborn")
-    const hasChild = subs.some((x) => x !== "newborn")
-    if (hasNewborn && hasChild) subjects.push("نوزاد/کودک")
-    else if (hasChild) subjects.push("کودک")
-    else if (hasNewborn) subjects.push("نوزاد")
-    else subjects.push("نوزاد/کودک")
-  }
-  if (serviceTypes.includes("parastar") || serviceTypes.includes("behyar")) subjects.push("بیمار")
-  const subject = subjects.length > 0 ? subjects.join(" / ") : "کارفرما"
-  return COLLABORATION_TYPE
-    .filter((c) => !(cleanerOnly && c[0] === "hospital_companion"))
-    .map((c) => (c[0] === "home_companion" ? [c[0], `همراهی در منزل ${subject}`] as Choice : c))
-}
+// بازه‌ی حقوق درخواستی (ماهانه) — هم‌گام با backend: RequestedSalaryRange.
+export const REQUESTED_SALARY_RANGE: Choice[] = [
+  ["under_10", "تا ۱۰ میلیون تومان"],
+  ["10_15", "۱۰ تا ۱۵ میلیون تومان"],
+  ["15_20", "۱۵ تا ۲۰ میلیون تومان"],
+  ["20_25", "۲۰ تا ۲۵ میلیون تومان"],
+  ["25_30", "۲۵ تا ۳۰ میلیون تومان"],
+  ["30_40", "۳۰ تا ۴۰ میلیون تومان"],
+  ["over_40", "بیش از ۴۰ میلیون تومان"],
+  ["negotiable", "توافقی"],
+]
 
 export const WORK_STATUS: Choice[] = [
   ["full_time", "تمام‌وقت"],

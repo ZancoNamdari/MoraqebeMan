@@ -33,6 +33,7 @@ from .choices import (
     ChildrenCount,
     ChildAccompanyAtWork,
     NationalityCountry,
+    RequestedSalaryRange,
 )
 
 
@@ -717,7 +718,14 @@ class CaregiverWorkPreferences(models.Model):
         max_length=100, blank=True, verbose_name="ساعات کاری مراقبت روزانه",
         help_text="فقط برای «مراقبت روزانه» — مثلاً «از ساعت ۸ تا ۱۶».",
     )
-    work_status = models.CharField(max_length=20, choices=WorkStatus.choices, blank=True, verbose_name="وضعیت کاری")
+    # روز/ساعت هر زیرگروهِ انتخابی نوع همکاری:
+    #   {"daily": {"days": [...], "from": "08:00", "to": "16:00"},
+    #    "shift": {"days": [...], "shifts": ["morning"]},
+    #    "monthly": {"target_date": "1405/08/01"}, ...}
+    # available_days / available_shifts از روی همین مشتق می‌شوند (apps.caregivers.schedule).
+    collaboration_schedule = models.JSONField(default=dict, blank=True, verbose_name="برنامه‌ی زمانی نوع همکاری")
+    # work_status و pay_basis و daily_work_hours از فرم‌ها حذف شدند؛ ستون‌ها فقط برای حفظ داده‌ی قبلی مانده‌اند.
+    work_status = models.CharField(max_length=20, choices=WorkStatus.choices, blank=True, verbose_name="وضعیت کاری (قدیمی، بدون استفاده)")
     family_presence_preference = models.CharField(max_length=20, choices=FamilyPresencePreference.choices, blank=True, verbose_name="حضور خانواده سالمند")
     accepted_gender = models.CharField(max_length=20, choices=AcceptedGender.choices, blank=True, verbose_name="جنسیت قابل قبول")
     accepted_age_ranges = models.JSONField(default=list, verbose_name="محدوده سنی")
@@ -768,7 +776,10 @@ class CaregiverWorkPreferences(models.Model):
     night_stay_until = models.CharField(max_length=20, choices=NightStayUntil.choices, blank=True, verbose_name="حداکثر زمان ماندن در شب")
     has_night_time_limit = models.BooleanField(null=True, blank=True, default=None, verbose_name="محدودیت زمانی برای شب دارد")
     additional_notes = models.TextField(blank=True, max_length=500, verbose_name="توضیحات تکمیلی")
-    requested_salary = models.CharField(max_length=100, blank=True, verbose_name="حقوق درخواستی")
+    requested_salary = models.CharField(max_length=100, blank=True, verbose_name="حقوق درخواستی (متن قدیمی)")
+    requested_salary_range = models.CharField(
+        max_length=20, choices=RequestedSalaryRange.choices, blank=True, verbose_name="بازه‌ی حقوق درخواستی",
+    )
     cleaning_willingness = models.CharField(
         max_length=10, choices=CleaningWillingness.choices, blank=True, verbose_name="میزان انجام نظافت",
     )

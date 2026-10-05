@@ -59,8 +59,7 @@ export interface IdentityFormData {
 
 export interface WorkPreferencesFormData {
   collaboration_types: string[]
-  daily_work_hours: string
-  work_status: string
+  collaboration_schedule: Record<string, any>
   family_presence_preference: string
   accepted_gender: string
   accepted_age_ranges: string[]
@@ -90,12 +89,12 @@ export interface WorkPreferencesFormData {
   problem_with_domestic_travel: boolean | null
   problem_with_international_travel: boolean | null
   problem_without_private_room: boolean | null
-  pay_basis: string
   terms_accepted: boolean
   night_stay_until: string
   has_night_time_limit: boolean | null
   additional_notes: string
-  requested_salary: string
+  requested_salary?: string // متن قدیمی (فقط نمایش)
+  requested_salary_range: string
   cleaning_willingness: string
   day_off_request: string
   serves_all_areas: boolean

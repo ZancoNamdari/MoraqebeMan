@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
 import { caregiverWizardService } from "@/services/caregiver_wizard.service"
+import { summarizeSchedule, type CollaborationSchedule } from "@/components/wizard-forms/collaboration-picker"
 import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
 import { FormSection } from "@/components/wizard-forms/form-section"
 import { ROUTES } from "@/lib/routes"
@@ -162,10 +163,11 @@ export default function CaregiverProfilePage() {
               {profile.work_preferences ? (
                 <div>
                   <InfoRow label="نوع همکاری" value={labelsForValues(C.COLLABORATION_TYPE, profile.work_preferences.collaboration_types)} />
-                  <InfoRow label="وضعیت کاری" value={labelForValue(C.WORK_STATUS, profile.work_preferences.work_status)} />
+                  {summarizeSchedule(profile.work_preferences.collaboration_types, profile.work_preferences.collaboration_schedule as CollaborationSchedule).map((r) => (
+                    <InfoRow key={r.label} label={`— ${r.label}`} value={r.value} />
+                  ))}
+                  <InfoRow label="حقوق درخواستی" value={labelForValue(C.REQUESTED_SALARY_RANGE, profile.work_preferences.requested_salary_range) || profile.work_preferences.requested_salary || ""} />
                   <InfoRow label="خدمات قابل ارائه" value={labelsForValues(C.OFFERED_SERVICE, profile.work_preferences.offered_services)} />
-                  <InfoRow label="روزهای کاری" value={labelsForValues(C.WEEKDAY, profile.work_preferences.available_days)} />
-                  <InfoRow label="شیفت‌ها" value={labelsForValues(C.SHIFT, profile.work_preferences.available_shifts)} />
                   <InfoRow label="پذیرش قوانین" value={yesNoLabel(profile.work_preferences.terms_accepted)} />
                 </div>
               ) : (

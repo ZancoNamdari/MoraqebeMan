@@ -1,9 +1,10 @@
 from rest_framework import serializers
 
 from apps.accounts.models import User
+from .schedule import ScheduleError, clean_schedule, derive_availability
 from apps.accounts.jalali_fields import JalaliDateField, JalaliDateTimeField
 
-from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, CollaborationType,
+from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, CollaborationMode, CollaborationType,
                       OfferedService, ServiceLocation, Shift, Weekday, CommuteMethod,
                       CommunicationSkill, CaregivingSkill, MobilityAssistanceAbility,
                       HouseholdSkill, ForeignLanguage, LocalLanguage,
@@ -298,19 +299,17 @@ def _choice_list_field(choices_class, **kwargs):
 
 
 class CaregiverWorkPreferencesSerializer(serializers.ModelSerializer):
-    collaboration_types = _choice_list_field(CollaborationType, required=False)
+    collaboration_types = _choice_list_field(CollaborationMode, required=False)
     accepted_age_ranges = _choice_list_field(AcceptedAgeRange, required=False)
     offered_services = _choice_list_field(OfferedService, required=False)
     accepted_physical_conditions = _choice_list_field(AcceptedPhysicalCondition, required=False)
     service_locations = _choice_list_field(ServiceLocation, required=False)
-    available_days = _choice_list_field(Weekday, required=False)
-    available_shifts = _choice_list_field(Shift, required=False)
     commute_methods = _choice_list_field(CommuteMethod, required=False)
 
     class Meta:
         model = CaregiverWorkPreferences
         fields = [
-            "collaboration_types", "daily_work_hours", "work_status", "family_presence_preference",
+            "collaboration_types", "collaboration_schedule", "family_presence_preference",
             "accepted_gender", "accepted_age_ranges", "offered_services",
             "accepted_physical_conditions", "lifting_capacity", "service_locations",
             "max_commute_time", "available_days", "available_shifts", "commute_methods",
@@ -319,28 +318,19 @@ class CaregiverWorkPreferencesSerializer(serializers.ModelSerializer):
             "problem_with_grandparent_or_relative_at_home", "problem_with_home_camera",
             "problem_with_dog", "problem_with_cat", "pets_other_notes",
             "problem_with_domestic_travel", "problem_with_international_travel",
-            "problem_without_private_room", "pay_basis",
+            "problem_without_private_room",
             "terms_accepted", "terms_accepted_at", "night_stay_until", "has_night_time_limit",
-            "additional_notes", "requested_salary", "cleaning_willingness", "day_off_request",
+            "additional_notes", "requested_salary", "requested_salary_range", "cleaning_willingness", "day_off_request",
             "service_specific_answers",
             "created_at", "updated_at",
         ]
-        read_only_fields = ["terms_accepted_at", "created_at", "updated_at"]
+        # available_days / available_shifts از collaboration_schedule مشتق می‌شوند؛
+        # requested_salary فقط متن قدیمی است (نمایش، بدون ویرایش).
+        read_only_fields = ["terms_accepted_at", "created_at", "updated_at",
+                            "available_days", "available_shifts", "requested_salary"]
 
     def validate_service_specific_answers(self, value):
         return _validate_service_specific_answers(value)
-
-    def validate_available_shifts(self, value):
-        # Nested rule #2 from the request: 24h and specific-hour shifts
-        # are alternatives, not additive — picking "24h" alongside
-        # "morning"/"afternoon"/"night" is a contradiction the form
-        # itself can't catch client-side if the checkboxes are
-        # independent, so it's enforced here.
-        if Shift.ALL_DAY in value and len(value) > 1:
-            raise serializers.ValidationError(
-                "شیفت «شبانه‌روزی» با سایر شیفت‌ها هم‌زمان قابل انتخاب نیست — یا شبانه‌روزی، یا شیفت‌های مشخص."
-            )
-        return value
 
     def validate_terms_accepted(self, value):
         if value is not True:
@@ -353,6 +343,20 @@ class CaregiverWorkPreferencesSerializer(serializers.ModelSerializer):
         from django.utils import timezone
         if attrs.get("terms_accepted"):
             attrs["terms_accepted_at"] = timezone.now()
+        return self._apply_schedule(attrs)
+
+    def _apply_schedule(self, attrs):
+        """برنامه‌ی زمانی را پاک‌سازی و available_days/shifts را از آن مشتق می‌کند."""
+        if "collaboration_types" not in attrs and "collaboration_schedule" not in attrs:
+            return attrs
+        types = attrs.get("collaboration_types", getattr(self.instance, "collaboration_types", None)) or []
+        raw = attrs.get("collaboration_schedule", getattr(self.instance, "collaboration_schedule", None)) or {}
+        try:
+            schedule = clean_schedule(raw, types)
+        except ScheduleError as exc:
+            raise serializers.ValidationError({"collaboration_schedule": str(exc)})
+        attrs["collaboration_schedule"] = schedule
+        attrs["available_days"], attrs["available_shifts"] = derive_availability(types, schedule)
         return attrs
 
 
@@ -392,7 +396,7 @@ class SupervisorCaregiverWorkPreferencesSerializer(CaregiverWorkPreferencesSeria
         # might try to smuggle in, since the field isn't in `fields`
         # for this serializer at all and DRF silently drops unknown
         # input keys rather than erroring on them.
-        return attrs
+        return self._apply_schedule(attrs)
 
 
 class CaregiverServiceAreaSerializer(serializers.ModelSerializer):

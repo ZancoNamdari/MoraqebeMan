@@ -11,6 +11,7 @@ import { AppHeader } from "@/components/layout/app-header"
 import { Input } from "@/components/ui/input"
 import { caregiverService } from "@/services/caregiver.service"
 import { assignmentService } from "@/services/assignment.service"
+import { summarizeSchedule, type CollaborationSchedule } from "@/components/forms/collaboration-picker"
 import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
 import { FormSection } from "@/components/forms/form-section"
 import { ROUTES } from "@/lib/routes"
@@ -251,14 +252,11 @@ function ReviewPageInner() {
               {profile.work_preferences ? (
                 <div>
                   <InfoRow label="نوع همکاری" value={labelsForValues(C.COLLABORATION_TYPE, profile.work_preferences.collaboration_types)} />
-                  {profile.work_preferences.collaboration_types.includes("daily") && (
-                    <InfoRow label="ساعات کاری مراقبت روزانه" value={profile.work_preferences.daily_work_hours} />
-                  )}
-                  <InfoRow label="وضعیت کاری" value={labelForValue(C.WORK_STATUS, profile.work_preferences.work_status)} />
+                  {summarizeSchedule(profile.work_preferences.collaboration_types, profile.work_preferences.collaboration_schedule as CollaborationSchedule).map((r) => (
+                    <InfoRow key={r.label} label={`— ${r.label}`} value={r.value} />
+                  ))}
                   <InfoRow label="خدمات قابل ارائه" value={labelsForValues(C.OFFERED_SERVICE, profile.work_preferences.offered_services)} />
-                  <InfoRow label="روزهای کاری" value={labelsForValues(C.WEEKDAY, profile.work_preferences.available_days)} />
-                  <InfoRow label="شیفت‌ها" value={labelsForValues(C.SHIFT, profile.work_preferences.available_shifts)} />
-                  <InfoRow label="حقوق درخواستی" value={profile.work_preferences.requested_salary} />
+                  <InfoRow label="حقوق درخواستی" value={labelForValue(C.REQUESTED_SALARY_RANGE, profile.work_preferences.requested_salary_range) || profile.work_preferences.requested_salary || ""} />
                   <InfoRow label="پذیرش قوانین" value={yesNoLabel(profile.work_preferences.terms_accepted)} />
                 </div>
               ) : (

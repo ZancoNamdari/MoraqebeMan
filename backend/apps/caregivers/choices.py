@@ -267,6 +267,46 @@ class CollaborationType(models.TextChoices):
     LONG_TERM = "long_term", "مراقبت بلندمدت"
 
 
+class CollaborationMode(models.TextChoices):
+    """نوع همکاری — برای همه‌ی نقش‌ها یکسان، دو سطح:
+      بلندمدت  ⇒ شبانه‌روزی / روزانه / شبانه / ماهانه
+      کوتاه‌مدت (مقطعی) ⇒ ساعتی / بیمارستان / شیفتی
+    هر دو سطح (کلید گروه و کلید زیرگروه) در یک فهرست
+    CaregiverWorkPreferences.collaboration_types ذخیره می‌شوند؛ جزئیات
+    روز/ساعت هر زیرگروه در collaboration_schedule است."""
+    LONG_TERM = "long_term", "بلندمدت"
+    SHORT_TERM = "short_term", "کوتاه‌مدت (مقطعی)"
+    # زیرگروه‌های بلندمدت
+    LIVE_IN = "live_in", "شبانه‌روزی (مقیم)"
+    DAILY = "daily", "روزانه"
+    NIGHT = "night", "شبانه"
+    MONTHLY = "monthly", "ماهانه"
+    # زیرگروه‌های کوتاه‌مدت
+    HOURLY = "hourly", "ساعتی"
+    HOSPITAL_COMPANION = "hospital_companion", "بیمارستان"
+    SHIFT = "shift", "شیفتی"
+
+
+COLLABORATION_LONG_TERM_SUBTYPES = ("live_in", "daily", "night", "monthly")
+COLLABORATION_SHORT_TERM_SUBTYPES = ("hourly", "hospital_companion", "shift")
+# توجه: CollaborationType (بالا) نوع «سرویس» در تعرفه/تخصیص (care/finance) است و
+# دست‌نخورده می‌ماند؛ CollaborationMode فقط ترجیح همکاری مراقب در فرم ۲ است.
+# زیرگروه‌هایی که روز + بازه‌ی ساعت می‌پرسند / روز + شیفت / فقط تاریخ.
+COLLABORATION_DAYS_HOURS_SUBTYPES = ("daily", "night", "hourly", "hospital_companion")
+
+
+class RequestedSalaryRange(models.TextChoices):
+    """بازه‌ی حقوق درخواستی (ماهانه، میلیون تومان) — جایگزین متن آزاد قبلی."""
+    UNDER_10 = "under_10", "تا ۱۰ میلیون تومان"
+    R_10_15 = "10_15", "۱۰ تا ۱۵ میلیون تومان"
+    R_15_20 = "15_20", "۱۵ تا ۲۰ میلیون تومان"
+    R_20_25 = "20_25", "۲۰ تا ۲۵ میلیون تومان"
+    R_25_30 = "25_30", "۲۵ تا ۳۰ میلیون تومان"
+    R_30_40 = "30_40", "۳۰ تا ۴۰ میلیون تومان"
+    OVER_40 = "over_40", "بیش از ۴۰ میلیون تومان"
+    NEGOTIABLE = "negotiable", "توافقی"
+
+
 class WorkStatus(models.TextChoices):
     FULL_TIME = "full_time", "تمام‌وقت"
     PART_TIME = "part_time", "پاره‌وقت"

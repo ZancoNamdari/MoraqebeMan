@@ -11,7 +11,7 @@ from .choices import (
     AcceptedPhysicalCondition,
     CaregivingSkill,
     ChronicDiseaseType,
-    CollaborationType,
+    CollaborationMode,
     CommunicationSkill,
     CommuteMethod,
     Ethnicity,
@@ -168,7 +168,7 @@ class CaregiverApprovalLogInline(admin.TabularInline):
 
 
 class CaregiverWorkPreferencesAdminForm(forms.ModelForm):
-    collaboration_types = JSONCheckboxMultipleChoiceField(choices=CollaborationType.choices, label="نوع همکاری")
+    collaboration_types = JSONCheckboxMultipleChoiceField(choices=CollaborationMode.choices, label="نوع همکاری")
     accepted_age_ranges = JSONCheckboxMultipleChoiceField(choices=AcceptedAgeRange.choices, label="بازه سنی پذیرفته")
     offered_services = JSONCheckboxMultipleChoiceField(choices=OfferedService.choices, label="خدمات قابل ارائه")
     accepted_physical_conditions = JSONCheckboxMultipleChoiceField(choices=AcceptedPhysicalCondition.choices, label="شرایط جسمانی پذیرفته")

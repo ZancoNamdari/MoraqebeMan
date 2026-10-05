@@ -110,6 +110,49 @@ class IdentityEthnicityAndAgeTests(TestCase):
         self.assertEqual((b.nationality_country, b.nationality_country_other), ("other", "اهل هند"))
         self.assertEqual((c.nationality_country, c.nationality_country_other), ("iraq", ""))
 
+    def test_collaboration_types_migrate_to_two_level(self):
+        m = importlib.import_module("apps.caregivers.migrations.0039_map_collaboration_types")
+        user = get_user_model().objects.create(phone_number="09121110088", username="m88")
+        profile = CaregiverProfile.objects.create(user=user, service_types=["salmandyar"], service_subtypes={})
+        wp = CaregiverWorkPreferences.objects.create(
+            profile=profile, collaboration_types=["daily", "hospital_companion", "home_companion", "live_in"],
+        )
+        m.forwards(django_apps, None)
+        wp.refresh_from_db()
+        self.assertEqual(wp.collaboration_types, ["daily", "long_term", "hospital_companion", "short_term", "live_in"])
+
+    def test_schedule_cleaning_and_derivation(self):
+        from apps.caregivers.schedule import ScheduleError, clean_schedule, derive_availability
+        types = ["long_term", "daily", "night", "monthly", "short_term", "shift"]
+        sched = clean_schedule({
+            "daily": {"days": ["saturday"], "from": "08:00", "to": "13:00"},
+            "night": {"days": ["sunday"], "from": "20:00", "to": "06:00"},
+            "shift": {"days": ["monday"], "shifts": ["afternoon"]},
+            "monthly": {"target_date": "1405/08/01"},
+            "hourly": {"days": ["friday"], "from": "10:00", "to": "12:00"},  # انتخاب نشده ⇒ حذف
+        }, types)
+        self.assertNotIn("hourly", sched)
+        days, shifts = derive_availability(types, sched)
+        self.assertEqual(days, ["saturday", "sunday", "monday"])
+        self.assertEqual(set(shifts), {"morning", "afternoon", "night"})
+        with self.assertRaises(ScheduleError):
+            clean_schedule({"daily": {"days": ["funday"]}}, types)
+        with self.assertRaises(ScheduleError):
+            clean_schedule({"daily": {"days": [], "from": "8:00"}}, types)
+        d2, s2 = derive_availability(["live_in"], {})
+        self.assertEqual((d2, s2), ([], ["24h"]))
+
+    def test_serializer_derives_availability(self):
+        from apps.caregivers.serializers import CaregiverWorkPreferencesSerializer
+        ser = CaregiverWorkPreferencesSerializer(data={
+            "collaboration_types": ["short_term", "hospital_companion"],
+            "collaboration_schedule": {"hospital_companion": {"days": ["all_days"], "from": "22:00", "to": "06:00"}},
+            "terms_accepted": True,
+        })
+        self.assertTrue(ser.is_valid(), ser.errors)
+        self.assertEqual(ser.validated_data["available_days"], ["all_days"])
+        self.assertEqual(ser.validated_data["available_shifts"], ["night"])
+
     def test_serializer_validates_subgroups_and_drops_unselected_main(self):
         from apps.caregivers.serializers import IdentityProfileSerializer
         ok = IdentityProfileSerializer(data={

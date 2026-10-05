@@ -11,6 +11,7 @@ import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/forms/fi
 import { LocationPicker } from "@/components/forms/location-picker"
 import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { FormSection } from "@/components/forms/form-section"
+import { CollaborationPicker, collaborationProblems, type CollaborationSchedule } from "@/components/forms/collaboration-picker"
 import { EthnicityPicker } from "@/components/forms/ethnicity-picker"
 import { jalaliAge } from "@/lib/jalali"
 import { ErrorSummary } from "@/components/forms/error-summary"
@@ -52,12 +53,12 @@ const EMPTY_IDENTITY: IdentityFormData = {
 }
 
 const EMPTY_WORK_PREFS: WorkPreferencesFormData = {
-  collaboration_types: [], daily_work_hours: "", work_status: "", family_presence_preference: "", accepted_gender: "",
+  collaboration_types: [], collaboration_schedule: {}, family_presence_preference: "", accepted_gender: "",
   accepted_age_ranges: [], offered_services: [], accepted_physical_conditions: [], lifting_capacity: "",
   service_locations: [], max_commute_time: "", available_days: [], available_shifts: [],
   commute_methods: [], smoking_status: "", pets_ok: null, holiday_work_ok: null, overnight_stay_ok: null,
   terms_accepted: false, night_stay_until: "", has_night_time_limit: null, additional_notes: "",
-  requested_salary: "", serves_all_areas: false,
+  requested_salary_range: "", serves_all_areas: false,
 }
 
 const EMPTY_EXPERIENCE: ExperienceFormData = {
@@ -255,6 +256,11 @@ function NewCaregiverWizardInner() {
 
   async function handleStep2() {
     if (!caregiverId) return
+    const problems = collaborationProblems(workPrefs.collaboration_types, workPrefs.collaboration_schedule as CollaborationSchedule)
+    if (problems.length > 0) {
+      setError([{ field: "collaboration_schedule", messages: problems }])
+      return
+    }
     setError([]); setSaving(true)
     try {
       await caregiverService.saveWorkPreferences(caregiverId, workPrefs)
@@ -285,12 +291,6 @@ function NewCaregiverWizardInner() {
     setError([]); setSaving(true)
     try {
       await caregiverService.saveReferences(caregiverId, references)
-      // requested_salary lives on the work-preferences record (Form
-      // 2's model) even though it's shown here on Form 4 — so saving
-      // this step also re-saves the whole work-preferences payload,
-      // same pattern Form 3 already uses to save two records
-      // (experience + skills) in one step.
-      await caregiverService.saveWorkPreferences(caregiverId, workPrefs)
       setStep(5)
     } catch (err: any) {
       showErrors(err, "ثبت معرف‌ها با خطا مواجه شد.")
@@ -508,19 +508,13 @@ function NewCaregiverWizardInner() {
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">💼</span> فرم ۲ — شرایط همکاری</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {/* این ویزارد ساده‌تر، نوع خدمت را جدا پیگیری نمی‌کند — واژه‌ی عمومی نگه داشته شده است. */}
-              <FormSection title="نوع همکاری و پرداخت">
-                <Field label="نوع همکاری"><CheckboxGroup choices={C.COLLABORATION_TYPE} value={workPrefs.collaboration_types} onChange={(v) => setWorkPrefs({ ...workPrefs, collaboration_types: v })} /></Field>
-                {workPrefs.collaboration_types.includes("daily") && (
-                  <Field label="ساعات کاری مراقبت روزانه">
-                    <Input
-                      value={workPrefs.daily_work_hours}
-                      onChange={(e) => setWorkPrefs({ ...workPrefs, daily_work_hours: e.target.value })}
-                      placeholder="از ساعت ... تا ساعت ..."
-                    />
-                  </Field>
-                )}
-                <Field label="وضعیت کاری"><ChoiceSelect choices={C.WORK_STATUS} value={workPrefs.work_status} onChange={(v) => setWorkPrefs({ ...workPrefs, work_status: v })} /></Field>
+              <FormSection title="نوع همکاری" hasError={!!fieldErrors.collaboration_schedule || !!fieldErrors.collaboration_types}>
+                <CollaborationPicker
+                  types={workPrefs.collaboration_types}
+                  schedule={workPrefs.collaboration_schedule as CollaborationSchedule}
+                  onChange={(types, schedule) => setWorkPrefs({ ...workPrefs, collaboration_types: types, collaboration_schedule: schedule })}
+                  error={fieldErrors.collaboration_schedule || fieldErrors.collaboration_types}
+                />
               </FormSection>
               <FormSection title="ترجیحات مراقبت از سالمند">
                 <Field label="حضور خانواده سالمند"><ChoiceSelect choices={C.FAMILY_PRESENCE_PREFERENCE} value={workPrefs.family_presence_preference} onChange={(v) => setWorkPrefs({ ...workPrefs, family_presence_preference: v })} /></Field>
@@ -530,17 +524,12 @@ function NewCaregiverWizardInner() {
                 <Field label="شرایط جسمانی سالمند قابل پذیرش"><CheckboxGroup choices={C.ACCEPTED_PHYSICAL_CONDITION} value={workPrefs.accepted_physical_conditions} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_physical_conditions: v })} /></Field>
                 <Field label="محل ارائه خدمت"><CheckboxGroup choices={C.SERVICE_LOCATION} value={workPrefs.service_locations} onChange={(v) => setWorkPrefs({ ...workPrefs, service_locations: v })} /></Field>
               </FormSection>
-              <FormSection title="زمان‌بندی و رفت‌وآمد" hasError={!!fieldErrors.available_shifts}>
-                {(workPrefs.collaboration_types.includes("daily") || workPrefs.collaboration_types.includes("short_term")) && (
+              <FormSection title="رفت‌وآمد و تعطیلات">
+                {["daily", "hourly", "hospital_companion", "shift"].some((t) => workPrefs.collaboration_types.includes(t)) && (
                   <Field label="حداکثر زمان رفت‌وآمد"><ChoiceSelect choices={C.MAX_COMMUTE_TIME} value={workPrefs.max_commute_time} onChange={(v) => setWorkPrefs({ ...workPrefs, max_commute_time: v })} /></Field>
                 )}
-                <Field label="روزهای کاری"><CheckboxGroup choices={C.WEEKDAY} value={workPrefs.available_days} onChange={(v) => setWorkPrefs({ ...workPrefs, available_days: v })} /></Field>
-                <Field label="شیفت‌های کاری (شبانه‌روزی با بقیه هم‌زمان انتخاب نشود)" error={fieldErrors.available_shifts}><CheckboxGroup choices={C.SHIFT} value={workPrefs.available_shifts} onChange={(v) => setWorkPrefs({ ...workPrefs, available_shifts: v })} /></Field>
-                <Field label="شب تا ساعت چند می‌توانید بمانید؟"><ChoiceSelect choices={C.NIGHT_STAY_UNTIL} value={workPrefs.night_stay_until} onChange={(v) => setWorkPrefs({ ...workPrefs, night_stay_until: v })} /></Field>
-                <Field label="آیا برای ماندن در شب محدودیت زمانی دارید؟"><YesNo value={workPrefs.has_night_time_limit} onChange={(v) => setWorkPrefs({ ...workPrefs, has_night_time_limit: v })} /></Field>
                 <Field label="روش رفت‌وآمد"><CheckboxGroup choices={C.COMMUTE_METHOD} value={workPrefs.commute_methods} onChange={(v) => setWorkPrefs({ ...workPrefs, commute_methods: v })} /></Field>
                 <Field label="امکان کار در تعطیلات"><YesNo value={workPrefs.holiday_work_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, holiday_work_ok: v })} /></Field>
-                <Field label="امکان شب‌مانی"><YesNo value={workPrefs.overnight_stay_ok} onChange={(v) => setWorkPrefs({ ...workPrefs, overnight_stay_ok: v })} /></Field>
               </FormSection>
               <FormSection title="شرایط محیط کار">
                 <Field label="وضعیت استعمال دخانیات"><ChoiceSelect choices={C.SMOKING_STATUS} value={workPrefs.smoking_status} onChange={(v) => setWorkPrefs({ ...workPrefs, smoking_status: v })} /></Field>
@@ -593,7 +582,8 @@ function NewCaregiverWizardInner() {
                   )}
                 </div>
               </FormSection>
-              <FormSection title="توضیحات تکمیلی">
+              <FormSection title="اطلاعات تکمیلی">
+                <Field label="حقوق درخواستی (ماهانه)"><ChoiceSelect choices={C.REQUESTED_SALARY_RANGE} value={workPrefs.requested_salary_range} onChange={(v) => setWorkPrefs({ ...workPrefs, requested_salary_range: v })} /></Field>
                 <Field label="توضیحات تکمیلی (اختیاری)"><Textarea value={workPrefs.additional_notes} onChange={(e) => setWorkPrefs({ ...workPrefs, additional_notes: e.target.value })} /></Field>
               </FormSection>
 
@@ -665,13 +655,6 @@ function NewCaregiverWizardInner() {
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">📇</span> فرم ۴ — معرف‌ها</CardTitle><p className="text-sm text-muted-foreground">افزودن معرف اختیاری است — هر تعداد که در دسترس دارید کافی است.</p></CardHeader>
             <CardContent className="space-y-6">
-              <Field label="حقوق درخواستی">
-                <Input
-                  value={workPrefs.requested_salary}
-                  onChange={(e) => setWorkPrefs({ ...workPrefs, requested_salary: e.target.value })}
-                  placeholder="مبلغ یا بازه مدنظر را وارد کنید"
-                />
-              </Field>
               {references.map((ref, i) => (
                 <FormSection
                   key={i}
