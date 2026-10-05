@@ -42,6 +42,14 @@ export const MADARYAR_SUBTYPE: Choice[] = [
   ["housework_child", "کارهای خانه + کودک"],
 ]
 
+// زیرشاخه‌هایی که سوالاتشان باکس جداگانه می‌گیرد (به‌جای یک باکس مشترک
+// برای کل نقش). ترتیب مهم است: سوالی که مشترک بین چند زیرشاخه است در
+// اولین زیرشاخه‌ی انتخاب‌شده از این فهرست می‌آید.
+export const SPLIT_SUBTYPE_BOXES: Record<string, Choice[]> = {
+  nezafatchi: [["cooking", "آشپزی"]],
+  madaryar: MADARYAR_SUBTYPE,
+}
+
 export const PARASTAR_SUBTYPE: Choice[] = [
   ["nursing_specialist", "کارشناس پرستاری"],
   ["specialized_nurse", "پرستار تخصصی"],

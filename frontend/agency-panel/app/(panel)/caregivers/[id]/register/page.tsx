@@ -363,24 +363,41 @@ export default function CaregiverRegistrationWizard() {
             .filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
             .filter((f) => matchesShowIfField(f, typeAnswers, workPrefs.service_specific_answers[type] ?? {}))
           if (fields.length === 0) return null
-          const items = fields.map((f) => (
-            <ServiceFieldControl
-              key={f.key}
-              field={f}
-              value={current[type]?.[f.key]}
-              onChange={(v) => setServiceAnswer(current, onChange, type, f.key, v)}
-            />
-          ))
-          // فرم ۲ و ۳: هر نوع خدمت یک باکس بسته؛ پرسشنامه‌ی سازگاری مثل قبل باز می‌ماند.
-          if (formKey !== "questionnaire") {
-            return <FormSection key={type} title={`سوالات مخصوص ${typeLabel}`}>{items}</FormSection>
+          // سوالات زیرشاخه‌های جداشده (آشپزی، نوزاد، کودک، کمک‌کننده در درس،
+          // کارهای خانه + کودک) هر کدام باکس خودشان را دارند؛ بقیه در باکس نقش.
+          const splitDefs = C.SPLIT_SUBTYPE_BOXES[type] ?? []
+          const boxOf = (f: C.ServiceSpecificField): string => {
+            if (!f.showIf) return ""
+            const hit = splitDefs.find(([s]) => f.showIf!.includes(s) && chosenSubtypes.includes(s))
+            return hit ? hit[0] : ""
           }
-          return (
-            <div key={type}>
-              <SectionHeading>سوالات مخصوص {typeLabel}</SectionHeading>
-              {items}
-            </div>
-          )
+          const groups: { id: string; title: string; fields: C.ServiceSpecificField[] }[] = []
+          const roleFields = fields.filter((f) => boxOf(f) === "")
+          if (roleFields.length > 0) groups.push({ id: type, title: `سوالات مخصوص ${typeLabel}`, fields: roleFields })
+          for (const [sub, subLabel] of splitDefs) {
+            const subFields = fields.filter((f) => boxOf(f) === sub)
+            if (subFields.length > 0) groups.push({ id: `${type}-${sub}`, title: `سوالات مخصوص ${subLabel}`, fields: subFields })
+          }
+          return groups.map((g) => {
+            const items = g.fields.map((f) => (
+              <ServiceFieldControl
+                key={f.key}
+                field={f}
+                value={current[type]?.[f.key]}
+                onChange={(v) => setServiceAnswer(current, onChange, type, f.key, v)}
+              />
+            ))
+            // فرم ۲ و ۳: هر گروه یک باکس بسته؛ پرسشنامه‌ی سازگاری مثل قبل باز می‌ماند.
+            if (formKey !== "questionnaire") {
+              return <FormSection key={g.id} title={g.title}>{items}</FormSection>
+            }
+            return (
+              <div key={g.id}>
+                <SectionHeading>{g.title}</SectionHeading>
+                {items}
+              </div>
+            )
+          })
         })}
       </>
     )
