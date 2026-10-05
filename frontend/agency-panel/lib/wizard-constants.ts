@@ -1043,10 +1043,16 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       // کار مراقبتی؛ صریح و شفاف پرسیده می‌شود.
       { key: "emotional_companionship_ok", label: "آمادگی برای همدمی و هم‌صحبتی با سالمند (گفتگو، همراهی در اوقات فراغت، حضور عاطفی در چارچوب کار مراقبتی)", type: "bool" },
       // شرایط محیط کار مخصوص سالمندیار — «آیا مشکلی دارید؟» (true = مشکل دارد).
-      { key: "problem_with_elderly_alone_at_home", label: "آیا مشکلی با کار در خانه‌ای که سالمند تنهاست (بدون حضور عضو دیگری از خانواده) دارید؟", type: "bool", group: "env" },
-      { key: "problem_with_building_without_elevator", label: "آیا مشکلی با کار در ساختمانی که آسانسور ندارد (طبقات بالا) دارید؟", type: "bool", group: "env" },
-      { key: "problem_with_smoker_elderly", label: "آیا مشکلی با مراقبت از سالمندی که سیگار می‌کشد دارید؟", type: "bool", group: "env" },
-      { key: "problem_with_children_present_at_home", label: "آیا مشکلی با کار در خانه‌ای که نوه یا کودک هم حضور دارد دارید؟", type: "bool", group: "env" },
+      { key: "env_max_floor_without_elevator", label: "حداکثر طبقه‌ای که بدون آسانسور حاضرید بالا بروید", type: "choice", choices: [
+        ["ground", "فقط همکف"],
+        ["up_to_2", "تا طبقه دوم"],
+        ["up_to_3", "تا طبقه سوم"],
+        ["any", "هر طبقه‌ای (مشکلی ندارم)"],
+      ], group: "env" },
+      { key: "env_own_rest_space_needed", label: "برای کار شبانه، به اتاق/محل استراحت جداگانه نیاز دارم", type: "bool", group: "env" },
+      { key: "env_ok_with_family_in_home", label: "با حضور سایر اعضای خانواده (فرزندان، نوه‌ها) در طول مراقبت مشکلی ندارم", type: "bool", group: "env" },
+      { key: "env_ok_with_elderly_smoker", label: "با مراقبت از سالمندی که سیگار می‌کشد مشکلی ندارم", type: "bool", group: "env" },
+      { key: "env_ok_with_far_from_transit", label: "با کار در منزلی که دور از ایستگاه مترو/اتوبوس است مشکلی ندارم", type: "bool", group: "env" },
       { key: "willing_to_relocate_other_cities", label: "آمادگی برای کار در شهرهای دیگر (محل کار دائم)", type: "bool" },
       { key: "ok_with_second_elderly_spouse_present", label: "آمادگی برای مراقبت در حضور همسر سالمند (زوج سالمند)", type: "bool" },
       // مراقبت شخصی — موارد حساس‌تر با مقیاس تجربه چهارسطحی به‌جای
