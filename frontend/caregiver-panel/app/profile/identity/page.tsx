@@ -4,24 +4,23 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/forms/fields"
+import { FormSection } from "@/components/forms/form-section"
 import { identityService, type MyIdentityProfile } from "@/services/identity.service"
 import { locationService } from "@/services/location.service"
 import type { Province, City, District } from "@/types/location"
 import {
   GENDER, MARITAL_STATUS, CHILDREN_COUNT, MILITARY_STATUS, HEIGHT_RANGE, WEIGHT_RANGE,
-  ETHNICITY, CHRONIC_DISEASE_TYPE, MEDICATION_TYPE, EMERGENCY_CONTACT_RELATION,
+  ETHNICITY, CHRONIC_DISEASE_TYPE, MEDICATION_TYPE,
 } from "@/lib/constants"
-import { parseJalaliDate, formatJalaliDate, daysInJalaliMonth, PERSIAN_MONTH_LIST, JALALI_YEAR_RANGE } from "@/lib/jalali"
+import { parseJalaliDate, formatJalaliDate, daysInJalaliMonth, PERSIAN_MONTH_LIST, JALALI_YEAR_RANGE, jalaliAge } from "@/lib/jalali"
 import { ROUTES } from "@/lib/routes"
 
 const emptyForm: MyIdentityProfile = {
   full_name: "", father_name: "", birth_certificate_number: "",
-  birth_certificate_issue_province: null, birth_certificate_issue_city: null,
   extra_phone_numbers: [],
   birth_date: null, gender: "", marital_status: "", children_count: "", military_status: "",
   height_range: "", weight_range: "", ethnicities: [], is_non_iranian_national: null, nationality_country: "",
@@ -44,8 +43,6 @@ export default function IdentityFormPage() {
   const [provinces, setProvinces] = useState<Province[]>([])
   const [cities, setCities] = useState<City[]>([])
   const [districts, setDistricts] = useState<District[]>([])
-  // محل صدور شناسنامه — استان/شهر مستقل از استان/شهر محل سکونت بالا.
-  const [bcCities, setBcCities] = useState<City[]>([])
 
   const birthParts = parseJalaliDate(form.birth_date || "")
 
@@ -68,11 +65,6 @@ export default function IdentityFormPage() {
     if (form.city) locationService.districts(form.city).then(setDistricts)
     else setDistricts([])
   }, [form.city])
-
-  useEffect(() => {
-    if (form.birth_certificate_issue_province) locationService.cities(form.birth_certificate_issue_province).then(setBcCities)
-    else setBcCities([])
-  }, [form.birth_certificate_issue_province])
 
   if (authLoading || !user) return null
 
@@ -118,155 +110,143 @@ export default function IdentityFormPage() {
             {saved && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">اطلاعات با موفقیت ذخیره شد.</div>}
             {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-base text-rose-900">مشخصات فردی</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <Field label="نام کامل"><Input value={form.full_name} disabled /></Field>
-                <Field label="نام پدر"><Input value={form.father_name} onChange={(e) => set("father_name", e.target.value)} /></Field>
-                <Field label="شماره شناسنامه"><Input value={form.birth_certificate_number} onChange={(e) => set("birth_certificate_number", e.target.value)} /></Field>
-                <Field label="محل صدور شناسنامه">
-                  <div className="grid grid-cols-2 gap-2">
-                    <Select
-                      value={form.birth_certificate_issue_province ?? ""}
-                      onChange={(e) => { set("birth_certificate_issue_province", Number(e.target.value) || null); set("birth_certificate_issue_city", null) }}
-                    >
-                      <option value="">استان</option>
-                      {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </Select>
-                    <Select
-                      value={form.birth_certificate_issue_city ?? ""}
-                      onChange={(e) => set("birth_certificate_issue_city", Number(e.target.value) || null)}
-                      disabled={!form.birth_certificate_issue_province}
-                    >
-                      <option value="">شهر</option>
-                      {bcCities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </Select>
-                  </div>
-                </Field>
-                <Field label="تاریخ تولد (شمسی)">
-                  <div className="grid grid-cols-3 gap-2">
-                    <Select value={birthParts.day ?? ""} onChange={(e) => setBirthPart("day", Number(e.target.value))}>
-                      <option value="">روز</option>
-                      {Array.from({ length: daysInJalaliMonth(birthParts.year || 1400, birthParts.month || 1) }, (_, i) => i + 1).map((d) => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                    </Select>
-                    <Select value={birthParts.month ?? ""} onChange={(e) => setBirthPart("month", Number(e.target.value))}>
-                      <option value="">ماه</option>
-                      {PERSIAN_MONTH_LIST.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                    </Select>
-                    <Select value={birthParts.year ?? ""} onChange={(e) => setBirthPart("year", Number(e.target.value))}>
-                      <option value="">سال</option>
-                      {JALALI_YEAR_RANGE.map((y) => <option key={y} value={y}>{y}</option>)}
-                    </Select>
-                  </div>
-                </Field>
-                <Field label="جنسیت"><ChoiceSelect choices={GENDER} value={form.gender || ""} onChange={(v) => set("gender", v)} /></Field>
-                <Field label="وضعیت تأهل"><ChoiceSelect choices={MARITAL_STATUS} value={form.marital_status || ""} onChange={(v) => set("marital_status", v)} /></Field>
-                <Field label="تعداد فرزندان"><ChoiceSelect choices={CHILDREN_COUNT} value={form.children_count || ""} onChange={(v) => set("children_count", v)} /></Field>
-                {form.gender === "male" && (
-                  <Field label="وضعیت نظام وظیفه"><ChoiceSelect choices={MILITARY_STATUS} value={form.military_status || ""} onChange={(v) => set("military_status", v)} /></Field>
-                )}
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="قد"><ChoiceSelect choices={HEIGHT_RANGE} value={form.height_range || ""} onChange={(v) => set("height_range", v)} /></Field>
-                  <Field label="وزن"><ChoiceSelect choices={WEIGHT_RANGE} value={form.weight_range || ""} onChange={(v) => set("weight_range", v)} /></Field>
-                </div>
-                <Field label="قومیت (می‌توانید چند مورد انتخاب کنید)">
-                  <CheckboxGroup choices={ETHNICITY} value={form.ethnicities || []} onChange={(v) => set("ethnicities", v)} />
-                </Field>
-                <Field label="آیا تابعیت غیرایرانی (اتباع) دارید؟"><YesNo value={form.is_non_iranian_national ?? null} onChange={(v) => set("is_non_iranian_national", v)} /></Field>
-                {form.is_non_iranian_national && (
-                  <>
-                    <Field label="اهل کدام کشور هستید؟"><Input value={form.nationality_country || ""} onChange={(e) => set("nationality_country", e.target.value)} /></Field>
-                    <p className="-mt-2 text-xs text-muted-foreground">مدارک پاسپورت/اقامت را از طریق پشتیبانی یا پنل آژانس ارسال کنید.</p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-base text-rose-900">سلامت</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <Field label="آیا بیماری زمینه‌ای دارید؟">
-                  <YesNo value={form.has_chronic_disease ?? null} onChange={(v) => set("has_chronic_disease", v)} />
-                </Field>
-                {form.has_chronic_disease && (
-                  <Field label="نوع بیماری" required>
-                    <CheckboxGroup choices={CHRONIC_DISEASE_TYPE} value={form.chronic_disease_types || []} onChange={(v) => set("chronic_disease_types", v)} />
-                  </Field>
-                )}
-                <Field label="آیا داروی دائمی مصرف می‌کنید؟">
-                  <YesNo value={form.takes_permanent_medication ?? null} onChange={(v) => set("takes_permanent_medication", v)} />
-                </Field>
-                {form.takes_permanent_medication && (
-                  <Field label="نوع دارو" required>
-                    <CheckboxGroup choices={MEDICATION_TYPE} value={form.medication_types || []} onChange={(v) => set("medication_types", v)} />
-                  </Field>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-base text-rose-900">تماس اضطراری و آدرس</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="شماره تماس اضطراری"><Input dir="ltr" value={form.emergency_contact_phone} onChange={(e) => set("emergency_contact_phone", e.target.value)} /></Field>
-                  <Field label="نسبت"><ChoiceSelect choices={EMERGENCY_CONTACT_RELATION} value={form.emergency_contact_relation || ""} onChange={(v) => set("emergency_contact_relation", v)} /></Field>
-                </div>
-                <Field label="تلفن ثابت"><Input dir="ltr" value={form.landline_phone} onChange={(e) => set("landline_phone", e.target.value)} /></Field>
-                <Field label="سایر شماره‌های تماس">
-                  <div className="space-y-2">
-                    {(form.extra_phone_numbers || []).map((num, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <Input
-                          dir="ltr" value={num}
-                          onChange={(e) => {
-                            const next = [...(form.extra_phone_numbers || [])]
-                            next[i] = e.target.value
-                            set("extra_phone_numbers", next)
-                          }}
-                        />
-                        <Button
-                          type="button" variant="outline" size="sm"
-                          onClick={() => set("extra_phone_numbers", (form.extra_phone_numbers || []).filter((_, j) => j !== i))}
-                        >
-                          حذف
-                        </Button>
-                      </div>
+            <FormSection title="اطلاعات شناسایی" defaultOpen>
+              <Field label="نام کامل"><Input value={form.full_name} disabled /></Field>
+              <Field label="جنسیت"><ChoiceSelect choices={GENDER} value={form.gender || ""} onChange={(v) => set("gender", v)} /></Field>
+              <Field label="نام پدر"><Input value={form.father_name} onChange={(e) => set("father_name", e.target.value)} /></Field>
+              <Field label="شماره شناسنامه"><Input value={form.birth_certificate_number} onChange={(e) => set("birth_certificate_number", e.target.value)} /></Field>
+              <Field label="تاریخ تولد (شمسی)">
+                <div className="grid grid-cols-3 gap-2">
+                  <Select value={birthParts.day ?? ""} onChange={(e) => setBirthPart("day", Number(e.target.value))}>
+                    <option value="">روز</option>
+                    {Array.from({ length: daysInJalaliMonth(birthParts.year || 1400, birthParts.month || 1) }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>{d}</option>
                     ))}
-                    <Button
-                      type="button" variant="outline" size="sm"
-                      onClick={() => set("extra_phone_numbers", [...(form.extra_phone_numbers || []), ""])}
-                    >
-                      + افزودن شماره
-                    </Button>
-                  </div>
-                </Field>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <Field label="استان">
-                    <Select value={form.province ?? ""} onChange={(e) => { set("province", Number(e.target.value) || null); set("city", null); set("district", null) }}>
-                      <option value="">انتخاب کنید...</option>
-                      {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </Select>
-                  </Field>
-                  <Field label="شهر">
-                    <Select value={form.city ?? ""} onChange={(e) => { set("city", Number(e.target.value) || null); set("district", null) }} disabled={!form.province}>
-                      <option value="">انتخاب کنید...</option>
-                      {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </Select>
-                  </Field>
-                  <Field label="منطقه">
-                    <Select value={form.district ?? ""} onChange={(e) => set("district", Number(e.target.value) || null)} disabled={!form.city}>
-                      <option value="">انتخاب کنید...</option>
-                      {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                    </Select>
-                  </Field>
+                  </Select>
+                  <Select value={birthParts.month ?? ""} onChange={(e) => setBirthPart("month", Number(e.target.value))}>
+                    <option value="">ماه</option>
+                    {PERSIAN_MONTH_LIST.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  </Select>
+                  <Select value={birthParts.year ?? ""} onChange={(e) => setBirthPart("year", Number(e.target.value))}>
+                    <option value="">سال</option>
+                    {JALALI_YEAR_RANGE.map((y) => <option key={y} value={y}>{y}</option>)}
+                  </Select>
                 </div>
-                <Field label="کد پستی"><Input dir="ltr" value={form.postal_code} onChange={(e) => set("postal_code", e.target.value)} /></Field>
-                <Field label="آدرس کامل"><Input value={form.full_address} onChange={(e) => set("full_address", e.target.value)} /></Field>
-              </CardContent>
-            </Card>
+              </Field>
+              {jalaliAge(form.birth_date) !== null && (
+                <p className="-mt-2 text-sm text-muted-foreground">سن: {jalaliAge(form.birth_date)!.toLocaleString("fa-IR")} سال</p>
+              )}
+              <Field label="آیا تابعیت غیرایرانی (اتباع) دارید؟"><YesNo value={form.is_non_iranian_national ?? null} onChange={(v) => set("is_non_iranian_national", v)} /></Field>
+              {form.is_non_iranian_national && (
+                <>
+                  <Field label="اهل کدام کشور هستید؟"><Input value={form.nationality_country || ""} onChange={(e) => set("nationality_country", e.target.value)} /></Field>
+                  <p className="-mt-2 text-xs text-muted-foreground">مدارک پاسپورت/اقامت را از طریق پشتیبانی یا پنل آژانس ارسال کنید.</p>
+                </>
+              )}
+            </FormSection>
+
+            <FormSection title="اطلاعات فردی">
+              <Field label="وضعیت تأهل"><ChoiceSelect choices={MARITAL_STATUS} value={form.marital_status || ""} onChange={(v) => set("marital_status", v)} /></Field>
+              <Field label="آیا خودتان فرزند دارید؟"><YesNo value={form.has_children ?? null} onChange={(v) => set("has_children", v)} /></Field>
+              {form.has_children && (
+                <Field label="تعداد فرزندان"><ChoiceSelect choices={CHILDREN_COUNT} value={form.children_count || ""} onChange={(v) => set("children_count", v)} /></Field>
+              )}
+              {form.gender === "male" && (
+                <Field label="وضعیت نظام وظیفه"><ChoiceSelect choices={MILITARY_STATUS} value={form.military_status || ""} onChange={(v) => set("military_status", v)} /></Field>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="قد"><ChoiceSelect choices={HEIGHT_RANGE} value={form.height_range || ""} onChange={(v) => set("height_range", v)} /></Field>
+                <Field label="وزن"><ChoiceSelect choices={WEIGHT_RANGE} value={form.weight_range || ""} onChange={(v) => set("weight_range", v)} /></Field>
+              </div>
+            </FormSection>
+
+            <FormSection title="اطلاعات سلامت">
+              <Field label="آیا بیماری زمینه‌ای دارید؟">
+                <YesNo value={form.has_chronic_disease ?? null} onChange={(v) => set("has_chronic_disease", v)} />
+              </Field>
+              {form.has_chronic_disease && (
+                <Field label="نوع بیماری" required>
+                  <CheckboxGroup choices={CHRONIC_DISEASE_TYPE} value={form.chronic_disease_types || []} onChange={(v) => set("chronic_disease_types", v)} />
+                </Field>
+              )}
+              <Field label="آیا داروی دائمی مصرف می‌کنید؟">
+                <YesNo value={form.takes_permanent_medication ?? null} onChange={(v) => set("takes_permanent_medication", v)} />
+              </Field>
+              {form.takes_permanent_medication && (
+                <Field label="نوع دارو" required>
+                  <CheckboxGroup choices={MEDICATION_TYPE} value={form.medication_types || []} onChange={(v) => set("medication_types", v)} />
+                </Field>
+              )}
+            </FormSection>
+
+            <FormSection title="اطلاعات تماس">
+              <Field label="شماره تماس‌های دیگر"><Input dir="ltr" value={form.emergency_contact_phone} onChange={(e) => set("emergency_contact_phone", e.target.value)} /></Field>
+            </FormSection>
+
+            <FormSection title="اطلاعات محل سکونت">
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="استان">
+                  <Select value={form.province ?? ""} onChange={(e) => { set("province", Number(e.target.value) || null); set("city", null); set("district", null) }}>
+                    <option value="">انتخاب کنید...</option>
+                    {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </Select>
+                </Field>
+                <Field label="شهر">
+                  <Select value={form.city ?? ""} onChange={(e) => { set("city", Number(e.target.value) || null); set("district", null) }} disabled={!form.province}>
+                    <option value="">انتخاب کنید...</option>
+                    {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </Select>
+                </Field>
+                <Field label="منطقه">
+                  <Select value={form.district ?? ""} onChange={(e) => set("district", Number(e.target.value) || null)} disabled={!form.city}>
+                    <option value="">انتخاب کنید...</option>
+                    {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </Select>
+                </Field>
+              </div>
+              <Field label="کد پستی"><Input dir="ltr" value={form.postal_code} onChange={(e) => set("postal_code", e.target.value)} /></Field>
+              <Field label="آدرس کامل"><Input value={form.full_address} onChange={(e) => set("full_address", e.target.value)} /></Field>
+            </FormSection>
+
+            <FormSection title="اطلاعات تکمیلی">
+              <Field label="قومیت (می‌توانید چند مورد انتخاب کنید)">
+                <CheckboxGroup choices={ETHNICITY} value={form.ethnicities || []} onChange={(v) => set("ethnicities", v)} />
+              </Field>
+              {form.has_children && (
+                <Field label="آیا در حال حاضر در حال مراقبت از فرزند خودتان هستید یا نیازی به مراقبت شما ندارد؟">
+                  <YesNo value={form.currently_caring_for_own_child ?? null} onChange={(v) => set("currently_caring_for_own_child", v)} />
+                </Field>
+              )}
+              <Field label="تلفن ثابت"><Input dir="ltr" value={form.landline_phone} onChange={(e) => set("landline_phone", e.target.value)} /></Field>
+              <Field label="سایر شماره‌های تماس">
+                <div className="space-y-2">
+                  {(form.extra_phone_numbers || []).map((num, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Input
+                        dir="ltr" value={num}
+                        onChange={(e) => {
+                          const next = [...(form.extra_phone_numbers || [])]
+                          next[i] = e.target.value
+                          set("extra_phone_numbers", next)
+                        }}
+                      />
+                      <Button
+                        type="button" variant="outline" size="sm"
+                        onClick={() => set("extra_phone_numbers", (form.extra_phone_numbers || []).filter((_, j) => j !== i))}
+                      >
+                        حذف
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button" variant="outline" size="sm"
+                    onClick={() => set("extra_phone_numbers", [...(form.extra_phone_numbers || []), ""])}
+                  >
+                    + افزودن شماره
+                  </Button>
+                </div>
+              </Field>
+            </FormSection>
           </>
         )}
       </main>

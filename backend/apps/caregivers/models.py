@@ -56,19 +56,10 @@ class IdentityProfile(models.Model):
     father_name = models.CharField(max_length=150, blank=True, verbose_name="نام پدر")
     national_id = models.CharField(max_length=10, blank=True, verbose_name="شماره ملی")
     birth_certificate_number = models.CharField(max_length=30, blank=True, verbose_name="شماره شناسنامه")
-    # Legacy free-text column — no longer shown in any form (replaced
-    # by the two FKs below, a real province/city picker like the
-    # residence-address fields, so it's not hard to type/pick). Left
-    # in place rather than dropped, to avoid losing already-filled data.
-    birth_certificate_issue_place = models.CharField(max_length=150, blank=True, verbose_name="محل صدور شناسنامه (قدیمی)")
-    birth_certificate_issue_province = models.ForeignKey(
-        "locations.Province", on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="+", verbose_name="استان محل صدور شناسنامه",
-    )
-    birth_certificate_issue_city = models.ForeignKey(
-        "locations.City", on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="+", verbose_name="شهر محل صدور شناسنامه",
-    )
+    # «محل صدور شناسنامه» از همه‌ی فرم‌ها حذف شد (دیگر پرسیده نمی‌شود).
+    # ستون متنی قدیمی فقط برای حفظ داده‌ی قبلاً ثبت‌شده نگه داشته شده و
+    # در هیچ فرم/serializer ای نمایش داده نمی‌شود.
+    birth_certificate_issue_place = models.CharField(max_length=150, blank=True, verbose_name="محل صدور شناسنامه (قدیمی، بدون استفاده)")
     # آزاد برای افزودن هر تعداد شماره تماس دیگر که لازم باشد — فهرستی
     # از رشته‌ها، نه فقط یک شماره ثابت.
     extra_phone_numbers = models.JSONField(default=list, blank=True, verbose_name="سایر شماره‌های تماس")

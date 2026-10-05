@@ -168,7 +168,6 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
         fields = [
             "full_name",
             "father_name", "national_id", "birth_certificate_number",
-            "birth_certificate_issue_province", "birth_certificate_issue_city",
             "birth_date", "gender", "marital_status", "children_count", "military_status",
             "height_range", "weight_range", "ethnicities",
             "is_non_iranian_national", "nationality_country", "nursing_license_number",

@@ -43,3 +43,24 @@ export function formatJalaliDate(year: number | null, month: number | null, day:
 // is roughly Gregorian year - 621/622.
 const CURRENT_JALALI_YEAR = new Date().getFullYear() - 621
 export const JALALI_YEAR_RANGE = Array.from({ length: 80 }, (_, i) => CURRENT_JALALI_YEAR - 15 - i)
+
+/**
+ * سن تمام‌شده (به سال) از تاریخ تولد شمسی «YYYY-MM-DD»؛ اگر تاریخ ناقص/نامعتبر
+ * باشد null. تاریخ امروزِ شمسی از تقویم Intl مرورگر گرفته می‌شود.
+ */
+export function jalaliAge(birthDate: string | null | undefined): number | null {
+  const { year, month, day } = parseJalaliDate(birthDate || "")
+  if (!year || !month || !day) return null
+  let ty = 0, tm = 0, td = 0
+  try {
+    const parts = new Intl.DateTimeFormat("en-US-u-ca-persian-nu-latn", { year: "numeric", month: "numeric", day: "numeric" }).formatToParts(new Date())
+    const get = (t: string) => Number(parts.find((p) => p.type === t)?.value)
+    ty = get("year"); tm = get("month"); td = get("day")
+  } catch {
+    return null
+  }
+  if (!ty || !tm || !td) return null
+  let age = ty - year
+  if (tm < month || (tm === month && td < day)) age -= 1
+  return age >= 0 ? age : null
+}

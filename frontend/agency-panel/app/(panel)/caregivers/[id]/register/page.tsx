@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator"
 import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/wizard-forms/fields"
 import { LocationPicker } from "@/components/wizard-forms/location-picker"
 import { JalaliDatePicker } from "@/components/wizard-forms/jalali-date-picker"
+import { FormSection } from "@/components/wizard-forms/form-section"
+import { jalaliAge } from "@/lib/jalali"
 import { ErrorSummary } from "@/components/wizard-forms/error-summary"
 import { StepIndicator } from "@/components/wizard-forms/step-indicator"
 import { AppHeader } from "@/components/layout/app-header"
@@ -61,7 +63,6 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 const EMPTY_IDENTITY: IdentityFormData = {
   father_name: "", national_id: "", birth_certificate_number: "",
-  birth_certificate_issue_province: null, birth_certificate_issue_city: null,
   nursing_license_number: "", extra_phone_numbers: [],
   birth_date: "", gender: "", marital_status: "", children_count: "",
   has_children: null, currently_caring_for_own_child: null, military_status: null,
@@ -555,116 +556,120 @@ export default function CaregiverRegistrationWizard() {
 
         {step === 2 && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">🪪</span> فرم ۱ — اطلاعات هویتی</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <Field label="نام پدر"><Input value={identity.father_name} onChange={(e) => setIdentity({ ...identity, father_name: e.target.value })} /></Field>
-              <Field label="کد ملی"><Input value={identity.national_id} onChange={(e) => setIdentity({ ...identity, national_id: e.target.value })} dir="ltr" /></Field>
-              <Field label="شماره شناسنامه"><Input value={identity.birth_certificate_number} onChange={(e) => setIdentity({ ...identity, birth_certificate_number: e.target.value })} /></Field>
-              <div>
-                <p className="mb-1.5 text-sm font-medium text-foreground">محل صدور شناسنامه</p>
-                <LocationPicker
-                  province={identity.birth_certificate_issue_province}
-                  city={identity.birth_certificate_issue_city}
-                  district={null}
-                  hideDistrict
-                  onChange={(v) => setIdentity({ ...identity, birth_certificate_issue_province: v.province, birth_certificate_issue_city: v.city })}
-                />
-              </div>
-              <Field label="تاریخ تولد">
-                <JalaliDatePicker value={identity.birth_date} onChange={(v) => setIdentity({ ...identity, birth_date: v })} />
-              </Field>
-              <Field label="جنسیت"><ChoiceSelect choices={C.GENDER} value={identity.gender} onChange={(v) => setIdentity({ ...identity, gender: v })} /></Field>
-              <Field label="وضعیت تأهل"><ChoiceSelect choices={C.MARITAL_STATUS} value={identity.marital_status} onChange={(v) => setIdentity({ ...identity, marital_status: v })} /></Field>
-              <Field label="آیا خودتان فرزند دارید؟"><YesNo value={identity.has_children} onChange={(v) => setIdentity({ ...identity, has_children: v })} /></Field>
-              {identity.has_children && (
-                <>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">🪪</span> فرم ۱ — اطلاعات هویتی</CardTitle>
+              <p className="text-sm text-muted-foreground">هر بخش را با زدن روی عنوانش باز یا بسته کنید.</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <FormSection title="اطلاعات شناسایی" defaultOpen>
+                <Field label="جنسیت"><ChoiceSelect choices={C.GENDER} value={identity.gender} onChange={(v) => setIdentity({ ...identity, gender: v })} /></Field>
+                <Field label="نام پدر"><Input value={identity.father_name} onChange={(e) => setIdentity({ ...identity, father_name: e.target.value })} /></Field>
+                <Field label="کد ملی"><Input value={identity.national_id} onChange={(e) => setIdentity({ ...identity, national_id: e.target.value })} dir="ltr" /></Field>
+                <Field label="شماره شناسنامه"><Input value={identity.birth_certificate_number} onChange={(e) => setIdentity({ ...identity, birth_certificate_number: e.target.value })} /></Field>
+                <Field label="تاریخ تولد">
+                  <JalaliDatePicker value={identity.birth_date} onChange={(v) => setIdentity({ ...identity, birth_date: v })} />
+                </Field>
+                {jalaliAge(identity.birth_date) !== null && (
+                  <p className="-mt-2 text-sm text-muted-foreground">سن: {jalaliAge(identity.birth_date)!.toLocaleString("fa-IR")} سال</p>
+                )}
+                <Field label="آیا تابعیت غیرایرانی (اتباع) دارید؟"><YesNo value={identity.is_non_iranian_national} onChange={(v) => setIdentity({ ...identity, is_non_iranian_national: v })} /></Field>
+                {identity.is_non_iranian_national && (
+                  <>
+                    <Field label="اهل کدام کشور هستید؟"><Input value={identity.nationality_country} onChange={(e) => setIdentity({ ...identity, nationality_country: e.target.value })} /></Field>
+                    <p className="-mt-2 text-xs text-muted-foreground">مدارک پاسپورت/اقامت از بخش «مدارک» در کاریز خدمت‌دهنده آپلود می‌شود.</p>
+                  </>
+                )}
+                {serviceTypes.includes("parastar") && (
+                  <Field label="شماره پروانه نظام پرستاری"><Input value={identity.nursing_license_number} onChange={(e) => setIdentity({ ...identity, nursing_license_number: e.target.value })} /></Field>
+                )}
+              </FormSection>
+
+              <FormSection title="اطلاعات فردی">
+                <Field label="وضعیت تأهل"><ChoiceSelect choices={C.MARITAL_STATUS} value={identity.marital_status} onChange={(v) => setIdentity({ ...identity, marital_status: v })} /></Field>
+                <Field label="آیا خودتان فرزند دارید؟"><YesNo value={identity.has_children} onChange={(v) => setIdentity({ ...identity, has_children: v })} /></Field>
+                {identity.has_children && (
                   <Field label="تعداد فرزندان"><ChoiceSelect choices={C.CHILDREN_COUNT} value={identity.children_count} onChange={(v) => setIdentity({ ...identity, children_count: v })} /></Field>
+                )}
+                {identity.gender === "male" && (
+                  <Field label="وضعیت نظام وظیفه"><ChoiceSelect choices={C.MILITARY_STATUS} value={identity.military_status || ""} onChange={(v) => setIdentity({ ...identity, military_status: v })} /></Field>
+                )}
+                <Field label="قد"><ChoiceSelect choices={C.HEIGHT_RANGE} value={identity.height_range} onChange={(v) => setIdentity({ ...identity, height_range: v })} /></Field>
+                <Field label="وزن"><ChoiceSelect choices={C.WEIGHT_RANGE} value={identity.weight_range} onChange={(v) => setIdentity({ ...identity, weight_range: v })} /></Field>
+              </FormSection>
+
+              <FormSection title="اطلاعات سلامت">
+                <Field label="آیا بیماری زمینه‌ای دارد؟" required><YesNo value={identity.has_chronic_disease} onChange={(v) => setIdentity({ ...identity, has_chronic_disease: !!v })} /></Field>
+                {identity.has_chronic_disease && (
+                  <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
+                    <Field label="نوع بیماری" required><CheckboxGroup choices={C.CHRONIC_DISEASE_TYPE} value={identity.chronic_disease_types} onChange={(v) => setIdentity({ ...identity, chronic_disease_types: v })} /></Field>
+                    <Field label="توضیح نوع بیماری (نام دقیق بیماری)"><Input value={identity.chronic_disease_detail} onChange={(e) => setIdentity({ ...identity, chronic_disease_detail: e.target.value })} /></Field>
+                    {identity.chronic_disease_types.includes("psychological_issues") && (
+                      <Field label="داروهای مصرفی برای مشکلات روحی/روانی">
+                        <Textarea value={identity.psychiatric_medication_detail} onChange={(e) => setIdentity({ ...identity, psychiatric_medication_detail: e.target.value })} />
+                      </Field>
+                    )}
+                  </div>
+                )}
+                <Field label="آیا داروی دائمی مصرف می‌کند؟"><YesNo value={identity.takes_permanent_medication} onChange={(v) => setIdentity({ ...identity, takes_permanent_medication: !!v })} /></Field>
+                {identity.takes_permanent_medication && (
+                  <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
+                    <Field label="نوع دارو" required><CheckboxGroup choices={C.MEDICATION_TYPE} value={identity.medication_types} onChange={(v) => setIdentity({ ...identity, medication_types: v })} /></Field>
+                    <Field label="توضیح نوع دارو (نام دقیق دارو)"><Input value={identity.medication_detail} onChange={(e) => setIdentity({ ...identity, medication_detail: e.target.value })} /></Field>
+                  </div>
+                )}
+              </FormSection>
+
+              <FormSection title="اطلاعات تماس">
+                <Field label="شماره تماس‌های دیگر"><Input value={identity.emergency_contact_phone} onChange={(e) => setIdentity({ ...identity, emergency_contact_phone: e.target.value })} dir="ltr" /></Field>
+              </FormSection>
+
+              <FormSection title="اطلاعات محل سکونت">
+                <LocationPicker
+                  province={identity.province}
+                  city={identity.city}
+                  district={identity.district}
+                  onChange={(v) => setIdentity({ ...identity, ...v })}
+                />
+                <Field label="کد پستی"><Input value={identity.postal_code} onChange={(e) => setIdentity({ ...identity, postal_code: e.target.value })} dir="ltr" /></Field>
+                <Field label="نشانی کامل"><Textarea value={identity.full_address} onChange={(e) => setIdentity({ ...identity, full_address: e.target.value })} /></Field>
+              </FormSection>
+
+              <FormSection title="اطلاعات تکمیلی">
+                <Field label="قومیت / زبان مادری"><CheckboxGroup choices={C.ETHNICITY} value={identity.ethnicities} onChange={(v) => setIdentity({ ...identity, ethnicities: v })} /></Field>
+                {identity.has_children && (
                   <Field label="آیا در حال حاضر در حال مراقبت از فرزند خودتان هستید یا نیازی به مراقبت شما ندارد؟"><YesNo value={identity.currently_caring_for_own_child} onChange={(v) => setIdentity({ ...identity, currently_caring_for_own_child: v })} /></Field>
-                </>
-              )}
-              {identity.gender === "male" && (
-                <Field label="وضعیت نظام وظیفه"><ChoiceSelect choices={C.MILITARY_STATUS} value={identity.military_status || ""} onChange={(v) => setIdentity({ ...identity, military_status: v })} /></Field>
-              )}
-
-              <SectionHeading>اطلاعات فردی</SectionHeading>
-              <Field label="قد"><ChoiceSelect choices={C.HEIGHT_RANGE} value={identity.height_range} onChange={(v) => setIdentity({ ...identity, height_range: v })} /></Field>
-              <Field label="وزن"><ChoiceSelect choices={C.WEIGHT_RANGE} value={identity.weight_range} onChange={(v) => setIdentity({ ...identity, weight_range: v })} /></Field>
-              <Field label="قومیت / زبان مادری"><CheckboxGroup choices={C.ETHNICITY} value={identity.ethnicities} onChange={(v) => setIdentity({ ...identity, ethnicities: v })} /></Field>
-              <Field label="آیا تابعیت غیرایرانی (اتباع) دارید؟"><YesNo value={identity.is_non_iranian_national} onChange={(v) => setIdentity({ ...identity, is_non_iranian_national: v })} /></Field>
-              {identity.is_non_iranian_national && (
-                <>
-                  <Field label="اهل کدام کشور هستید؟"><Input value={identity.nationality_country} onChange={(e) => setIdentity({ ...identity, nationality_country: e.target.value })} /></Field>
-                  <p className="-mt-2 text-xs text-muted-foreground">مدارک پاسپورت/اقامت از بخش «مدارک» در کاریز خدمت‌دهنده آپلود می‌شود.</p>
-                </>
-              )}
-
-              <SectionHeading>وضعیت سلامت</SectionHeading>
-              <Field label="آیا بیماری زمینه‌ای دارد؟" required><YesNo value={identity.has_chronic_disease} onChange={(v) => setIdentity({ ...identity, has_chronic_disease: !!v })} /></Field>
-              {identity.has_chronic_disease && (
-                <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
-                  <Field label="نوع بیماری" required><CheckboxGroup choices={C.CHRONIC_DISEASE_TYPE} value={identity.chronic_disease_types} onChange={(v) => setIdentity({ ...identity, chronic_disease_types: v })} /></Field>
-                  <Field label="توضیح نوع بیماری (نام دقیق بیماری)"><Input value={identity.chronic_disease_detail} onChange={(e) => setIdentity({ ...identity, chronic_disease_detail: e.target.value })} /></Field>
-                  {identity.chronic_disease_types.includes("psychological_issues") && (
-                    <Field label="داروهای مصرفی برای مشکلات روحی/روانی">
-                      <Textarea value={identity.psychiatric_medication_detail} onChange={(e) => setIdentity({ ...identity, psychiatric_medication_detail: e.target.value })} />
-                    </Field>
-                  )}
+                )}
+                <Field label="تلفن ثابت"><Input value={identity.landline_phone} onChange={(e) => setIdentity({ ...identity, landline_phone: e.target.value })} dir="ltr" /></Field>
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-foreground">سایر شماره‌های تماس</p>
+                  <div className="space-y-2">
+                    {identity.extra_phone_numbers.map((num, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input
+                          value={num} dir="ltr"
+                          onChange={(e) => {
+                            const next = [...identity.extra_phone_numbers]
+                            next[i] = e.target.value
+                            setIdentity({ ...identity, extra_phone_numbers: next })
+                          }}
+                        />
+                        <Button
+                          type="button" variant="outline" size="sm"
+                          onClick={() => setIdentity({ ...identity, extra_phone_numbers: identity.extra_phone_numbers.filter((_, j) => j !== i) })}
+                        >
+                          حذف
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button" variant="outline" size="sm"
+                      onClick={() => setIdentity({ ...identity, extra_phone_numbers: [...identity.extra_phone_numbers, ""] })}
+                    >
+                      + افزودن شماره
+                    </Button>
+                  </div>
                 </div>
-              )}
-              <Field label="آیا داروی دائمی مصرف می‌کند؟"><YesNo value={identity.takes_permanent_medication} onChange={(v) => setIdentity({ ...identity, takes_permanent_medication: !!v })} /></Field>
-              {identity.takes_permanent_medication && (
-                <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
-                  <Field label="نوع دارو" required><CheckboxGroup choices={C.MEDICATION_TYPE} value={identity.medication_types} onChange={(v) => setIdentity({ ...identity, medication_types: v })} /></Field>
-                  <Field label="توضیح نوع دارو (نام دقیق دارو)"><Input value={identity.medication_detail} onChange={(e) => setIdentity({ ...identity, medication_detail: e.target.value })} /></Field>
-                </div>
-              )}
-
-              <SectionHeading>اطلاعات تماس</SectionHeading>
-              <Field label="شماره تماس اضطراری"><Input value={identity.emergency_contact_phone} onChange={(e) => setIdentity({ ...identity, emergency_contact_phone: e.target.value })} dir="ltr" /></Field>
-              <Field label="نسبت فرد اضطراری"><ChoiceSelect choices={C.EMERGENCY_CONTACT_RELATION} value={identity.emergency_contact_relation} onChange={(v) => setIdentity({ ...identity, emergency_contact_relation: v })} /></Field>
-              <Field label="تلفن ثابت"><Input value={identity.landline_phone} onChange={(e) => setIdentity({ ...identity, landline_phone: e.target.value })} dir="ltr" /></Field>
-              <div>
-                <p className="mb-1.5 text-sm font-medium text-foreground">سایر شماره‌های تماس</p>
-                <div className="space-y-2">
-                  {identity.extra_phone_numbers.map((num, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <Input
-                        value={num} dir="ltr"
-                        onChange={(e) => {
-                          const next = [...identity.extra_phone_numbers]
-                          next[i] = e.target.value
-                          setIdentity({ ...identity, extra_phone_numbers: next })
-                        }}
-                      />
-                      <Button
-                        type="button" variant="outline" size="sm"
-                        onClick={() => setIdentity({ ...identity, extra_phone_numbers: identity.extra_phone_numbers.filter((_, j) => j !== i) })}
-                      >
-                        حذف
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    type="button" variant="outline" size="sm"
-                    onClick={() => setIdentity({ ...identity, extra_phone_numbers: [...identity.extra_phone_numbers, ""] })}
-                  >
-                    + افزودن شماره
-                  </Button>
-                </div>
-              </div>
-              {serviceTypes.includes("parastar") && (
-                <Field label="شماره پروانه نظام پرستاری"><Input value={identity.nursing_license_number} onChange={(e) => setIdentity({ ...identity, nursing_license_number: e.target.value })} /></Field>
-              )}
-
-              <SectionHeading>محل سکونت</SectionHeading>
-              <LocationPicker
-                province={identity.province}
-                city={identity.city}
-                district={identity.district}
-                onChange={(v) => setIdentity({ ...identity, ...v })}
-              />
-              <Field label="کد پستی"><Input value={identity.postal_code} onChange={(e) => setIdentity({ ...identity, postal_code: e.target.value })} dir="ltr" /></Field>
-              <Field label="نشانی کامل"><Textarea value={identity.full_address} onChange={(e) => setIdentity({ ...identity, full_address: e.target.value })} /></Field>
+              </FormSection>
             </CardContent>
           </Card>
         )}

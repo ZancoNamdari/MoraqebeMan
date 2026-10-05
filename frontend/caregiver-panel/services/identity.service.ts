@@ -4,12 +4,12 @@ export interface MyIdentityProfile {
   full_name: string
   father_name?: string
   birth_certificate_number?: string
-  birth_certificate_issue_province?: number | null
-  birth_certificate_issue_city?: number | null
   extra_phone_numbers?: string[]
   birth_date?: string | null
   gender?: string
   marital_status?: string
+  has_children?: boolean | null
+  currently_caring_for_own_child?: boolean | null
   children_count?: string
   military_status?: string
   height_range?: string
