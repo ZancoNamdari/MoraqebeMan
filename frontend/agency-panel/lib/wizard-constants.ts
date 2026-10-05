@@ -1034,38 +1034,12 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
   // type's extra questions.
   salmandyar: {
     form2: [
-      { key: "has_assistant", label: "آیا نیاز به نیروی کمکی برای انجام امور دارید؟", type: "bool" },
-      { key: "night_wakefulness_ok", label: "آمادگی برای بیداری‌های شبانه مکرر", type: "bool" },
       { key: "toileting_hygiene_assistance_ok", label: "آمادگی برای کمک در طهارت و نظافت فردی سالمند", type: "bool" },
-      { key: "bedpan_assistance_ok", label: "آیا مشکلی با کمک به سالمند نیازمند استفاده از لگن جهت امور شخصی دارید؟", type: "bool" },
-      { key: "park_outing_accompaniment_ok", label: "آمادگی برای همراهی سالمند در پیاده‌روی و پارک", type: "bool" },
       // همدمی — فقط به معنای هم‌صحبتی و همراهی روحی/عاطفی در چارچوب
       // کار مراقبتی؛ صریح و شفاف پرسیده می‌شود.
       { key: "emotional_companionship_ok", label: "آمادگی برای همدمی و هم‌صحبتی با سالمند (گفتگو، همراهی در اوقات فراغت، حضور عاطفی در چارچوب کار مراقبتی)", type: "bool" },
       // شرایط محیط کار مخصوص سالمندیار — «آیا مشکلی دارید؟» (true = مشکل دارد).
       { key: "env_own_rest_space_needed", label: "برای کار شبانه، به اتاق/محل استراحت جداگانه نیاز دارم", type: "bool", group: "env" },
-      { key: "willing_to_relocate_other_cities", label: "آمادگی برای کار در شهرهای دیگر (محل کار دائم)", type: "bool" },
-      { key: "ok_with_second_elderly_spouse_present", label: "آمادگی برای مراقبت در حضور همسر سالمند (زوج سالمند)", type: "bool" },
-      // مراقبت شخصی — موارد حساس‌تر با مقیاس تجربه چهارسطحی به‌جای
-      // بلی/خیر ساده (پیشنهاد صریح سند).
-      { key: "grooming_assistance_level", label: "کمک به اصلاح و آراستگی سالمند", type: "choice", choices: CARE_EXPERIENCE_LEVEL },
-      { key: "adult_diaper_changing_level", label: "تعویض پوشک بزرگسال", type: "choice", choices: CARE_EXPERIENCE_LEVEL },
-      // غذا و تغذیه — توانایی اجرای رژیم، نه نوع رژیم سالمند (که از
-      // سمت خانواده/پزشک گرفته می‌شود). ساده شد به یک بلی/خیر.
-      { key: "dietary_execution_ok", label: "آیا توانایی تهیه و اجرای رژیم‌های غذایی خاص (کم‌نمک، دیابتی و مانند آن) را دارید؟", type: "bool" },
-      // همراهی خارج از منزل — به‌جای فهرست فعالیت‌ها، همراهی برای
-      // مراجعه به مراکز درمانی (نقطه حساس‌تر) به‌صورت بلی/خیر پرسیده
-      // می‌شود؛ وسیله رفت‌وآمد همچنان جدا می‌ماند.
-      { key: "medical_accompaniment_ok", label: "آیا آمادگی همراهی سالمند در مراجعه به مراکز درمانی را دارید؟", type: "bool" },
-      { key: "accompaniment_transport_methods", label: "وسیله رفت‌وآمد هنگام همراهی", type: "multi", choices: ACCOMPANIMENT_TRANSPORT_METHOD },
-      // ظاهر — به‌جای ارزش‌گذاری روی ظاهر، سازگاری با استاندارد
-      // موردنظر خانواده پرسیده می‌شود (پیشنهاد صریح سند)
-      { key: "appearance_standard_compliance_ok", label: "امکان رعایت استاندارد ظاهری و پوشش موردنظر خانواده", type: "bool" },
-      { key: "short_nails_ok", label: "آمادگی برای کوتاه نگه‌داشتن ناخن در صورت درخواست خانواده", type: "bool" },
-      { key: "specific_dress_code_ok", label: "آمادگی برای رعایت پوشش مشخص موردنظر خانواده", type: "bool" },
-      { key: "no_specific_perfume_ok", label: "آمادگی برای عدم استفاده از عطر خاص در صورت درخواست خانواده", type: "bool" },
-      // ماشین — جای یک بلی/خیر ساده، چند حالت کاربردی‌تر
-      { key: "vehicle_abilities", label: "وضعیت خودرو و رانندگی", type: "multi", choices: VEHICLE_ABILITY },
     ],
     form3: [
       { key: "catheter_care_experience", label: "تجربه مراقبت از سالمند دارای سوند", type: "bool" },
