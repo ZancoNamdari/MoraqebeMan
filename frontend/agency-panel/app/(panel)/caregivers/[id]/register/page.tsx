@@ -39,7 +39,6 @@ const STEPS = ["اطلاعات پایه", "نوع خدمت", "فرم ۱ — هو
 // service type -> its subtype choice list (SALMANDYAR has none —
 // it's the original, already-built flow with no subtypes of its own).
 const SUBTYPE_CHOICES_BY_SERVICE_TYPE: Record<string, C.Choice[]> = {
-  koodakyar: C.KOODAKYAR_SUBTYPE,
   nezafatchi: C.NEZAFATCHI_SUBTYPE,
   madaryar: C.MADARYAR_SUBTYPE,
   // parastar's own subtype choice PLUS, only once "specialized_nurse"
@@ -299,9 +298,15 @@ export default function CaregiverRegistrationWizard() {
   // activity checkbox (e.g. hosting_etiquette_level depending on
   // indoor_activities including "hosting") rather than a service
   // subtype.
-  function matchesShowIfField(f: C.ServiceSpecificField, typeAnswers: Record<string, any>) {
+  // `fallbackAnswers`: فیلدی در فرم ۳/پرسشنامه ممکن است به پاسخ فرم ۲ وابسته
+  // باشد (مثلاً مرحله‌ی همراهی با نوزاد که در فرم ۲ پرسیده می‌شود).
+  function matchesShowIfField(
+    f: C.ServiceSpecificField,
+    typeAnswers: Record<string, any>,
+    fallbackAnswers: Record<string, any> = {},
+  ) {
     if (!f.showIfField) return true
-    const v = typeAnswers?.[f.showIfField.key]
+    const v = typeAnswers?.[f.showIfField.key] ?? fallbackAnswers?.[f.showIfField.key]
     // A bool-type sibling field (e.g. is_non_iranian_national) stores a
     // real boolean, not "true"/"false" strings — normalize so oneOf can
     // still match it with string literals.
@@ -320,12 +325,12 @@ export default function CaregiverRegistrationWizard() {
     return (
       <>
         {applicableTypes.map((type) => {
-          const typeLabel = C.SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
+          const typeLabel = C.ALL_SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
           const chosenSubtypes = serviceSubtypes[type] ?? []
           const typeAnswers = current[type] ?? {}
           const fields = C.SERVICE_SPECIFIC_FORMS[type][formKey]
             .filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
-            .filter((f) => matchesShowIfField(f, typeAnswers))
+            .filter((f) => matchesShowIfField(f, typeAnswers, workPrefs.service_specific_answers[type] ?? {}))
           if (fields.length === 0) return null
           return (
             <div key={type}>
@@ -515,7 +520,7 @@ export default function CaregiverRegistrationWizard() {
               {serviceTypes.map((type) => {
                 const subtypeChoices = SUBTYPE_CHOICES_BY_SERVICE_TYPE[type]
                 if (!subtypeChoices) return null
-                const typeLabel = C.SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
+                const typeLabel = C.ALL_SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
                 const selectedSubtypes = serviceSubtypes[type] ?? []
                 return (
                   <div key={type} className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
@@ -668,7 +673,7 @@ export default function CaregiverRegistrationWizard() {
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">💼</span> فرم ۲ — شرایط همکاری</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <Field label="نوع همکاری"><CheckboxGroup choices={C.getCollaborationTypeChoices(serviceTypes)} value={workPrefs.collaboration_types} onChange={(v) => setWorkPrefs({ ...workPrefs, collaboration_types: v })} /></Field>
+              <Field label="نوع همکاری"><CheckboxGroup choices={C.getCollaborationTypeChoices(serviceTypes, serviceSubtypes)} value={workPrefs.collaboration_types} onChange={(v) => setWorkPrefs({ ...workPrefs, collaboration_types: v })} /></Field>
               {workPrefs.collaboration_types.includes("daily") && (
                 <Field label="ساعات کاری مراقبت روزانه"><Input value={workPrefs.daily_work_hours} onChange={(e) => setWorkPrefs({ ...workPrefs, daily_work_hours: e.target.value })} placeholder="مثلاً از ساعت ۸ تا ۱۶" /></Field>
               )}
@@ -978,7 +983,7 @@ export default function CaregiverRegistrationWizard() {
               </Card>
             ))}
             {serviceTypes.filter((t) => C.SERVICE_SPECIFIC_FORMS[t]?.questionnaire?.length).map((type) => {
-              const typeLabel = C.SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
+              const typeLabel = C.ALL_SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
               const chosenSubtypes = serviceSubtypes[type] ?? []
               // showIfField here checks form2's own answers (where
               // activity checkboxes like indoor_activities/

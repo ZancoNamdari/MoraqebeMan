@@ -8,7 +8,7 @@ from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, Collaboration
                       CommunicationSkill, CaregivingSkill, MobilityAssistanceAbility,
                       HouseholdSkill, ForeignLanguage, LocalLanguage,
                       PreviousWorkplace, SpecialConditionExperience, TrainingCourse, Gender,
-                      ServiceType, KoodakyarSubtype, NezafatchiSubtype, MadaryarSubtype,
+                      ServiceType, NezafatchiSubtype, MadaryarSubtype,
                       ParastarSubtype, ParastarSpecialty, BehyarSubtype)
 from .models import (CaregiverWorkPreferences, CaregiverServiceArea, CaregiverExperience,
                      CaregiverSkills, CaregiverReference, IdentityProfile, CaregiverCompatibilityQuestionnaire,
@@ -22,7 +22,6 @@ from .models import (CaregiverWorkPreferences, CaregiverServiceArea, CaregiverEx
 # is a tag set, not a nested structure.
 _SUBTYPE_CHOICES_BY_SERVICE_TYPE = {
     ServiceType.SALMANDYAR: [],
-    ServiceType.KOODAKYAR: [c[0] for c in KoodakyarSubtype.choices],
     ServiceType.NEZAFATCHI: [c[0] for c in NezafatchiSubtype.choices],
     ServiceType.MADARYAR: [c[0] for c in MadaryarSubtype.choices],
     ServiceType.PARASTAR: [c[0] for c in ParastarSubtype.choices] + [c[0] for c in ParastarSpecialty.choices],

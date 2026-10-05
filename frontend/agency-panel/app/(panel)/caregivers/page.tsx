@@ -30,18 +30,17 @@ import type { AgencyCaregiverPipelineItem, CaregiverDocumentField, CaregiverDocu
 import * as C from "@/lib/wizard-constants"
 
 function serviceTypeLabel(value: string) {
-  return C.SERVICE_TYPE.find((c) => c[0] === value)?.[1] ?? value
+  return C.ALL_SERVICE_TYPE.find((c) => c[0] === value)?.[1] ?? value
 }
 
 // One distinct, fixed color per service type — never cycled/computed
 // — so the same type always reads as the same color across every
 // card and the filter dropdown's active-chip styling. Falls back to
-// the plain slate pair for any value that isn't one of the 6 known
+// the plain slate pair for any value that isn't one of the 5 known
 // types (shouldn't happen, but a caregiver's service_types comes
 // from the server).
 const SERVICE_TYPE_COLOR: Record<string, string> = {
   salmandyar: "bg-sky-100 text-sky-700",
-  koodakyar: "bg-amber-100 text-amber-700",
   nezafatchi: "bg-emerald-100 text-emerald-700",
   madaryar: "bg-pink-100 text-pink-700",
   parastar: "bg-violet-100 text-violet-700",
@@ -53,7 +52,6 @@ const SERVICE_TYPE_COLOR: Record<string, string> = {
 // a pale fill at that size.
 const SERVICE_TYPE_DOT_COLOR: Record<string, string> = {
   salmandyar: "bg-sky-500",
-  koodakyar: "bg-amber-500",
   nezafatchi: "bg-emerald-500",
   madaryar: "bg-pink-500",
   parastar: "bg-violet-500",

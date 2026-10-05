@@ -5,27 +5,25 @@ from django.db import models
 class ServiceType(models.TextChoices):
     """Multi-select — the service category/categories this caregiver
     offers. One caregiver can hold several at once (e.g. both
-    SALMANDYAR and KOODAKYAR) — this is NOT a fork into separate
+    SALMANDYAR and MADARYAR) — this is NOT a fork into separate
     profiles; it's a tag set on the one CaregiverProfile, so the same
     caregiver shows up in each matching type's pool/list under a
     single, unique registration (CaregiverProfile.id), never
     duplicated with a different id per type."""
     SALMANDYAR = "salmandyar", "سالمندیار"
-    KOODAKYAR = "koodakyar", "کودک‌یار"
-    NEZAFATCHI = "nezafatchi", "نظافت‌چی"
+    # «کودک‌یار» قبلاً نوع خدمت جدا بود؛ به‌طور کامل در مادریار ادغام شد
+    # (زیرشاخه‌های کودک / کمک‌کننده در درس و مشق / کارخانه + کودک) —
+    # مایگریشن 0029 داده‌های موجود را منتقل می‌کند.
+    NEZAFATCHI = "nezafatchi", "امور منزل"
     MADARYAR = "madaryar", "مادریار"
+    # پرستار فعلاً در رابط کاربری غیرفعال است (بعداً فعال می‌شود)؛
+    # مقدار برای داده‌های موجود و فعال‌سازی مجدد در بک‌اند معتبر می‌ماند.
     PARASTAR = "parastar", "پرستار"
     BEHYAR = "behyar", "بهیار"
 
 
-class KoodakyarSubtype(models.TextChoices):
-    GENERAL_CHILDCARE = "general_childcare", "مراقبت و نگهداری عمومی کودک"
-    HOMEWORK_TUTOR = "homework_tutor", "پرستار درس و مشق"
-    LIVE_IN_HOUSEWORK_CHILDCARE = "live_in_housework_childcare", "پرستار شبانه‌روزی کارهای خانه و بچه"
-
-
 class NezafatchiSubtype(models.TextChoices):
-    """Multi-select — the 3 main نظافت‌چی branches. Finer-grained
+    """Multi-select — the 3 main «امور منزل» (قبلاً نظافت‌چی) branches. Finer-grained
     activities (deep cleaning, hosting, laundry, janitor work, etc.)
     are asked as activity checklists within the indoor/outdoor
     sections of SERVICE_SPECIFIC_FORMS.nezafatchi in the frontend,
@@ -37,10 +35,13 @@ class NezafatchiSubtype(models.TextChoices):
 
 
 class MadaryarSubtype(models.TextChoices):
+    """مادریار + کودک‌یار (ادغام‌شده). دوران بارداری / در شرف زایمان / پس از
+    زایمان دیگر زیرشاخه نیستند؛ ترجیح مرحله‌ی همراهی زیر «نوزاد» در
+    service_specific_answers پرسیده می‌شود (newborn_stage_preferences)."""
     NEWBORN = "newborn", "نوزاد"
-    PREGNANCY = "pregnancy", "دوران بارداری"
-    LABOR = "labor", "در شرف زایمان"
-    POSTPARTUM = "postpartum", "پس از زایمان"
+    CHILD = "child", "کودک"
+    HOMEWORK_HELPER = "homework_helper", "کمک‌کننده در درس و مشق"
+    HOUSEWORK_CHILD = "housework_child", "کارهای خانه + کودک"
 
 
 class ParastarSubtype(models.TextChoices):

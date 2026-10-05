@@ -111,13 +111,25 @@ export const COLLABORATION_TYPE: Choice[] = [
 // employer, no patient); every other type should name who they're
 // caring for (سالمند/کودک/نوزاد/بیمار). "همراهی در بیمارستان" is
 // dropped entirely when نظافت‌چی is the ONLY selected type.
-export function getCollaborationTypeChoices(serviceTypes: string[]): Choice[] {
+export function getCollaborationTypeChoices(
+  serviceTypes: string[],
+  serviceSubtypes: Record<string, string[]> = {},
+): Choice[] {
   const cleanerOnly = serviceTypes.length > 0 && serviceTypes.every((t) => t === "nezafatchi")
-  let subject = "کارفرما"
-  if (serviceTypes.includes("salmandyar")) subject = "سالمند"
-  else if (serviceTypes.includes("koodakyar")) subject = "کودک"
-  else if (serviceTypes.includes("madaryar")) subject = "نوزاد/مادر"
-  else if (serviceTypes.includes("parastar") || serviceTypes.includes("behyar")) subject = "بیمار"
+  const subjects: string[] = []
+  if (serviceTypes.includes("salmandyar")) subjects.push("سالمند")
+  if (serviceTypes.includes("madaryar")) {
+    // مادریار شامل نوزاد و کودک است — واژه از روی زیرشاخه‌ی انتخابی.
+    const subs = serviceSubtypes.madaryar ?? []
+    const hasNewborn = subs.includes("newborn")
+    const hasChild = subs.some((x) => x !== "newborn")
+    if (hasNewborn && hasChild) subjects.push("نوزاد/کودک")
+    else if (hasChild) subjects.push("کودک")
+    else if (hasNewborn) subjects.push("نوزاد")
+    else subjects.push("نوزاد/کودک")
+  }
+  if (serviceTypes.includes("parastar") || serviceTypes.includes("behyar")) subjects.push("بیمار")
+  const subject = subjects.length > 0 ? subjects.join(" / ") : "کارفرما"
   return COLLABORATION_TYPE
     .filter((c) => !(cleanerOnly && c[0] === "hospital_companion"))
     .map((c) => (c[0] === "home_companion" ? [c[0], `همراهی در منزل ${subject}`] as Choice : c))
