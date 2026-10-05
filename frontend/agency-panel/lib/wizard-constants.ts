@@ -882,6 +882,9 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "toileting_hygiene_assistance_ok", label: "آمادگی برای کمک در طهارت و نظافت فردی سالمند", type: "bool" },
       { key: "bedpan_assistance_ok", label: "آیا مشکلی با کمک به سالمند نیازمند استفاده از لگن جهت امور شخصی دارید؟", type: "bool" },
       { key: "park_outing_accompaniment_ok", label: "آمادگی برای همراهی سالمند در پیاده‌روی و پارک", type: "bool" },
+      // همدمی — فقط به معنای هم‌صحبتی و همراهی روحی/عاطفی در چارچوب
+      // کار مراقبتی؛ صریح و شفاف پرسیده می‌شود.
+      { key: "emotional_companionship_ok", label: "آمادگی برای همدمی و هم‌صحبتی با سالمند (گفتگو، همراهی در اوقات فراغت، حضور عاطفی در چارچوب کار مراقبتی)", type: "bool" },
       { key: "willing_to_relocate_other_cities", label: "آمادگی برای کار در شهرهای دیگر (محل کار دائم)", type: "bool" },
       { key: "ok_with_second_elderly_spouse_present", label: "آمادگی برای مراقبت در حضور همسر سالمند (زوج سالمند)", type: "bool" },
       // مراقبت شخصی — موارد حساس‌تر با مقیاس تجربه چهارسطحی به‌جای
