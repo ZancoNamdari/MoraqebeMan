@@ -28,7 +28,7 @@ import type {
   SkillsFormData, WorkPreferencesFormData,
 } from "@/types/caregiver"
 
-const STEPS = ["اطلاعات پایه", "فرم ۱ — هویتی", "فرم ۲ — شرایط همکاری", "فرم ۳ — سوابق و مهارت", "فرم ۴ — معرف‌ها", "پرسشنامه سازگاری (اختیاری)"]
+const STEPS = ["اطلاعات پایه", "فرم ۱ — هویتی", "فرم ۲ — شرایط همکاری", "فرم ۳ — سوابق و مهارت", "فرم ۴ — معرف‌ها", "فرم ۵ — پرسشنامه سازگاری"]
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -713,7 +713,9 @@ function NewCaregiverWizardInner() {
         )}
 
         {step === 5 && (
-          <div className="space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">🧩</span> فرم ۵ — پرسشنامه سازگاری</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
             {CAREGIVER_QUESTIONNAIRE.map((section) => (
               <FormSection key={section.title} title={section.title}>
                   {section.questions.map((q) => (
@@ -737,7 +739,8 @@ function NewCaregiverWizardInner() {
                   ))}
                 </FormSection>
             ))}
-          </div>
+            </CardContent>
+          </Card>
         )}
       </main>
 

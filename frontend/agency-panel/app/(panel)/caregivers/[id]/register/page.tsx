@@ -37,7 +37,7 @@ import type {
 // from the Kanban card ("+ افزودن خدمت‌دهنده" in caregivers/page.tsx),
 // so there's no "step 0: create account" branch to a brand-new id;
 // step 0 here is edit-only (fixing a typo in the name/phone).
-const STEPS = ["اطلاعات پایه", "نوع خدمت", "فرم ۱ — هویتی", "فرم ۲ — شرایط همکاری", "فرم ۳ — سوابق و مهارت", "فرم ۴ — معرف‌ها", "پرسشنامه سازگاری (اختیاری)"]
+const STEPS = ["اطلاعات پایه", "نوع خدمت", "فرم ۱ — هویتی", "فرم ۲ — شرایط همکاری", "فرم ۳ — سوابق و مهارت", "فرم ۴ — معرف‌ها", "فرم ۵ — پرسشنامه سازگاری"]
 
 // service type -> its subtype choice list (SALMANDYAR has none —
 // it's the original, already-built flow with no subtypes of its own).
@@ -977,7 +977,9 @@ export default function CaregiverRegistrationWizard() {
         )}
 
         {step === 6 && (
-          <div className="space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">🧩</span> فرم ۵ — پرسشنامه سازگاری</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
             {CAREGIVER_QUESTIONNAIRE.map((section) => (
               <FormSection key={section.title} title={section.title}>
                   {/* clinical_compatibility_level ("رعایت دستورات پزشکی و شرایط
@@ -1046,7 +1048,8 @@ export default function CaregiverRegistrationWizard() {
                   </FormSection>
               )
             })}
-          </div>
+            </CardContent>
+          </Card>
         )}
       </main>
 
