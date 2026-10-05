@@ -39,6 +39,7 @@ export interface IdentityFormData {
   ethnicity_details: Record<string, string[]>
   is_non_iranian_national: boolean | null
   nationality_country: string
+  nationality_country_other: string
   has_chronic_disease: boolean
   chronic_disease_types: string[]
   chronic_disease_detail: string

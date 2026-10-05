@@ -93,6 +93,20 @@ class ChildAccompanyAtWork(models.TextChoices):
     INDIFFERENT = "indifferent", "فرقی ندارد"
 
 
+class NationalityCountry(models.TextChoices):
+    """کشور تابعیت برای اتباع غیرایرانی — «سایر» با متن آزاد (nationality_country_other)."""
+    AFGHANISTAN = "afghanistan", "افغانستان"
+    PAKISTAN = "pakistan", "پاکستان"
+    IRAQ = "iraq", "عراق"
+    SYRIA = "syria", "سوریه"
+    LEBANON = "lebanon", "لبنان"
+    TURKMENISTAN = "turkmenistan", "ترکمنستان"
+    AZERBAIJAN = "azerbaijan", "آذربایجان"
+    TAJIKISTAN = "tajikistan", "تاجیکستان"
+    TURKEY = "turkey", "ترکیه"
+    OTHER = "other", "سایر"
+
+
 class MilitaryStatus(models.TextChoices):
     """Only relevant when gender == MALE — enforced in the serializer, not the DB."""
     NOT_SERVED = "not_served", "مشمول (هنوز به خدمت نرفته)"

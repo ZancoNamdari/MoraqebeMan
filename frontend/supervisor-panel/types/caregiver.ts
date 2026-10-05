@@ -38,6 +38,7 @@ export interface IdentityFormData {
   child_accompany_at_work: string
   is_non_iranian_national: boolean | null
   nationality_country: string
+  nationality_country_other: string
   has_chronic_disease: boolean
   chronic_disease_types: string[]
   takes_permanent_medication: boolean

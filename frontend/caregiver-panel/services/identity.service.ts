@@ -20,6 +20,7 @@ export interface MyIdentityProfile {
   age?: number | null
   is_non_iranian_national?: boolean | null
   nationality_country?: string
+  nationality_country_other?: string
   has_chronic_disease?: boolean | null
   chronic_disease_types?: string[]
   takes_permanent_medication?: boolean | null

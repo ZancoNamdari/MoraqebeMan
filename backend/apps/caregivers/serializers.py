@@ -171,7 +171,7 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
             "father_name", "national_id", "birth_certificate_number",
             "birth_date", "gender", "marital_status", "children_count", "military_status",
             "height_range", "weight_range", "ethnicities", "ethnicity_details", "age",
-            "is_non_iranian_national", "nationality_country", "nursing_license_number",
+            "is_non_iranian_national", "nationality_country", "nationality_country_other", "nursing_license_number",
             "has_chronic_disease", "chronic_disease_types", "chronic_disease_detail",
             "takes_permanent_medication", "medication_types", "medication_detail", "psychiatric_medication_detail",
             "emergency_contact_phone", "emergency_contact_relation", "landline_phone", "extra_phone_numbers",
@@ -228,6 +228,15 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
         caring = attrs.get("currently_caring_for_own_child", getattr(self.instance, "currently_caring_for_own_child", None))
         if not (has_children and caring):
             attrs["child_accompany_at_work"] = ""
+
+        # کشور تابعیت فقط برای اتباع؛ متن «سایر» فقط وقتی کشور = سایر.
+        non_iranian = attrs.get("is_non_iranian_national", getattr(self.instance, "is_non_iranian_national", None))
+        country = attrs.get("nationality_country", getattr(self.instance, "nationality_country", ""))
+        if not non_iranian:
+            attrs["nationality_country"] = ""
+            attrs["nationality_country_other"] = ""
+        elif country != "other":
+            attrs["nationality_country_other"] = ""
 
         has_chronic_disease = attrs.get("has_chronic_disease", getattr(self.instance, "has_chronic_disease", None))
         chronic_disease_types = attrs.get("chronic_disease_types", getattr(self.instance, "chronic_disease_types", None))

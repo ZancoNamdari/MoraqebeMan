@@ -59,6 +59,19 @@ export const CHILD_ACCOMPANY_AT_WORK: Choice[] = [
   ["indifferent", "فرقی ندارد"],
 ]
 
+export const NATIONALITY_COUNTRY: Choice[] = [
+  ["afghanistan", "افغانستان"],
+  ["pakistan", "پاکستان"],
+  ["iraq", "عراق"],
+  ["syria", "سوریه"],
+  ["lebanon", "لبنان"],
+  ["turkmenistan", "ترکمنستان"],
+  ["azerbaijan", "آذربایجان"],
+  ["tajikistan", "تاجیکستان"],
+  ["turkey", "ترکیه"],
+  ["other", "سایر"],
+]
+
 export const MILITARY_STATUS: Choice[] = [
   ["not_served", "مشمول (هنوز به خدمت نرفته)"],
   ["in_service", "در حال خدمت"],

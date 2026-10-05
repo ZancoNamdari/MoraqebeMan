@@ -14,7 +14,7 @@ import { identityService, type MyIdentityProfile } from "@/services/identity.ser
 import { locationService } from "@/services/location.service"
 import type { Province, City, District } from "@/types/location"
 import {
-  GENDER, MARITAL_STATUS, CHILDREN_COUNT, CHILD_ACCOMPANY_AT_WORK, MILITARY_STATUS, HEIGHT_RANGE, WEIGHT_RANGE,
+  GENDER, MARITAL_STATUS, CHILDREN_COUNT, CHILD_ACCOMPANY_AT_WORK, NATIONALITY_COUNTRY, MILITARY_STATUS, HEIGHT_RANGE, WEIGHT_RANGE,
   CHRONIC_DISEASE_TYPE, MEDICATION_TYPE,
 } from "@/lib/constants"
 import { parseJalaliDate, formatJalaliDate, daysInJalaliMonth, PERSIAN_MONTH_LIST, JALALI_YEAR_RANGE, jalaliAge } from "@/lib/jalali"
@@ -24,7 +24,7 @@ const emptyForm: MyIdentityProfile = {
   full_name: "", father_name: "", birth_certificate_number: "",
   extra_phone_numbers: [],
   birth_date: null, gender: "", marital_status: "", children_count: "", military_status: "",
-  height_range: "", weight_range: "", ethnicities: [], ethnicity_details: {}, is_non_iranian_national: null, nationality_country: "",
+  height_range: "", weight_range: "", ethnicities: [], ethnicity_details: {}, is_non_iranian_national: null, nationality_country: "", nationality_country_other: "",
   has_chronic_disease: null, chronic_disease_types: [],
   takes_permanent_medication: null, medication_types: [],
   emergency_contact_phone: "", emergency_contact_relation: "", landline_phone: "",
@@ -147,7 +147,10 @@ export default function IdentityFormPage() {
               <Field label="آیا تابعیت غیرایرانی (اتباع) دارید؟"><YesNo value={form.is_non_iranian_national ?? null} onChange={(v) => set("is_non_iranian_national", v)} /></Field>
               {form.is_non_iranian_national && (
                 <>
-                  <Field label="اهل کدام کشور هستید؟"><Input value={form.nationality_country || ""} onChange={(e) => set("nationality_country", e.target.value)} /></Field>
+                  <Field label="اهل کدام کشور هستید؟"><ChoiceSelect choices={NATIONALITY_COUNTRY} value={form.nationality_country || ""} onChange={(v) => { set("nationality_country", v); if (v !== "other") set("nationality_country_other", "") }} /></Field>
+                  {form.nationality_country === "other" && (
+                    <Field label="نام کشور را بنویسید"><Input value={form.nationality_country_other || ""} onChange={(e) => set("nationality_country_other", e.target.value)} /></Field>
+                  )}
                   <p className="-mt-2 text-xs text-muted-foreground">مدارک پاسپورت/اقامت را از طریق پشتیبانی یا پنل آژانس ارسال کنید.</p>
                 </>
               )}

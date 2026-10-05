@@ -32,6 +32,7 @@ from .choices import (
     WorkStatus,
     ChildrenCount,
     ChildAccompanyAtWork,
+    NationalityCountry,
 )
 
 
@@ -97,7 +98,11 @@ class IdentityProfile(models.Model):
     # بله، آپلود مدارک (پاسپورت/اقامت) از طریق چک‌لیست مدارک پنل آژانس
     # انجام می‌شود (CaregiverDocumentType.RESIDENCY_DOCUMENTS).
     is_non_iranian_national = models.BooleanField(null=True, blank=True, default=False, verbose_name="تابعیت غیرایرانی (اتباع) دارد")
-    nationality_country = models.CharField(max_length=100, blank=True, verbose_name="اهل کدام کشور است", help_text="فقط در صورت تابعیت غیرایرانی.")
+    nationality_country = models.CharField(
+        max_length=100, choices=NationalityCountry.choices, blank=True,
+        verbose_name="اهل کدام کشور است", help_text="فقط در صورت تابعیت غیرایرانی. «سایر» ⇒ nationality_country_other.",
+    )
+    nationality_country_other = models.CharField(max_length=100, blank=True, verbose_name="کشور (سایر)", help_text="فقط وقتی nationality_country=other.")
     # فقط برای پرستار پرسیده می‌شود — قبلاً در service_specific_answers
     # پرستار بود، به فرم ۱ منتقل شد.
     nursing_license_number = models.CharField(max_length=50, blank=True, verbose_name="شماره پروانه نظام پرستاری")

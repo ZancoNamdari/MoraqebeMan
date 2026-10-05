@@ -98,6 +98,18 @@ class IdentityEthnicityAndAgeTests(TestCase):
         self.assertEqual(ident.ethnicities, ["other", "fars"])
         self.assertEqual(ident.ethnicity_details, {"fars": ["other", "tehrani"]})
 
+    def test_nationality_free_text_maps_to_choice_or_other(self):
+        m = importlib.import_module("apps.caregivers.migrations.0037_map_nationality_country")
+        a = self._identity(5, nationality_country="افغانستان")
+        b = self._identity(6, nationality_country="اهل هند")
+        c = self._identity(7, nationality_country="iraq")
+        m.forwards(django_apps, None)
+        for o in (a, b, c):
+            o.refresh_from_db()
+        self.assertEqual((a.nationality_country, a.nationality_country_other), ("afghanistan", ""))
+        self.assertEqual((b.nationality_country, b.nationality_country_other), ("other", "اهل هند"))
+        self.assertEqual((c.nationality_country, c.nationality_country_other), ("iraq", ""))
+
     def test_serializer_validates_subgroups_and_drops_unselected_main(self):
         from apps.caregivers.serializers import IdentityProfileSerializer
         ok = IdentityProfileSerializer(data={
