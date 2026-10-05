@@ -64,6 +64,11 @@ class IdentityProfile(models.Model):
     # از رشته‌ها، نه فقط یک شماره ثابت.
     extra_phone_numbers = models.JSONField(default=list, blank=True, verbose_name="سایر شماره‌های تماس")
     birth_date = jmodels.jDateField(null=True, blank=True, verbose_name="تاریخ تولد")
+    # سنِ تمام‌شده — از birth_date در هر save() محاسبه و ذخیره می‌شود تا در
+    # تطبیق (matching) و فیلترها مستقیماً قابل استفاده باشد. با گذر زمان
+    # (تولد بعدی) تا save بعدی ثابت می‌ماند؛ refresh_caregiver_ages این را
+    # برای همه به‌روز می‌کند.
+    age = models.PositiveSmallIntegerField(null=True, blank=True, editable=False, verbose_name="سن")
     gender = models.CharField(max_length=10, choices=Gender.choices, blank=True, verbose_name="جنسیت")
     marital_status = models.CharField(max_length=20, choices=MaritalStatus.choices, blank=True, verbose_name="وضعیت تأهل")
     children_count = models.CharField(max_length=20, choices=ChildrenCount.choices, blank=True, verbose_name="تعداد فرزندان")
@@ -79,6 +84,9 @@ class IdentityProfile(models.Model):
     height_range = models.CharField(max_length=20, choices=HeightRange.choices, blank=True, verbose_name="قد")
     weight_range = models.CharField(max_length=20, choices=WeightRange.choices, blank=True, verbose_name="وزن")
     ethnicities = models.JSONField(default=list, blank=True, verbose_name="قومیت / زبان مادری")
+    # زیرگروه (اهل کجا) هر قومیت اصلی: {"turk": ["tabrizi", "zanjani"], ...} —
+    # مقادیر معتبر در choices.ETHNICITY_SUBGROUPS. برای تطبیق ذخیره می‌شود.
+    ethnicity_details = models.JSONField(default=dict, blank=True, verbose_name="زیرگروه قومیت")
     # اتباع — پرسیده می‌شود برای همه نوع خدمت، نه فقط نظافت‌چی؛ در صورت
     # بله، آپلود مدارک (پاسپورت/اقامت) از طریق چک‌لیست مدارک پنل آژانس
     # انجام می‌شود (CaregiverDocumentType.RESIDENCY_DOCUMENTS).
@@ -124,6 +132,22 @@ class IdentityProfile(models.Model):
         return (
         self.user.get_full_name().strip()
         or self.user.username )
+
+    def compute_age(self):
+        """سن تمام‌شده بر پایه‌ی تاریخ شمسی امروز؛ None اگر تاریخ تولد نباشد."""
+        import jdatetime
+        if not self.birth_date:
+            return None
+        today = jdatetime.date.today()
+        age = today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+        return age if age >= 0 else None
+
+    def save(self, *args, **kwargs):
+        self.age = self.compute_age()
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and "birth_date" in update_fields and "age" not in update_fields:
+            kwargs["update_fields"] = [*update_fields, "age"]
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.full_name

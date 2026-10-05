@@ -8,6 +8,7 @@ from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, Collaboration
                       CommunicationSkill, CaregivingSkill, MobilityAssistanceAbility,
                       HouseholdSkill, ForeignLanguage, LocalLanguage,
                       PreviousWorkplace, SpecialConditionExperience, TrainingCourse, Gender,
+                      Ethnicity, ETHNICITY_SUBGROUPS,
                       ServiceType, NezafatchiSubtype, MadaryarSubtype,
                       ParastarSubtype, ParastarSpecialty, BehyarSubtype)
 from .models import (CaregiverWorkPreferences, CaregiverServiceArea, CaregiverExperience,
@@ -169,7 +170,7 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
             "full_name",
             "father_name", "national_id", "birth_certificate_number",
             "birth_date", "gender", "marital_status", "children_count", "military_status",
-            "height_range", "weight_range", "ethnicities",
+            "height_range", "weight_range", "ethnicities", "ethnicity_details", "age",
             "is_non_iranian_national", "nationality_country", "nursing_license_number",
             "has_chronic_disease", "chronic_disease_types", "chronic_disease_detail",
             "takes_permanent_medication", "medication_types", "medication_detail", "psychiatric_medication_detail",
@@ -178,9 +179,38 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
             "has_children", "currently_caring_for_own_child",
             "created_at", "updated_at",
         ]
-        read_only_fields = ["created_at", "updated_at"]
+        read_only_fields = ["age", "created_at", "updated_at"]
+
+    def validate_ethnicities(self, value):
+        valid = {c[0] for c in Ethnicity.choices}
+        invalid = [v for v in (value or []) if v not in valid]
+        if invalid:
+            raise serializers.ValidationError(f"قومیت نامعتبر: {invalid}")
+        return value
+
+    def validate_ethnicity_details(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("ساختار زیرگروه قومیت باید دیکشنری باشد.")
+        cleaned = {}
+        for main, subs in value.items():
+            if main not in ETHNICITY_SUBGROUPS:
+                raise serializers.ValidationError(f"قومیت نامعتبر: {main}")
+            if not isinstance(subs, list):
+                raise serializers.ValidationError(f"زیرگروه‌های {main} باید فهرست باشد.")
+            allowed = {c[0] for c in ETHNICITY_SUBGROUPS[main]}
+            invalid = [x for x in subs if x not in allowed]
+            if invalid:
+                raise serializers.ValidationError(f"زیرگروه نامعتبر برای {main}: {invalid}")
+            if subs:
+                cleaned[main] = subs
+        return cleaned
 
     def validate(self, attrs):
+        # زیرگروهِ قومیتی که در ethnicities انتخاب نشده نگه داشته نمی‌شود.
+        if "ethnicity_details" in attrs:
+            mains = attrs.get("ethnicities", getattr(self.instance, "ethnicities", None)) or []
+            attrs["ethnicity_details"] = {k: v for k, v in attrs["ethnicity_details"].items() if k in mains}
+
         # Conditional rules straight from the form itself, enforced
         # server-side (not just hidden client-side): military_status
         # only makes sense for gender=male; the "type" sub-fields are

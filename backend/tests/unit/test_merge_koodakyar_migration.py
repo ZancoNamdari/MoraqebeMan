@@ -59,3 +59,44 @@ class MergeKoodakyarIntoMadaryarTests(TestCase):
         p.refresh_from_db()
         self.assertEqual(p.service_types, ["salmandyar"])
         self.assertEqual(p.service_subtypes, {})
+
+
+class IdentityEthnicityAndAgeTests(TestCase):
+    def _identity(self, n, **kw):
+        from apps.caregivers.models import IdentityProfile
+        user = get_user_model().objects.create(phone_number=f"0912333000{n}", username=f"e{n}")
+        return IdentityProfile.objects.create(user=user, **kw)
+
+    def test_age_is_computed_and_stored_on_save(self):
+        import jdatetime
+        today = jdatetime.date.today()
+        ident = self._identity(1, birth_date=jdatetime.date(today.year - 30, today.month, today.day))
+        ident.refresh_from_db()
+        self.assertEqual(ident.age, 30)
+        ident.birth_date = jdatetime.date(today.year - 31, today.month, today.day)
+        ident.save()
+        ident.refresh_from_db()
+        self.assertEqual(ident.age, 31)
+
+    def test_age_none_without_birth_date(self):
+        self.assertIsNone(self._identity(2).age)
+
+    def test_old_turk_values_migrate_to_main_group_plus_subgroup(self):
+        m = importlib.import_module("apps.caregivers.migrations.0033_migrate_ethnicity_and_backfill_age")
+        ident = self._identity(3, ethnicities=["turk_tabriz", "turk_zanjan", "kurd", "turk_other"])
+        m.forwards(django_apps, None)
+        ident.refresh_from_db()
+        self.assertEqual(ident.ethnicities, ["turk", "kurd"])
+        self.assertEqual(ident.ethnicity_details, {"turk": ["tabrizi", "zanjani"]})
+
+    def test_serializer_validates_subgroups_and_drops_unselected_main(self):
+        from apps.caregivers.serializers import IdentityProfileSerializer
+        ok = IdentityProfileSerializer(data={
+            "ethnicities": ["turk", "kurd"],
+            "ethnicity_details": {"turk": ["tabrizi"], "kurd": ["sanandaji"], "lor": ["lak"]},
+        }, partial=True)
+        self.assertTrue(ok.is_valid(), ok.errors)
+        # «lor» انتخاب نشده بود، پس زیرگروهش نگه داشته نمی‌شود
+        self.assertEqual(ok.validated_data["ethnicity_details"], {"turk": ["tabrizi"], "kurd": ["sanandaji"]})
+        bad = IdentityProfileSerializer(data={"ethnicities": ["turk"], "ethnicity_details": {"turk": ["nope"]}}, partial=True)
+        self.assertFalse(bad.is_valid())

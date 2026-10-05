@@ -113,21 +113,97 @@ class WeightRange(models.TextChoices):
 
 
 class Ethnicity(models.TextChoices):
-    """Multi-select in the form — stored as a JSON list of these values."""
+    """قومیت اصلی (سطح اول). Multi-select — stored as a JSON list of these
+    values in IdentityProfile.ethnicities. هر قومیت اصلی زیرگروه‌های خودش را
+    دارد (ETHNICITY_SUBGROUPS)؛ زیرگروه‌های انتخابی در
+    IdentityProfile.ethnicity_details به‌شکل {قومیت: [زیرگروه‌ها]} ذخیره می‌شوند."""
     FARS = "fars", "فارس"
-    # قومیت ترک به‌جای یک گزینه کلی، به شهر مرتبط می‌شود.
-    TURK_TABRIZ = "turk_tabriz", "ترک تبریزی"
-    TURK_ZANJAN = "turk_zanjan", "ترک زنجانی"
-    TURK_ARDABIL = "turk_ardabil", "ترک اردبیلی"
-    TURK_OTHER = "turk_other", "سایر مناطق ترک‌نشین (آذری)"
+    TURK = "turk", "آذری/ترک"
     KURD = "kurd", "کرد"
     LOR = "lor", "لر"
     GILAK = "gilak", "گیلک"
     MAZANDARANI = "mazandarani", "مازندرانی"
     BALOCH = "baloch", "بلوچ"
-    ARAB = "arab", "عرب"
+    ARAB = "arab", "عرب خوزستان"
     TURKMEN = "turkmen", "ترکمن"
+    TALESH = "talesh", "تالشی"
+    TAT = "tat", "تات"
+    ARMENIAN = "armenian", "ارمنی"
+    ASSYRIAN = "assyrian", "آشوری"
+    JEWISH = "jewish", "یهودی ایرانی"
+    QASHQAI = "qashqai", "قشقایی"
+    BAKHTIARI = "bakhtiari", "بختیاری"
     OTHER = "other", "سایر"
+
+
+# زیرگروه‌های هر قومیت اصلی (سطح دوم) — «اهل کجا». کلیدها پایدارند و برای
+# تطبیق (matching) استفاده می‌شوند؛ فرانت‌اند همین فهرست را بازنویسی کرده
+# (ETHNICITY_SUBGROUPS در wizard-constants.ts و ...)، هم‌گام نگه دارید.
+ETHNICITY_SUBGROUPS = {
+    "fars": [
+        ("tehrani", "تهرانی"), ("khorasani", "خراسانی"), ("isfahani", "اصفهانی"), ("shirazi", "شیرازی"),
+        ("yazdi", "یزدی"), ("kermani", "کرمانی"), ("qomi", "قمی"), ("kashani", "کاشانی"),
+        ("gilaki_neighbor", "گیلکی‌مجاور"), ("other", "سایر"),
+    ],
+    "turk": [
+        ("tabrizi", "تبریزی"), ("ardabili", "اردبیلی"), ("urmiaei", "ارومیه‌ای"), ("zanjani", "زنجانی"),
+        ("qazvini", "قزوینی"), ("hamedani", "همدانی"), ("maraghei", "مراغه‌ای"), ("khoyi", "خویی"),
+        ("mianei", "میانه‌ای"), ("other", "سایر"),
+    ],
+    "kurd": [
+        ("sanandaji", "سنندجی"), ("kermanshahi", "کرمانشاهی"), ("marivani", "مریوانی"), ("saqqezi", "سقزی"),
+        ("baneh", "بانه‌ای"), ("mahabadi", "مهابادی"), ("ilami", "ایلامی"), ("other", "سایر"),
+    ],
+    "lor": [
+        ("lorestani", "لرستانی"), ("khorramabadi", "خرم‌آبادی"), ("boroujerdi", "بروجردی"), ("lak", "لک"),
+        ("bakhtiari", "بختیاری"), ("mamasani", "ممسنی"), ("other", "سایر"),
+    ],
+    "gilak": [
+        ("rashti", "رشتی"), ("lahijani", "لاهیجانی"), ("fomani", "فومنی"), ("roudsari", "رودسری"),
+        ("anzali", "انزلی‌ای"), ("other", "سایر"),
+    ],
+    "mazandarani": [
+        ("sari", "ساروی"), ("babol", "بابلی"), ("amol", "آملی"), ("ghaemshahr", "قائمشهری"),
+        ("nowshahr", "نوشهری"), ("chalus", "چالوسی"), ("other", "سایر"),
+    ],
+    "baloch": [
+        ("zahedani", "زاهدانی"), ("saravani", "سراوانی"), ("chabahari", "چابهاری"),
+        ("iranshahri", "ایرانشهری"), ("nikshahri", "نیکشهری"), ("other", "سایر"),
+    ],
+    "arab": [
+        ("ahvazi", "اهوازی"), ("abadani", "آبادانی"), ("khorramshahri", "خرمشهری"), ("shadegani", "شادگانی"),
+        ("dezful_shushtar_arab", "دزفولی/شوشتریِ عرب‌مجاور"), ("other", "سایر"),
+    ],
+    "turkmen": [
+        ("gonbad", "گنبدی"), ("bandar_turkmen", "بندرترکمن"), ("aqqala", "آق‌قلا"), ("kalaleh", "کلاله"),
+        ("other", "سایر"),
+    ],
+    "talesh": [
+        ("talesh_north", "تالش شمالی"), ("asalem", "اسالم"), ("masal", "ماسال"),
+        ("surrounding_areas", "مناطق اطراف"), ("other", "سایر"),
+    ],
+    "tat": [
+        ("qazvin_takestan", "قزوین/تاکستان"), ("alborz_zanjan_areas", "برخی مناطق البرز و زنجان"), ("other", "سایر"),
+    ],
+    "armenian": [
+        ("tehran", "ارمنی‌های تهران"), ("isfahan", "ارمنی‌های اصفهان"), ("azerbaijan", "ارمنی‌های آذربایجان"),
+        ("other", "سایر"),
+    ],
+    "assyrian": [
+        ("northwest", "شمال‌غرب"), ("tehran", "تهران"), ("other", "سایر"),
+    ],
+    "jewish": [
+        ("tehran", "تهران"), ("shiraz", "شیراز"), ("isfahan", "اصفهان"), ("other", "سایر"),
+    ],
+    "qashqai": [
+        ("shiraz", "شیراز"), ("firuzabad", "فیروزآباد"), ("kazerun", "کازرون"),
+        ("nomadic_rural_fars", "مناطق کوچ‌نشین/روستایی فارس"), ("other", "سایر"),
+    ],
+    "bakhtiari": [
+        ("chaharmahal", "چهارمحال"), ("masjed_soleyman", "مسجدسلیمان"), ("izeh", "ایذه"),
+        ("lordegan", "لردگان"), ("other", "سایر"),
+    ],
+}
 
 
 class ChronicDiseaseType(models.TextChoices):

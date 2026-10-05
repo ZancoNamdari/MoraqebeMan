@@ -11,6 +11,7 @@ import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/wizard-f
 import { LocationPicker } from "@/components/wizard-forms/location-picker"
 import { JalaliDatePicker } from "@/components/wizard-forms/jalali-date-picker"
 import { FormSection } from "@/components/wizard-forms/form-section"
+import { EthnicityPicker } from "@/components/wizard-forms/ethnicity-picker"
 import { jalaliAge } from "@/lib/jalali"
 import { ErrorSummary } from "@/components/wizard-forms/error-summary"
 import { StepIndicator } from "@/components/wizard-forms/step-indicator"
@@ -66,7 +67,7 @@ const EMPTY_IDENTITY: IdentityFormData = {
   nursing_license_number: "", extra_phone_numbers: [],
   birth_date: "", gender: "", marital_status: "", children_count: "",
   has_children: null, currently_caring_for_own_child: null, military_status: null,
-  height_range: "", weight_range: "", ethnicities: [], is_non_iranian_national: null, nationality_country: "",
+  height_range: "", weight_range: "", ethnicities: [], ethnicity_details: {}, is_non_iranian_national: null, nationality_country: "",
   has_chronic_disease: false, chronic_disease_types: [], chronic_disease_detail: "",
   takes_permanent_medication: false, medication_types: [], medication_detail: "", psychiatric_medication_detail: "",
   emergency_contact_phone: "", emergency_contact_relation: "", landline_phone: "",
@@ -572,6 +573,13 @@ export default function CaregiverRegistrationWizard() {
                 {jalaliAge(identity.birth_date) !== null && (
                   <p className="-mt-2 text-sm text-muted-foreground">سن: {jalaliAge(identity.birth_date)!.toLocaleString("fa-IR")} سال</p>
                 )}
+                <Field label="قومیت / زبان مادری">
+                  <EthnicityPicker
+                    ethnicities={identity.ethnicities}
+                    details={identity.ethnicity_details}
+                    onChange={(v) => setIdentity({ ...identity, ...v })}
+                  />
+                </Field>
                 <Field label="آیا تابعیت غیرایرانی (اتباع) دارید؟"><YesNo value={identity.is_non_iranian_national} onChange={(v) => setIdentity({ ...identity, is_non_iranian_national: v })} /></Field>
                 {identity.is_non_iranian_national && (
                   <>
@@ -621,24 +629,6 @@ export default function CaregiverRegistrationWizard() {
 
               <FormSection title="اطلاعات تماس">
                 <Field label="شماره تماس‌های دیگر"><Input value={identity.emergency_contact_phone} onChange={(e) => setIdentity({ ...identity, emergency_contact_phone: e.target.value })} dir="ltr" /></Field>
-              </FormSection>
-
-              <FormSection title="اطلاعات محل سکونت">
-                <LocationPicker
-                  province={identity.province}
-                  city={identity.city}
-                  district={identity.district}
-                  onChange={(v) => setIdentity({ ...identity, ...v })}
-                />
-                <Field label="کد پستی"><Input value={identity.postal_code} onChange={(e) => setIdentity({ ...identity, postal_code: e.target.value })} dir="ltr" /></Field>
-                <Field label="نشانی کامل"><Textarea value={identity.full_address} onChange={(e) => setIdentity({ ...identity, full_address: e.target.value })} /></Field>
-              </FormSection>
-
-              <FormSection title="اطلاعات تکمیلی">
-                <Field label="قومیت / زبان مادری"><CheckboxGroup choices={C.ETHNICITY} value={identity.ethnicities} onChange={(v) => setIdentity({ ...identity, ethnicities: v })} /></Field>
-                {identity.has_children && (
-                  <Field label="آیا در حال حاضر در حال مراقبت از فرزند خودتان هستید یا نیازی به مراقبت شما ندارد؟"><YesNo value={identity.currently_caring_for_own_child} onChange={(v) => setIdentity({ ...identity, currently_caring_for_own_child: v })} /></Field>
-                )}
                 <Field label="تلفن ثابت"><Input value={identity.landline_phone} onChange={(e) => setIdentity({ ...identity, landline_phone: e.target.value })} dir="ltr" /></Field>
                 <div>
                   <p className="mb-1.5 text-sm font-medium text-foreground">سایر شماره‌های تماس</p>
@@ -669,6 +659,26 @@ export default function CaregiverRegistrationWizard() {
                     </Button>
                   </div>
                 </div>
+              </FormSection>
+
+              <FormSection title="اطلاعات محل سکونت">
+                <LocationPicker
+                  province={identity.province}
+                  city={identity.city}
+                  district={identity.district}
+                  onChange={(v) => setIdentity({ ...identity, ...v })}
+                />
+                <Field label="کد پستی"><Input value={identity.postal_code} onChange={(e) => setIdentity({ ...identity, postal_code: e.target.value })} dir="ltr" /></Field>
+                <Field label="نشانی کامل"><Textarea value={identity.full_address} onChange={(e) => setIdentity({ ...identity, full_address: e.target.value })} /></Field>
+              </FormSection>
+
+              <FormSection title="اطلاعات تکمیلی">
+                {!identity.has_children && (
+                  <p className="text-sm text-muted-foreground">فعلاً مورد تکمیلی‌ای برای نمایش نیست.</p>
+                )}
+                {identity.has_children && (
+                  <Field label="آیا در حال حاضر در حال مراقبت از فرزند خودتان هستید یا نیازی به مراقبت شما ندارد؟"><YesNo value={identity.currently_caring_for_own_child} onChange={(v) => setIdentity({ ...identity, currently_caring_for_own_child: v })} /></Field>
+                )}
               </FormSection>
             </CardContent>
           </Card>

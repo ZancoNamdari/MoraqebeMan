@@ -35,6 +35,7 @@ export interface IdentityFormData {
   height_range: string
   weight_range: string
   ethnicities: string[]
+  ethnicity_details: Record<string, string[]>
   is_non_iranian_national: boolean | null
   nationality_country: string
   has_chronic_disease: boolean

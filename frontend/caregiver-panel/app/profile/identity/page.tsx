@@ -9,12 +9,13 @@ import { Select } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/forms/fields"
 import { FormSection } from "@/components/forms/form-section"
+import { EthnicityPicker } from "@/components/forms/ethnicity-picker"
 import { identityService, type MyIdentityProfile } from "@/services/identity.service"
 import { locationService } from "@/services/location.service"
 import type { Province, City, District } from "@/types/location"
 import {
   GENDER, MARITAL_STATUS, CHILDREN_COUNT, MILITARY_STATUS, HEIGHT_RANGE, WEIGHT_RANGE,
-  ETHNICITY, CHRONIC_DISEASE_TYPE, MEDICATION_TYPE,
+  CHRONIC_DISEASE_TYPE, MEDICATION_TYPE,
 } from "@/lib/constants"
 import { parseJalaliDate, formatJalaliDate, daysInJalaliMonth, PERSIAN_MONTH_LIST, JALALI_YEAR_RANGE, jalaliAge } from "@/lib/jalali"
 import { ROUTES } from "@/lib/routes"
@@ -23,7 +24,7 @@ const emptyForm: MyIdentityProfile = {
   full_name: "", father_name: "", birth_certificate_number: "",
   extra_phone_numbers: [],
   birth_date: null, gender: "", marital_status: "", children_count: "", military_status: "",
-  height_range: "", weight_range: "", ethnicities: [], is_non_iranian_national: null, nationality_country: "",
+  height_range: "", weight_range: "", ethnicities: [], ethnicity_details: {}, is_non_iranian_national: null, nationality_country: "",
   has_chronic_disease: null, chronic_disease_types: [],
   takes_permanent_medication: null, medication_types: [],
   emergency_contact_phone: "", emergency_contact_relation: "", landline_phone: "",
@@ -136,6 +137,13 @@ export default function IdentityFormPage() {
               {jalaliAge(form.birth_date) !== null && (
                 <p className="-mt-2 text-sm text-muted-foreground">سن: {jalaliAge(form.birth_date)!.toLocaleString("fa-IR")} سال</p>
               )}
+              <Field label="قومیت / زبان مادری">
+                <EthnicityPicker
+                  ethnicities={form.ethnicities || []}
+                  details={form.ethnicity_details || {}}
+                  onChange={(v) => { setForm((prev) => ({ ...prev, ...v })); setSaved(false) }}
+                />
+              </Field>
               <Field label="آیا تابعیت غیرایرانی (اتباع) دارید؟"><YesNo value={form.is_non_iranian_national ?? null} onChange={(v) => set("is_non_iranian_national", v)} /></Field>
               {form.is_non_iranian_national && (
                 <>
@@ -181,42 +189,6 @@ export default function IdentityFormPage() {
 
             <FormSection title="اطلاعات تماس">
               <Field label="شماره تماس‌های دیگر"><Input dir="ltr" value={form.emergency_contact_phone} onChange={(e) => set("emergency_contact_phone", e.target.value)} /></Field>
-            </FormSection>
-
-            <FormSection title="اطلاعات محل سکونت">
-              <div className="grid grid-cols-3 gap-3">
-                <Field label="استان">
-                  <Select value={form.province ?? ""} onChange={(e) => { set("province", Number(e.target.value) || null); set("city", null); set("district", null) }}>
-                    <option value="">انتخاب کنید...</option>
-                    {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </Select>
-                </Field>
-                <Field label="شهر">
-                  <Select value={form.city ?? ""} onChange={(e) => { set("city", Number(e.target.value) || null); set("district", null) }} disabled={!form.province}>
-                    <option value="">انتخاب کنید...</option>
-                    {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </Select>
-                </Field>
-                <Field label="منطقه">
-                  <Select value={form.district ?? ""} onChange={(e) => set("district", Number(e.target.value) || null)} disabled={!form.city}>
-                    <option value="">انتخاب کنید...</option>
-                    {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </Select>
-                </Field>
-              </div>
-              <Field label="کد پستی"><Input dir="ltr" value={form.postal_code} onChange={(e) => set("postal_code", e.target.value)} /></Field>
-              <Field label="آدرس کامل"><Input value={form.full_address} onChange={(e) => set("full_address", e.target.value)} /></Field>
-            </FormSection>
-
-            <FormSection title="اطلاعات تکمیلی">
-              <Field label="قومیت (می‌توانید چند مورد انتخاب کنید)">
-                <CheckboxGroup choices={ETHNICITY} value={form.ethnicities || []} onChange={(v) => set("ethnicities", v)} />
-              </Field>
-              {form.has_children && (
-                <Field label="آیا در حال حاضر در حال مراقبت از فرزند خودتان هستید یا نیازی به مراقبت شما ندارد؟">
-                  <YesNo value={form.currently_caring_for_own_child ?? null} onChange={(v) => set("currently_caring_for_own_child", v)} />
-                </Field>
-              )}
               <Field label="تلفن ثابت"><Input dir="ltr" value={form.landline_phone} onChange={(e) => set("landline_phone", e.target.value)} /></Field>
               <Field label="سایر شماره‌های تماس">
                 <div className="space-y-2">
@@ -246,6 +218,42 @@ export default function IdentityFormPage() {
                   </Button>
                 </div>
               </Field>
+            </FormSection>
+
+            <FormSection title="اطلاعات محل سکونت">
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="استان">
+                  <Select value={form.province ?? ""} onChange={(e) => { set("province", Number(e.target.value) || null); set("city", null); set("district", null) }}>
+                    <option value="">انتخاب کنید...</option>
+                    {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </Select>
+                </Field>
+                <Field label="شهر">
+                  <Select value={form.city ?? ""} onChange={(e) => { set("city", Number(e.target.value) || null); set("district", null) }} disabled={!form.province}>
+                    <option value="">انتخاب کنید...</option>
+                    {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </Select>
+                </Field>
+                <Field label="منطقه">
+                  <Select value={form.district ?? ""} onChange={(e) => set("district", Number(e.target.value) || null)} disabled={!form.city}>
+                    <option value="">انتخاب کنید...</option>
+                    {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </Select>
+                </Field>
+              </div>
+              <Field label="کد پستی"><Input dir="ltr" value={form.postal_code} onChange={(e) => set("postal_code", e.target.value)} /></Field>
+              <Field label="آدرس کامل"><Input value={form.full_address} onChange={(e) => set("full_address", e.target.value)} /></Field>
+            </FormSection>
+
+            <FormSection title="اطلاعات تکمیلی">
+              {!form.has_children && (
+                <p className="text-sm text-muted-foreground">فعلاً مورد تکمیلی‌ای برای نمایش نیست.</p>
+              )}
+              {form.has_children && (
+                <Field label="آیا در حال حاضر در حال مراقبت از فرزند خودتان هستید یا نیازی به مراقبت شما ندارد؟">
+                  <YesNo value={form.currently_caring_for_own_child ?? null} onChange={(v) => set("currently_caring_for_own_child", v)} />
+                </Field>
+              )}
             </FormSection>
           </>
         )}
