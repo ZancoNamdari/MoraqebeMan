@@ -934,8 +934,12 @@ export default function CaregiverRegistrationWizard() {
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">📇</span> فرم ۴ — معرف‌ها</CardTitle><p className="text-sm text-muted-foreground">افزودن معرف اختیاری است — هر تعداد که در دسترس دارید کافی است.</p></CardHeader>
             <CardContent className="space-y-6">
               {references.map((ref, i) => (
-                <div key={i} className="space-y-3 rounded-md border p-3">
-                  <p className="text-sm font-semibold">معرف {i + 1}</p>
+                <FormSection
+                  key={i}
+                  title={ref.full_name ? `معرف ${i + 1} — ${ref.full_name}` : `معرف ${i + 1}`}
+                  defaultOpen={!ref.full_name && !ref.phone_number}
+                  hasError={!!(referenceFieldError(error, i, "full_name") || referenceFieldError(error, i, "phone_number"))}
+                >
                   <Field label="نام و نام خانوادگی" required error={referenceFieldError(error, i, "full_name")}>
                     <Input value={ref.full_name} onChange={(e) => updateReference(i, { full_name: e.target.value })} />
                   </Field>
@@ -958,7 +962,7 @@ export default function CaregiverRegistrationWizard() {
                   {references.length > 0 && (
                     <Button variant="ghost" size="sm" className="text-primary-strong hover:bg-secondary" onClick={() => setReferences(references.filter((_, idx) => idx !== i))}>حذف این معرف</Button>
                   )}
-                </div>
+                </FormSection>
               ))}
               {references.length === 0 && (
                 <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
@@ -975,9 +979,7 @@ export default function CaregiverRegistrationWizard() {
         {step === 6 && (
           <div className="space-y-4">
             {CAREGIVER_QUESTIONNAIRE.map((section) => (
-              <Card key={section.title}>
-                <CardHeader><CardTitle className="text-xl text-foreground">{section.title}</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
+              <FormSection key={section.title} title={section.title}>
                   {/* clinical_compatibility_level ("رعایت دستورات پزشکی و شرایط
                       درمانی سالمند") only makes sense when سالمندیار is one of
                       this caregiver's selected types — asking it of a pure
@@ -1002,8 +1004,7 @@ export default function CaregiverRegistrationWizard() {
                       </div>
                     </div>
                   ))}
-                </CardContent>
-              </Card>
+                </FormSection>
             ))}
             {serviceTypes.filter((t) => C.SERVICE_SPECIFIC_FORMS[t]?.questionnaire?.length).map((type) => {
               const typeLabel = C.ALL_SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
@@ -1018,9 +1019,7 @@ export default function CaregiverRegistrationWizard() {
               if (fields.length === 0) return null
               const typeAnswers = questionnaireAnswers.service_specific_answers?.[type] ?? {}
               return (
-                <Card key={type}>
-                  <CardHeader><CardTitle className="text-xl text-foreground">سازگاری مخصوص {typeLabel}</CardTitle></CardHeader>
-                  <CardContent className="space-y-3">
+                <FormSection key={type} title={`سازگاری مخصوص ${typeLabel}`}>
                     {fields.map((f) => (
                       <div key={f.key} className="rounded-lg border border-border p-3">
                         <p className="mb-4 text-lg font-medium">{f.label}</p>
@@ -1044,8 +1043,7 @@ export default function CaregiverRegistrationWizard() {
                         </div>
                       </div>
                     ))}
-                  </CardContent>
-                </Card>
+                  </FormSection>
               )
             })}
           </div>

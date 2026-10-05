@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Field, ChoiceSelect } from "@/components/forms/fields"
 import { referencesService, type Reference } from "@/services/references.service"
 import { REFERENCE_RELATION_TYPE, REFERENCE_ACQUAINTANCE_DURATION } from "@/lib/constants"
+import { FormSection } from "@/components/forms/form-section"
 import { ROUTES } from "@/lib/routes"
 
 const emptyReference: Reference = {
@@ -86,12 +87,11 @@ export default function ReferencesPage() {
             {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
             {references.map((ref, index) => (
-              <Card key={index} className="border-pink-100">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-sm text-rose-900">معرف {index + 1}</CardTitle>
-                  <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => removeReference(index)}>حذف</Button>
-                </CardHeader>
-                <CardContent className="space-y-3">
+              <FormSection
+                key={index}
+                title={ref.full_name ? `معرف ${index + 1} — ${ref.full_name}` : `معرف ${index + 1}`}
+                defaultOpen={!ref.full_name && !ref.phone_number}
+              >
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="نام کامل" required>
                       <Input value={ref.full_name} onChange={(e) => update(index, { full_name: e.target.value })} />
@@ -115,8 +115,8 @@ export default function ReferencesPage() {
                     <Checkbox checked={ref.callable_for_inquiry} onChange={(e) => update(index, { callable_for_inquiry: e.target.checked })} />
                     امکان تماس جهت استعلام وجود دارد
                   </label>
-                </CardContent>
-              </Card>
+                <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => removeReference(index)}>حذف این معرف</Button>
+              </FormSection>
             ))}
 
             <Button variant="outline" className="w-full border-pink-200 text-rose-700 hover:bg-pink-50" onClick={addReference}>

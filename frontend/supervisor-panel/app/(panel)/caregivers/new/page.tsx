@@ -670,8 +670,12 @@ function NewCaregiverWizardInner() {
                 />
               </Field>
               {references.map((ref, i) => (
-                <div key={i} className="space-y-3 rounded-md border p-3">
-                  <p className="text-sm font-semibold">معرف {i + 1}</p>
+                <FormSection
+                  key={i}
+                  title={ref.full_name ? `معرف ${i + 1} — ${ref.full_name}` : `معرف ${i + 1}`}
+                  defaultOpen={!ref.full_name && !ref.phone_number}
+                  hasError={!!(referenceFieldError(error, i, "full_name") || referenceFieldError(error, i, "phone_number"))}
+                >
                   <Field label="نام و نام خانوادگی" required error={referenceFieldError(error, i, "full_name")}>
                     <Input value={ref.full_name} onChange={(e) => updateReference(i, { full_name: e.target.value })} />
                   </Field>
@@ -694,7 +698,7 @@ function NewCaregiverWizardInner() {
                   {references.length > 0 && (
                     <Button variant="ghost" size="sm" className="text-primary-strong hover:bg-secondary" onClick={() => setReferences(references.filter((_, idx) => idx !== i))}>حذف این معرف</Button>
                   )}
-                </div>
+                </FormSection>
               ))}
               {references.length === 0 && (
                 <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
@@ -711,9 +715,7 @@ function NewCaregiverWizardInner() {
         {step === 5 && (
           <div className="space-y-4">
             {CAREGIVER_QUESTIONNAIRE.map((section) => (
-              <Card key={section.title}>
-                <CardHeader><CardTitle className="text-xl text-foreground">{section.title}</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
+              <FormSection key={section.title} title={section.title}>
                   {section.questions.map((q) => (
                     <div key={q.field} className="rounded-lg border border-border p-3">
                       <p className="mb-4 text-lg font-medium">{q.question}</p>
@@ -733,8 +735,7 @@ function NewCaregiverWizardInner() {
                       </div>
                     </div>
                   ))}
-                </CardContent>
-              </Card>
+                </FormSection>
             ))}
           </div>
         )}

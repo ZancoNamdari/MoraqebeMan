@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { caregiverService } from "@/services/caregiver.service"
 import { assignmentService } from "@/services/assignment.service"
 import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
+import { FormSection } from "@/components/forms/form-section"
 import { ROUTES } from "@/lib/routes"
 import * as C from "@/lib/constants"
 import { labelForValue, labelsForValues, yesNoLabel, patientAvatar } from "@/lib/constants"
@@ -379,8 +380,7 @@ function ReviewPageInner() {
                   )}
 
                   {CAREGIVER_QUESTIONNAIRE.map((section) => (
-                    <div key={section.title} className="space-y-3">
-                      <p className="text-sm font-semibold text-foreground">{section.title}</p>
+                    <FormSection key={section.title} title={section.title}>
                       {section.questions.map((q) => (
                         <div key={q.field} className="rounded-lg border border-border p-3">
                           <p className="mb-2 text-sm">{q.question}</p>
@@ -400,7 +400,7 @@ function ReviewPageInner() {
                           </div>
                         </div>
                       ))}
-                    </div>
+                    </FormSection>
                   ))}
 
                   <Button

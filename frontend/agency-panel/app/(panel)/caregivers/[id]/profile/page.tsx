@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
 import { caregiverWizardService } from "@/services/caregiver_wizard.service"
 import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
+import { FormSection } from "@/components/wizard-forms/form-section"
 import { ROUTES } from "@/lib/routes"
 import * as C from "@/lib/wizard-constants"
 import { labelForValue, labelsForValues, yesNoLabel } from "@/lib/wizard-constants"
@@ -246,8 +247,7 @@ export default function CaregiverProfilePage() {
                   )}
 
                   {CAREGIVER_QUESTIONNAIRE.map((section) => (
-                    <div key={section.title} className="space-y-3">
-                      <p className="text-sm font-semibold text-foreground">{section.title}</p>
+                    <FormSection key={section.title} title={section.title}>
                       {section.questions.map((q) => (
                         <div key={q.field} className="rounded-lg border border-border p-3">
                           <p className="mb-2 text-sm">{q.question}</p>
@@ -267,7 +267,7 @@ export default function CaregiverProfilePage() {
                           </div>
                         </div>
                       ))}
-                    </div>
+                    </FormSection>
                   ))}
 
                   <Button
