@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -10,13 +10,16 @@ import { cn } from "@/lib/utils"
  * تا state فرم و اعتبارسنجی مرورگر دست‌نخورده بماند.
  */
 export function FormSection({
-  title, defaultOpen = false, children,
+  title, defaultOpen = false, hasError = false, children,
 }: {
   title: string
   defaultOpen?: boolean
+  /** اگر خطای اعتبارسنجی داخل این باکس باشد، خودکار باز می‌شود. */
+  hasError?: boolean
   children: React.ReactNode
 }) {
   const [open, setOpen] = useState(defaultOpen)
+  useEffect(() => { if (hasError) setOpen(true) }, [hasError])
   return (
     <section className="rounded-lg border bg-card">
       <button

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/forms/fields"
+import { FormSection } from "@/components/forms/form-section"
 import { skillsService, type MySkills } from "@/services/experience_skills.service"
 import {
   EDUCATION_LEVEL, TRAINING_COURSE, COMMUNICATION_SKILL, CAREGIVING_SKILL, PHYSICAL_ABILITY,
@@ -76,13 +77,14 @@ export default function SkillsFormPage() {
             {saved && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">اطلاعات با موفقیت ذخیره شد.</div>}
             {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
-            <Card className="border-pink-100">
-              <CardContent className="space-y-3 p-4">
+            <FormSection title="تحصیلات و آموزش‌ها">
                 <Field label="سطح تحصیلات"><ChoiceSelect choices={EDUCATION_LEVEL} value={form.education_level || ""} onChange={(v) => set("education_level", v)} /></Field>
                 <Field label="رشته تحصیلی"><Input value={form.field_of_study} onChange={(e) => set("field_of_study", e.target.value)} /></Field>
                 <Field label="دوره‌های آموزشی گذرانده‌شده">
                   <CheckboxGroup choices={TRAINING_COURSE} value={form.training_courses || []} onChange={(v) => set("training_courses", v)} />
                 </Field>
+            </FormSection>
+            <FormSection title="مهارت‌ها و توانایی‌ها">
                 <Field label="مهارت‌های ارتباطی">
                   <CheckboxGroup choices={COMMUNICATION_SKILL} value={form.communication_skills || []} onChange={(v) => set("communication_skills", v)} />
                 </Field>
@@ -96,17 +98,20 @@ export default function SkillsFormPage() {
                 <Field label="مهارت‌های خانگی">
                   <CheckboxGroup choices={HOUSEHOLD_SKILL} value={form.household_skills || []} onChange={(v) => set("household_skills", v)} />
                 </Field>
+            </FormSection>
+            <FormSection title="زبان‌ها">
                 <Field label="زبان‌های خارجی">
                   <CheckboxGroup choices={FOREIGN_LANGUAGE} value={form.foreign_languages || []} onChange={(v) => set("foreign_languages", v)} />
                 </Field>
                 <Field label="زبان‌ها/گویش‌های محلی">
                   <CheckboxGroup choices={LOCAL_LANGUAGE} value={form.local_languages || []} onChange={(v) => set("local_languages", v)} />
                 </Field>
+            </FormSection>
+            <FormSection title="سایر">
                 <Field label="گواهینامه رانندگی دارید؟"><YesNo value={form.has_driving_license ?? null} onChange={(v) => set("has_driving_license", v)} /></Field>
                 <Field label="توانایی استفاده از تلفن هوشمند؟"><YesNo value={form.can_use_smartphone ?? null} onChange={(v) => set("can_use_smartphone", v)} /></Field>
                 <Field label="توضیحات تکمیلی"><Textarea maxLength={500} value={form.additional_notes} onChange={(e) => set("additional_notes", e.target.value)} /></Field>
-              </CardContent>
-            </Card>
+            </FormSection>
           </>
         )}
       </main>

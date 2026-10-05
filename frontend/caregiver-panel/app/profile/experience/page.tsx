@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/forms/fields"
+import { FormSection } from "@/components/forms/form-section"
 import { experienceService, type MyExperience } from "@/services/experience_skills.service"
 import {
   EXPERIENCE_RANGE, PREVIOUS_WORKPLACE, PATIENTS_CARED_FOR_COUNT, SPECIAL_CONDITION_EXPERIENCE,
@@ -75,8 +76,7 @@ export default function ExperienceFormPage() {
             {saved && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">اطلاعات با موفقیت ذخیره شد.</div>}
             {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
-            <Card className="border-pink-100">
-              <CardContent className="space-y-3 p-4">
+            <FormSection title="سابقه مراقبت">
                 <Field label="سابقه مراقبت از سالمند">
                   <ChoiceSelect choices={EXPERIENCE_RANGE} value={form.elderly_care_experience || ""} onChange={(v) => set("elderly_care_experience", v)} />
                 </Field>
@@ -89,6 +89,8 @@ export default function ExperienceFormPage() {
                 <Field label="تعداد سالمندانی که تاکنون مراقبت کرده‌اید">
                   <ChoiceSelect choices={PATIENTS_CARED_FOR_COUNT} value={form.patients_cared_for_count || ""} onChange={(v) => set("patients_cared_for_count", v)} />
                 </Field>
+            </FormSection>
+            <FormSection title="تجربه شرایط خاص و سابقه‌های ویژه">
                 <Field label="سابقه مراقبت از شرایط خاص">
                   <CheckboxGroup choices={SPECIAL_CONDITION_EXPERIENCE} value={form.special_conditions_experience || []} onChange={(v) => set("special_conditions_experience", v)} />
                 </Field>
@@ -97,11 +99,11 @@ export default function ExperienceFormPage() {
                 <Field label="سابقه مراقبت هم‌زمان از زوج سالمند"><YesNo value={form.couple_care_experience ?? null} onChange={(v) => set("couple_care_experience", v)} /></Field>
                 <Field label="سابقه مراقبت تنها از یک سالمند"><YesNo value={form.solo_elderly_care_experience ?? null} onChange={(v) => set("solo_elderly_care_experience", v)} /></Field>
                 <Field label="سابقه رانندگی برای بیمار"><YesNo value={form.driving_for_patient_experience ?? null} onChange={(v) => set("driving_for_patient_experience", v)} /></Field>
-
+            </FormSection>
+            <FormSection title="آخرین محل فعالیت و توضیحات">
                 <Field label="آخرین محل فعالیت"><Input value={form.last_workplace} onChange={(e) => set("last_workplace", e.target.value)} /></Field>
                 <Field label="توضیحات تکمیلی"><Textarea maxLength={500} value={form.additional_notes} onChange={(e) => set("additional_notes", e.target.value)} /></Field>
-              </CardContent>
-            </Card>
+            </FormSection>
           </>
         )}
       </main>
