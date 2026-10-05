@@ -318,6 +318,33 @@ export default function CaregiverRegistrationWizard() {
     return values.some((x) => f.showIfField!.oneOf.includes(x))
   }
 
+  // باکس «شرایط محیط کار — مخصوص <نقش>» برای هر نقشِ انتخاب‌شده که سوال محیطی
+  // اختصاصی دارد (فیلدهای form2 با group: "env").
+  const ENV_ROLE_TITLE: Record<string, string> = {
+    salmandyar: "سالمندیاران", madaryar: "مادریاران", nezafatchi: "امور منزل", behyar: "بهیاران", parastar: "پرستاران",
+  }
+  function renderEnvironmentSections(
+    current: Record<string, Record<string, any>>,
+    onChange: (next: Record<string, Record<string, any>>) => void,
+  ) {
+    return serviceTypes.map((type) => {
+      const fields = (C.SERVICE_SPECIFIC_FORMS[type]?.form2 ?? []).filter((f) => f.group === "env")
+      if (fields.length === 0) return null
+      return (
+        <FormSection key={`env-${type}`} title={`شرایط محیط کار — مخصوص ${ENV_ROLE_TITLE[type] ?? C.ALL_SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type}`}>
+          {fields.map((f) => (
+            <ServiceFieldControl
+              key={f.key}
+              field={f}
+              value={current[type]?.[f.key]}
+              onChange={(v) => setServiceAnswer(current, onChange, type, f.key, v)}
+            />
+          ))}
+        </FormSection>
+      )
+    })
+  }
+
   function renderServiceSpecificSections(
     formKey: "form2" | "form3" | "questionnaire",
     current: Record<string, Record<string, any>>,
@@ -332,6 +359,7 @@ export default function CaregiverRegistrationWizard() {
           const chosenSubtypes = serviceSubtypes[type] ?? []
           const typeAnswers = current[type] ?? {}
           const fields = C.SERVICE_SPECIFIC_FORMS[type][formKey]
+            .filter((f) => f.group !== "env")
             .filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
             .filter((f) => matchesShowIfField(f, typeAnswers, workPrefs.service_specific_answers[type] ?? {}))
           if (fields.length === 0) return null
@@ -735,8 +763,9 @@ export default function CaregiverRegistrationWizard() {
                 <Field label="آیا مشکلی با سفر همراه خانواده در داخل ایران دارید؟"><YesNo value={workPrefs.problem_with_domestic_travel} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_domestic_travel: v })} /></Field>
                 <Field label="آیا مشکلی با سفر همراه خانواده به خارج از کشور دارید؟"><YesNo value={workPrefs.problem_with_international_travel} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_international_travel: v })} /></Field>
               </FormSection>
-              {/* هر نقش در صورت انتخاب، باکس «شرایط محیط کار» مخصوص خودش را دارد؛
-                  فعلاً فقط مادریار (کودک/نوزاد) سوال اختصاصی محیط دارد. */}
+              {/* هر نقش در صورت انتخاب، باکس «شرایط محیط کار» مخصوص خودش را دارد
+                  (سالمندیار از SERVICE_SPECIFIC_FORMS؛ مادریار با ستون‌های واقعی زیر). */}
+              {renderEnvironmentSections(workPrefs.service_specific_answers, (next) => setWorkPrefs({ ...workPrefs, service_specific_answers: next }))}
               {serviceTypes.includes("madaryar") && (
                 <FormSection title="شرایط محیط کار — مخصوص مادریاران">
                   {identity.gender === "female" && (

@@ -709,6 +709,9 @@ export interface ServiceSpecificField {
   // field depend on an activity checkbox instead of a top-level
   // subtype (which showIf is limited to).
   showIfField?: { key: string; oneOf: string[] }
+  // "env" ⇒ در باکس «شرایط محیط کار — مخصوص <نقش>» فرم ۲ نمایش داده می‌شود،
+  // نه در «سوالات مخصوص <نقش>».
+  group?: "env"
 }
 
 export const SCORE_OPTIONS: Choice[] = [
@@ -1039,6 +1042,11 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       // همدمی — فقط به معنای هم‌صحبتی و همراهی روحی/عاطفی در چارچوب
       // کار مراقبتی؛ صریح و شفاف پرسیده می‌شود.
       { key: "emotional_companionship_ok", label: "آمادگی برای همدمی و هم‌صحبتی با سالمند (گفتگو، همراهی در اوقات فراغت، حضور عاطفی در چارچوب کار مراقبتی)", type: "bool" },
+      // شرایط محیط کار مخصوص سالمندیار — «آیا مشکلی دارید؟» (true = مشکل دارد).
+      { key: "problem_with_elderly_alone_at_home", label: "آیا مشکلی با کار در خانه‌ای که سالمند تنهاست (بدون حضور عضو دیگری از خانواده) دارید؟", type: "bool", group: "env" },
+      { key: "problem_with_building_without_elevator", label: "آیا مشکلی با کار در ساختمانی که آسانسور ندارد (طبقات بالا) دارید؟", type: "bool", group: "env" },
+      { key: "problem_with_smoker_elderly", label: "آیا مشکلی با مراقبت از سالمندی که سیگار می‌کشد دارید؟", type: "bool", group: "env" },
+      { key: "problem_with_children_present_at_home", label: "آیا مشکلی با کار در خانه‌ای که نوه یا کودک هم حضور دارد دارید؟", type: "bool", group: "env" },
       { key: "willing_to_relocate_other_cities", label: "آمادگی برای کار در شهرهای دیگر (محل کار دائم)", type: "bool" },
       { key: "ok_with_second_elderly_spouse_present", label: "آمادگی برای مراقبت در حضور همسر سالمند (زوج سالمند)", type: "bool" },
       // مراقبت شخصی — موارد حساس‌تر با مقیاس تجربه چهارسطحی به‌جای
