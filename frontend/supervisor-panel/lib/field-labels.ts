@@ -11,7 +11,7 @@ export const FIELD_LABELS: Record<string, string> = {
   birth_date: "تاریخ تولد",
   gender: "جنسیت", marital_status: "وضعیت تأهل", children_count: "تعداد فرزندان",
   military_status: "وضعیت نظام وظیفه", height_range: "قد", weight_range: "وزن",
-  ethnicities: "قومیت / زبان مادری", has_chronic_disease: "بیماری زمینه‌ای",
+  child_accompany_at_work: "همراهی فرزند هنگام کار", ethnicities: "قومیت / زبان مادری", has_chronic_disease: "بیماری زمینه‌ای",
   chronic_disease_types: "نوع بیماری", takes_permanent_medication: "داروی دائمی",
   medication_types: "نوع دارو", emergency_contact_phone: "شماره تماس‌های دیگر",
   emergency_contact_relation: "نسبت فرد اضطراری", landline_phone: "تلفن ثابت",

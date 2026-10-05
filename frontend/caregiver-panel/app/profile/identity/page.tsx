@@ -14,7 +14,7 @@ import { identityService, type MyIdentityProfile } from "@/services/identity.ser
 import { locationService } from "@/services/location.service"
 import type { Province, City, District } from "@/types/location"
 import {
-  GENDER, MARITAL_STATUS, CHILDREN_COUNT, MILITARY_STATUS, HEIGHT_RANGE, WEIGHT_RANGE,
+  GENDER, MARITAL_STATUS, CHILDREN_COUNT, CHILD_ACCOMPANY_AT_WORK, MILITARY_STATUS, HEIGHT_RANGE, WEIGHT_RANGE,
   CHRONIC_DISEASE_TYPE, MEDICATION_TYPE,
 } from "@/lib/constants"
 import { parseJalaliDate, formatJalaliDate, daysInJalaliMonth, PERSIAN_MONTH_LIST, JALALI_YEAR_RANGE, jalaliAge } from "@/lib/jalali"
@@ -251,7 +251,12 @@ export default function IdentityFormPage() {
               )}
               {form.has_children && (
                 <Field label="آیا در حال حاضر در حال مراقبت از فرزند خودتان هستید یا نیازی به مراقبت شما ندارد؟">
-                  <YesNo value={form.currently_caring_for_own_child ?? null} onChange={(v) => set("currently_caring_for_own_child", v)} />
+                  <YesNo value={form.currently_caring_for_own_child ?? null} onChange={(v) => { set("currently_caring_for_own_child", v); if (!v) set("child_accompany_at_work", "") }} />
+                </Field>
+              )}
+              {form.has_children && form.currently_caring_for_own_child && (
+                <Field label="آیا مایل هستید در هنگام کار فرزندتان همراه شما باشد؟">
+                  <ChoiceSelect choices={CHILD_ACCOMPANY_AT_WORK} value={form.child_accompany_at_work || ""} onChange={(v) => set("child_accompany_at_work", v)} />
                 </Field>
               )}
             </FormSection>

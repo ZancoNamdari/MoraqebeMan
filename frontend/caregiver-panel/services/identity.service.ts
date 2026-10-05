@@ -10,6 +10,7 @@ export interface MyIdentityProfile {
   marital_status?: string
   has_children?: boolean | null
   currently_caring_for_own_child?: boolean | null
+  child_accompany_at_work?: string
   children_count?: string
   military_status?: string
   height_range?: string

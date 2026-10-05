@@ -35,6 +35,7 @@ export interface IdentityFormData {
   ethnicity_details: Record<string, string[]>
   has_children: boolean | null
   currently_caring_for_own_child: boolean | null
+  child_accompany_at_work: string
   is_non_iranian_national: boolean | null
   nationality_country: string
   has_chronic_disease: boolean

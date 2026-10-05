@@ -23,6 +23,12 @@ export const CHILDREN_COUNT: Choice[] = [
   ["four_or_more", "۴ یا بیشتر"],
 ]
 
+export const CHILD_ACCOMPANY_AT_WORK: Choice[] = [
+  ["yes", "بله"],
+  ["no", "خیر"],
+  ["indifferent", "فرقی ندارد"],
+]
+
 export const MILITARY_STATUS: Choice[] = [
   ["not_served", "مشمول (هنوز به خدمت نرفته)"],
   ["in_service", "در حال خدمت"],

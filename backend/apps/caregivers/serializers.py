@@ -176,7 +176,7 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
             "takes_permanent_medication", "medication_types", "medication_detail", "psychiatric_medication_detail",
             "emergency_contact_phone", "emergency_contact_relation", "landline_phone", "extra_phone_numbers",
             "province", "city", "district", "postal_code", "full_address",
-            "has_children", "currently_caring_for_own_child",
+            "has_children", "currently_caring_for_own_child", "child_accompany_at_work",
             "created_at", "updated_at",
         ]
         read_only_fields = ["age", "created_at", "updated_at"]
@@ -221,6 +221,13 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 "military_status": "وضعیت نظام وظیفه فقط برای جنسیت مرد قابل ثبت است."
             })
+
+        # «همراهی فرزند هنگام کار» فقط وقتی معنا دارد که الان از فرزند خودش
+        # مراقبت می‌کند؛ در غیر این صورت پاسخِ قبلی پاک می‌شود.
+        has_children = attrs.get("has_children", getattr(self.instance, "has_children", None))
+        caring = attrs.get("currently_caring_for_own_child", getattr(self.instance, "currently_caring_for_own_child", None))
+        if not (has_children and caring):
+            attrs["child_accompany_at_work"] = ""
 
         has_chronic_disease = attrs.get("has_chronic_disease", getattr(self.instance, "has_chronic_disease", None))
         chronic_disease_types = attrs.get("chronic_disease_types", getattr(self.instance, "chronic_disease_types", None))

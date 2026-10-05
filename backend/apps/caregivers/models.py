@@ -31,6 +31,7 @@ from .choices import (
     WeightRange,
     WorkStatus,
     ChildrenCount,
+    ChildAccompanyAtWork,
 )
 
 
@@ -76,6 +77,11 @@ class IdentityProfile(models.Model):
     currently_caring_for_own_child = models.BooleanField(
         null=True, blank=True, default=None, verbose_name="آیا در حال حاضر از فرزند خود مراقبت می‌کند؟",
         help_text="برای سنجش هم‌زمانی مراقبت از فرزند خودش با کار — فقط وقتی has_children=True معنا دارد.",
+    )
+    child_accompany_at_work = models.CharField(
+        max_length=20, choices=ChildAccompanyAtWork.choices, blank=True,
+        verbose_name="مایل است هنگام کار فرزندش همراهش باشد؟",
+        help_text="فقط وقتی currently_caring_for_own_child=True معنا دارد؛ در غیر این صورت خالی ذخیره می‌شود.",
     )
     military_status = models.CharField(
         max_length=30, choices=MilitaryStatus.choices, null=True, blank=True,

@@ -86,6 +86,13 @@ class ChildrenCount(models.TextChoices):
     FOUR_OR_MORE = "four_or_more", "۴ یا بیشتر"
 
 
+class ChildAccompanyAtWork(models.TextChoices):
+    """آیا مایل است هنگام کار، فرزندش همراهش باشد؟ (فقط وقتی از فرزند خودش مراقبت می‌کند)"""
+    YES = "yes", "بله"
+    NO = "no", "خیر"
+    INDIFFERENT = "indifferent", "فرقی ندارد"
+
+
 class MilitaryStatus(models.TextChoices):
     """Only relevant when gender == MALE — enforced in the serializer, not the DB."""
     NOT_SERVED = "not_served", "مشمول (هنوز به خدمت نرفته)"

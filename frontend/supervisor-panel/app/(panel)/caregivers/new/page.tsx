@@ -44,7 +44,7 @@ const EMPTY_IDENTITY: IdentityFormData = {
   father_name: "", national_id: "", birth_certificate_number: "",
   extra_phone_numbers: [],
   birth_date: "", gender: "", marital_status: "", children_count: "", military_status: null,
-  height_range: "", weight_range: "", ethnicities: [], ethnicity_details: {}, has_children: null, currently_caring_for_own_child: null, is_non_iranian_national: null, nationality_country: "",
+  height_range: "", weight_range: "", ethnicities: [], ethnicity_details: {}, has_children: null, currently_caring_for_own_child: null, child_accompany_at_work: "", is_non_iranian_national: null, nationality_country: "",
   has_chronic_disease: false, chronic_disease_types: [],
   takes_permanent_medication: false, medication_types: [],
   emergency_contact_phone: "", emergency_contact_relation: "", landline_phone: "",
@@ -491,7 +491,10 @@ function NewCaregiverWizardInner() {
                   <p className="text-sm text-muted-foreground">فعلاً مورد تکمیلی‌ای برای نمایش نیست.</p>
                 )}
                 {identity.has_children && (
-                  <Field label="آیا در حال حاضر در حال مراقبت از فرزند خودتان هستید یا نیازی به مراقبت شما ندارد؟"><YesNo value={identity.currently_caring_for_own_child} onChange={(v) => setIdentity({ ...identity, currently_caring_for_own_child: v })} /></Field>
+                  <Field label="آیا در حال حاضر در حال مراقبت از فرزند خودتان هستید یا نیازی به مراقبت شما ندارد؟"><YesNo value={identity.currently_caring_for_own_child} onChange={(v) => setIdentity({ ...identity, currently_caring_for_own_child: v, ...(v ? {} : { child_accompany_at_work: "" }) })} /></Field>
+                )}
+                {identity.has_children && identity.currently_caring_for_own_child && (
+                  <Field label="آیا مایل هستید در هنگام کار فرزندتان همراه شما باشد؟"><ChoiceSelect choices={C.CHILD_ACCOMPANY_AT_WORK} value={identity.child_accompany_at_work} onChange={(v) => setIdentity({ ...identity, child_accompany_at_work: v })} /></Field>
                 )}
               </FormSection>
             </CardContent>
