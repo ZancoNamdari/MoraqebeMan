@@ -735,13 +735,12 @@ export default function CaregiverRegistrationWizard() {
                 <Field label="آیا مشکلی با سفر همراه خانواده در داخل ایران دارید؟"><YesNo value={workPrefs.problem_with_domestic_travel} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_domestic_travel: v })} /></Field>
                 <Field label="آیا مشکلی با سفر همراه خانواده به خارج از کشور دارید؟"><YesNo value={workPrefs.problem_with_international_travel} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_international_travel: v })} /></Field>
               </FormSection>
-              {serviceTypes.includes("salmandyar") && (
-                <FormSection title="شرایط محیط کار — مخصوص سالمندیاران">
+              {/* هر نقش در صورت انتخاب، باکس «شرایط محیط کار» مخصوص خودش را دارد؛
+                  فعلاً فقط مادریار (کودک/نوزاد) سوال اختصاصی محیط دارد. */}
+              {serviceTypes.includes("madaryar") && (
+                <FormSection title="شرایط محیط کار — مخصوص مادریاران">
                   {identity.gender === "female" && (
                     <Field label="آیا مشکلی با کار نزد پدر مجرد دارید؟"><YesNo value={workPrefs.problem_with_single_father} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_single_father: v })} /></Field>
-                  )}
-                  {identity.gender === "male" && (
-                    <Field label="آیا مشکلی با کار نزد مادر تنها (بدون همسر) دارید؟"><YesNo value={workPrefs.problem_with_single_mother} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_single_mother: v })} /></Field>
                   )}
                   <Field label="آیا مشکلی با کار در خانه‌ای که پدر در ساعات کاری در منزل است دارید؟"><YesNo value={workPrefs.problem_with_father_present_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_father_present_at_home: v })} /></Field>
                   <Field label="آیا مشکلی با کار در خانه‌ای که پدربزرگ/مادربزرگ یا یکی از اقوام هم حضور دارد دارید؟"><YesNo value={workPrefs.problem_with_grandparent_or_relative_at_home} onChange={(v) => setWorkPrefs({ ...workPrefs, problem_with_grandparent_or_relative_at_home: v })} /></Field>
