@@ -742,23 +742,14 @@ const TUTORING_SUBJECT: Choice[] = [
   ["other", "سایر"],
 ]
 
-const CLEANING_FREQUENCY: Choice[] = [
-  ["daily", "روزانه"],
-  ["every_other_day", "یک روز در میان"],
-  ["weekly", "هفته‌ای یک‌بار"],
-  ["biweekly", "هر دو هفته یک‌بار"],
-]
-
 const CLEANING_STANDARD_LEVEL: Choice[] = [
   ["light", "نظافت سطحی و روزمره (گردگیری، جمع و جور کردن)"],
-  ["standard", "نظافت کامل هفتگی (حمام، آشپزخانه، شیشه‌ها)"],
+  ["standard", "نظافت کامل (حمام، آشپزخانه، شیشه‌ها)"],
   ["deep", "نظافت عمقی و تخصصی (شستشوی موکت/مبل، ضدعفونی کامل)"],
 ]
 
 const COOKING_CUISINE: Choice[] = [
   ["iranian", "غذای ایرانی"],
-  ["traditional", "غذای سنتی"],
-  ["simple_daily", "غذای ساده روزمره"],
   ["formal_ceremonial", "غذای مجلسی"],
   ["western", "غذای فرنگی"],
   ["diet_food", "غذای رژیمی"],
@@ -949,7 +940,6 @@ const CHILD_CONDITION: Choice[] = [
   ["physical_disability", "معلولیت جسمی"],
   ["speech_therapy_needed", "نیاز به گفتاردرمانی"],
   ["diaper_dependent_disability", "معلول حرکتی (پوشکی)"],
-  ["none", "هیچ‌کدام — کودک عادی"],
 ]
 
 const CHILD_SPECIAL_NEEDS_EXPERIENCE: Choice[] = [
@@ -1074,8 +1064,6 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
   },
   nezafatchi: {
     form2: [
-      { key: "cleaning_frequency_preference", label: "تناوب ترجیحی نظافت", type: "choice", choices: CLEANING_FREQUENCY },
-      { key: "one_time_jobs_ok", label: "آمادگی برای کارهای مقطعی (مانند نظافت پس از ساخت‌وساز یا اسباب‌کشی)", type: "bool" },
       { key: "brings_own_equipment", label: "وسایل نظافت را خودش می‌آورد", type: "bool" },
       // Concrete standard instead of an abstract 0/50/100 "taste/care"
       // score — a caregiver's cleaning standard is a real difference
@@ -1212,7 +1200,7 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
     form2: [
       // pay_basis moved to the universal WorkPreferences fields.
       // ── نوزاد ──────────────────────────────────────────────────────
-      { key: "newborn_stage_preferences", label: "برای همراهی با نوزاد، ترجیح می‌دهید در کدام مرحله حضور داشته باشید؟", type: "multi", choices: NEWBORN_STAGE_PREFERENCE, showIf: ["newborn"] },
+      { key: "newborn_stage_preferences", label: "برای همراهی با مادر نوزاد، ترجیح می‌دهید در کدام مرحله حضور داشته باشید؟", type: "multi", choices: NEWBORN_STAGE_PREFERENCE, showIf: ["newborn"] },
       { key: "night_shift_ok", label: "آمادگی برای شیفت شب نوزاد", type: "bool", showIf: ["newborn"] },
       { key: "labor_accompaniment_ok", label: "آمادگی همراهی در زمان زایمان", type: "bool", showIf: ["newborn"], showIfField: { key: "newborn_stage_preferences", oneOf: ["labor"] } },
       { key: "readiness_for_off_hours_presence", label: "آمادگی حضور در ساعات غیراداری", type: "bool", showIf: ["newborn"], showIfField: { key: "newborn_stage_preferences", oneOf: ["labor"] } },
@@ -1221,13 +1209,13 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       // ── کودک (سه زیرشاخه‌ی کودک‌محور) ───────────────────────────────
       { key: "accepted_child_age_ranges", label: "بازه سنی کودک قابل پذیرش", type: "multi", choices: CHILD_AGE_RANGE, showIf: CHILD_SUBTYPES },
       { key: "max_children_count", label: "حداکثر تعداد کودک قابل نگهداری هم‌زمان", type: "choice", choices: CHILDREN_COUNT_CAPACITY, showIf: CHILD_SUBTYPES },
+      { key: "multiples_care_ok", label: "آیا مشکلی با مراقبت از ۲ یا چند قلو ندارید؟", type: "bool", showIf: CHILD_SUBTYPES, showIfField: { key: "max_children_count", oneOf: ["two", "three_plus"] } },
       { key: "accepted_child_conditions", label: "ویژگی‌های خاص کودک قابل پذیرش", type: "multi", choices: CHILD_CONDITION, showIf: CHILD_SUBTYPES },
       // pay_basis moved to the universal WorkPreferences fields.
       // کودک + کارهای خانه و کودک — کارهای روزمره‌ی مراقبت از کودک
       // (کمک‌کننده در درس و مشق این کارها را بر عهده ندارد)
       { key: "daily_feeding_ok", label: "آمادگی غذا دادن به کودک", type: "bool", showIf: ["child", "housework_child"] },
       { key: "bathing_child_ok", label: "آمادگی حمام کردن کودک", type: "bool", showIf: ["child", "housework_child"] },
-      { key: "dressing_child_ok", label: "آمادگی لباس پوشاندن کودک", type: "bool", showIf: ["child", "housework_child"] },
       { key: "putting_to_sleep_ok", label: "آمادگی خواباندن کودک", type: "bool", showIf: ["child", "housework_child"] },
       { key: "play_and_entertainment_ok", label: "آمادگی بازی و سرگرمی با کودک", type: "bool", showIf: ["child", "housework_child"] },
       { key: "outdoor_outings_ok", label: "آمادگی بردن کودک به پارک یا کلاس", type: "bool", showIf: ["child", "housework_child"] },
@@ -1235,6 +1223,7 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       // کمک‌کننده در درس و مشق
       { key: "tutor_role_type", label: "نوع نقش تدریس", type: "choice", choices: TUTOR_ROLE_TYPE, showIf: ["homework_helper"] },
       { key: "tutoring_subjects", label: "دروس قابل تدریس", type: "multi", choices: TUTORING_SUBJECT, showIf: ["homework_helper"] },
+      { key: "tutoring_levels", label: "مقطع قابل تدریس", type: "multi", choices: [["primary", "ابتدایی"], ["secondary", "متوسطه"]], showIf: ["homework_helper"] },
       { key: "tutoring_subjects_other_detail", label: "سایر دروس (اگر «سایر» را انتخاب کردید، اینجا بنویسید)", type: "text", showIf: ["homework_helper"] },
       { key: "after_school_pickup_ok", label: "امکان رفتن دنبال کودک از مدرسه", type: "bool", showIf: ["homework_helper"] },
       // کارهای خانه + کودک
@@ -1357,11 +1346,21 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
   behyar: {
     form2: [
       { key: "physical_tasks_comfort", label: "آمادگی برای کارهای فیزیکی (جابجایی و بلند کردن بیمار)", type: "bool" },
-      { key: "shift_rotation_ok", label: "آمادگی برای چرخش شیفت", type: "bool" },
       { key: "averse_hospitals_detail", label: "آیا بیمارستانی هست که قصد رفتن به آن را ندارید؟ (در صورت وجود، نام ببرید)", type: "text" },
     ],
     form3: [
       { key: "aide_training_certificate", label: "گواهی آموزشی کمک‌بهیاری/بهیاری دارد", type: "bool" },
+      { key: "behyar_care_abilities", label: "توانایی‌های بهیاری", type: "multi", choices: [
+        ["vital_signs", "کنترل علائم حیاتی (فشار، نبض، تب، قند خون)"],
+        ["bedbound_hygiene", "بهداشت و شست‌وشوی بیمار بستری"],
+        ["patient_positioning", "تغییر وضعیت بیمار و پیشگیری از زخم بستر"],
+        ["patient_transfer", "جابه‌جایی و انتقال بیمار (تخت، ویلچر)"],
+        ["feeding_assistance", "تغذیه بیمار (خوراکی و لوله معده)"],
+        ["elimination_care", "کمک در دفع، لگن و مراقبت از سوند"],
+        ["medication_reminder", "یادآوری و کمک در مصرف داروها"],
+        ["nurse_assistance", "کمک به پرستار در اقدامات درمانی"],
+        ["oxygen_equipment", "کار با کپسول اکسیژن و دستگاه‌های ساده"],
+      ] },
       { key: "years_of_hospital_experience", label: "سابقه کار بیمارستانی", type: "choice", choices: EXPERIENCE_RANGE },
     ],
     questionnaire: [
