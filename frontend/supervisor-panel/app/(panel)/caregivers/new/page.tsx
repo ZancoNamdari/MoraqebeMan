@@ -710,9 +710,6 @@ function NewCaregiverWizardInner() {
 
         {step === 5 && (
           <div className="space-y-4">
-            <p className="rounded-lg border border-dashed border-border bg-secondary/40 p-3 text-base text-muted-foreground">
-              این پرسشنامه اختیاری است — تکمیل آن در تأیید یا رد پروفایل مراقب تأثیری ندارد، فقط کیفیت پیشنهاد مراقب در بخش «تطابق» را بهبود می‌دهد. هر زمان می‌توانید آن را رد کنید و بعداً از صفحه بررسی مراقب تکمیل کنید.
-            </p>
             {CAREGIVER_QUESTIONNAIRE.map((section) => (
               <Card key={section.title}>
                 <CardHeader><CardTitle className="text-xl text-foreground">{section.title}</CardTitle></CardHeader>
