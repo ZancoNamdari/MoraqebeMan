@@ -350,7 +350,6 @@ export const WORK_STATUS: Choice[] = [
 export const FAMILY_PRESENCE_PREFERENCE: Choice[] = [
   ["prefer_present", "ترجیح می‌دهم عضوی از خانواده در منزل حضور داشته باشد"],
   ["prefer_absent", "ترجیح می‌دهم خانواده در ساعات کاری خارج از منزل باشند"],
-  ["no_preference", "برایم اولویت ندارد"],
 ]
 
 export const ACCEPTED_GENDER: Choice[] = [
@@ -379,7 +378,34 @@ export const OFFERED_SERVICE: Choice[] = [
   ["doctor_visits", "همراهی در مراجعه به پزشک"],
   ["family_housework", "انجام امور منزل خانواده سالمند"],
   ["hospital_care", "مراقبت در بیمارستان"],
+  ["personal_care", "کمک در طهارت و انجام امور شخصی"],
   ["all", "همه موارد"],
+]
+
+// فقط این ۳ خدمت در فرم ثبت سالمندیار انتخاب می‌شود؛ OFFERED_SERVICE کامل
+// برای نمایش برچسب مقادیر قدیمی نگه داشته شده است.
+export const OFFERED_SERVICE_PICK: Choice[] = [
+  ["mobility_help", "کمک در جابجایی سالمند"],
+  ["light_cleaning", "نظافت محیط سالمند"],
+  ["personal_care", "کمک در طهارت و انجام امور شخصی"],
+]
+
+export const MOBILITY_ASSIST_LEVEL: Choice[] = [
+  ["walking_support", "همراهی و کمک در راه رفتن (با عصا یا واکر)"],
+  ["bed_chair_transfer", "جابجایی از تخت به صندلی یا ویلچر"],
+  ["full_transfer", "جابجایی کامل سالمند بستری یا سنگین‌وزن"],
+]
+
+export const CLEANING_LEVEL_PICK: Choice[] = [
+  ["light", "نظافت سبک (گردگیری، مرتب کردن، نظافت اتاق سالمند)"],
+  ["heavy", "نظافت سنگین (شست‌وشوی کامل، حمام، آشپزخانه)"],
+]
+
+export const ACCEPTED_PHYSICAL_CONDITION_PICK: Choice[] = [
+  ["limited_mobility_bedridden", "سالمند دارای محدودیت حرکتی"],
+  ["bedridden_diaper", "سالمند پوشکی"],
+  ["alzheimers", "سالمند مبتلا به آلزایمر"],
+  ["hospital_companion_needed", "سالمند نیازمند همراهی بیمارستانی"],
 ]
 
 export const ACCEPTED_PHYSICAL_CONDITION: Choice[] = [

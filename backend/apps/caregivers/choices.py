@@ -345,6 +345,7 @@ class OfferedService(models.TextChoices):
     DOCTOR_VISITS = "doctor_visits", "همراهی در مراجعه به پزشک"
     FAMILY_HOUSEWORK = "family_housework", "انجام امور منزل خانواده سالمند"
     HOSPITAL_CARE = "hospital_care", "مراقبت در بیمارستان"
+    PERSONAL_CARE = "personal_care", "کمک در طهارت و انجام امور شخصی"
     ALL = "all", "همه موارد"
 
 

@@ -763,11 +763,22 @@ export default function CaregiverRegistrationWizard() {
                     <>
                       <Field label="حضور خانواده سالمند"><ChoiceSelect choices={C.FAMILY_PRESENCE_PREFERENCE} value={workPrefs.family_presence_preference} onChange={(v) => setWorkPrefs({ ...workPrefs, family_presence_preference: v })} /></Field>
                       <Field label="جنسیت سالمند قابل قبول"><ChoiceSelect choices={C.ACCEPTED_GENDER} value={workPrefs.accepted_gender} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_gender: v })} /></Field>
-                      <Field label="بازه سنی سالمند"><CheckboxGroup choices={C.ACCEPTED_AGE_RANGE} value={workPrefs.accepted_age_ranges} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_age_ranges: v })} /></Field>
-                      <Field label="خدمات قابل ارائه"><CheckboxGroup choices={C.OFFERED_SERVICE} value={workPrefs.offered_services} onChange={(v) => setWorkPrefs({ ...workPrefs, offered_services: v })} /></Field>
-                      <Field label="شرایط جسمانی سالمند قابل پذیرش"><CheckboxGroup choices={C.ACCEPTED_PHYSICAL_CONDITION} value={workPrefs.accepted_physical_conditions} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_physical_conditions: v })} /></Field>
-                      <Field label="میزان انجام نظافت"><ChoiceSelect choices={C.CLEANING_WILLINGNESS} value={workPrefs.cleaning_willingness} onChange={(v) => setWorkPrefs({ ...workPrefs, cleaning_willingness: v })} /></Field>
-                      <Field label="محل ارائه خدمت"><CheckboxGroup choices={C.SERVICE_LOCATION} value={workPrefs.service_locations} onChange={(v) => setWorkPrefs({ ...workPrefs, service_locations: v })} /></Field>
+                      <Field label="خدمات قابل ارائه"><CheckboxGroup choices={C.OFFERED_SERVICE_PICK} value={workPrefs.offered_services} onChange={(v) => setWorkPrefs({ ...workPrefs, offered_services: v })} /></Field>
+                      {workPrefs.offered_services.includes("mobility_help") && (
+                        <Field label="در جابجایی سالمند تا چه حد می‌توانید کمک کنید؟">
+                          <ChoiceSelect
+                            choices={C.MOBILITY_ASSIST_LEVEL}
+                            value={String(workPrefs.service_specific_answers?.salmandyar?.mobility_assist_level ?? "")}
+                            onChange={(v) => setServiceAnswer(workPrefs.service_specific_answers, (next) => setWorkPrefs({ ...workPrefs, service_specific_answers: next }), "salmandyar", "mobility_assist_level", v)}
+                          />
+                        </Field>
+                      )}
+                      {workPrefs.offered_services.includes("light_cleaning") && (
+                        <Field label="در نظافت محیط سالمند تا چه حد کمک می‌کنید؟">
+                          <ChoiceSelect choices={C.CLEANING_LEVEL_PICK} value={workPrefs.cleaning_willingness} onChange={(v) => setWorkPrefs({ ...workPrefs, cleaning_willingness: v })} />
+                        </Field>
+                      )}
+                      <Field label="شرایط جسمانی سالمند قابل پذیرش"><CheckboxGroup choices={C.ACCEPTED_PHYSICAL_CONDITION_PICK} value={workPrefs.accepted_physical_conditions} onChange={(v) => setWorkPrefs({ ...workPrefs, accepted_physical_conditions: v })} /></Field>
                     </>
                 </FormSection>
               )}
