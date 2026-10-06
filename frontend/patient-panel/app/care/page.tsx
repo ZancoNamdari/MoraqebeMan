@@ -79,7 +79,7 @@ export default function CarePage() {
                     {team.map((a) => (
                       <div key={a.id} className="rounded-lg border border-border bg-secondary/50 p-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-primary/70 text-sm">{caregiverAvatar(a.caregiver_gender)}</div>
+                          <div className="flex h-12 w-12 shrink-0 overflow-hidden items-center justify-center rounded-full bg-gradient-to-br from-accent to-primary/70 text-sm">{a.caregiver_photo_url ? <img src={a.caregiver_photo_url} alt={a.caregiver_name} className="h-full w-full object-cover" /> : caregiverAvatar(a.caregiver_gender)}</div>
                           <div className="flex-1">
                             <p className="text-sm font-medium">{a.caregiver_name}</p>
                             <p className="text-xs text-muted-foreground">
@@ -88,6 +88,17 @@ export default function CarePage() {
                                 <span> · {"★".repeat(Math.round(a.caregiver_avg_rating))}{"☆".repeat(5 - Math.round(a.caregiver_avg_rating))} ({a.caregiver_avg_rating} از {a.caregiver_review_count} نظر)</span>
                               )}
                             </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {a.caregiver_care_count} مراقبت انجام‌شده
+                              {a.caregiver_satisfaction_percent !== null && <span> · رضایت خانواده‌ها: {a.caregiver_satisfaction_percent}٪</span>}
+                            </p>
+                            {a.caregiver_special_talents.length > 0 && (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {a.caregiver_special_talents.map((x) => (
+                                  <span key={x} className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-foreground">{x}</span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           {reviewedIds.has(a.id) ? (
                             <span className="text-xs font-medium text-emerald-700">✓ نظر ثبت شد</span>

@@ -181,3 +181,37 @@ class SpecialTalentSerializerTests(TestCase):
             data={"special_talents": ["other"], "special_talents_other": "ژونگلر"}, partial=True)
         self.assertTrue(s.is_valid(), s.errors)
         self.assertEqual(s.validated_data["special_talents_other"], "ژونگلر")
+
+
+class CaregiverShowcaseTests(TestCase):
+    def test_showcase_values(self):
+        from django.core.files.base import ContentFile
+        from apps.care.models import CaregiverAssignment, CaregiverReview
+        from apps.care.serializers import CaregiverAssignmentSerializer
+        from apps.caregivers.models import (
+            CaregiverDocumentReviewStatus, CaregiverDocumentType, CaregiverDocumentUpload, IdentityProfile,
+        )
+        from apps.families.models import PatientProfile
+
+        user = get_user_model().objects.create(phone_number="09121110099", username="sc1")
+        cg = CaregiverProfile.objects.create(user=user)
+        IdentityProfile.objects.create(user=user, special_talents=["piano", "other"], special_talents_other="ژونگلر")
+        p1 = PatientProfile.objects.create(full_name="الف")
+        p2 = PatientProfile.objects.create(full_name="ب")
+        a1 = CaregiverAssignment.objects.create(caregiver=cg, patient=p1)
+        CaregiverAssignment.objects.create(caregiver=cg, patient=p2)
+        CaregiverReview.objects.create(assignment=a1, caregiver=cg, patient=p1, rating=5)
+
+        data = CaregiverAssignmentSerializer(a1).data
+        self.assertEqual(data["caregiver_care_count"], 2)
+        self.assertEqual(data["caregiver_satisfaction_percent"], 100)
+        self.assertEqual(data["caregiver_special_talents"], ["پیانو", "ژونگلر"])
+        self.assertIsNone(data["caregiver_photo_url"])
+
+        up = CaregiverDocumentUpload(caregiver=cg, document_type=CaregiverDocumentType.PERSONAL_PHOTO)
+        up.file.save("a.jpg", ContentFile(b"x"), save=False)
+        up.save()
+        self.assertIsNone(CaregiverAssignmentSerializer(a1).data["caregiver_photo_url"])  # هنوز تأیید نشده
+        up.status = CaregiverDocumentReviewStatus.APPROVED
+        up.save()
+        self.assertTrue(CaregiverAssignmentSerializer(a1).data["caregiver_photo_url"])

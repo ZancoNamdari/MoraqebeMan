@@ -1621,6 +1621,11 @@ class AgencyCaregiverDocumentUploadView(APIView):
         uploaded_file = request.data.get("file")
         if not uploaded_file:
             return Response({"detail": "فایل الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
+        # عکس پرسنلی در پروفایل به خانواده نشان داده می‌شود؛ فقط تصویر پذیرفته می‌شود.
+        if document_type == CaregiverDocumentType.PERSONAL_PHOTO and not str(
+            getattr(uploaded_file, "content_type", "")
+        ).startswith("image/"):
+            return Response({"detail": "عکس پرسنلی باید فایل تصویری باشد."}, status=status.HTTP_400_BAD_REQUEST)
 
         upload, _ = CaregiverDocumentUpload.objects.update_or_create(
             caregiver=link.caregiver, document_type=document_type,

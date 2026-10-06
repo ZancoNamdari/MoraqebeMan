@@ -8,6 +8,10 @@ class CaregiverAssignmentSerializer(serializers.ModelSerializer):
     caregiver_gender = serializers.SerializerMethodField()
     caregiver_avg_rating = serializers.SerializerMethodField()
     caregiver_review_count = serializers.SerializerMethodField()
+    caregiver_photo_url = serializers.SerializerMethodField()
+    caregiver_special_talents = serializers.SerializerMethodField()
+    caregiver_care_count = serializers.SerializerMethodField()
+    caregiver_satisfaction_percent = serializers.SerializerMethodField()
     patient_name = serializers.CharField(source="patient.full_name", read_only=True)
     patient_gender = serializers.CharField(source="patient.gender", read_only=True)
     patient_code = serializers.CharField(source="patient.access_code", read_only=True)
@@ -17,11 +21,13 @@ class CaregiverAssignmentSerializer(serializers.ModelSerializer):
         model = CaregiverAssignment
         fields = [
             "id", "caregiver", "caregiver_name", "caregiver_gender", "caregiver_avg_rating", "caregiver_review_count",
+            "caregiver_photo_url", "caregiver_special_talents", "caregiver_care_count", "caregiver_satisfaction_percent",
             "patient", "patient_name", "patient_gender", "patient_code",
             "assigned_by", "assigned_by_username", "status", "notes", "assigned_at", "ended_at",
         ]
         read_only_fields = [
             "id", "caregiver_name", "caregiver_gender", "caregiver_avg_rating", "caregiver_review_count",
+            "caregiver_photo_url", "caregiver_special_talents", "caregiver_care_count", "caregiver_satisfaction_percent",
             "patient_name", "patient_gender", "patient_code", "assigned_by", "assigned_by_username", "status", "assigned_at", "ended_at",
         ]
 
@@ -40,6 +46,22 @@ class CaregiverAssignmentSerializer(serializers.ModelSerializer):
 
     def get_caregiver_review_count(self, obj):
         return CaregiverReview.objects.filter(caregiver=obj.caregiver).count()
+
+    def get_caregiver_photo_url(self, obj):
+        from apps.caregivers.showcase import profile_photo_url
+        return profile_photo_url(obj.caregiver)
+
+    def get_caregiver_special_talents(self, obj):
+        from apps.caregivers.showcase import special_talent_labels
+        return special_talent_labels(obj.caregiver)
+
+    def get_caregiver_care_count(self, obj):
+        from apps.caregivers.showcase import care_count
+        return care_count(obj.caregiver)
+
+    def get_caregiver_satisfaction_percent(self, obj):
+        from apps.caregivers.showcase import satisfaction_percent
+        return satisfaction_percent(obj.caregiver)
 
 
 class CreateAssignmentSerializer(serializers.Serializer):

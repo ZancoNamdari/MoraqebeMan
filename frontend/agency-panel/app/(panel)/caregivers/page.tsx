@@ -124,7 +124,7 @@ const DOC_CHECKLIST = [
   { field: "doc_no_criminal_record", docType: "no_criminal_record", label: "عدم سوءپیشینه" },
   { field: "doc_no_addiction_test", docType: "no_addiction_test", label: "آزمایش عدم اعتیاد" },
   { field: "doc_identity_verified", docType: "identity_verified", label: "تأیید مدارک هویتی" },
-  { field: "doc_personal_photo", docType: "personal_photo", label: "عکس پرسنلی" },
+  { field: "doc_personal_photo", docType: "personal_photo", label: "عکس پروفایل (پرسنلی)" },
   { field: "doc_mental_health_test", docType: "mental_health_test", label: "آزمون سلامت روان" },
   { field: "doc_promissory_note", docType: "promissory_note", label: "دریافت سفته/ضمانت" },
   { field: "doc_id_card_received", docType: "id_card_received", label: "دریافت مدرک شناسایی" },
@@ -574,7 +574,7 @@ function DocumentChecklistRow({ item, agencyId, docType, label, canReview, onUpd
           busy && "pointer-events-none opacity-50",
         )}>
           {upload ? "آپلود مجدد فایل" : "آپلود فایل"}
-          <input type="file" className="hidden" disabled={busy} onChange={handleFile} />
+          <input type="file" accept={docType === "personal_photo" ? "image/*" : undefined} className="hidden" disabled={busy} onChange={handleFile} />
         </label>
         {upload?.file && (
           <a href={upload.file} target="_blank" rel="noopener noreferrer" className="text-[10px] text-purple-700 underline">

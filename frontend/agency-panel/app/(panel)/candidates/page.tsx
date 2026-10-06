@@ -24,7 +24,7 @@ const HISTORY_FIELD_LABEL: Record<string, string> = {
   agency_pipeline_status: "مرحله سرویس‌دهی", is_urgent: "فوری", tags: "برچسب‌ها",
   process_milestones: "مراحل طی‌شده",
   doc_no_criminal_record: "عدم سوءپیشینه", doc_no_addiction_test: "آزمایش عدم اعتیاد",
-  doc_identity_verified: "احراز هویت", doc_personal_photo: "عکس پرسنلی",
+  doc_identity_verified: "احراز هویت", doc_personal_photo: "عکس پروفایل (پرسنلی)",
   doc_mental_health_test: "آزمایش سلامت روان", doc_promissory_note: "سفته/ضمانت",
   doc_id_card_received: "دریافت کارت شناسایی",
 }

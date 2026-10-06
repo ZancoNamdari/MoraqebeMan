@@ -269,7 +269,7 @@ export interface PatientDocumentUpload {
 export const PATIENT_DOCUMENT_TYPES: [string, string][] = [
   ["national_id_card", "کارت ملی"],
   ["birth_certificate", "شناسنامه"],
-  ["personal_photo", "عکس پرسنلی"],
+  ["personal_photo", "عکس پروفایل (پرسنلی)"],
 ]
 
 // Same shape as the platform-wide suggest-caregivers response — the

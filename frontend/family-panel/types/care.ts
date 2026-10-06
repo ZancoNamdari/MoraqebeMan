@@ -9,6 +9,10 @@ export interface CaregiverAssignment {
   patient_code: string
   caregiver_avg_rating: number | null
   caregiver_review_count: number
+  caregiver_photo_url: string | null
+  caregiver_special_talents: string[]
+  caregiver_care_count: number
+  caregiver_satisfaction_percent: number | null
   assigned_by: number | null
   assigned_by_username: string | null
   status: "active" | "ended"
