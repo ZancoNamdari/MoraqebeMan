@@ -16,7 +16,9 @@ from rest_framework.views import APIView
 from apps.agencies.tenancy import can_review_caregiver_document
 from apps.audit.services import AuditService
 
-from .models import CaregiverDocumentType, CaregiverDocumentUpload, CaregiverProfile
+from .models import (
+    CaregiverDocumentReviewStatus, CaregiverDocumentType, CaregiverDocumentUpload, CaregiverProfile,
+)
 from .serializers import CaregiverDocumentUploadSerializer
 
 audit = AuditService()
@@ -81,3 +83,63 @@ class CaregiverDocumentRejectView(APIView):
         upload.reject(request.user, reason)
         audit.caregiver_updated(request.user.id, user_id, section=f"document_rejected:{document_type}")
         return Response(CaregiverDocumentUploadSerializer(upload).data)
+
+
+MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024
+
+
+class CaregiverProfilePhotoView(APIView):
+    """
+    GET/POST /api/caregivers/<user_id>/profile-photo/
+    مسیر ساده و مستقیمِ «عکس پروفایل» — همان رکوردِ مدرک «عکس پرسنلی»
+    (CaregiverDocumentType.PERSONAL_PHOTO) را می‌خواند/می‌نویسد، پس تأیید و رد
+    از چک‌لیست مدارک بدون تغییر کار می‌کند. هم خود مراقب و هم کسی که
+    اجازه‌ی بررسی مدارک او را دارد (ادمین پلتفرم یا مالک/سرپرست همان آژانس)
+    می‌تواند عکس را ببیند و بارگذاری کند. بارگذاری همیشه وضعیت را به «در انتظار
+    بررسی» برمی‌گرداند؛ تأیید جداگانه و توسط فرد دیگری انجام می‌شود.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _caregiver_for(self, request, user_id):
+        caregiver = CaregiverProfile.objects.filter(user_id=user_id).first()
+        if caregiver is None:
+            return None
+        if request.user.id == caregiver.user_id or can_review_caregiver_document(request.user, caregiver):
+            return caregiver
+        return None
+
+    def get(self, request, user_id):
+        caregiver = self._caregiver_for(request, user_id)
+        if caregiver is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        upload = CaregiverDocumentUpload.objects.filter(
+            caregiver=caregiver, document_type=CaregiverDocumentType.PERSONAL_PHOTO,
+        ).first()
+        return Response(CaregiverDocumentUploadSerializer(upload).data if upload else None)
+
+    def post(self, request, user_id):
+        caregiver = self._caregiver_for(request, user_id)
+        if caregiver is None:
+            return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        uploaded_file = request.data.get("file")
+        if not uploaded_file:
+            return Response({"detail": "فایل الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
+        if not str(getattr(uploaded_file, "content_type", "")).startswith("image/"):
+            return Response({"detail": "عکس پروفایل باید فایل تصویری باشد."}, status=status.HTTP_400_BAD_REQUEST)
+        if getattr(uploaded_file, "size", 0) > MAX_PROFILE_PHOTO_BYTES:
+            return Response({"detail": "حجم عکس نباید بیشتر از ۵ مگابایت باشد."}, status=status.HTTP_400_BAD_REQUEST)
+
+        upload, _ = CaregiverDocumentUpload.objects.update_or_create(
+            caregiver=caregiver, document_type=CaregiverDocumentType.PERSONAL_PHOTO,
+            defaults={
+                "file": uploaded_file,
+                "status": CaregiverDocumentReviewStatus.PENDING,
+                "uploaded_by": request.user,
+                "reviewed_by": None,
+                "reviewed_at": None,
+                "rejection_reason": "",
+            },
+        )
+        upload._sync_profile_flag()
+        audit.caregiver_updated(request.user.id, user_id, section="profile_photo_uploaded")
+        return Response(CaregiverDocumentUploadSerializer(upload).data, status=status.HTTP_201_CREATED)

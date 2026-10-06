@@ -215,3 +215,31 @@ class CaregiverShowcaseTests(TestCase):
         up.status = CaregiverDocumentReviewStatus.APPROVED
         up.save()
         self.assertTrue(CaregiverAssignmentSerializer(a1).data["caregiver_photo_url"])
+
+
+class ProfilePhotoViewTests(TestCase):
+    def test_self_upload_validation_and_stranger_404(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from rest_framework.test import APIClient
+
+        owner = get_user_model().objects.create(phone_number="09121110077", username="pp1")
+        CaregiverProfile.objects.create(user=owner)
+        stranger = get_user_model().objects.create(phone_number="09121110078", username="pp2")
+
+        c = APIClient()
+        c.force_authenticate(owner)
+        url = f"/api/caregivers/{owner.id}/profile-photo/"
+        self.assertEqual(c.get(url).status_code, 200)
+        bad = c.post(url, {"file": SimpleUploadedFile("a.txt", b"x", content_type="text/plain")}, format="multipart")
+        self.assertEqual(bad.status_code, 400)
+        ok = c.post(url, {"file": SimpleUploadedFile("a.jpg", b"x", content_type="image/jpeg")}, format="multipart")
+        self.assertEqual(ok.status_code, 201)
+        self.assertEqual(ok.data["status"], "pending")
+        self.assertEqual(c.get(url).data["status"], "pending")
+
+        c.force_authenticate(stranger)
+        self.assertEqual(c.get(url).status_code, 404)
+        self.assertEqual(c.post(url, {}, format="multipart").status_code, 404)
+        from apps.caregivers.models import CaregiverDocumentUpload
+        for u in CaregiverDocumentUpload.objects.all():
+            u.file.delete(save=False)

@@ -11,6 +11,7 @@ import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/wizard-f
 import { LocationPicker } from "@/components/wizard-forms/location-picker"
 import { JalaliDatePicker } from "@/components/wizard-forms/jalali-date-picker"
 import { FormSection } from "@/components/wizard-forms/form-section"
+import { ProfilePhotoUploader } from "@/components/wizard-forms/profile-photo-uploader"
 import { TalentPicker } from "@/components/wizard-forms/talent-picker"
 import { CollaborationPicker, collaborationProblems, type CollaborationSchedule } from "@/components/wizard-forms/collaboration-picker"
 import { EthnicityPicker } from "@/components/wizard-forms/ethnicity-picker"
@@ -619,6 +620,9 @@ export default function CaregiverRegistrationWizard() {
               <p className="text-sm text-muted-foreground">هر بخش را با زدن روی عنوانش باز یا بسته کنید.</p>
             </CardHeader>
             <CardContent className="space-y-3">
+              <FormSection title="عکس پروفایل" defaultOpen>
+                <ProfilePhotoUploader userId={caregiverId} canApprove />
+              </FormSection>
               <FormSection title="اطلاعات شناسایی" defaultOpen>
                 <Field label="جنسیت"><ChoiceSelect choices={C.GENDER} value={identity.gender} onChange={(v) => setIdentity({ ...identity, gender: v })} /></Field>
                 <Field label="نام پدر"><Input value={identity.father_name} onChange={(e) => setIdentity({ ...identity, father_name: e.target.value })} /></Field>

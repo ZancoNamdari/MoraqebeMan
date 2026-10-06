@@ -18,6 +18,7 @@ import {
   CHRONIC_DISEASE_TYPE, MEDICATION_TYPE,
 } from "@/lib/constants"
 import { parseJalaliDate, formatJalaliDate, daysInJalaliMonth, PERSIAN_MONTH_LIST, JALALI_YEAR_RANGE, jalaliAge } from "@/lib/jalali"
+import { ProfilePhotoUploader } from "@/components/forms/profile-photo-uploader"
 import { TalentPicker } from "@/components/forms/talent-picker"
 import { ROUTES } from "@/lib/routes"
 
@@ -112,6 +113,9 @@ export default function IdentityFormPage() {
             {saved && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">اطلاعات با موفقیت ذخیره شد.</div>}
             {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
+            <FormSection title="عکس پروفایل" defaultOpen>
+              <ProfilePhotoUploader userId={user.id} />
+            </FormSection>
             <FormSection title="اطلاعات شناسایی" defaultOpen>
               <Field label="نام کامل"><Input value={form.full_name} disabled /></Field>
               <Field label="جنسیت"><ChoiceSelect choices={GENDER} value={form.gender || ""} onChange={(v) => set("gender", v)} /></Field>
