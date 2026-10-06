@@ -41,6 +41,7 @@ export function ProfilePhotoUploader({ userId, canApprove = false }: { userId: n
   const [photo, setPhoto] = useState<PhotoUpload | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  const [preview, setPreview] = useState<string | null>(null)
   const input = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -53,12 +54,15 @@ export function ProfilePhotoUploader({ userId, canApprove = false }: { userId: n
     e.target.value = ""
     if (!picked) return
     setBusy(true); setError("")
+    setPreview(URL.createObjectURL(picked))
     try {
       const body = new FormData()
       body.append("file", await shrinkImage(picked))
-      const { data } = await api.post(`/api/caregivers/${userId}/profile-photo/`, body)
+      const { data } = await api.post(`/api/caregivers/${userId}/profile-photo/`, body, { headers: { "Content-Type": "multipart/form-data" } })
       setPhoto(data)
+      setPreview(null)
     } catch (err: any) {
+      setPreview(null)
       setError(err?.response?.data?.detail || "آپلود عکس با خطا مواجه شد.")
     } finally {
       setBusy(false)
@@ -80,7 +84,7 @@ export function ProfilePhotoUploader({ userId, canApprove = false }: { userId: n
   return (
     <div className="flex items-center gap-4">
       <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted text-3xl">
-        {photo?.file ? <img src={photo.file} alt="عکس پروفایل" className="h-full w-full object-cover" /> : "👤"}
+        {preview || photo?.file ? <img src={preview ?? photo?.file ?? ""} alt="عکس پروفایل" className="h-full w-full object-cover" /> : "👤"}
       </div>
       <div className="space-y-2">
         {photo && (
