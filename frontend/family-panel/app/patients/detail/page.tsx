@@ -447,7 +447,7 @@ function CareTab({ patientId }: { patientId: number }) {
               {team.map((a) => (
                 <div key={a.id} className="rounded-lg border border-pink-100 bg-pink-50/50 p-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 shrink-0 overflow-hidden items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-sm">{a.caregiver_photo_url ? <img src={a.caregiver_photo_url} alt={a.caregiver_name} className="h-full w-full object-cover" /> : caregiverAvatar(a.caregiver_gender)}</div>
+                    <div className="flex h-12 w-12 shrink-0 overflow-hidden items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-sm">{a.caregiver_photo_url ? <img src={/^https?:\/\//.test(a.caregiver_photo_url) ? a.caregiver_photo_url : `${process.env.NEXT_PUBLIC_API_URL || ""}${a.caregiver_photo_url}`} alt={a.caregiver_name} className="h-full w-full object-cover" /> : caregiverAvatar(a.caregiver_gender)}</div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">{a.caregiver_name}</p>
                       <p className="text-xs text-muted-foreground">

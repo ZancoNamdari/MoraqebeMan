@@ -115,7 +115,7 @@ class CaregiverProfilePhotoView(APIView):
         upload = CaregiverDocumentUpload.objects.filter(
             caregiver=caregiver, document_type=CaregiverDocumentType.PERSONAL_PHOTO,
         ).first()
-        return Response(CaregiverDocumentUploadSerializer(upload).data if upload else None)
+        return Response(CaregiverDocumentUploadSerializer(upload, context={"request": request}).data if upload else None)
 
     def post(self, request, user_id):
         caregiver = self._caregiver_for(request, user_id)
@@ -142,4 +142,4 @@ class CaregiverProfilePhotoView(APIView):
         )
         upload._sync_profile_flag()
         audit.caregiver_updated(request.user.id, user_id, section="profile_photo_uploaded")
-        return Response(CaregiverDocumentUploadSerializer(upload).data, status=status.HTTP_201_CREATED)
+        return Response(CaregiverDocumentUploadSerializer(upload, context={"request": request}).data, status=status.HTTP_201_CREATED)

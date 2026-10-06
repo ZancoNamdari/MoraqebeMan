@@ -4,6 +4,13 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react"
 import { api } from "@/services/api"
 import { Button } from "@/components/ui/button"
 
+// آدرس فایل ممکن است نسبی (/media/...) باشد؛ باید روی دامنه‌ی API باز شود، نه دامنه‌ی پنل.
+export function mediaUrl(path: string | null | undefined): string {
+  if (!path) return ""
+  if (/^https?:\/\//.test(path)) return path
+  return `${process.env.NEXT_PUBLIC_API_URL || ""}${path}`
+}
+
 interface PhotoUpload {
   file: string | null
   status: "pending" | "approved" | "rejected"
@@ -84,7 +91,7 @@ export function ProfilePhotoUploader({ userId, canApprove = false }: { userId: n
   return (
     <div className="flex items-center gap-4">
       <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted text-3xl">
-        {preview || photo?.file ? <img src={preview ?? photo?.file ?? ""} alt="عکس پروفایل" className="h-full w-full object-cover" /> : "👤"}
+        {preview || photo?.file ? <img src={preview ?? mediaUrl(photo?.file)} alt="عکس پروفایل" className="h-full w-full object-cover" /> : "👤"}
       </div>
       <div className="space-y-2">
         {photo && (
