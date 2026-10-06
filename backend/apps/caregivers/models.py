@@ -85,6 +85,14 @@ class IdentityProfile(models.Model):
         verbose_name="مایل است هنگام کار فرزندش همراهش باشد؟",
         help_text="فقط وقتی currently_caring_for_own_child=True معنا دارد؛ در غیر این صورت خالی ذخیره می‌شود.",
     )
+    special_talents = models.JSONField(
+        default=list, blank=True, verbose_name="استعدادها و مهارت‌های ویژه",
+        help_text="فهرستی از مقادیر SpecialTalent؛ در پروفایل نمایش داده می‌شود.",
+    )
+    special_talents_other = models.CharField(
+        max_length=200, blank=True, verbose_name="سایر استعدادها",
+        help_text="فقط وقتی 'other' در special_talents باشد معنا دارد.",
+    )
     military_status = models.CharField(
         max_length=30, choices=MilitaryStatus.choices, null=True, blank=True,
         verbose_name="وضعیت نظام وظیفه", help_text="فقط برای جنسیت مرد",

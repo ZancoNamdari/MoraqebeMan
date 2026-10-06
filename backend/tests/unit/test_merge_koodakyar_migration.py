@@ -164,3 +164,20 @@ class IdentityEthnicityAndAgeTests(TestCase):
         self.assertEqual(ok.validated_data["ethnicity_details"], {"turk": ["tabrizi"], "kurd": ["sanandaji"]})
         bad = IdentityProfileSerializer(data={"ethnicities": ["turk"], "ethnicity_details": {"turk": ["nope"]}}, partial=True)
         self.assertFalse(bad.is_valid())
+
+
+class SpecialTalentSerializerTests(TestCase):
+    def test_validation_and_other_text_reset(self):
+        from apps.caregivers.serializers import IdentityProfileSerializer
+        s = IdentityProfileSerializer(data={"special_talents": ["piano", "bogus"]}, partial=True)
+        self.assertFalse(s.is_valid())
+        self.assertIn("special_talents", s.errors)
+        s = IdentityProfileSerializer(
+            data={"special_talents": ["piano", "piano"], "special_talents_other": "x"}, partial=True)
+        self.assertTrue(s.is_valid(), s.errors)
+        self.assertEqual(s.validated_data["special_talents"], ["piano"])
+        self.assertEqual(s.validated_data["special_talents_other"], "")
+        s = IdentityProfileSerializer(
+            data={"special_talents": ["other"], "special_talents_other": "ژونگلر"}, partial=True)
+        self.assertTrue(s.is_valid(), s.errors)
+        self.assertEqual(s.validated_data["special_talents_other"], "ژونگلر")

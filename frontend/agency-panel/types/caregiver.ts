@@ -32,6 +32,8 @@ export interface IdentityFormData {
   has_children: boolean | null
   currently_caring_for_own_child: boolean | null
   child_accompany_at_work: string
+  special_talents: string[]
+  special_talents_other: string
   military_status: string | null
   height_range: string
   weight_range: string

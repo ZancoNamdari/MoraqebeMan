@@ -18,6 +18,7 @@ import {
   CHRONIC_DISEASE_TYPE, MEDICATION_TYPE,
 } from "@/lib/constants"
 import { parseJalaliDate, formatJalaliDate, daysInJalaliMonth, PERSIAN_MONTH_LIST, JALALI_YEAR_RANGE, jalaliAge } from "@/lib/jalali"
+import { TalentPicker } from "@/components/forms/talent-picker"
 import { ROUTES } from "@/lib/routes"
 
 const emptyForm: MyIdentityProfile = {
@@ -249,9 +250,6 @@ export default function IdentityFormPage() {
             </FormSection>
 
             <FormSection title="اطلاعات تکمیلی">
-              {!form.has_children && (
-                <p className="text-sm text-muted-foreground">فعلاً مورد تکمیلی‌ای برای نمایش نیست.</p>
-              )}
               {form.has_children && (
                 <Field label="آیا در حال حاضر در حال مراقبت از فرزند خودتان هستید یا نیازی به مراقبت شما ندارد؟">
                   <YesNo value={form.currently_caring_for_own_child ?? null} onChange={(v) => { set("currently_caring_for_own_child", v); if (!v) set("child_accompany_at_work", "") }} />
@@ -262,6 +260,11 @@ export default function IdentityFormPage() {
                   <ChoiceSelect choices={CHILD_ACCOMPANY_AT_WORK} value={form.child_accompany_at_work || ""} onChange={(v) => set("child_accompany_at_work", v)} />
                 </Field>
               )}
+            <TalentPicker
+                value={form.special_talents ?? []}
+                other={form.special_talents_other ?? ""}
+                onChange={(talents, other) => { set("special_talents", talents); set("special_talents_other", other) }}
+              />
             </FormSection>
           </>
         )}

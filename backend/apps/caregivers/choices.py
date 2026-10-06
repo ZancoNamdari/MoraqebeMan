@@ -733,3 +733,38 @@ class LocalLanguageFluency(models.TextChoices):
     conversation in it."""
     UNDERSTAND_ONLY = "understand_only", "فقط متوجه می‌شود"
     CAN_CONVERSE = "can_converse", "می‌تواند مکالمه کند"
+
+
+class SpecialTalent(models.TextChoices):
+    """استعدادها و مهارت‌های ویژه — برای همه نقش‌ها یکسان است و در پروفایل
+    نمایش داده می‌شود تا خانواده بتواند مراقبی با استعداد موردنظر را ترجیح دهد
+    (مثلاً کودک‌یاری که پیانو یا نقاشی بلد است)."""
+    # سازها
+    PIANO = "piano", "پیانو"
+    GUITAR = "guitar", "گیتار"
+    VIOLIN = "violin", "ویولن"
+    SANTUR = "santur", "سنتور"
+    TAR_SETAR = "tar_setar", "تار و سه‌تار"
+    NEY = "ney", "نی"
+    DAF_TONBAK = "daf_tonbak", "دف و تنبک"
+    OTHER_INSTRUMENT = "other_instrument", "سایر سازها"
+    # هنر
+    PAINTING = "painting", "نقاشی"
+    CALLIGRAPHY = "calligraphy", "خوشنویسی"
+    HANDICRAFT = "handicraft", "کاردستی و هنرهای دستی"
+    KNITTING_EMBROIDERY = "knitting_embroidery", "بافتنی و گلدوزی"
+    POTTERY = "pottery", "سفالگری"
+    SINGING = "singing", "آواز و خوانندگی"
+    STORYTELLING = "storytelling", "قصه‌گویی و نمایش"
+    # علمی و فناوری
+    ROBOTICS = "robotics", "رباتیک"
+    PROGRAMMING = "programming", "برنامه‌نویسی"
+    SCIENCE_EXPERIMENTS = "science_experiments", "آزمایش‌های علمی"
+    CHESS_BOARD_GAMES = "chess_board_games", "شطرنج و بازی‌های فکری"
+    # ورزش
+    SWIMMING = "swimming", "شنا"
+    MARTIAL_ARTS = "martial_arts", "ورزش‌های رزمی"
+    YOGA_PILATES = "yoga_pilates", "یوگا و پیلاتس"
+    BALL_SPORTS = "ball_sports", "ورزش‌های توپی"
+    # سایر
+    OTHER = "other", "سایر"

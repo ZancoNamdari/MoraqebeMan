@@ -21,6 +21,7 @@ from .choices import (
     MedicationType,
     MobilityAssistanceAbility,
     OfferedService,
+    SpecialTalent,
     PreviousWorkplace,
     ServiceLocation,
     Shift,
@@ -76,6 +77,7 @@ class IdentityProfileAdminForm(forms.ModelForm):
     ethnicities = JSONCheckboxMultipleChoiceField(choices=Ethnicity.choices, label="قومیت / زبان مادری")
     chronic_disease_types = JSONCheckboxMultipleChoiceField(choices=ChronicDiseaseType.choices, label="انواع بیماری‌های مزمن")
     medication_types = JSONCheckboxMultipleChoiceField(choices=MedicationType.choices, label="انواع داروها")
+    special_talents = JSONCheckboxMultipleChoiceField(choices=SpecialTalent.choices, label="استعدادها و مهارت‌های ویژه", required=False)
 
     class Meta:
         model = IdentityProfile

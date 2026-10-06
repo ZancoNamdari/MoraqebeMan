@@ -1402,3 +1402,25 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
     ],
   },
 }
+
+// استعدادها و مهارت‌های ویژه — برای همه نقش‌ها؛ در پروفایل نمایش داده می‌شود.
+export const TALENT_GROUPS: { title: string; choices: Choice[] }[] = [
+  { title: "ساز", choices: [
+    ["piano", "پیانو"], ["guitar", "گیتار"], ["violin", "ویولن"], ["santur", "سنتور"],
+    ["tar_setar", "تار و سه‌تار"], ["ney", "نی"], ["daf_tonbak", "دف و تنبک"], ["other_instrument", "سایر سازها"],
+  ] },
+  { title: "هنر", choices: [
+    ["painting", "نقاشی"], ["calligraphy", "خوشنویسی"], ["handicraft", "کاردستی و هنرهای دستی"],
+    ["knitting_embroidery", "بافتنی و گلدوزی"], ["pottery", "سفالگری"], ["singing", "آواز و خوانندگی"],
+    ["storytelling", "قصه‌گویی و نمایش"],
+  ] },
+  { title: "علمی و فناوری", choices: [
+    ["robotics", "رباتیک"], ["programming", "برنامه‌نویسی"], ["science_experiments", "آزمایش‌های علمی"],
+    ["chess_board_games", "شطرنج و بازی‌های فکری"],
+  ] },
+  { title: "ورزش", choices: [
+    ["swimming", "شنا"], ["martial_arts", "ورزش‌های رزمی"], ["yoga_pilates", "یوگا و پیلاتس"], ["ball_sports", "ورزش‌های توپی"],
+  ] },
+  { title: "سایر", choices: [["other", "سایر"]] },
+]
+export const SPECIAL_TALENT: Choice[] = TALENT_GROUPS.flatMap((g) => g.choices)

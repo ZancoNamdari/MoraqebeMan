@@ -4,7 +4,7 @@ from apps.accounts.models import User
 from .schedule import ScheduleError, clean_schedule, derive_availability
 from apps.accounts.jalali_fields import JalaliDateField, JalaliDateTimeField
 
-from .choices import (AcceptedPhysicalCondition, AcceptedAgeRange, CollaborationMode, CollaborationType,
+from .choices import (SpecialTalent, AcceptedPhysicalCondition, AcceptedAgeRange, CollaborationMode, CollaborationType,
                       OfferedService, ServiceLocation, Shift, Weekday, CommuteMethod,
                       CommunicationSkill, CaregivingSkill, MobilityAssistanceAbility,
                       HouseholdSkill, ForeignLanguage, LocalLanguage,
@@ -178,6 +178,7 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
             "emergency_contact_phone", "emergency_contact_relation", "landline_phone", "extra_phone_numbers",
             "province", "city", "district", "postal_code", "full_address",
             "has_children", "currently_caring_for_own_child", "child_accompany_at_work",
+            "special_talents", "special_talents_other",
             "created_at", "updated_at",
         ]
         read_only_fields = ["age", "created_at", "updated_at"]
@@ -188,6 +189,13 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
         if invalid:
             raise serializers.ValidationError(f"قومیت نامعتبر: {invalid}")
         return value
+
+    def validate_special_talents(self, value):
+        valid = {c[0] for c in SpecialTalent.choices}
+        invalid = [v for v in (value or []) if v not in valid]
+        if invalid:
+            raise serializers.ValidationError(f"استعداد نامعتبر: {invalid}")
+        return list(dict.fromkeys(value or []))
 
     def validate_ethnicity_details(self, value):
         if not isinstance(value, dict):
@@ -229,6 +237,11 @@ class IdentityProfileSerializer(serializers.ModelSerializer):
         caring = attrs.get("currently_caring_for_own_child", getattr(self.instance, "currently_caring_for_own_child", None))
         if not (has_children and caring):
             attrs["child_accompany_at_work"] = ""
+
+        # متن «سایر استعدادها» فقط وقتی «سایر» انتخاب شده نگه داشته می‌شود.
+        talents = attrs.get("special_talents", getattr(self.instance, "special_talents", None)) or []
+        if "other" not in talents:
+            attrs["special_talents_other"] = ""
 
         # کشور تابعیت فقط برای اتباع؛ متن «سایر» فقط وقتی کشور = سایر.
         non_iranian = attrs.get("is_non_iranian_national", getattr(self.instance, "is_non_iranian_national", None))

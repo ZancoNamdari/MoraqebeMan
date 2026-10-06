@@ -152,6 +152,7 @@ export default function CaregiverProfilePage() {
                   <InfoRow label="تاریخ تولد" value={profile.identity.birth_date} />
                   <InfoRow label="بیماری زمینه‌ای" value={yesNoLabel(profile.identity.has_chronic_disease)} />
                   <InfoRow label="شماره تماس اضطراری" value={profile.identity.emergency_contact_phone} />
+                  <InfoRow label="استعدادها و مهارت‌های ویژه" value={[labelsForValues(C.SPECIAL_TALENT, (profile.identity.special_talents ?? []).filter((x: string) => x !== "other")), (profile.identity.special_talents ?? []).includes("other") ? (profile.identity.special_talents_other || "سایر") : ""].filter(Boolean).join("، ")} />
                   <InfoRow label="نشانی" value={profile.identity.full_address} />
                 </div>
               ) : (

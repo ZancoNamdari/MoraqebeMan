@@ -11,6 +11,7 @@ import { Field, ChoiceSelect, CheckboxGroup, YesNo } from "@/components/wizard-f
 import { LocationPicker } from "@/components/wizard-forms/location-picker"
 import { JalaliDatePicker } from "@/components/wizard-forms/jalali-date-picker"
 import { FormSection } from "@/components/wizard-forms/form-section"
+import { TalentPicker } from "@/components/wizard-forms/talent-picker"
 import { CollaborationPicker, collaborationProblems, type CollaborationSchedule } from "@/components/wizard-forms/collaboration-picker"
 import { EthnicityPicker } from "@/components/wizard-forms/ethnicity-picker"
 import { jalaliAge } from "@/lib/jalali"
@@ -67,7 +68,7 @@ const EMPTY_IDENTITY: IdentityFormData = {
   father_name: "", national_id: "", birth_certificate_number: "",
   nursing_license_number: "", extra_phone_numbers: [],
   birth_date: "", gender: "", marital_status: "", children_count: "",
-  has_children: null, currently_caring_for_own_child: null, child_accompany_at_work: "", military_status: null,
+  has_children: null, currently_caring_for_own_child: null, child_accompany_at_work: "", special_talents: [], special_talents_other: "", military_status: null,
   height_range: "", weight_range: "", ethnicities: [], ethnicity_details: {}, is_non_iranian_national: null, nationality_country: "", nationality_country_other: "",
   has_chronic_disease: false, chronic_disease_types: [], chronic_disease_detail: "",
   takes_permanent_medication: false, medication_types: [], medication_detail: "", psychiatric_medication_detail: "",
@@ -732,15 +733,17 @@ export default function CaregiverRegistrationWizard() {
               </FormSection>
 
               <FormSection title="اطلاعات تکمیلی">
-                {!identity.has_children && (
-                  <p className="text-sm text-muted-foreground">فعلاً مورد تکمیلی‌ای برای نمایش نیست.</p>
-                )}
                 {identity.has_children && (
                   <Field label="آیا در حال حاضر در حال مراقبت از فرزند خودتان هستید یا نیازی به مراقبت شما ندارد؟"><YesNo value={identity.currently_caring_for_own_child} onChange={(v) => setIdentity({ ...identity, currently_caring_for_own_child: v, ...(v ? {} : { child_accompany_at_work: "" }) })} /></Field>
                 )}
                 {identity.has_children && identity.currently_caring_for_own_child && (
                   <Field label="آیا مایل هستید در هنگام کار فرزندتان همراه شما باشد؟"><ChoiceSelect choices={C.CHILD_ACCOMPANY_AT_WORK} value={identity.child_accompany_at_work} onChange={(v) => setIdentity({ ...identity, child_accompany_at_work: v })} /></Field>
                 )}
+              <TalentPicker
+                  value={identity.special_talents}
+                  other={identity.special_talents_other}
+                  onChange={(talents, other) => setIdentity({ ...identity, special_talents: talents, special_talents_other: other })}
+                />
               </FormSection>
             </CardContent>
           </Card>
