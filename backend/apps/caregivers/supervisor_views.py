@@ -28,6 +28,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import User, UserRole
 from apps.audit.services import AuditService
 
+from .showcase import care_count, satisfaction_percent
 from .models import (
     CaregiverDocumentType,
     CaregiverExperience,
@@ -228,6 +229,11 @@ class SupervisorCaregiverFullProfileView(APIView):
             "skills": getattr(profile, "skills", None),
             "references": profile.references.all(),
             "documents": _get_documents_dict(profile),
+            "showcase": {
+                "care_count": care_count(profile),
+                "satisfaction_percent": satisfaction_percent(profile),
+                "review_count": profile.reviews.count(),
+            },
         }
         return Response(SupervisorCaregiverFullProfileSerializer(data).data)
 

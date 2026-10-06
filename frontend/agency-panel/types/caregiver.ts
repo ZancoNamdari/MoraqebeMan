@@ -175,4 +175,6 @@ export interface FullCaregiverProfile {
   experience: ExperienceFormData | null
   skills: SkillsFormData | null
   references: ReferenceFormData[]
+  documents?: Record<string, { file: string | null; status: "pending" | "approved" | "rejected" } | null>
+  showcase?: { care_count: number; satisfaction_percent: number | null; review_count: number } | null
 }

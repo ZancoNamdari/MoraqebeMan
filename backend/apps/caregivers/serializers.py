@@ -528,6 +528,8 @@ class CaregiverFullProfileSerializer(serializers.Serializer):
     # review page for an agency_supervisor) can see and act on the
     # uploaded files, not just the plain doc_* booleans.
     documents = serializers.DictField(allow_null=True, required=False)
+    # ویترین: تعداد مراقبت‌ها و درصد رضایت (فقط محاسبه‌شده، برای صفحه‌ی اول پروفایل)
+    showcase = serializers.DictField(allow_null=True, required=False)
 
 
 class SupervisorCaregiverFullProfileSerializer(CaregiverFullProfileSerializer):

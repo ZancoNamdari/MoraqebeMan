@@ -11,6 +11,7 @@ import { caregiverWizardService } from "@/services/caregiver_wizard.service"
 import { summarizeSchedule, type CollaborationSchedule } from "@/components/wizard-forms/collaboration-picker"
 import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
 import { FormSection } from "@/components/wizard-forms/form-section"
+import { CaregiverHero } from "@/components/wizard-forms/caregiver-hero"
 import { ROUTES } from "@/lib/routes"
 import * as C from "@/lib/wizard-constants"
 import { labelForValue, labelsForValues, yesNoLabel } from "@/lib/wizard-constants"
@@ -142,6 +143,8 @@ export default function CaregiverProfilePage() {
                 <strong>دلیل رد شدن (توسط پلتفرم):</strong> {profile.rejection_reason}
               </div>
             )}
+
+            <CaregiverHero userId={id} name={name} profile={profile} />
 
             <Section icon="🪪" title="اطلاعات هویتی">
               {profile.identity ? (
