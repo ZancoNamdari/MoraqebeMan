@@ -1149,9 +1149,25 @@ export default function CaregiverRegistrationWizard() {
                 (next) => setQuestionnaireAnswers((prev) => ({ ...prev, service_specific_answers: next })),
                 type, key, value,
               )
-              return (
-                <FormSection key={`scenario-${type}`} title={`سوال‌های موقعیتی — ${typeLabel}`}>
-                  {fields.map((f) => (
+              // هر زیرشاخه‌ی جداشده (مثلاً آشپزی، نوزاد، بهیار) باکس موقعیتیِ خودش را دارد.
+              const splitDefs = C.SPLIT_SUBTYPE_BOXES[type] ?? []
+              const branchOf = (s: string) => (type === "parastar" ? C.PARASTAR_INNER_TO_BRANCH[s] ?? s : s)
+              const boxOf = (f: C.ServiceSpecificField): string => {
+                if (!f.showIf) return ""
+                const hit = splitDefs.find(([b]) => f.showIf!.some((s) => chosenSubtypes.includes(s) && branchOf(s) === b))
+                return hit ? hit[0] : ""
+              }
+              const roleTitle = type === "nezafatchi" && splitDefs.length > 0 ? "نظافت" : typeLabel
+              const groups: { id: string; title: string; fields: C.ServiceSpecificField[] }[] = []
+              const roleFields = fields.filter((f) => boxOf(f) === "")
+              if (roleFields.length > 0) groups.push({ id: type, title: roleTitle, fields: roleFields })
+              for (const [sub, subLabel] of splitDefs) {
+                const subFields = fields.filter((f) => boxOf(f) === sub)
+                if (subFields.length > 0) groups.push({ id: `${type}-${sub}`, title: subLabel, fields: subFields })
+              }
+              return groups.map((g) => (
+                <FormSection key={`scenario-${g.id}`} title={`سوال‌های موقعیتی — ${g.title}`}>
+                  {g.fields.map((f) => (
                     <div key={f.key} className="rounded-lg border border-border p-3">
                       {f.type === "choice" ? (
                         <>
@@ -1171,7 +1187,7 @@ export default function CaregiverRegistrationWizard() {
                     </div>
                   ))}
                 </FormSection>
-              )
+              ))
             })}
             </CardContent>
           </Card>
