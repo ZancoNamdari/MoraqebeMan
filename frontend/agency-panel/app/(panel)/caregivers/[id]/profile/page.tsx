@@ -11,6 +11,8 @@ import { caregiverWizardService } from "@/services/caregiver_wizard.service"
 import { summarizeSchedule, type CollaborationSchedule } from "@/components/wizard-forms/collaboration-picker"
 import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
 import { FormSection } from "@/components/wizard-forms/form-section"
+import { TraitProfileView } from "@/components/wizard-forms/trait-profile-view"
+import type { TraitProfile } from "@/lib/trait-profiles"
 import { CaregiverHero } from "@/components/wizard-forms/caregiver-hero"
 import { ROUTES } from "@/lib/routes"
 import * as C from "@/lib/wizard-constants"
@@ -69,6 +71,7 @@ export default function CaregiverProfilePage() {
 
   const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, string>>({})
   const [questionnaireScores, setQuestionnaireScores] = useState<{ overall_flexibility_score: number; section_scores: Record<string, number> } | null>(null)
+  const [traitProfiles, setTraitProfiles] = useState<TraitProfile[]>([])
   const [questionnaireLoading, setQuestionnaireLoading] = useState(true)
   const [questionnaireSaving, setQuestionnaireSaving] = useState(false)
   const [questionnaireMessage, setQuestionnaireMessage] = useState("")
@@ -77,8 +80,9 @@ export default function CaregiverProfilePage() {
     if (!id) return
     caregiverWizardService.getCompatibilityQuestionnaire(id)
       .then((data) => {
-        const { section_scores, overall_flexibility_score, updated_at, ...answers } = data
+        const { section_scores, overall_flexibility_score, updated_at, trait_profiles, ...answers } = data
         setQuestionnaireAnswers(answers)
+        setTraitProfiles(trait_profiles ?? [])
         setQuestionnaireScores({ overall_flexibility_score, section_scores })
       })
       .catch(() => {})
@@ -250,6 +254,12 @@ export default function CaregiverProfilePage() {
                         ))}
                       </div>
                     </div>
+                  )}
+
+                  {traitProfiles.length > 0 && (
+                    <FormSection title="نتیجه‌ی سوال‌های موقعیتی" defaultOpen>
+                      <TraitProfileView profiles={traitProfiles} />
+                    </FormSection>
                   )}
 
                   {CAREGIVER_QUESTIONNAIRE.map((section) => (

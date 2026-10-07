@@ -23,6 +23,8 @@ import { parseApiErrors, errorsByField, referenceFieldError, type ApiFieldError 
 import { useAuth } from "@/hooks/useauth"
 import { caregiverWizardService } from "@/services/caregiver_wizard.service"
 import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
+import { buildTraitProfiles, type TraitProfile } from "@/lib/trait-profiles"
+import { TraitProfileView } from "@/components/wizard-forms/trait-profile-view"
 import { ROUTES } from "@/lib/routes"
 import * as C from "@/lib/wizard-constants"
 import type {
@@ -159,6 +161,7 @@ export default function CaregiverRegistrationWizard() {
   // treat it as one flat payload (see caregiverWizardService's
   // get/saveCompatibilityQuestionnaire).
   const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, any>>({})
+  const [traitProfiles, setTraitProfiles] = useState<TraitProfile[]>([])
   const [serviceTypes, setServiceTypes] = useState<string[]>([])
   const [serviceSubtypes, setServiceSubtypes] = useState<Record<string, string[]>>({})
 
@@ -495,7 +498,13 @@ export default function CaregiverRegistrationWizard() {
   async function handleStep5() {
     setError([]); setSaving(true)
     try {
-      await caregiverWizardService.saveCompatibilityQuestionnaire(caregiverId, questionnaireAnswers)
+      // نتیجه‌ی سوال‌های موقعیتی همراه پرسشنامه در حساب مراقب ذخیره و آخر نمایش داده می‌شود.
+      const profiles = buildTraitProfiles(
+        serviceTypes, serviceSubtypes,
+        questionnaireAnswers.service_specific_answers ?? {}, workPrefs.service_specific_answers ?? {},
+      )
+      await caregiverWizardService.saveCompatibilityQuestionnaire(caregiverId, { ...questionnaireAnswers, trait_profiles: profiles })
+      setTraitProfiles(profiles)
       setDone(true)
     } catch (err: any) {
       showErrors(err, "ثبت پرسشنامه با خطا مواجه شد — همه سؤالات باید پاسخ داده شوند.")
@@ -515,12 +524,18 @@ export default function CaregiverRegistrationWizard() {
   if (done) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-background to-secondary p-4">
-        <Card className="w-full max-w-md border-0 text-center shadow-xl">
+        <Card className={`w-full border-0 text-center shadow-xl ${traitProfiles.length ? "max-w-2xl" : "max-w-md"}`}>
           <CardContent className="space-y-4 p-8">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-4xl text-white shadow-lg shadow-emerald-500/30">
               ✓
             </div>
             <h2 className="text-xl font-bold text-emerald-900">اطلاعات {caregiverName} با موفقیت ثبت شد</h2>
+            {traitProfiles.length > 0 && (
+              <div className="space-y-3 text-start">
+                <p className="text-center text-base font-semibold text-foreground">نتیجه‌ی سوال‌های موقعیتی (در حساب {caregiverName} ذخیره شد)</p>
+                <TraitProfileView profiles={traitProfiles} />
+              </div>
+            )}
             <Button size="lg" className="w-full" onClick={() => router.push(ROUTES.caregivers)}>بازگشت به لیست خدمت‌دهنده‌ها</Button>
           </CardContent>
         </Card>

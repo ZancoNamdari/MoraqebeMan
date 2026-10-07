@@ -51,7 +51,7 @@ export const caregiverWizardService = {
     return data
   },
 
-  async saveCompatibilityQuestionnaire(userId: number, answers: Record<string, string>) {
+  async saveCompatibilityQuestionnaire(userId: number, answers: Record<string, any>) {
     const { data } = await api.put(`${base}/${userId}/compatibility-questionnaire/`, answers)
     return data
   },

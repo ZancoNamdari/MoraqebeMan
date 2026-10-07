@@ -619,13 +619,35 @@ class CaregiverCompatibilityQuestionnaireSerializer(serializers.ModelSerializer)
         fields = [
             "religiosity_level", "family_compatibility_level",
             "patience_level", "clinical_compatibility_level",
-            "service_specific_answers",
+            "service_specific_answers", "trait_profiles",
             "section_scores", "overall_flexibility_score", "updated_at",
         ]
         read_only_fields = ["section_scores", "overall_flexibility_score", "updated_at"]
 
     def validate_service_specific_answers(self, value):
         return _validate_service_specific_answers(value)
+
+    def validate_trait_profiles(self, value):
+        """[{id, title, traits: [{key, label, percent 0-100, questions}]}] —
+        only the known keys are kept, so the stored shape stays small and clean."""
+        if not isinstance(value, list) or len(value) > 12:
+            raise serializers.ValidationError("ساختار پروفایل نامعتبر است.")
+        cleaned = []
+        for prof in value:
+            if not isinstance(prof, dict) or not isinstance(prof.get("traits"), list) or len(prof["traits"]) > 40:
+                raise serializers.ValidationError("ساختار پروفایل نامعتبر است.")
+            traits = []
+            for tr in prof["traits"]:
+                try:
+                    percent, questions = int(tr["percent"]), int(tr.get("questions", 0))
+                    key, label = str(tr["key"])[:60], str(tr["label"])[:120]
+                except (KeyError, TypeError, ValueError):
+                    raise serializers.ValidationError("ساختار پارامتر نامعتبر است.")
+                if not 0 <= percent <= 100:
+                    raise serializers.ValidationError("درصد باید بین ۰ تا ۱۰۰ باشد.")
+                traits.append({"key": key, "label": label, "percent": percent, "questions": questions})
+            cleaned.append({"id": str(prof.get("id", ""))[:40], "title": str(prof.get("title", ""))[:100], "traits": traits})
+        return cleaned
 
     def get_section_scores(self, obj):
         return obj.section_scores()

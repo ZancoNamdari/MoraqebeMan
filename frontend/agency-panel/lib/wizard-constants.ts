@@ -1031,7 +1031,7 @@ const PARASTAR_MOTHER_CHILD_CARE_ABILITY: Choice[] = [
 ]
 
 // زیرشاخه‌های کودک‌محور مادریار (همه‌ی زیرشاخه‌ها به‌جز نوزاد).
-const CHILD_SUBTYPES = ["child", "homework_helper", "housework_child"]
+export const CHILD_SUBTYPES = ["child", "homework_helper", "housework_child"]
 
 // ترجیح مرحله‌ی همراهی با نوزاد — جایگزین زیرشاخه‌های قبلی
 // دوران بارداری / در شرف زایمان / پس از زایمان.

@@ -1036,6 +1036,16 @@ class CaregiverCompatibilityQuestionnaire(models.Model):
         ),
     )
 
+    trait_profiles = models.JSONField(
+        default=list, blank=True, verbose_name="پروفایل پارامترهای سوال‌های موقعیتی",
+        help_text=(
+            "نتیجه‌ی امتیازدهی سوال‌های موقعیتی (غیرمستقیم)، محاسبه‌شده در پنل "
+            "(مدل‌های lib/trait-model*.ts) و هنگام ذخیره‌ی پرسشنامه همراه آن ذخیره "
+            "می‌شود: لیستی از {id, title, traits: [{key, label, percent, questions}]} "
+            "برای هر نقش/زیرشاخه. سبک مراقب را نشان می‌دهد، نه توان مطلق او."
+        ),
+    )
+
     created_at = jmodels.jDateTimeField(auto_now_add=True, verbose_name="زمان تکمیل")
     updated_at = jmodels.jDateTimeField(auto_now=True, verbose_name="آخرین به‌روزرسانی")
 
