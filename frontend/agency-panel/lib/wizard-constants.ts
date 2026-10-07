@@ -1008,6 +1008,81 @@ const CHILD_RELATED_TRAINING_COURSE: Choice[] = [
 ]
 
 
+// ── فرم ۳ کودک‌یار: تحصیلات، مهارت‌ها و ویژگی‌های جانبی ─────────────────
+const CHILD_EDUCATION_FIELD: Choice[] = [
+  ["early_childhood", "آموزش و پرورش پیش‌دبستانی / خردسالان"],
+  ["elementary_education", "آموزش ابتدایی"],
+  ["child_psychology", "روانشناسی کودک"],
+  ["special_education", "آموزش و توانبخشی کودکان استثنایی"],
+  ["child_nursing_health", "پرستاری یا بهداشت کودک"],
+  ["other", "سایر رشته‌های مرتبط با کودک"],
+]
+
+const CHILD_EDUCATION_LEVEL: Choice[] = [
+  ["diploma", "دیپلم یا کاردانی"],
+  ["bachelor", "کارشناسی (یا دانشجوی کارشناسی)"],
+  ["master_plus", "کارشناسی ارشد و بالاتر"],
+]
+
+const PSYCHOLOGY_EDUCATION_LEVEL: Choice[] = [
+  ["none", "ندارم"],
+  ["short_course", "دوره یا کارگاه کوتاه‌مدت"],
+  ["student", "دانشجوی روانشناسی"],
+  ["bachelor", "کارشناسی روانشناسی"],
+  ["master_plus", "کارشناسی ارشد یا دکتری روانشناسی"],
+]
+
+const CRAFTS_WITH_CHILDREN_EXPERIENCE: Choice[] = [
+  ["none", "ندارم"],
+  ["occasionally", "گاهی با کودکان کاردستی ساخته‌ام"],
+  ["regularly", "به‌طور منظم با کودکان کاردستی می‌سازم"],
+  ["professional", "به‌صورت حرفه‌ای (کلاس یا مربیگری)"],
+]
+
+const CHILD_ENTERTAINMENT_METHOD: Choice[] = [
+  ["storytelling", "قصه‌گویی و نمایش"],
+  ["music_instrument", "نواختن ساز یا آموزش موسیقی"],
+  ["singing", "آواز و ریتم‌بازی"],
+  ["painting", "نقاشی و رنگ‌آمیزی"],
+  ["sports_games", "ورزش و بازی‌های حرکتی"],
+  ["board_puzzle_games", "بازی‌های فکری، پازل و لگو"],
+  ["robotics_computer", "رباتیک یا کار با رایانه"],
+  ["outdoor_play", "بازی در پارک و فضای باز"],
+  ["other", "سایر"],
+]
+
+const VALUED_EXTRA_QUALITY: Choice[] = [
+  ["artistic", "هنرمند (نقاشی، موسیقی، نمایش و...)"],
+  ["well_read", "با سواد و اهل مطالعه"],
+  ["crafts", "آشنا به کاردستی و ساخت‌وساز"],
+  ["good_taste", "خوش‌سلیقه"],
+]
+
+// ── فرم ۳ نوزادیار ───────────────────────────────────────────────────
+const MULTIPLES_NEWBORN_EXPERIENCE: Choice[] = [
+  ["none", "ندارم"],
+  ["twins", "دوقلو"],
+  ["triplets_plus", "سه‌قلو یا بیشتر"],
+]
+
+const MODERN_NEWBORN_CARE_METHOD: Choice[] = [
+  ["safe_sleep", "خواب ایمن نوزاد"],
+  ["kangaroo_care", "آغوش کانگورویی (تماس پوست با پوست)"],
+  ["safe_swaddling", "قنداق‌پیچی ایمن"],
+  ["infant_massage", "ماساژ نوزاد"],
+  ["colic_gas_care", "مراقبت از کولیک و نفخ"],
+  ["cord_skin_care", "مراقبت از بند ناف و پوست نوزاد"],
+  ["breastfeeding_positions", "وضعیت‌های صحیح شیردهی و آروغ‌گیری"],
+]
+
+const MIDWIFERY_DEGREE: Choice[] = [
+  ["none", "ندارم"],
+  ["student", "دانشجوی مامایی"],
+  ["associate", "کاردانی مامایی"],
+  ["bachelor", "کارشناسی مامایی"],
+  ["master_plus", "کارشناسی ارشد مامایی و بالاتر"],
+]
+
 export const PAY_BASIS: Choice[] = [
   ["hourly", "ساعتی"],
   ["shift", "شیفتی"],
@@ -1278,6 +1353,10 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "newborn_cpr_training", label: "دوره CPR نوزاد دیده است", type: "bool", showIf: ["newborn"] },
       { key: "newborn_first_aid_training", label: "دوره کمک‌های اولیه نوزاد دیده است", type: "bool", showIf: ["newborn"] },
       { key: "newborn_care_course", label: "دوره مراقبت از نوزاد گذرانده است", type: "bool", showIf: ["newborn"] },
+      { key: "multiples_newborn_experience", label: "تجربه‌ی مراقبت از نوزاد دوقلو یا چندقلو", type: "choice", choices: MULTIPLES_NEWBORN_EXPERIENCE, showIf: ["newborn"] },
+      { key: "newborn_specialized_work_experience", label: "سابقه‌ی کار تخصصی با نوزاد (مثلاً مراکز مراقبت از نوزاد، بخش نوزادان یا نوزادیار حرفه‌ای)", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["newborn"] },
+      { key: "modern_newborn_care_methods", label: "با کدام روش‌های به‌روز نگهداری از نوزاد آشنایی دارید؟", type: "multi", choices: MODERN_NEWBORN_CARE_METHOD, showIf: ["newborn"] },
+      { key: "midwifery_university_degree", label: "مدرک دانشگاهی مامایی", type: "choice", choices: MIDWIFERY_DEGREE, showIf: ["newborn"] },
       // دوران بارداری (ترجیح مرحله در فرم ۲ — showIfField به آن نگاه می‌کند)
       { key: "pregnancy_care_experience", label: "سابقه مراقبت از مادر باردار", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["newborn"], showIfField: { key: "newborn_stage_preferences", oneOf: ["pregnancy"] } },
       { key: "medical_visit_accompaniment_experience", label: "تجربه همراهی برای مراجعه پزشکی", type: "bool", showIf: ["newborn"], showIfField: { key: "newborn_stage_preferences", oneOf: ["pregnancy"] } },
@@ -1294,7 +1373,14 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "simultaneous_mother_newborn_care_experience", label: "تجربه مراقبت هم‌زمان از مادر و نوزاد", type: "bool", showIf: ["newborn"], showIfField: { key: "newborn_stage_preferences", oneOf: ["postpartum"] } },
       // ── کودک (سه زیرشاخه‌ی کودک‌محور) ───────────────────────────────
       { key: "childcare_experience", label: "سابقه مراقبت از کودک", type: "choice", choices: EXPERIENCE_RANGE, showIf: CHILD_SUBTYPES },
-      { key: "preschool_experience", label: "سابقه کار در مهدکودک", type: "choice", choices: EXPERIENCE_RANGE, showIf: CHILD_SUBTYPES },
+      { key: "preschool_experience", label: "سابقه کار در مهدکودک یا کودکیار آموزشی", type: "choice", choices: EXPERIENCE_RANGE, showIf: CHILD_SUBTYPES },
+      { key: "child_related_education_field", label: "رشته‌ی تحصیلیِ مرتبط با کودک (اگر دارید)", type: "multi", choices: CHILD_EDUCATION_FIELD, showIf: CHILD_SUBTYPES },
+      { key: "child_related_education_level", label: "مقطع تحصیلی در این رشته", type: "choice", choices: CHILD_EDUCATION_LEVEL, showIf: CHILD_SUBTYPES, showIfField: { key: "child_related_education_field", oneOf: ["early_childhood", "elementary_education", "child_psychology", "special_education", "child_nursing_health", "other"] } },
+      { key: "psychology_education", label: "تحصیلات یا آموزش روانشناسی", type: "choice", choices: PSYCHOLOGY_EDUCATION_LEVEL, showIf: CHILD_SUBTYPES },
+      { key: "crafts_with_children_experience", label: "تجربه‌ی ساختن کاردستی همراه با کودک", type: "choice", choices: CRAFTS_WITH_CHILDREN_EXPERIENCE, showIf: CHILD_SUBTYPES },
+      { key: "child_entertainment_methods", label: "برای سرگرم کردن یا آموزش دادن به کودک، چه کارهایی را خوب بلدید یا قبلاً انجام داده‌اید؟", type: "multi", choices: CHILD_ENTERTAINMENT_METHOD, showIf: CHILD_SUBTYPES },
+      { key: "child_entertainment_detail", label: "یکی از کارهایی را که برای کودکان انجام داده‌اید (مثلاً کلاس نقاشی، ساز، ورزش) کوتاه بنویسید", type: "text", showIf: CHILD_SUBTYPES },
+      { key: "valued_extra_qualities", label: "ویژگی‌های جانبیِ مورد توجه خانواده‌ها", type: "multi", choices: VALUED_EXTRA_QUALITY, showIf: CHILD_SUBTYPES },
       { key: "currently_babysitting_elsewhere", label: "هم‌اکنون جای دیگری هم مشغول به کار هستید؟", type: "bool", showIf: CHILD_SUBTYPES },
       { key: "child_cpr_training", label: "آموزش کمک‌های اولیه/CPR کودک دیده است", type: "bool", showIf: CHILD_SUBTYPES },
       { key: "child_related_training_courses", label: "دوره‌های آموزشی مرتبط با کودک گذرانده‌شده", type: "multi", choices: CHILD_RELATED_TRAINING_COURSE, showIf: CHILD_SUBTYPES },
@@ -1367,11 +1453,6 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "scenario_groom_2", label: "حین بازی لباس‌تان کثیف می‌شود (مثلاً رنگ یا غذا). چه می‌کنید؟", type: "choice", choices: [["a", "لباس یدک یا پیش‌بند دارم و سریع عوض می‌کنم"], ["b", "ساده تمیز می‌کنم و بدون اینکه کودک ناراحت شود ادامه می‌دهم"], ["c", "از اول لباسی می‌پوشم که برای کار با کودک مناسب و تمیز کردنش آسان باشد"]], showIf: CHILD_SUBTYPES, trait: "grooming" },
       { key: "scenario_groom_3", label: "بهداشت شخصی و بوی ظاهرتان در کار نزدیک با کودک چه جایگاهی برایتان دارد؟", type: "choice", choices: [["a", "پیش از رفتن به خانه بهداشت شخصی را رعایت می‌کنم و بوی ملایم و خوشایند دارم"], ["b", "از عطر تند و وسایل تحریک‌کننده برای کودک پرهیز می‌کنم"], ["c", "ناخن‌ها را کوتاه و دست‌ها را تمیز نگه می‌دارم"]], showIf: CHILD_SUBTYPES, trait: "grooming" },
       { key: "scenario_housework_involve", label: "می‌خواهید کودک در کارهای خانه (مثلاً چیدن میز یا جمع کردن لباس) کمک کند. چه می‌کنید؟", type: "choice", choices: [["a", "سهم ساده و متناسب با سنش به او می‌دهم"], ["b", "آن را به یک بازی تبدیل می‌کنم و همراهش می‌شوم"], ["c", "کار را با هم انجام می‌دهیم و تلاشش را تشویق می‌کنم"]], showIf: ["housework_child"], trait: "responsibility" },
-      // مهارت‌های فردی — فقط برای کودکانِ بزرگ‌تر از نوزاد که فعالیت/آموزش دارند (نگهداری کودک و کمک‌معلم)
-      { key: "scenario_free_time_skills", label: "برای سرگرم کردن یا آموزش دادن به کودک، چه کارهایی را خوب بلدید یا قبلاً انجام داده‌اید؟", type: "multi", choices: [["music_instrument", "نواختن ساز یا آموزش موسیقی"], ["singing", "آواز خواندن و ریتم‌بازی"], ["painting", "نقاشی و رنگ‌آمیزی"], ["handicraft", "کاردستی و ساخت‌وساز با وسایل ساده"], ["storytelling", "قصه‌گویی و نمایش"], ["sports_games", "ورزش و بازی‌های حرکتی"], ["robotics_computer", "رباتیک یا کار با رایانه"], ["other", "سایر"]], showIf: ["child", "homework_helper"], trait: "skills" },
-      { key: "scenario_free_time_skills_detail", label: "یکی از کارهایی را که برای کودکان انجام داده‌اید (مثلاً کلاس نقاشی، ساز، ورزش) کوتاه بنویسید", type: "text", showIf: ["child", "homework_helper"], trait: "skills" },
-      // مهارت درسی — فقط کمک‌معلم
-      { key: "scenario_school_subjects", label: "در کمک به درس و مشق، با کدام درس‌ها بیشتر راحت هستید؟", type: "multi", choices: [["math", "ریاضی"], ["science", "علوم"], ["persian", "فارسی و املا"], ["english", "زبان انگلیسی"], ["social", "مطالعات اجتماعی"], ["quran_religion", "قرآن و هدیه‌های آسمان"], ["other", "سایر"]], showIf: ["homework_helper"], trait: "skills" },
     ],
   },
   parastar: {
