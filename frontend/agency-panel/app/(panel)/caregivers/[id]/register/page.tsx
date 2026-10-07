@@ -1140,6 +1140,7 @@ export default function CaregiverRegistrationWizard() {
               const fields = C.SERVICE_SPECIFIC_FORMS[type].questionnaire
                 .filter((f) => f.key.startsWith("scenario_"))
                 .filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
+                .filter((f) => matchesShowIfField(f, workPrefs.service_specific_answers[type] ?? {}))
               if (fields.length === 0) return null
               const typeLabel = C.ALL_SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
               const typeAnswers = questionnaireAnswers.service_specific_answers?.[type] ?? {}
