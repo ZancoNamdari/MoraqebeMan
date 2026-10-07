@@ -1074,6 +1074,7 @@ export default function CaregiverRegistrationWizard() {
               const fields = C.SERVICE_SPECIFIC_FORMS[type].questionnaire
                 .filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
                 .filter((f) => matchesShowIfField(f, form2Answers))
+                .filter((f) => !f.key.startsWith("scenario_"))
               if (fields.length === 0) return null
               const typeAnswers = questionnaireAnswers.service_specific_answers?.[type] ?? {}
               return (
@@ -1102,6 +1103,44 @@ export default function CaregiverRegistrationWizard() {
                       </div>
                     ))}
                   </FormSection>
+              )
+            })}
+            {/* سوال‌های موقعیتی (غیرمستقیم) — همیشه آخرِ پرسشنامه */}
+            {serviceTypes.filter((t) => C.SERVICE_SPECIFIC_FORMS[t]?.questionnaire?.some((f) => f.key.startsWith("scenario_"))).map((type) => {
+              const chosenSubtypes = serviceSubtypes[type] ?? []
+              const fields = C.SERVICE_SPECIFIC_FORMS[type].questionnaire
+                .filter((f) => f.key.startsWith("scenario_"))
+                .filter((f) => !f.showIf || f.showIf.some((s) => chosenSubtypes.includes(s)))
+              if (fields.length === 0) return null
+              const typeLabel = C.ALL_SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
+              const typeAnswers = questionnaireAnswers.service_specific_answers?.[type] ?? {}
+              const setAns = (key: string, value: any) => setServiceAnswer(
+                questionnaireAnswers.service_specific_answers ?? {},
+                (next) => setQuestionnaireAnswers((prev) => ({ ...prev, service_specific_answers: next })),
+                type, key, value,
+              )
+              return (
+                <FormSection key={`scenario-${type}`} title={`سوال‌های موقعیتی — ${typeLabel}`}>
+                  {fields.map((f) => (
+                    <div key={f.key} className="rounded-lg border border-border p-3">
+                      {f.type === "choice" ? (
+                        <>
+                          <p className="mb-4 text-lg font-medium">{f.label}</p>
+                          <div className="space-y-1.5">
+                            {(f.choices ?? []).map(([value, text]) => (
+                              <label key={value} className="flex cursor-pointer items-start gap-3 text-base">
+                                <input type="radio" name={`${type}.${f.key}`} checked={typeAnswers[f.key] === value} onChange={() => setAns(f.key, value)} className="mt-0.5 h-4 w-4" />
+                                <span>{text}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <ServiceFieldControl field={f} value={typeAnswers[f.key]} onChange={(v) => setAns(f.key, v)} />
+                      )}
+                    </div>
+                  ))}
+                </FormSection>
               )
             })}
             </CardContent>
