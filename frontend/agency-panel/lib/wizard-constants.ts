@@ -1065,16 +1065,6 @@ const MULTIPLES_NEWBORN_EXPERIENCE: Choice[] = [
   ["triplets_plus", "سه‌قلو یا بیشتر"],
 ]
 
-const MODERN_NEWBORN_CARE_METHOD: Choice[] = [
-  ["safe_sleep", "خواب ایمن نوزاد"],
-  ["kangaroo_care", "آغوش کانگورویی (تماس پوست با پوست)"],
-  ["safe_swaddling", "قنداق‌پیچی ایمن"],
-  ["infant_massage", "ماساژ نوزاد"],
-  ["colic_gas_care", "مراقبت از کولیک و نفخ"],
-  ["cord_skin_care", "مراقبت از بند ناف و پوست نوزاد"],
-  ["breastfeeding_positions", "وضعیت‌های صحیح شیردهی و آروغ‌گیری"],
-]
-
 const MIDWIFERY_DEGREE: Choice[] = [
   ["none", "ندارم"],
   ["student", "دانشجوی مامایی"],
@@ -1367,7 +1357,6 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
     ],
     form3: [
       // ── نوزاد ──────────────────────────────────────────────────────
-      { key: "breastfeeding_support_training", label: "آموزش حمایت از شیردهی دیده است", type: "bool", showIf: ["newborn"] },
       { key: "newborn_care_experience", label: "سابقه مراقبت از نوزاد", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["newborn"] },
       { key: "weaning_support_experience", label: "تجربه کمک به از شیر/پوشک گرفتن نوزاد", type: "bool", showIf: ["newborn"] },
       { key: "bottle_feeding_ok", label: "آمادگی شیر دادن با شیشه", type: "bool", showIf: ["newborn"] },
@@ -1375,12 +1364,9 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "soothing_newborn_ok", label: "آمادگی آرام کردن نوزاد", type: "bool", showIf: ["newborn"] },
       { key: "newborn_bathing_ok", label: "آمادگی حمام نوزاد", type: "bool", showIf: ["newborn"] },
       { key: "night_waking_readiness", label: "آمادگی برای بیدار شدن‌های شبانه مکرر", type: "bool", showIf: ["newborn"] },
-      { key: "newborn_cpr_training", label: "دوره CPR نوزاد دیده است", type: "bool", showIf: ["newborn"] },
       { key: "newborn_first_aid_training", label: "دوره کمک‌های اولیه نوزاد دیده است", type: "bool", showIf: ["newborn"] },
-      { key: "newborn_care_course", label: "دوره مراقبت از نوزاد گذرانده است", type: "bool", showIf: ["newborn"] },
       { key: "multiples_newborn_experience", label: "تجربه‌ی مراقبت از نوزاد دوقلو یا چندقلو", type: "choice", choices: MULTIPLES_NEWBORN_EXPERIENCE, showIf: ["newborn"] },
       { key: "newborn_specialized_work_experience", label: "سابقه‌ی کار تخصصی با نوزاد (مثلاً مراکز مراقبت از نوزاد، بخش نوزادان یا نوزادیار حرفه‌ای)", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["newborn"] },
-      { key: "modern_newborn_care_methods", label: "با کدام روش‌های به‌روز نگهداری از نوزاد آشنایی دارید؟", type: "multi", choices: MODERN_NEWBORN_CARE_METHOD, showIf: ["newborn"] },
       { key: "midwifery_university_degree", label: "مدرک دانشگاهی مامایی", type: "choice", choices: MIDWIFERY_DEGREE, showIf: ["newborn"] },
       // دوران بارداری (ترجیح مرحله در فرم ۲ — showIfField به آن نگاه می‌کند)
       { key: "pregnancy_care_experience", label: "سابقه مراقبت از مادر باردار", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["newborn"], showIfField: { key: "newborn_stage_preferences", oneOf: ["pregnancy"] } },
@@ -1428,13 +1414,43 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
     ],
     questionnaire: [
       // ── نوزاد ──────────────────────────────────────────────────────
-      { key: "gentleness_with_newborn_level", label: "لطافت و دقت در برخورد با نوزاد", type: "score", showIf: ["newborn"] },
-      { key: "calmness_under_pressure_level", label: "آرامش در شرایط پراسترس (مثل لحظات زایمان)", type: "score", showIf: ["newborn"] },
-      { key: "night_wakefulness_tolerance_level", label: "تحمل بیداری شبانه", type: "score", showIf: ["newborn"] },
-      // Asked as the CAREGIVER's own comfort/compatibility with the
-      // mother's situation — never a question about the caregiver's
-      // own reproductive history.
-      { key: "ivf_or_pregnancy_loss_history_compatibility_level", label: "سازگاری با همراهی مادرانی که سابقه IVF یا سقط جنین دارند", type: "score", showIf: ["newborn"] },
+      // ── سوال‌های موقعیتی (غیرمستقیم) نوزادیار — در بخش آخرِ پرسشنامه؛ اثر گزینه‌ها در lib/trait-model-newborn.ts.
+      // همه‌ی گزینه‌ها درست‌اند (سبک متفاوت). هیچ سوالی درباره‌ی سابقه‌ی شخصیِ خودِ مراقب نیست.
+      { key: "scenario_nb_gent_1", label: "نوزاد هنگام تعویض پوشک بدخلق است و دست‌وپا می‌زند. چه می‌کنید؟", type: "choice", choices: [["a", "با لمس آرام و صحبت ملایم ادامه می‌دهم"], ["b", "لحظه‌ای مکث می‌کنم و بعد با آرامش ادامه می‌دهم"], ["c", "حواسش را با لالایی یا اسباب‌بازی نرم پرت می‌کنم"]], showIf: ["newborn"], trait: "gentleness" },
+      { key: "scenario_nb_gent_2", label: "برای حمام نوزاد چه می‌کنید؟", type: "choice", choices: [["a", "همه چیز را از قبل می‌چینم تا حین حمام او را رها نکنم"], ["b", "دمای آب را با دماسنج یا آرنج امتحان می‌کنم و آرام حمام می‌دهم"], ["c", "حمام را کوتاه و آرام انجام می‌دهم و با او حرف می‌زنم"]], showIf: ["newborn"], trait: "gentleness" },
+      { key: "scenario_nb_gent_3", label: "هنگام بغل کردن نوزادِ خواب‌آلود چه می‌کنید؟", type: "choice", choices: [["a", "سر و گردن را کامل حمایت می‌کنم و آهسته جابه‌جا می‌کنم"], ["b", "قبل از بلند کردن آرام صدایش می‌کنم تا نترسد"], ["c", "او را نزدیک بدنم و در وضعیت راحت نگه می‌دارم"]], showIf: ["newborn"], trait: "gentleness" },
+      { key: "scenario_nb_calm_1", label: "نوزاد ساعتی است بی‌وقفه گریه می‌کند. چه می‌کنید؟", type: "choice", choices: [["a", "نیازهای معمول (شیر، پوشک، گاز) را بررسی می‌کنم و آرام می‌مانم"], ["b", "روش‌های آرام‌سازی (قنداق، لالایی، حرکت ملایم) را یکی‌یکی امتحان می‌کنم"], ["c", "اگر ادامه پیدا کرد به مادر یا پزشک خبر می‌دهم"]], showIf: ["newborn"], trait: "calmness" },
+      { key: "scenario_nb_calm_2", label: "نوزاد تب دارد و مادر مضطرب است. چه می‌کنید؟", type: "choice", choices: [["a", "آرام می‌مانم، دما را اندازه می‌گیرم و با پزشک تماس می‌گیرم"], ["b", "مادر را آرام می‌کنم و کارها را بین خودمان تقسیم می‌کنیم"], ["c", "طبق دستور پزشک اطفال عمل می‌کنم"]], showIf: ["newborn"], trait: "calmness" },
+      { key: "scenario_nb_calm_3", label: "هنگام شیر خوردن، نوزاد دچار سرفه یا خفگی خفیف می‌شود. چه می‌کنید؟", type: "choice", choices: [["a", "فوراً او را در وضعیت مناسب می‌گیرم و کمک می‌خواهم"], ["b", "آرام می‌مانم و طبق آموزش‌هایم عمل می‌کنم"], ["c", "پس از رفع خطر به مادر و پزشک اطلاع می‌دهم"]], showIf: ["newborn"], trait: "calmness" },
+      { key: "scenario_nb_night_1", label: "سومین شب پشت‌سر هم شیفت شبانه شماست. چه می‌کنید؟", type: "choice", choices: [["a", "در ساعات خواب نوزاد استراحت کوتاه می‌کنم"], ["b", "غذا و نوشیدنی مناسب آماده می‌کنم تا هوشیار بمانم"], ["c", "با مادر درباره‌ی تقسیم ساعت‌های بیداری صحبت می‌کنم"]], showIf: ["newborn"], trait: "night_endurance" },
+      { key: "scenario_nb_night_2", label: "ساعت ۳ بامداد نوزاد بیدار می‌شود و شما خسته‌اید. چه می‌کنید؟", type: "choice", choices: [["a", "با همان آرامش و لطافت همیشگی به او رسیدگی می‌کنم"], ["b", "سریع نیازش را می‌سنجم تا زودتر دوباره بخوابد"], ["c", "نور کم و محیط ساکت را حفظ می‌کنم تا هر دو زودتر آرام شویم"]], showIf: ["newborn"], trait: "night_endurance" },
+      { key: "scenario_nb_night_3", label: "برای روز بعد از یک شب بی‌خوابی چه می‌کنید؟", type: "choice", choices: [["a", "قبل از شروع شیفت بعد خواب کافی می‌کنم"], ["b", "کارهای حساس را در ساعاتی که هوشیارترم انجام می‌دهم"], ["c", "از مادر یا خانواده می‌خواهم ساعاتی را شریک شوند"]], showIf: ["newborn"], trait: "night_endurance" },
+      { key: "scenario_nb_pat_1", label: "نوزاد شیر نمی‌خورد و سرش را کنار می‌کشد. چه می‌کنید؟", type: "choice", choices: [["a", "صبر می‌کنم و چند دقیقه بعد دوباره امتحان می‌کنم"], ["b", "وضعیت بغل و شیشه را عوض می‌کنم"], ["c", "علائم گرسنگی و سیری را بررسی می‌کنم و اطلاع می‌دهم"]], showIf: ["newborn"], trait: "patience" },
+      { key: "scenario_nb_pat_2", label: "نوزاد تازه خوابیده و چند بار پشت‌سر هم دوباره بیدار می‌شود. چه می‌کنید؟", type: "choice", choices: [["a", "هر بار با آرامش از اول او را می‌خوابانم"], ["b", "الگوی بیدار شدنش را یادداشت می‌کنم"], ["c", "روش آرام‌سازی را کمی تغییر می‌دهم"]], showIf: ["newborn"], trait: "patience" },
+      { key: "scenario_nb_pat_3", label: "مادر چند بار پشت‌سر هم همان سوال را درباره‌ی نوزاد می‌پرسد. چه می‌کنید؟", type: "choice", choices: [["a", "هر بار با حوصله و همان لحن پاسخ می‌دهم"], ["b", "پاسخ را یادداشت می‌کنم تا هر وقت خواست ببیند"], ["c", "جواب می‌دهم و با ملایمت درباره‌ی نگرانی‌اش صحبت می‌کنم"]], showIf: ["newborn"], trait: "patience" },
+      { key: "scenario_nb_att_1", label: "رنگ یا تعداد پوشک‌های نوزاد با روزهای قبل فرق کرده است. چه می‌کنید؟", type: "choice", choices: [["a", "یادداشت می‌کنم و به مادر و پزشک اطلاع می‌دهم"], ["b", "با راهنمای رشد و تغذیه‌ی نوزاد مقایسه می‌کنم"], ["c", "تغذیه و مایعات او را دقیق‌تر زیر نظر می‌گیرم"]], showIf: ["newborn"], trait: "attentiveness" },
+      { key: "scenario_nb_att_2", label: "نوزاد بیش از معمول می‌خوابد و برای شیر بیدار نمی‌شود. چه می‌کنید؟", type: "choice", choices: [["a", "او را آرام بیدار می‌کنم و وضعیتش را بررسی می‌کنم"], ["b", "فوراً به مادر یا پزشک خبر می‌دهم"], ["c", "زمان و مقدار تغذیه را ثبت می‌کنم و پیگیری می‌کنم"]], showIf: ["newborn"], trait: "attentiveness" },
+      { key: "scenario_nb_att_3", label: "به نظر می‌رسد رنگ پوست نوزاد کمی زردتر شده است. چه می‌کنید؟", type: "choice", choices: [["a", "در نور طبیعی بررسی می‌کنم و موضوع را به مادر و پزشک می‌گویم"], ["b", "طبق دستور پزشک تغذیه و پایش را دقیق‌تر می‌کنم"], ["c", "زمان شروع و تغییرات را ثبت می‌کنم تا پزشک بتواند ارزیابی کند"]], showIf: ["newborn"], trait: "attentiveness" },
+      { key: "scenario_nb_safe_1", label: "لازم است لحظه‌ای از کنار نوزاد بروید. چه می‌کنید؟", type: "choice", choices: [["a", "او را در گهواره یا تخت ایمن می‌گذارم"], ["b", "او را همراه خودم می‌برم"], ["c", "از فرد دیگری می‌خواهم مراقبش باشد"]], showIf: ["newborn"], trait: "safety" },
+      { key: "scenario_nb_safe_2", label: "برای خواباندن نوزاد چه می‌کنید؟", type: "choice", choices: [["a", "به پشت، روی سطح محکم و بدون وسایل اضافه می‌خوابانم"], ["b", "دمای اتاق و پوشش او را بررسی می‌کنم"], ["c", "هنگام خواب او را زیر نظر دارم"]], showIf: ["newborn"], trait: "safety" },
+      { key: "scenario_nb_safe_3", label: "مهمان‌ها می‌خواهند نوزاد را ببوسند یا بغل کنند و برخی سرما خورده‌اند. چه می‌کنید؟", type: "choice", choices: [["a", "محترمانه می‌خواهم دست‌هایشان را بشویند و فاصله بگیرند"], ["b", "با مادر هماهنگ می‌کنم و تصمیم را به او می‌سپارم"], ["c", "نوزاد را در اتاق دیگر و با پوشش مناسب نگه می‌دارم"]], showIf: ["newborn"], trait: "safety" },
+      { key: "scenario_nb_hyg_1", label: "قبل از لمس نوزاد برای بهداشت خودتان چه می‌کنید؟", type: "choice", choices: [["a", "دست‌ها را کامل می‌شویم"], ["b", "در صورت نیاز ضدعفونی می‌کنم و لباس تمیز می‌پوشم"], ["c", "اگر بیمارم به مادر می‌گویم و احتیاط می‌کنم"]], showIf: ["newborn"], trait: "hygiene" },
+      { key: "scenario_nb_hyg_2", label: "شیشه و پستانک نوزاد را چطور آماده می‌کنید؟", type: "choice", choices: [["a", "هر بار کامل می‌شویم و ضدعفونی می‌کنم"], ["b", "وسایل را جدا و در جای تمیز نگه می‌دارم"], ["c", "شیر و آب را با دقت و مطابق دستور مادر آماده می‌کنم"]], showIf: ["newborn"], trait: "hygiene" },
+      { key: "scenario_nb_memp_1", label: "مادر بعد از زایمان بی‌دلیل گریه می‌کند. چه می‌کنید؟", type: "choice", choices: [["a", "کنارش می‌نشینم و بدون قضاوت گوش می‌دهم"], ["b", "به او استراحت می‌دهم و کار عملی را از دوشش برمی‌دارم"], ["c", "اگر ادامه داشت، با ملایمت پیشنهاد می‌کنم با پزشک یا مشاور صحبت کند"]], showIf: ["newborn"], trait: "maternal_empathy" },
+      { key: "scenario_nb_memp_2", label: "مادر می‌گوید پس از تلاش‌های بسیار صاحب این نوزاد شده و خیلی نگران است. چه می‌کنید؟", type: "choice", choices: [["a", "با احترام گوش می‌دهم و دلگرمی می‌دهم"], ["b", "حریم او را رعایت می‌کنم و سوال‌های شخصی نمی‌پرسم"], ["c", "با گزارش دقیق و منظم از نوزاد او را مطمئن می‌کنم"]], showIf: ["newborn"], trait: "maternal_empathy" },
+      { key: "scenario_nb_memp_3", label: "مادر خسته است اما اصرار دارد همه‌ی کارها را خودش انجام دهد. چه می‌کنید؟", type: "choice", choices: [["a", "کارهای کوچک را به‌عنوان کمک پیشنهاد می‌دهم"], ["b", "کنارش می‌مانم و فقط وقتی بخواهد کمک می‌کنم"], ["c", "بخش‌های خسته‌کننده را با ملایمت از او می‌گیرم"]], showIf: ["newborn"], trait: "maternal_empathy" },
+      { key: "scenario_nb_prs_1", label: "مادر روشی برای خواباندن نوزاد دارد که با آموخته‌های شما فرق دارد. چه می‌کنید؟", type: "choice", choices: [["a", "روش او را اجرا می‌کنم"], ["b", "نظرم را محترمانه می‌گویم و تصمیم را به او می‌سپارم"], ["c", "اگر خطری ندارد هماهنگ می‌شوم و در صورت لزوم مشورت با پزشک پیشنهاد می‌کنم"]], showIf: ["newborn"], trait: "parent_respect" },
+      { key: "scenario_nb_prs_2", label: "اطرافیان توصیه‌های سنتی متفاوتی درباره‌ی نوزاد می‌دهند. چه می‌کنید؟", type: "choice", choices: [["a", "محترمانه گوش می‌کنم و تصمیم را به والدین می‌سپارم"], ["b", "توصیه‌ی پزشک اطفال را با ملایمت مطرح می‌کنم"], ["c", "بین مادر و اطرافیان با ملایمت هماهنگ می‌کنم"]], showIf: ["newborn"], trait: "parent_respect" },
+      { key: "scenario_nb_adh_1", label: "پزشک اطفال برنامه‌ی تغذیه یا مکمل مشخصی تجویز کرده است. چه می‌کنید؟", type: "choice", choices: [["a", "طبق ساعت و مقدار تجویز شده عمل می‌کنم"], ["b", "یادآور تنظیم می‌کنم و ثبت می‌کنم"], ["c", "اگر ابهامی بود قبل از اجرا می‌پرسم"]], showIf: ["newborn"], trait: "adherence" },
+      { key: "scenario_nb_adh_2", label: "مادر برنامه‌ای متفاوت با دستور پزشک می‌خواهد. چه می‌کنید؟", type: "choice", choices: [["a", "محترمانه دستور پزشک را یادآوری می‌کنم"], ["b", "پیشنهاد می‌کنم با پزشک هماهنگ کنیم"], ["c", "تا روشن شدن موضوع رویه‌ی ایمن‌تر را حفظ می‌کنم و اطلاع می‌دهم"]], showIf: ["newborn"], trait: "adherence" },
+      { key: "scenario_nb_comm_1", label: "پایان شیفت، مادر از وضعیت نوزاد می‌پرسد. چه می‌کنید؟", type: "choice", choices: [["a", "گزارش مرتب شامل شیر، خواب، پوشک و رفتار نوزاد می‌دهم"], ["b", "با نکات مثبت شروع می‌کنم و بعد نگرانی‌ها را می‌گویم"], ["c", "برگه‌ی ثبت روزانه را در اختیارش می‌گذارم"]], showIf: ["newborn"], trait: "communication" },
+      { key: "scenario_nb_comm_2", label: "درباره‌ی نگرانی سلامتی نوزاد چطور با مادر صحبت می‌کنید؟", type: "choice", choices: [["a", "واقعیت را آرام و روشن می‌گویم"], ["b", "با مشاهدات دقیق و بدون ترساندن مطرح می‌کنم"], ["c", "همراه با پیشنهاد مراجعه به پزشک مطرح می‌کنم"]], showIf: ["newborn"], trait: "communication" },
+      { key: "scenario_nb_resp_1", label: "مادر خواب است و نوزاد وقت شیر یا پوشک دارد. چه می‌کنید؟", type: "choice", choices: [["a", "طبق برنامه خودم رسیدگی می‌کنم و بعداً اطلاع می‌دهم"], ["b", "اگر لازم بود با ملایمت مادر را بیدار می‌کنم"], ["c", "نیاز نوزاد را برطرف می‌کنم و موضوع را ثبت می‌کنم"]], showIf: ["newborn"], trait: "responsibility" },
+      { key: "scenario_nb_resp_2", label: "وسایل مورد نیاز نوزاد (پوشک، لباس تمیز، شیشه) رو به اتمام است. چه می‌کنید؟", type: "choice", choices: [["a", "پیش از تمام شدن به مادر اطلاع می‌دهم"], ["b", "فهرست مصرف را نگه می‌دارم"], ["c", "جایگزین موقت ایمن پیدا می‌کنم و اطلاع می‌دهم"]], showIf: ["newborn"], trait: "responsibility" },
+      { key: "scenario_nb_trust_1", label: "می‌خواهید از نوزاد عکس بگیرید یا برای دوستانتان بفرستید. چه می‌کنید؟", type: "choice", choices: [["a", "بدون اجازه‌ی صریح والدین عکس نمی‌گیرم"], ["b", "عکس‌ها را فقط با اجازه و برای خود والدین می‌گیرم"], ["c", "از قبل با والدین درباره‌ی قواعد عکس‌برداری هماهنگ می‌کنم"]], showIf: ["newborn"], trait: "trustworthiness" },
+      { key: "scenario_nb_trust_2", label: "دوستی درباره‌ی خانواده‌ی مادر و نوزاد از شما سوال می‌پرسد. چه می‌کنید؟", type: "choice", choices: [["a", "مؤدبانه می‌گویم درباره‌ی محل کارم صحبت نمی‌کنم"], ["b", "بحث را به شکل طبیعی عوض می‌کنم"], ["c", "می‌گویم رازداری بخشی از کار حرفه‌ای من است"]], showIf: ["newborn"], trait: "trustworthiness" },
+      { key: "scenario_nb_adapt_1", label: "برنامه‌ی خواب و شیر نوزاد هر چند روز تغییر می‌کند. چه می‌کنید؟", type: "choice", choices: [["a", "با آرامش برنامه را با نوزاد هماهنگ می‌کنم"], ["b", "الگوها را یادداشت می‌کنم تا زودتر تطبیق دهم"], ["c", "تغییرات را با مادر در میان می‌گذارم"]], showIf: ["newborn"], trait: "adaptability" },
+      { key: "scenario_nb_adapt_2", label: "مادر وسط شیفت تصمیم می‌گیرد برنامه‌ی روز را عوض کند. چه می‌کنید؟", type: "choice", choices: [["a", "بدون دلخوری برنامه‌ی جدید را اجرا می‌کنم"], ["b", "جزئیات تغییر را می‌پرسم و هماهنگ می‌شوم"], ["c", "ایمنی و نیاز نوزاد را در برنامه‌ی جدید لحاظ می‌کنم"]], showIf: ["newborn"], trait: "adaptability" },
       // ── کودک (سه زیرشاخه‌ی کودک‌محور) ───────────────────────────────
       // ── سوال‌های موقعیتی (غیرمستقیم) کودک‌یار — در بخش آخرِ پرسشنامه نمایش داده می‌شوند.
       // صفت‌ها (مهربانی، نظم، صبر، قابل اعتماد بودن، مسئولیت‌پذیری، خلاقیت، وقت‌شناسی،
