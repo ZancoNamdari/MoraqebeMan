@@ -96,7 +96,7 @@ export const OPTION_EFFECTS: Record<string, Record<string, Effects>> = Object.fr
 )
 
 export interface TraitScore {
-  key: TraitKey
+  key: string
   label: string
   /** مجموع اثرها */
   raw: number
@@ -109,16 +109,23 @@ export interface TraitScore {
   questions: number
 }
 
+export interface TraitDef { key: string; label: string; description: string }
+export type OptionEffectsMap = Record<string, Record<string, Record<string, number>>>
+
 /**
- * پاسخ‌های سوال‌های موقعیتی (مثلاً { scenario_kind_1: "a", ... }) → امتیاز هر پارامتر.
- * پارامتری که هیچ سوال پاسخ‌داده‌شده‌ای روی آن اثر نداشته در خروجی نمی‌آید.
+ * موتور عمومی امتیازدهی — برای هر نقش (کودک‌یار، سالمندیار...) با مجموعه‌ی
+ * پارامتر و اثر گزینه‌های خودش صدا زده می‌شود.
  */
-export function computeTraitProfile(answers: Record<string, any>): TraitScore[] {
-  const acc = new Map<TraitKey, { raw: number; min: number; max: number; n: number }>()
-  for (const [qKey, byOption] of Object.entries(OPTION_EFFECTS)) {
+export function computeProfile(
+  traits: TraitDef[],
+  effects: OptionEffectsMap,
+  answers: Record<string, any>,
+): TraitScore[] {
+  const acc = new Map<string, { raw: number; min: number; max: number; n: number }>()
+  for (const [qKey, byOption] of Object.entries(effects)) {
     const picked = answers?.[qKey]
     if (typeof picked !== "string" || !byOption[picked]) continue
-    for (const t of TRAITS) {
+    for (const t of traits) {
       const all = Object.values(byOption).map((e) => e[t.key] ?? 0)
       if (all.every((v) => v === 0)) continue
       const cur = acc.get(t.key) ?? { raw: 0, min: 0, max: 0, n: 0 }
@@ -129,7 +136,7 @@ export function computeTraitProfile(answers: Record<string, any>): TraitScore[] 
       acc.set(t.key, cur)
     }
   }
-  return TRAITS.filter((t) => acc.has(t.key)).map((t) => {
+  return traits.filter((t) => acc.has(t.key)).map((t) => {
     const v = acc.get(t.key)!
     const span = v.max - v.min
     return {
@@ -137,4 +144,9 @@ export function computeTraitProfile(answers: Record<string, any>): TraitScore[] 
       percent: span === 0 ? 50 : Math.round(((v.raw - v.min) / span) * 100),
     }
   })
+}
+
+/** پاسخ‌های سوال‌های موقعیتی کودک‌یار → امتیاز هر پارامتر. */
+export function computeTraitProfile(answers: Record<string, any>): TraitScore[] {
+  return computeProfile(TRAITS, OPTION_EFFECTS as OptionEffectsMap, answers)
 }
