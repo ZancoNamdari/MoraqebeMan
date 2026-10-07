@@ -946,6 +946,81 @@ const PARASTAR_WOUND_CARE_ABILITY: Choice[] = [
   ["urgent_referral_recognition", "تشخیص موارد نیازمند ارجاع فوری"],
 ]
 
+// ── فرم ۳: سوابق و مهارت پرستار/بهیار ──
+const NURSING_LICENSE_STATUS: Choice[] = [
+  ["valid", "پروانه/عضویت معتبر نظام پرستاری دارد"],
+  ["in_process", "در حال دریافت یا تمدید"],
+  ["none", "ندارد"],
+]
+
+const NURSE_WORK_SETTING: Choice[] = [
+  ["public_hospital", "بیمارستان دولتی"],
+  ["private_hospital", "بیمارستان خصوصی"],
+  ["clinic", "کلینیک / درمانگاه"],
+  ["home_care", "مراقبت در منزل بیمار"],
+  ["nursing_home", "آسایشگاه / سرای سالمندان"],
+  ["dialysis_center", "مرکز دیالیز"],
+  ["operating_room", "اتاق عمل"],
+  ["rehab_center", "مرکز توانبخشی"],
+  ["nursing_agency", "شرکت یا آژانس خدمات پرستاری"],
+]
+
+const BEHYAR_WORK_SETTING: Choice[] = [
+  ["hospital", "بیمارستان"],
+  ["clinic", "کلینیک / درمانگاه"],
+  ["home_care", "مراقبت در منزل بیمار"],
+  ["nursing_home", "آسایشگاه / سرای سالمندان"],
+  ["rehab_center", "مرکز توانبخشی"],
+  ["nursing_agency", "شرکت یا آژانس خدمات پرستاری"],
+]
+
+const SHIFT_EXPERIENCE: Choice[] = [
+  ["morning", "شیفت صبح"],
+  ["evening", "شیفت عصر"],
+  ["night", "شیفت شب"],
+  ["full_24h", "شیفت ۲۴ ساعته / شبانه‌روزی"],
+]
+
+const NURSE_CERTIFICATION: Choice[] = [
+  ["bls", "احیای قلبی‌ریوی پایه (BLS)"],
+  ["acls", "احیای پیشرفته قلبی (ACLS)"],
+  ["pals", "احیای پیشرفته کودکان (PALS)"],
+  ["infection_control", "کنترل عفونت"],
+  ["palliative_care", "مراقبت تسکینی"],
+  ["wound_care_course", "مراقبت از زخم و پانسمان"],
+  ["dialysis_course", "پرستاری دیالیز"],
+  ["icu_course", "مراقبت‌های ویژه (ICU)"],
+]
+
+const NURSE_ADVANCED_PROCEDURE: Choice[] = [
+  ["tracheostomy_care", "مراقبت از تراکئوستومی"],
+  ["suction", "ساکشن راه هوایی"],
+  ["ecg_recording", "گرفتن نوار قلب (ECG)"],
+  ["ng_tube_insertion", "گذاشتن لوله معده (NG)"],
+  ["ostomy_care", "مراقبت از استومی (کلستومی / ایلئوستومی)"],
+  ["central_line_care", "مراقبت از راه‌های وریدی مرکزی و پورت"],
+  ["nebulizer_therapy", "نبولایزر و درمان‌های تنفسی"],
+  ["home_ventilator_care", "مراقبت از بیمار متصل به ونتیلاتور یا BiPAP"],
+  ["transfusion_monitoring", "پایش تزریق خون"],
+]
+
+const BEHYAR_TRAINING_SOURCE: Choice[] = [
+  ["university", "دانشگاه علوم پزشکی / مرکز آموزش درمانی"],
+  ["technical_vocational", "سازمان فنی‌وحرفه‌ای"],
+  ["private_institute", "آموزشگاه یا مؤسسه‌ی خصوصی"],
+  ["on_the_job", "آموزش حین کار (بدون گواهی رسمی)"],
+]
+
+const BEHYAR_EXTRA_SKILL: Choice[] = [
+  ["glucometer", "کار با گلوکومتر (قند خون)"],
+  ["nebulizer", "نبولایزر و ماسک اکسیژن"],
+  ["simple_dressing", "پانسمان ساده"],
+  ["ostomy_bag_care", "مراقبت از کیسه‌ی استومی و ادرار"],
+  ["patient_lift_use", "کار با بالابر و ویلچر / واکر"],
+  ["bed_bath", "حمام در تخت"],
+  ["range_of_motion", "حرکات ساده‌ی مفصلی و کمک به راه رفتن"],
+]
+
 const PARASTAR_MOTHER_CHILD_CARE_ABILITY: Choice[] = [
   ["pregnant_mother_care", "مراقبت از مادر باردار"],
   ["postpartum_care", "مراقبت پس از زایمان"],
@@ -1605,6 +1680,16 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       // تجربه دارد/کاملاً مسلط») با دو چک‌لیست مستقل.
       { key: "medical_equipment_experience", label: "تجهیزات پزشکی که با آن‌ها کار کرده است", type: "multi", choices: PARASTAR_EQUIPMENT },
       { key: "medical_equipment_mastery", label: "تجهیزات پزشکی که کاملاً به آن‌ها مسلط است", type: "multi", choices: PARASTAR_EQUIPMENT },
+      // — سوابق و مهارت‌های تکمیلی پرستار —
+      { key: "nursing_license_status", label: "وضعیت پروانه / عضویت نظام پرستاری", type: "choice", choices: NURSING_LICENSE_STATUS, showIf: ["specialized_nurse", "nursing_specialist"] },
+      { key: "nursing_work_settings", label: "محیط‌هایی که در آن‌ها کار کرده است", type: "multi", choices: NURSE_WORK_SETTING, showIf: ["specialized_nurse", "nursing_specialist"] },
+      { key: "nurse_certifications", label: "دوره‌ها و گواهی‌هایی که گذرانده است", type: "multi", choices: NURSE_CERTIFICATION, showIf: ["specialized_nurse", "nursing_specialist"] },
+      { key: "advanced_procedures_ability", label: "توانایی انجام اقدامات تخصصی‌تر", type: "multi", choices: NURSE_ADVANCED_PROCEDURE, showIf: ["specialized_nurse", "nursing_specialist"] },
+      { key: "palliative_care_experience", label: "تجربه مراقبت تسکینی و پایان عمر", type: "bool", showIf: ["specialized_nurse", "nursing_specialist"] },
+      { key: "nursing_documentation_experience", label: "تجربه ثبت گزارش پرستاری و علائم حیاتی", type: "bool", showIf: ["specialized_nurse", "nursing_specialist"] },
+      // — مشترک بین پرستار و بهیار —
+      { key: "shift_experience", label: "شیفت‌هایی که سابقه کار در آن‌ها را دارد", type: "multi", choices: SHIFT_EXPERIENCE },
+      { key: "home_care_experience", label: "سابقه مراقبت از بیمار در منزل", type: "choice", choices: EXPERIENCE_RANGE },
       // — مخصوص شاخه‌ی بهیار —
       { key: "aide_training_certificate", label: "گواهی آموزشی کمک‌بهیاری/بهیاری دارد", type: "bool", showIf: ["behyar"] },
       { key: "behyar_care_abilities", label: "توانایی‌های بهیاری", type: "multi", choices: [
@@ -1619,6 +1704,11 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
         ["oxygen_equipment", "کار با کپسول اکسیژن و دستگاه‌های ساده"],
       ], showIf: ["behyar"] },
       { key: "years_of_hospital_experience", label: "سابقه کار بیمارستانی", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["behyar"] },
+      { key: "behyar_training_source", label: "محل گذراندن آموزش بهیاری", type: "choice", choices: BEHYAR_TRAINING_SOURCE, showIf: ["behyar"] },
+      { key: "behyar_work_settings", label: "محیط‌هایی که در آن‌ها کار کرده است", type: "multi", choices: BEHYAR_WORK_SETTING, showIf: ["behyar"] },
+      { key: "bedbound_patient_experience", label: "سابقه مراقبت از بیمار بستری و زمین‌گیر", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["behyar"] },
+      { key: "behyar_extra_skills", label: "مهارت‌های تکمیلی", type: "multi", choices: BEHYAR_EXTRA_SKILL, showIf: ["behyar"] },
+      { key: "first_aid_training", label: "دوره کمک‌های اولیه / احیای پایه گذرانده است", type: "bool", showIf: ["behyar"] },
     ],
     questionnaire: [
       // سوال‌های موقعیتی (غیرمستقیم)؛ مدل امتیاز: lib/trait-model-parastar.ts
