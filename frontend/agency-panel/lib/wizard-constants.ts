@@ -11,17 +11,14 @@ export const SERVICE_TYPE: Choice[] = [
   ["salmandyar", "سالمندیار"],
   ["nezafatchi", "امور منزل"],
   ["madaryar", "مادریار"],
-  ["behyar", "بهیار"],
+  ["parastar", "پرستار"],
 ]
 
 // «کودک‌یار» دیگر نوع خدمت جدا نیست و کامل در مادریار ادغام شده
 // (زیرشاخه‌های کودک / کمک‌کننده در درس و مشق / کارهای خانه + کودک).
-// «پرستار» فعلاً غیرفعال است: در انتخاب نوع خدمت نشان داده نمی‌شود،
-// ولی برچسبش برای مراقب‌های قبلاً ثبت‌شده در ALL_SERVICE_TYPE می‌ماند
-// و فرم‌های SERVICE_SPECIFIC_FORMS.parastar برای فعال‌سازی مجدد دست‌نخورده‌اند.
-export const INACTIVE_SERVICE_TYPE: Choice[] = [
-  ["parastar", "پرستار"],
-]
+// «بهیار» دیگر نوع خدمت جدا نیست: به‌صورت یک شاخه زیر «پرستار» ادغام شده
+// (شاخه‌ها: پرستار تخصصی / بهیار).
+export const INACTIVE_SERVICE_TYPE: Choice[] = []
 
 // برای جست‌وجوی برچسب (کارت‌ها، عنوان بخش‌ها)، نه برای انتخاب.
 export const ALL_SERVICE_TYPE: Choice[] = [...SERVICE_TYPE, ...INACTIVE_SERVICE_TYPE]
@@ -48,11 +45,19 @@ export const MADARYAR_SUBTYPE: Choice[] = [
 export const SPLIT_SUBTYPE_BOXES: Record<string, Choice[]> = {
   nezafatchi: [["cooking", "آشپزی"]],
   madaryar: MADARYAR_SUBTYPE,
+  parastar: [] as unknown as Choice[], // پایین‌تر (بعد از PARASTAR_SUBTYPE) مقداردهی می‌شود
 }
 
+// پرستار دو شاخه دارد؛ هر شاخه انتخاب‌های داخلی خودش را دارد و همه‌ی مقدارها
+// در یک لیست تخت زیر کلید "parastar" ذخیره می‌شوند.
 export const PARASTAR_SUBTYPE: Choice[] = [
-  ["nursing_specialist", "کارشناس پرستاری"],
   ["specialized_nurse", "پرستار تخصصی"],
+  ["behyar", "بهیار"],
+]
+
+// داخل «پرستار تخصصی»: مدرک (کارشناس پرستاری) + زمینه تخصصی
+export const PARASTAR_NURSE_QUALIFICATION: Choice[] = [
+  ["nursing_specialist", "کارشناس پرستاری"],
 ]
 
 export const PARASTAR_SPECIALTY: Choice[] = [
@@ -64,11 +69,20 @@ export const PARASTAR_SPECIALTY: Choice[] = [
   ["other", "سایر"],
 ]
 
-export const BEHYAR_SUBTYPE: Choice[] = [
+// داخل «بهیار»: سطح
+export const BEHYAR_LEVEL: Choice[] = [
   ["aide_helper", "کمک بهیار"],
   ["nurse_helper", "کمک پرستار"],
-  ["behyar", "بهیار"],
+  ["behyar_level", "بهیار"],
 ]
+
+// مقدارهای داخلی هر شاخه‌ی پرستار → خود شاخه (برای تعیین باکس سوالات)
+export const PARASTAR_INNER_TO_BRANCH: Record<string, string> = {
+  ...Object.fromEntries([...PARASTAR_NURSE_QUALIFICATION, ...PARASTAR_SPECIALTY].map(([v]) => [v, "specialized_nurse"])),
+  ...Object.fromEntries(BEHYAR_LEVEL.map(([v]) => [v, "behyar"])),
+}
+
+SPLIT_SUBTYPE_BOXES.parastar = PARASTAR_SUBTYPE
 
 export const GENDER: Choice[] = [
   ["female", "زن"],
@@ -1510,8 +1524,8 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
     form2: [
       // شماره پروانه نظام پرستاری حالا در فرم ۱ (هویتی) پرسیده می‌شود.
       { key: "shift_rotation_ok", label: "آمادگی برای چرخش شیفت", type: "bool" },
-      { key: "can_administer_injections", label: "توانایی تزریقات", type: "bool" },
-      { key: "works_alongside_aide_ok", label: "آمادگی همکاری در کنار کمک‌بهیار", type: "bool" },
+      { key: "can_administer_injections", label: "توانایی تزریقات", type: "bool", showIf: ["specialized_nurse", "nursing_specialist"] },
+      { key: "works_alongside_aide_ok", label: "آمادگی همکاری در کنار کمک‌بهیار", type: "bool", showIf: ["specialized_nurse", "nursing_specialist"] },
       { key: "hospital_surgery_accompaniment_ok", label: "آمادگی همراهی در بیمارستان حین عمل جراحی", type: "bool" },
       { key: "averse_hospitals_detail", label: "آیا بیمارستانی هست که قصد رفتن به آن را ندارید؟ (در صورت وجود، نام ببرید)", type: "text" },
       { key: "pre_surgery_shaving_ok", label: "آمادگی انجام اصلاح موی بدن قبل از عمل (شیو)", type: "bool" },
@@ -1524,10 +1538,11 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "discharge_and_home_transfer_ok", label: "آمادگی همراهی ترخیص و انتقال بیمار به منزل", type: "bool" },
       { key: "physiotherapy_assistance_ability", label: "توانایی کمک در فیزیوتراپی و تمرینات تجویزشده", type: "bool" },
       { key: "dialysis_accompaniment_ability", label: "توانایی همراهی بیمار دیالیزی", type: "bool" },
+      { key: "physical_tasks_comfort", label: "آمادگی برای کارهای فیزیکی (جابجایی و بلند کردن بیمار)", type: "bool", showIf: ["behyar"] },
     ],
     form3: [
-      { key: "nursing_degree_level", label: "مقطع تحصیلی پرستاری", type: "choice", choices: NURSING_DEGREE_LEVEL },
-      { key: "years_of_clinical_experience", label: "سابقه کار بالینی", type: "choice", choices: EXPERIENCE_RANGE },
+      { key: "nursing_degree_level", label: "مقطع تحصیلی پرستاری", type: "choice", choices: NURSING_DEGREE_LEVEL, showIf: ["specialized_nurse", "nursing_specialist"] },
+      { key: "years_of_clinical_experience", label: "سابقه کار بالینی", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["specialized_nurse", "nursing_specialist"] },
       // گروه بیمارانی که تجربه مراقبت از آن‌ها را دارد — جدا از
       // تخصص‌های ICU/زخم بستر/کودکان/مامایی/اورژانس که سابقه
       // اختصاصی خودشان را پایین‌تر دارند.
@@ -1539,26 +1554,15 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
       { key: "emergency_nursing_experience", label: "سابقه کار در اورژانس", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["emergency"] },
       { key: "mother_child_care_abilities", label: "توانایی‌های مراقبت از مادر و کودک", type: "multi", choices: PARASTAR_MOTHER_CHILD_CARE_ABILITY, showIf: ["midwifery", "pediatric"] },
       { key: "patient_condition_experience", label: "تجربه مراقبت از بیماران با شرایط زیر", type: "multi", choices: PARASTAR_CONDITION_EXPERIENCE },
-      { key: "clinical_procedures_ability", label: "توانایی انجام اقدامات بالینی زیر", type: "multi", choices: PARASTAR_PROCEDURE_ABILITY },
-      { key: "medication_treatment_abilities", label: "توانایی‌های دارویی و درمانی", type: "multi", choices: PARASTAR_MEDICATION_TREATMENT_ABILITY },
-      { key: "wound_care_abilities", label: "توانایی‌های زخم و پانسمان", type: "multi", choices: PARASTAR_WOUND_CARE_ABILITY },
+      { key: "clinical_procedures_ability", label: "توانایی انجام اقدامات بالینی زیر", type: "multi", choices: PARASTAR_PROCEDURE_ABILITY, showIf: ["specialized_nurse", "nursing_specialist"] },
+      { key: "medication_treatment_abilities", label: "توانایی‌های دارویی و درمانی", type: "multi", choices: PARASTAR_MEDICATION_TREATMENT_ABILITY, showIf: ["specialized_nurse", "nursing_specialist"] },
+      { key: "wound_care_abilities", label: "توانایی‌های زخم و پانسمان", type: "multi", choices: PARASTAR_WOUND_CARE_ABILITY, showIf: ["specialized_nurse", "nursing_specialist"] },
       // تجهیزات پزشکی — تقریبی از مقیاس سه‌سطحی سند («بدون تجربه/
       // تجربه دارد/کاملاً مسلط») با دو چک‌لیست مستقل.
       { key: "medical_equipment_experience", label: "تجهیزات پزشکی که با آن‌ها کار کرده است", type: "multi", choices: PARASTAR_EQUIPMENT },
       { key: "medical_equipment_mastery", label: "تجهیزات پزشکی که کاملاً به آن‌ها مسلط است", type: "multi", choices: PARASTAR_EQUIPMENT },
-    ],
-    questionnaire: [
-      { key: "clinical_judgement_confidence_level", label: "اعتماد به قضاوت بالینی خودش", type: "score" },
-      { key: "emergency_stress_tolerance_level", label: "تحمل استرس در شرایط اورژانسی", type: "score" },
-    ],
-  },
-  behyar: {
-    form2: [
-      { key: "physical_tasks_comfort", label: "آمادگی برای کارهای فیزیکی (جابجایی و بلند کردن بیمار)", type: "bool" },
-      { key: "averse_hospitals_detail", label: "آیا بیمارستانی هست که قصد رفتن به آن را ندارید؟ (در صورت وجود، نام ببرید)", type: "text" },
-    ],
-    form3: [
-      { key: "aide_training_certificate", label: "گواهی آموزشی کمک‌بهیاری/بهیاری دارد", type: "bool" },
+      // — مخصوص شاخه‌ی بهیار —
+      { key: "aide_training_certificate", label: "گواهی آموزشی کمک‌بهیاری/بهیاری دارد", type: "bool", showIf: ["behyar"] },
       { key: "behyar_care_abilities", label: "توانایی‌های بهیاری", type: "multi", choices: [
         ["vital_signs", "کنترل علائم حیاتی (فشار، نبض، تب، قند خون)"],
         ["bedbound_hygiene", "بهداشت و شست‌وشوی بیمار بستری"],
@@ -1569,11 +1573,13 @@ export const SERVICE_SPECIFIC_FORMS: Record<string, {
         ["medication_reminder", "یادآوری و کمک در مصرف داروها"],
         ["nurse_assistance", "کمک به پرستار در اقدامات درمانی"],
         ["oxygen_equipment", "کار با کپسول اکسیژن و دستگاه‌های ساده"],
-      ] },
-      { key: "years_of_hospital_experience", label: "سابقه کار بیمارستانی", type: "choice", choices: EXPERIENCE_RANGE },
+      ], showIf: ["behyar"] },
+      { key: "years_of_hospital_experience", label: "سابقه کار بیمارستانی", type: "choice", choices: EXPERIENCE_RANGE, showIf: ["behyar"] },
     ],
     questionnaire: [
-      { key: "physical_stamina_level", label: "استقامت فیزیکی برای کارهای سخت", type: "score" },
+      { key: "clinical_judgement_confidence_level", label: "اعتماد به قضاوت بالینی خودش", type: "score", showIf: ["specialized_nurse", "nursing_specialist"] },
+      { key: "emergency_stress_tolerance_level", label: "تحمل استرس در شرایط اورژانسی", type: "score", showIf: ["specialized_nurse", "nursing_specialist"] },
+      { key: "physical_stamina_level", label: "استقامت فیزیکی برای کارهای سخت", type: "score", showIf: ["behyar"] },
     ],
   },
 }

@@ -52,7 +52,6 @@ const SUBTYPE_CHOICES_BY_SERVICE_TYPE: Record<string, C.Choice[]> = {
   // below rather than flattened here, since that second list is
   // conditional on a specific value within this same type.
   parastar: C.PARASTAR_SUBTYPE,
-  behyar: C.BEHYAR_SUBTYPE,
 }
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
@@ -323,7 +322,7 @@ export default function CaregiverRegistrationWizard() {
   // باکس «شرایط محیط کار — مخصوص <نقش>» برای هر نقشِ انتخاب‌شده که سوال محیطی
   // اختصاصی دارد (فیلدهای form2 با group: "env").
   const ENV_ROLE_TITLE: Record<string, string> = {
-    salmandyar: "سالمندیاران", madaryar: "مادریاران", nezafatchi: "امور منزل", behyar: "بهیاران", parastar: "پرستاران",
+    salmandyar: "سالمندیاران", madaryar: "مادریاران", nezafatchi: "امور منزل", parastar: "پرستاران و بهیاران",
   }
   function renderEnvironmentSections(
     current: Record<string, Record<string, any>>,
@@ -370,7 +369,9 @@ export default function CaregiverRegistrationWizard() {
           const splitDefs = C.SPLIT_SUBTYPE_BOXES[type] ?? []
           const boxOf = (f: C.ServiceSpecificField): string => {
             if (!f.showIf) return ""
-            const hit = splitDefs.find(([s]) => f.showIf!.includes(s) && chosenSubtypes.includes(s))
+            // مقدارهای داخلی شاخه‌ها (مثلاً icu → specialized_nurse) به باکس شاخه می‌روند
+            const branchOf = (s: string) => (type === "parastar" ? C.PARASTAR_INNER_TO_BRANCH[s] ?? s : s)
+            const hit = splitDefs.find(([b]) => f.showIf!.some((s) => chosenSubtypes.includes(s) && branchOf(s) === b))
             return hit ? hit[0] : ""
           }
           const groups: { id: string; title: string; fields: C.ServiceSpecificField[] }[] = []
@@ -582,27 +583,55 @@ export default function CaregiverRegistrationWizard() {
                 if (!subtypeChoices) return null
                 const typeLabel = C.ALL_SERVICE_TYPE.find((c) => c[0] === type)?.[1] ?? type
                 const selectedSubtypes = serviceSubtypes[type] ?? []
+                // parastar keeps branch + inner picks in one flat list: replace only
+                // the picks belonging to `group`, keep everything else.
+                const setParastarInner = (group: C.Choice[], v: string[]) =>
+                  setServiceSubtypes({
+                    ...serviceSubtypes,
+                    parastar: [...selectedSubtypes.filter((s) => !group.some((c) => c[0] === s)), ...v],
+                  })
                 return (
                   <div key={type} className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
                     <Field label={`زیرشاخه — ${typeLabel}`}>
                       <CheckboxGroup
                         choices={subtypeChoices}
                         value={selectedSubtypes}
-                        onChange={(v) => setServiceSubtypes({ ...serviceSubtypes, [type]: v })}
+                        onChange={(v) => {
+                          if (type !== "parastar") return setServiceSubtypes({ ...serviceSubtypes, [type]: v })
+                          // شاخه‌ی برداشته‌شده → انتخاب‌های داخلی‌اش هم حذف شود
+                          const kept = selectedSubtypes.filter((s) => {
+                            const branch = C.PARASTAR_INNER_TO_BRANCH[s]
+                            return !branch || v.includes(branch)
+                          })
+                          const branches = v.filter((s) => C.PARASTAR_SUBTYPE.some((c) => c[0] === s))
+                          setServiceSubtypes({ ...serviceSubtypes, parastar: [...new Set([...branches, ...kept.filter((s) => C.PARASTAR_INNER_TO_BRANCH[s])])] })
+                        }}
                       />
                     </Field>
                     {type === "parastar" && selectedSubtypes.includes("specialized_nurse") && (
-                      <Field label="زمینه تخصصی پرستار">
-                        {/* backend stores parastar's subtype + specialty values together
-                            in one flat list under the "parastar" key, so specialty picks
-                            are merged into the same array rather than a separate key. */}
+                      <>
+                        <Field label="مدرک پرستار تخصصی">
+                          <CheckboxGroup
+                            choices={C.PARASTAR_NURSE_QUALIFICATION}
+                            value={selectedSubtypes.filter((s) => C.PARASTAR_NURSE_QUALIFICATION.some((c) => c[0] === s))}
+                            onChange={(v) => setParastarInner(C.PARASTAR_NURSE_QUALIFICATION, v)}
+                          />
+                        </Field>
+                        <Field label="زمینه تخصصی پرستار">
+                          <CheckboxGroup
+                            choices={C.PARASTAR_SPECIALTY}
+                            value={selectedSubtypes.filter((s) => C.PARASTAR_SPECIALTY.some((c) => c[0] === s))}
+                            onChange={(v) => setParastarInner(C.PARASTAR_SPECIALTY, v)}
+                          />
+                        </Field>
+                      </>
+                    )}
+                    {type === "parastar" && selectedSubtypes.includes("behyar") && (
+                      <Field label="سطح بهیار">
                         <CheckboxGroup
-                          choices={C.PARASTAR_SPECIALTY}
-                          value={selectedSubtypes.filter((s) => C.PARASTAR_SPECIALTY.some((c) => c[0] === s))}
-                          onChange={(v) => {
-                            const baseSubtypes = selectedSubtypes.filter((s) => C.PARASTAR_SUBTYPE.some((c) => c[0] === s))
-                            setServiceSubtypes({ ...serviceSubtypes, parastar: [...baseSubtypes, ...v] })
-                          }}
+                          choices={C.BEHYAR_LEVEL}
+                          value={selectedSubtypes.filter((s) => C.BEHYAR_LEVEL.some((c) => c[0] === s))}
+                          onChange={(v) => setParastarInner(C.BEHYAR_LEVEL, v)}
                         />
                       </Field>
                     )}
@@ -651,7 +680,7 @@ export default function CaregiverRegistrationWizard() {
                     <p className="-mt-2 text-xs text-muted-foreground">مدارک پاسپورت/اقامت از بخش «مدارک» در کاریز خدمت‌دهنده آپلود می‌شود.</p>
                   </>
                 )}
-                {serviceTypes.includes("parastar") && (
+                {serviceTypes.includes("parastar") && ((serviceSubtypes.parastar ?? []).length === 0 || (serviceSubtypes.parastar ?? []).some((s) => s === "specialized_nurse" || s === "nursing_specialist")) && (
                   <Field label="شماره پروانه نظام پرستاری"><Input value={identity.nursing_license_number} onChange={(e) => setIdentity({ ...identity, nursing_license_number: e.target.value })} /></Field>
                 )}
               </FormSection>

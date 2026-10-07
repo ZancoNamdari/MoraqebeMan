@@ -11,23 +11,25 @@ from .choices import (SpecialTalent, AcceptedPhysicalCondition, AcceptedAgeRange
                       PreviousWorkplace, SpecialConditionExperience, TrainingCourse, Gender,
                       Ethnicity, ETHNICITY_SUBGROUPS,
                       ServiceType, NezafatchiSubtype, MadaryarSubtype,
-                      ParastarSubtype, ParastarSpecialty, BehyarSubtype)
+                      ParastarSubtype, ParastarSpecialty, BehyarLevel)
 from .models import (CaregiverWorkPreferences, CaregiverServiceArea, CaregiverExperience,
                      CaregiverSkills, CaregiverReference, IdentityProfile, CaregiverCompatibilityQuestionnaire,
                      BlacklistAppeal, CaregiverDocumentUpload)
 
 
-# Which subtype values are valid for each ServiceType — PARASTAR
-# accepts both its own subtype (nursing_specialist/specialized_nurse)
-# AND, when SPECIALIZED_NURSE is among them, a specialty tag
-# (icu/wound_care/pediatric/other) in the same flat list, since this
-# is a tag set, not a nested structure.
+# Which subtype values are valid for each ServiceType — PARASTAR is a flat
+# tag set: its two branches (specialized_nurse / behyar) plus the inner
+# choices of each (nursing_specialist + specialties under the nurse branch,
+# BehyarLevel under the behyar branch).
 _SUBTYPE_CHOICES_BY_SERVICE_TYPE = {
     ServiceType.SALMANDYAR: [],
     ServiceType.NEZAFATCHI: [c[0] for c in NezafatchiSubtype.choices],
     ServiceType.MADARYAR: [c[0] for c in MadaryarSubtype.choices],
-    ServiceType.PARASTAR: [c[0] for c in ParastarSubtype.choices] + [c[0] for c in ParastarSpecialty.choices],
-    ServiceType.BEHYAR: [c[0] for c in BehyarSubtype.choices],
+    ServiceType.PARASTAR: (
+        [c[0] for c in ParastarSubtype.choices]
+        + [c[0] for c in ParastarSpecialty.choices]
+        + [c[0] for c in BehyarLevel.choices]
+    ),
 }
 
 

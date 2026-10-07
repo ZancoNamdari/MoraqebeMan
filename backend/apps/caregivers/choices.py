@@ -16,10 +16,9 @@ class ServiceType(models.TextChoices):
     # مایگریشن 0029 داده‌های موجود را منتقل می‌کند.
     NEZAFATCHI = "nezafatchi", "امور منزل"
     MADARYAR = "madaryar", "مادریار"
-    # پرستار فعلاً در رابط کاربری غیرفعال است (بعداً فعال می‌شود)؛
-    # مقدار برای داده‌های موجود و فعال‌سازی مجدد در بک‌اند معتبر می‌ماند.
+    # «بهیار» قبلاً نوع خدمت جدا بود؛ به‌صورت یک شاخه زیر «پرستار» ادغام شد
+    # (شاخه‌ها: پرستار تخصصی / بهیار) — مایگریشن 0041 داده‌های موجود را منتقل می‌کند.
     PARASTAR = "parastar", "پرستار"
-    BEHYAR = "behyar", "بهیار"
 
 
 class NezafatchiSubtype(models.TextChoices):
@@ -45,8 +44,14 @@ class MadaryarSubtype(models.TextChoices):
 
 
 class ParastarSubtype(models.TextChoices):
+    """شاخه‌های نوع خدمت «پرستار» (+ بهیار). همه‌ی مقدارهای پرستار در یک لیست
+    تخت زیر کلید "parastar" ذخیره می‌شوند:
+      شاخه‌ها      : specialized_nurse (پرستار تخصصی)، behyar (بهیار)
+      زیر پرستار تخصصی: nursing_specialist (کارشناس پرستاری) + ParastarSpecialty
+      زیر بهیار    : BehyarLevel (کمک بهیار / کمک پرستار / بهیار)"""
     NURSING_SPECIALIST = "nursing_specialist", "کارشناس پرستاری"
     SPECIALIZED_NURSE = "specialized_nurse", "پرستار تخصصی"
+    BEHYAR = "behyar", "بهیار"
 
 
 class ParastarSpecialty(models.TextChoices):
@@ -60,10 +65,12 @@ class ParastarSpecialty(models.TextChoices):
     OTHER = "other", "سایر"
 
 
-class BehyarSubtype(models.TextChoices):
+class BehyarLevel(models.TextChoices):
+    """سطح بهیار — فقط وقتی شاخه‌ی ParastarSubtype.BEHYAR انتخاب شده معنا دارد
+    (مقدار "behyar_level" برای جلوگیری از تداخل با نام شاخه است)."""
     AIDE_HELPER = "aide_helper", "کمک بهیار"
     NURSE_HELPER = "nurse_helper", "کمک پرستار"
-    BEHYAR = "behyar", "بهیار"
+    BEHYAR_LEVEL = "behyar_level", "بهیار"
 
 
 class Gender(models.TextChoices):
