@@ -99,6 +99,10 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+# فایل‌های بزرگ‌تر از ۲.۵ مگابایت از طریق فایل موقت ذخیره می‌شوند و بدون این
+# تنظیم با دسترسی 0600 (فقط مالک) می‌مانند؛ nginx با کاربر دیگری اجرا می‌شود و
+# نمی‌توانست آن‌ها را بخواند.
+FILE_UPLOAD_PERMISSIONS = 0o644
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

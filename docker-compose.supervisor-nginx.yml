@@ -9,6 +9,9 @@ services:
       - ./gateway/nginx.supervisor.conf:/etc/nginx/nginx.conf:ro
       - ./certbot/www:/var/www/certbot:ro
       - ./certbot/conf:/etc/letsencrypt:ro
+      # همان volume آپلودها که backend در آن می‌نویسد (در docker-compose.prod.yml
+      # تعریف شده) — برای سرو مستقیم /media/ روی api.moraqebman.ir
+      - media_data:/app/media:ro
     depends_on:
       - supervisor_panel
       - agency_panel
@@ -18,3 +21,6 @@ services:
       - admin_panel
       - superuser_panel
       - landing_page
+
+volumes:
+  media_data:
