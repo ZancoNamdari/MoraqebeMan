@@ -4,6 +4,8 @@ services:
       - "8000:8000"
     environment:
       SECURE_SSL_REDIRECT: "false"
+      # لوکال nginx ندارد؛ Django خودش /media/ (عکس پروفایل و...) را سرو کند.
+      SERVE_MEDIA_FROM_DJANGO: "true"
 
   supervisor_panel:
     build:

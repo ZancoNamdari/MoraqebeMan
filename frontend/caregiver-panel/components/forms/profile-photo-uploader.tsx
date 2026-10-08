@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 export function mediaUrl(path: string | null | undefined): string {
   if (!path) return ""
   if (/^https?:\/\//.test(path)) return path
-  return `${process.env.NEXT_PUBLIC_API_URL || ""}${path}`
+  return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${path}`
 }
 
 interface PhotoUpload {

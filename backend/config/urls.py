@@ -7,7 +7,8 @@ a stable contract even across the eventual microservice migration.
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve as serve_media
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from config.health import health_check
@@ -42,3 +43,10 @@ if settings.DEBUG:
     # media through nginx/a real object store, not Django directly —
     # this block deliberately never runs there.
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+elif getattr(settings, "SERVE_MEDIA_FROM_DJANGO", False):
+    # فقط برای اجرای محلی با docker-compose.local.yml که nginx ندارد و DEBUG هم
+    # خاموش است (static() بالا در این حالت چیزی برنمی‌گرداند). در production
+    # این فلگ خاموش است و nginx فایل‌ها را سرو می‌کند.
+    urlpatterns += [
+        re_path(r"^%s(?P<path>.*)$" % settings.MEDIA_URL.lstrip("/"), serve_media, {"document_root": settings.MEDIA_ROOT}),
+    ]

@@ -103,6 +103,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 # تنظیم با دسترسی 0600 (فقط مالک) می‌مانند؛ nginx با کاربر دیگری اجرا می‌شود و
 # نمی‌توانست آن‌ها را بخواند.
 FILE_UPLOAD_PERMISSIONS = 0o644
+# سرو فایل‌های آپلودی توسط خود Django — فقط برای اجرای محلی بدون nginx (docker-compose.local.yml).
+SERVE_MEDIA_FROM_DJANGO = env.bool("SERVE_MEDIA_FROM_DJANGO", default=False)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
