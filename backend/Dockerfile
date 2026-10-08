@@ -51,4 +51,4 @@ ENTRYPOINT ["./entrypoint.sh"]
 # Overridden by docker-compose in dev (runserver on 0.0.0.0:8000) and by
 # the celery worker service (celery -A config worker). This is the
 # production default: a real WSGI server, not manage.py runserver.
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--threads", "4", "--timeout", "60"]

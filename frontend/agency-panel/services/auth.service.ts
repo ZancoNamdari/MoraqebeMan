@@ -1,8 +1,44 @@
 import { api } from "./api"
 import type { User } from "@/types/user"
 
+// «من کیستم» (/api/auth/me/) بین همه‌ی صفحه‌ها مشترک است. قبلاً هر صفحه در هر
+// کلیک دوباره آن را صدا می‌زد و تا برگشتن جواب، صفحه‌ی خالی نشان می‌داد — یعنی
+// قبل از شروع به گرفتن داده‌ی خودِ صفحه، یک رفت‌وبرگشت اضافه به سرور.
+// حالا نتیجه چند دقیقه نگه داشته می‌شود و درخواست‌های هم‌زمان یکی می‌شوند.
+const ME_TTL_MS = 5 * 60 * 1000
+let meCache: { user: User; at: number } | null = null
+let meInflight: Promise<User> | null = null
+
 export const authService = {
+  /** کاربر ذخیره‌شده (اگر هست) بدون هیچ درخواستی؛ برای رندر آنی صفحه‌ها. */
+  peekMe(): { user: User; fresh: boolean } | null {
+    if (!meCache) return null
+    return { user: meCache.user, fresh: Date.now() - meCache.at < ME_TTL_MS }
+  },
+
+  async meCached(): Promise<User> {
+    if (meCache && Date.now() - meCache.at < ME_TTL_MS) return meCache.user
+    if (!meInflight) {
+      meInflight = authService
+        .me()
+        .then((u: User) => {
+          meCache = { user: u, at: Date.now() }
+          return u
+        })
+        .finally(() => {
+          meInflight = null
+        })
+    }
+    return meInflight
+  },
+
+  clearMeCache() {
+    meCache = null
+    meInflight = null
+  },
+
   async login(username: string, password: string) {
+    authService.clearMeCache()
     const { data } = await api.post("/api/auth/login/", { username, password })
     window.localStorage.setItem("access_token", data.tokens.access)
     window.localStorage.setItem("refresh_token", data.tokens.refresh)
@@ -15,6 +51,7 @@ export const authService = {
   },
 
   logout() {
+    authService.clearMeCache()
     window.localStorage.removeItem("access_token")
     window.localStorage.removeItem("refresh_token")
   },
@@ -46,6 +83,7 @@ export const authService = {
   // apps.authentication.views.UpdateProfileView/ChangePasswordView).
   async updateOwnProfile(payload: { first_name?: string; last_name?: string; email?: string; phone_number?: string }) {
     const { data } = await api.patch("/api/auth/profile/", payload)
+    authService.clearMeCache()
     return data as User
   },
 

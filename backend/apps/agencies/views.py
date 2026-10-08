@@ -1075,7 +1075,7 @@ class AgencyPatientListCreateView(APIView):
 
         links = AgencyPatientLink.objects.filter(
             agency=agency, status=AgencyLinkStatus.APPROVED,
-        ).select_related("patient", "decided_by").prefetch_related(
+        ).select_related("patient", "patient__province", "patient__city", "decided_by").prefetch_related(
             "patient__family_links__family__user",
         )
 
@@ -1368,7 +1368,9 @@ class AgencyCaregiverPipelineListView(APIView):
 
         links = AgencyCaregiverLink.objects.filter(
             agency=agency, status=AgencyLinkStatus.APPROVED,
-        ).select_related("caregiver", "caregiver__user", "decided_by").prefetch_related("caregiver__document_uploads")
+        ).select_related(
+            "caregiver", "caregiver__user", "caregiver__user__caregiver_identity_profile", "decided_by",
+        ).prefetch_related("caregiver__document_uploads", "caregiver__references")
 
         creator_scope = visible_creator_user_ids(request.user)
         if creator_scope is not None:

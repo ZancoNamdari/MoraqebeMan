@@ -67,7 +67,12 @@ class PatientProfileSerializer(serializers.ModelSerializer):
 
     def get_family_contacts(self, obj):
         contacts = []
-        links = obj.family_links.filter(status=LinkStatus.APPROVED).select_related("family__user")
+        # اگر لیست با prefetch_related("family_links__family__user") آمده، از همان
+        # کش استفاده کن (فیلتر وضعیت در پایتون) تا برای هر ردیف کوئری جدا نزنیم.
+        if "family_links" in getattr(obj, "_prefetched_objects_cache", {}):
+            links = [lk for lk in obj.family_links.all() if lk.status == LinkStatus.APPROVED]
+        else:
+            links = obj.family_links.filter(status=LinkStatus.APPROVED).select_related("family__user")
         for link in links:
             phone = getattr(link.family.user, "phone_number", "") if link.family and link.family.user else ""
             if not phone:

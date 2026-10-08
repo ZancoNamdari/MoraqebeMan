@@ -14,13 +14,14 @@ const DIGIT_MAP: Record<string, string> = {
   "0": "۰", "1": "۱", "2": "۲", "3": "۳", "4": "۴",
   "5": "۵", "6": "۶", "7": "۷", "8": "۸", "9": "۹",
 }
+const HAS_DIGIT_RE = /[0-9]/
 const WESTERN_DIGIT_RE = /[0-9]/g
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "TEXTAREA", "INPUT", "NOSCRIPT"])
 
 function convertSubtree(node: Node) {
   if (node.nodeType === Node.TEXT_NODE) {
     const text = node.nodeValue
-    if (text && WESTERN_DIGIT_RE.test(text)) {
+    if (text && HAS_DIGIT_RE.test(text)) {
       node.nodeValue = text.replace(WESTERN_DIGIT_RE, (d) => DIGIT_MAP[d])
     }
     return
@@ -48,13 +49,30 @@ export function PersianDigitsProvider() {
   useEffect(() => {
     convertSubtree(document.body)
 
+    // تغییرات DOM را جمع می‌کنیم و یک‌جا در فریم بعد پردازش می‌کنیم؛ قبلاً با هر
+    // mutation (و هر بار که خودِ این کد متن را عوض می‌کرد) کل زیردرخت دوباره
+    // پیمایش می‌شد و در صفحه‌های بزرگ (کانبان/لیست‌ها) حسابی کند بود.
+    const pending = new Set<Node>()
+    let scheduled = false
+    const flush = () => {
+      scheduled = false
+      const nodes = Array.from(pending)
+      pending.clear()
+      for (const n of nodes) {
+        if (n.isConnected) convertSubtree(n)
+      }
+    }
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type === "characterData") {
-          convertSubtree(mutation.target)
+          pending.add(mutation.target)
         } else {
-          mutation.addedNodes.forEach((n) => convertSubtree(n))
+          mutation.addedNodes.forEach((n) => pending.add(n))
         }
+      }
+      if (!scheduled && pending.size) {
+        scheduled = true
+        requestAnimationFrame(flush)
       }
     })
     observer.observe(document.body, { childList: true, subtree: true, characterData: true })

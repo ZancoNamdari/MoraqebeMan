@@ -2,14 +2,32 @@ import { api } from "./api"
 import type { AgencyCaregiverLink, AgencyDashboard, AgencyFamilyLink, AgencyProfile } from "@/types/agency"
 import type { DashboardInsights, StaffDashboardData } from "@/types/dashboard"
 
+// پروفایل آژانس تقریباً هیچ‌وقت عوض نمی‌شود ولی ~۱۸ صفحه در هر باز شدن آن را
+// می‌گیرند؛ چند دقیقه در حافظه نگه می‌داریم و درخواست‌های هم‌زمان را یکی می‌کنیم.
+const ME_TTL_MS = 5 * 60 * 1000
+let meCache: { value: AgencyProfile; at: number } | null = null
+let meInflight: Promise<AgencyProfile> | null = null
+
 export const agencyService = {
-  async me() {
-    const { data } = await api.get("/api/agencies/me/")
-    return data as AgencyProfile
+  async me(): Promise<AgencyProfile> {
+    if (meCache && Date.now() - meCache.at < ME_TTL_MS) return meCache.value
+    if (!meInflight) {
+      meInflight = api
+        .get("/api/agencies/me/")
+        .then(({ data }) => {
+          meCache = { value: data as AgencyProfile, at: Date.now() }
+          return meCache.value
+        })
+        .finally(() => {
+          meInflight = null
+        })
+    }
+    return meInflight
   },
 
   async updateProfile(payload: { company_name?: string; license_number?: string; admin_finance_access?: boolean }) {
     const { data } = await api.put("/api/agencies/me/", payload)
+    meCache = null
     return data as AgencyProfile
   },
 
