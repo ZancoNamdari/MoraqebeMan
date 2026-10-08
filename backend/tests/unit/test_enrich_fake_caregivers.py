@@ -46,3 +46,12 @@ class EnrichFakeCaregiversTests(TestCase):
             self.assertTrue(d["skills"]["caregiving"])
             self.assertTrue(d["highlights"] is not None)
             self.assertEqual(sum(d["rating_distribution"].values()), d["review_count"])
+
+    def test_all_flag_includes_hand_made_caregivers(self):
+        with tempfile.TemporaryDirectory() as tmp, override_settings(MEDIA_ROOT=tmp):
+            call_command("enrich_fake_caregivers", "--approve", "--all", verbosity=0)
+            real = CaregiverProfile.objects.get(user__username="real_cg")
+            self.assertEqual(real.status, CaregiverStatus.APPROVED)
+            self.assertTrue(CaregiverDocumentUpload.objects.filter(caregiver=real).exists())
+            real.user.refresh_from_db()
+            self.assertEqual(real.user.first_name, "واقعی")  # نام موجود دست نمی‌خورد

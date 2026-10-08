@@ -6,7 +6,8 @@
 
   python manage.py enrich_fake_caregivers --approve
 
-- فقط کاربرانی که username آن‌ها با bulk_caregiver_ یا demo_caregiver_ شروع می‌شود.
+- پیش‌فرض: فقط کاربرانی که username آن‌ها با bulk_caregiver_ یا demo_caregiver_ شروع می‌شود.
+- --all: همه‌ی مراقبان (مثلاً کسانی که خودتان روی لوکال ساخته‌اید). فقط روی دیتابیس تستی!
 - امن برای اجرای دوباره: فقط فیلدهای خالی پر می‌شوند (مگر با --force).
 - --approve: مراقبانِ draft/pending را approved می‌کند (تا در فهرست خانواده‌ها
   دیده شوند)؛ مراقبان تعلیق‌شده/ردشده دست نمی‌خورند.
@@ -159,6 +160,10 @@ class Command(BaseCommand):
         parser.add_argument("--force", action="store_true", help="فیلدهای پرشده را هم دوباره بنویس.")
         parser.add_argument("--no-photos", action="store_true")
         parser.add_argument("--no-reviews", action="store_true")
+        parser.add_argument(
+            "--all", action="store_true", dest="all_caregivers",
+            help="همه‌ی مراقبان (هر username) را تکمیل کن، نه فقط bulk_/demo_ — برای دیتابیس لوکال.",
+        )
         parser.add_argument("--limit", type=int, default=0, help="حداکثر تعداد مراقب (۰ = همه).")
 
     def handle(self, *a, **o):
@@ -167,7 +172,7 @@ class Command(BaseCommand):
         q = Q()
         for pre in FAKE_PREFIXES:
             q |= Q(username__startswith=pre)
-        users = users.filter(q).order_by("id")
+        users = users.order_by("id") if o["all_caregivers"] else users.filter(q).order_by("id")
         if o["limit"]:
             users = users[: o["limit"]]
         self.cities = list(City.objects.select_related("province")[:300])
