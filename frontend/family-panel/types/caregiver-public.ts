@@ -18,7 +18,7 @@ export interface PublicCaregiverCard {
 }
 
 export interface PublicCaregiverProfile extends PublicCaregiverCard {
-  about: { marital_status: string | null; ethnicities: string[] }
+  about: { gender: string | null; marital_status: string | null; children_count: string | null; ethnicities: string[]; province: string }
   areas: string[]
   experience: {
     elderly_care: string | null

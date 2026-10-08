@@ -163,6 +163,18 @@ export function CaregiverProfileView({ p, stickyTop = 0 }: { p: PublicCaregiverP
           </div>
 
           <div className={cn(card, "space-y-3")}>
+            <p className="text-sm font-semibold">مشخصات</p>
+            <Row label="نام و نام خانوادگی" value={p.display_name} />
+            <Row label="سن" value={p.age ? `${fa(p.age)} سال` : null} />
+            <Row label="جنسیت" value={p.about.gender} />
+            <Row label="وضعیت تأهل" value={p.about.marital_status} />
+            <Row label="تعداد فرزندان" value={p.about.children_count} />
+            <Row label="قومیت / زبان مادری" value={p.about.ethnicities.join("، ")} />
+            <Row label="محل سکونت" value={[p.about.province, p.city].filter(Boolean).join("، ")} />
+            <Row label="سابقه‌ی کار" value={p.elderly_experience} />
+          </div>
+
+          <div className={cn(card, "space-y-3")}>
             <p className="text-sm font-semibold">شرایط همکاری</p>
             <Sub title="نوع همکاری" items={av.collaboration_types} />
             <Sub title="روزهای کاری" items={av.days} />

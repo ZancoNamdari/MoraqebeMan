@@ -47,9 +47,9 @@ class PublicCaregiverProfileTests(TestCase):
         ids = [r["id"] for r in res.json()["results"]]
         self.assertEqual(ids, [self.cg_user.id])
         body = res.content.decode()
-        for secret in ("09121110000", "0012345678", "secret", "02112345678", "احمدی"):
+        for secret in ("09121110000", "0012345678", "secret", "02112345678"):
             self.assertNotIn(secret, body)
-        self.assertEqual(res.json()["results"][0]["display_name"], "مریم ا.")
+        self.assertEqual(res.json()["results"][0]["display_name"], "مریم احمدی")
 
     def test_detail_shows_only_high_trait_titles_and_404s_unapproved(self):
         self.client.force_authenticate(self.family)

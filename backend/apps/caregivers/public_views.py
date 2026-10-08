@@ -4,8 +4,7 @@
 پروفایل تصمیم بگیرد با او همکاری کند یا نه.
 
 حریم خصوصی (عمداً سخت‌گیرانه): هیچ‌کدام از این‌ها هرگز در خروجی نیست —
-شماره تلفن/نام کاربری، کد ملی، مدارک، آدرس و کد پستی، نام کامل (فقط نام
-کوچک + حرف اول نام خانوادگی)، اطلاعات سلامت، حقوق درخواستی، معرف‌ها و
+شماره تلفن/نام کاربری، کد ملی، مدارک، آدرس و کد پستی، اطلاعات سلامت، حقوق درخواستی، معرف‌ها و
 یادداشت‌های داخلی. عکس هم فقط وقتی نشان داده می‌شود که تأیید شده باشد.
 """
 from django.db.models import Avg, Count, Q
@@ -39,20 +38,17 @@ class CanViewPublicCaregiver(IsAuthenticated):
 
 
 def public_display_name(caregiver):
-    """نام کوچک + حرف اول نام خانوادگی. هرگز username (که شماره موبایل است)
-    را برنمی‌گرداند."""
+    """نام و نام خانوادگیِ کامل (به‌درخواست مالک پلتفرم). هرگز username
+    (که شماره موبایل است) را برنمی‌گرداند."""
     user = caregiver.user
-    first = (user.first_name or "").strip()
-    last = (user.last_name or "").strip()
-    if not first and not last:
-        return "مراقب"
-    return f"{first} {last[:1]}." if last else first
+    full = f"{(user.first_name or '').strip()} {(user.last_name or '').strip()}".strip()
+    return full or "مراقب"
 
 
 def _approved_qs():
     return (
         CaregiverProfile.objects.filter(status=CaregiverStatus.APPROVED)
-        .select_related("user", "user__caregiver_identity_profile", "user__caregiver_identity_profile__city")
+        .select_related("user", "user__caregiver_identity_profile", "user__caregiver_identity_profile__city", "user__caregiver_identity_profile__province")
     )
 
 
@@ -228,8 +224,11 @@ def serialize_profile(caregiver):
     identity = getattr(caregiver.user, "caregiver_identity_profile", None)
 
     data["about"] = {
+        "gender": _one(identity.gender, c.Gender) if identity else None,
         "marital_status": _one(identity.marital_status, c.MaritalStatus) if identity else None,
+        "children_count": _one(identity.children_count, c.ChildrenCount) if identity else None,
         "ethnicities": _map(identity.ethnicities, c.Ethnicity) if identity else [],
+        "province": getattr(getattr(identity, "province", None), "name", "") if identity else "",
     }
     data["areas"] = _areas(caregiver)
     data["experience"] = {
@@ -327,7 +326,7 @@ class CaregiverFamilyViewPreviewView(APIView):
         from apps.agencies.tenancy import can_review_caregiver_document
         caregiver = (
             CaregiverProfile.objects.filter(user_id=user_id)
-            .select_related("user", "user__caregiver_identity_profile", "user__caregiver_identity_profile__city")
+            .select_related("user", "user__caregiver_identity_profile", "user__caregiver_identity_profile__city", "user__caregiver_identity_profile__province")
             .first()
         )
         if caregiver is None or not can_review_caregiver_document(request.user, caregiver):
