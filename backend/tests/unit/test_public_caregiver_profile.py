@@ -94,3 +94,18 @@ class ReviewsInProfileTests(PublicCaregiverProfileTests):
         self.assertEqual(d["reviews"][0]["name"], "f g.")
         self.assertEqual(d["reviews"][0]["comment"], "خیلی خوب بود")
         self.assertNotIn("محرمانه", body.content.decode())
+
+
+class FamilyViewAgencyIsolationTests(PublicCaregiverProfileTests):
+    """آژانس فقط پروفایل مراقبانِ تأییدشده‌ی خودش را ببیند؛ حدس زدن id در URL نباید کار کند."""
+
+    def test_agency_sees_only_own_caregivers(self):
+        from apps.agencies.models import AgencyCaregiverLink, AgencyLinkStatus, AgencyProfile
+        a1 = AgencyProfile.objects.create(user=mk_user("09125550001", "agency"), company_name="A1")
+        a2 = AgencyProfile.objects.create(user=mk_user("09125550002", "agency"), company_name="A2")
+        AgencyCaregiverLink.objects.create(agency=a1, caregiver=self.cg, status=AgencyLinkStatus.APPROVED)
+        url = f"/api/caregivers/{self.cg_user.id}/family-view/"
+        self.client.force_authenticate(a1.user)
+        self.assertEqual(self.client.get(url).status_code, 200)
+        self.client.force_authenticate(a2.user)
+        self.assertEqual(self.client.get(url).status_code, 404)
