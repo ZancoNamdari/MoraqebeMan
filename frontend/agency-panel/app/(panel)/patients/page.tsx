@@ -35,6 +35,8 @@ type Stage = { value: string; label: string }
 // "auto" first is required before reading scrollHeight, otherwise a
 // box that already grew tall would never be able to shrink back down
 // when text is deleted.
+const COLUMN_PAGE_SIZE = 12
+
 function autoGrowNote(el: HTMLTextAreaElement | null) {
   if (!el) return
   el.style.height = "auto"
@@ -379,6 +381,8 @@ function StageColumn({ stage, index, stages, patients, onMove, movingId, router,
   onSaveContractDate: (patient: AgencyPatient, field: "contract_start_date" | "contract_end_date", date: string) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.value })
+  // فقط تعداد محدودی کارت را رندر می‌کنیم؛ رندر ده‌ها کارت drag-and-drop سنگین است.
+  const [visibleCount, setVisibleCount] = useState(COLUMN_PAGE_SIZE)
   const colors = STAGE_HEADER_CLASS
   const urgentCount = patients.filter((p) => p.is_urgent).length
   const isFirst = index === 0
@@ -419,13 +423,21 @@ function StageColumn({ stage, index, stages, patients, onMove, movingId, router,
         {patients.length === 0 ? (
           <p className="p-3 text-center text-xs text-slate-400">موردی نیست</p>
         ) : (
-          patients.map((p) => (
+          patients.slice(0, visibleCount).map((p) => (
             <PatientCard
               key={p.id} patient={p} stages={stages} onMove={onMove} moving={movingId === p.id} router={router}
               pinned={isPinned(p.id)} onTogglePin={() => onTogglePin(p.id)} onSaveNote={onSaveNote}
               onAddTag={onAddTag} onRemoveTag={onRemoveTag} onSaveContractDate={onSaveContractDate}
             />
           ))
+        )}
+        {patients.length > visibleCount && (
+          <button
+            onClick={() => setVisibleCount((c) => c + COLUMN_PAGE_SIZE)}
+            className="w-full rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 hover:bg-slate-100"
+          >
+            نمایش بیشتر ({patients.length - visibleCount} مورد دیگر)
+          </button>
         )}
         {/* Quick-add sits below every card in the column, not above,
             so it doesn't push the existing cards down every time the

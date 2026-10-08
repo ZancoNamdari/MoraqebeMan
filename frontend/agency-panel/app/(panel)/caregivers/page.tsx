@@ -29,6 +29,8 @@ import type { AgencyCaregiverLink } from "@/types/agency"
 import type { AgencyCaregiverPipelineItem, CaregiverDocumentField, CaregiverDocumentReviewStatus } from "@/types/agency_management"
 import * as C from "@/lib/wizard-constants"
 
+const COLUMN_PAGE_SIZE = 12
+
 function serviceTypeLabel(value: string) {
   return C.ALL_SERVICE_TYPE.find((c) => c[0] === value)?.[1] ?? value
 }
@@ -435,6 +437,8 @@ function StageColumn({ stage, index, stages, items, onMove, movingId, onAddTag, 
   onSaveContractDate: (item: AgencyCaregiverPipelineItem, field: "contract_start_date" | "contract_end_date", date: string) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.value })
+  // فقط تعداد محدودی کارت را رندر می‌کنیم؛ رندر ده‌ها کارت drag-and-drop سنگین است.
+  const [visibleCount, setVisibleCount] = useState(COLUMN_PAGE_SIZE)
   const colors = STAGE_HEADER_CLASS
   const isFirst = index === 0
 
@@ -468,7 +472,7 @@ function StageColumn({ stage, index, stages, items, onMove, movingId, onAddTag, 
         {items.length === 0 ? (
           <p className="p-3 text-center text-xs text-slate-400">موردی نیست</p>
         ) : (
-          items.map((item) => (
+          items.slice(0, visibleCount).map((item) => (
             <CaregiverCard
               key={item.id} item={item} stages={stages} onMove={onMove} moving={movingId === item.id}
               onAddTag={onAddTag} onRemoveTag={onRemoveTag}
@@ -476,6 +480,14 @@ function StageColumn({ stage, index, stages, items, onMove, movingId, onAddTag, 
               onSaveContractDate={onSaveContractDate}
             />
           ))
+        )}
+        {items.length > visibleCount && (
+          <button
+            onClick={() => setVisibleCount((c) => c + COLUMN_PAGE_SIZE)}
+            className="w-full rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 hover:bg-slate-100"
+          >
+            نمایش بیشتر ({items.length - visibleCount} مورد دیگر)
+          </button>
         )}
         {/* Quick-add sits below every card in the column, not above,
             so it doesn't push the existing cards down every time the
