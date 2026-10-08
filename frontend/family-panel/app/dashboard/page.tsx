@@ -156,6 +156,15 @@ export default function DashboardPage() {
 
         <Card className="border-pink-100">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <p className="text-sm text-rose-900">مراقبان تأییدشده — پروفایل و سوابق</p>
+            <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => router.push(ROUTES.caregivers)}>
+              مشاهده‌ی مراقبان
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-pink-100">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <p className="text-sm text-rose-900">شکایات و بازخورد</p>
             <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => router.push(ROUTES.complaints)}>
               مشاهده / ثبت شکایت

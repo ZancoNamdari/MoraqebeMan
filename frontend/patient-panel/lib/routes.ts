@@ -5,4 +5,6 @@ export const ROUTES = {
   questionnaire: "/questionnaire",
   access: "/access",
   care: "/care",
+  caregivers: "/caregivers",
+  caregiverDetail: (id: number | string) => `/caregivers/detail?id=${id}`,
 }

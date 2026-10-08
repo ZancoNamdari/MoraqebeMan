@@ -106,6 +106,7 @@ export default function DashboardPage() {
               <NavCard icon="💬" label="پرسشنامه سازگاری" onClick={() => router.push(ROUTES.questionnaire)} />
               <NavCard icon="👪" label={`دسترسی خانواده (${links.length})`} onClick={() => router.push(ROUTES.access)} />
               <NavCard icon="👩‍⚕️" label="تیم مراقبت" onClick={() => router.push(ROUTES.care)} />
+              <NavCard icon="🔍" label="مشاهده‌ی مراقبان" onClick={() => router.push(ROUTES.caregivers)} />
             </div>
           </>
         )}
