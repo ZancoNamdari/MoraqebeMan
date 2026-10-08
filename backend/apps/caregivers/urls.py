@@ -38,13 +38,12 @@ from .views import (
     RejectCaregiverView,
     ServiceAreaDetailView,
 )
-from .public_views import CaregiverFamilyViewPreviewView, PublicCaregiverDetailView, PublicCaregiverListView
+from .public_views import PublicCaregiverDetailView, PublicCaregiverListView
 from .document_views import CaregiverDocumentApproveView, CaregiverDocumentRejectView, CaregiverProfilePhotoView
 
 urlpatterns = [
     path("caregivers/public/", PublicCaregiverListView.as_view(), name="public-caregiver-list"),
     path("caregivers/public/<int:user_id>/", PublicCaregiverDetailView.as_view(), name="public-caregiver-detail"),
-    path("caregivers/<int:user_id>/family-view/", CaregiverFamilyViewPreviewView.as_view(), name="caregiver-family-view"),
     path("caregivers/me/identity/", MyIdentityProfileView.as_view(), name="my-identity-profile"),
     path("caregivers/me/work-preferences/", MyWorkPreferencesView.as_view(), name="my-work-preferences"),
     path("caregivers/me/service-areas/", MyServiceAreasView.as_view(), name="my-service-areas"),

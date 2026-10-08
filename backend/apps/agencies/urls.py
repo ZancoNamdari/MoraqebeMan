@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.caregivers.public_views import CaregiverFamilyViewPreviewView
+
 from .views import (
     AgencyAnalyticsView,
     AgencyCandidateHistoryView,
@@ -108,6 +110,10 @@ urlpatterns = [
     path(
         "agencies/<int:agency_id>/patients/<int:patient_id>/documents/<str:document_type>/",
         AgencyPatientDocumentUploadView.as_view(), name="agencies-patient-document-upload",
+    ),
+    path(
+        "agencies/<int:agency_id>/caregivers/<int:user_id>/family-view/",
+        CaregiverFamilyViewPreviewView.as_view(), name="agency-caregiver-family-view",
     ),
     path(
         "agencies/<int:agency_id>/caregivers-pipeline/",

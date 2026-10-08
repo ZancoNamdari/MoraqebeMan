@@ -68,15 +68,26 @@ class PublicCaregiverProfileTests(TestCase):
 
 
 class FamilyViewPreviewTests(PublicCaregiverProfileTests):
-    def test_admin_sees_preview_even_when_pending_family_cannot(self):
-        admin = mk_user("09124440000", "admin", first_name="a", last_name="b")
-        self.client.force_authenticate(admin)
-        res = self.client.get(f"/api/caregivers/{self.pending.user_id}/family-view/")
+    def _agency(self, phone, name):
+        from apps.agencies.models import AgencyProfile
+        return AgencyProfile.objects.create(user=mk_user(phone, "agency"), company_name=name)
+
+    def _link(self, agency, cg):
+        from apps.agencies.models import AgencyCaregiverLink, AgencyLinkStatus
+        AgencyCaregiverLink.objects.create(agency=agency, caregiver=cg, status=AgencyLinkStatus.APPROVED)
+
+    def test_own_agency_sees_preview_even_when_pending_no_contact_data(self):
+        a1 = self._agency("09124440001", "A1")
+        self._link(a1, self.pending)
+        self.client.force_authenticate(a1.user)
+        res = self.client.get(f"/api/agencies/{a1.id}/caregivers/{self.pending.user_id}/family-view/")
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()["status"], "pending")
         self.assertNotIn("09122220000", res.content.decode())
+        # خانواده به این مسیر دسترسی ندارد
         self.client.force_authenticate(self.family)
-        self.assertEqual(self.client.get(f"/api/caregivers/{self.pending.user_id}/family-view/").status_code, 404)
+        self.assertEqual(
+            self.client.get(f"/api/agencies/{a1.id}/caregivers/{self.pending.user_id}/family-view/").status_code, 403)
 
 
 class ReviewsInProfileTests(PublicCaregiverProfileTests):
@@ -96,16 +107,18 @@ class ReviewsInProfileTests(PublicCaregiverProfileTests):
         self.assertNotIn("محرمانه", body.content.decode())
 
 
-class FamilyViewAgencyIsolationTests(PublicCaregiverProfileTests):
-    """آژانس فقط پروفایل مراقبانِ تأییدشده‌ی خودش را ببیند؛ حدس زدن id در URL نباید کار کند."""
+class FamilyViewAgencyIsolationTests(FamilyViewPreviewTests):
+    """آژانس فقط مراقبانِ تأییدشده‌ی خودش را ببیند؛ نه با id آژانس دیگر و نه با حدس زدن id مراقب."""
 
     def test_agency_sees_only_own_caregivers(self):
-        from apps.agencies.models import AgencyCaregiverLink, AgencyLinkStatus, AgencyProfile
-        a1 = AgencyProfile.objects.create(user=mk_user("09125550001", "agency"), company_name="A1")
-        a2 = AgencyProfile.objects.create(user=mk_user("09125550002", "agency"), company_name="A2")
-        AgencyCaregiverLink.objects.create(agency=a1, caregiver=self.cg, status=AgencyLinkStatus.APPROVED)
-        url = f"/api/caregivers/{self.cg_user.id}/family-view/"
+        a1 = self._agency("09125550001", "A1")
+        a2 = self._agency("09125550002", "A2")
+        self._link(a1, self.cg)
+        url = lambda ag: f"/api/agencies/{ag.id}/caregivers/{self.cg_user.id}/family-view/"
         self.client.force_authenticate(a1.user)
-        self.assertEqual(self.client.get(url).status_code, 200)
+        self.assertEqual(self.client.get(url(a1)).status_code, 200)
+        # آژانس ۲ با مسیر خودش: مراقب در فهرستش نیست
         self.client.force_authenticate(a2.user)
-        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.get(url(a2)).status_code, 404)
+        # آژانس ۲ با id آژانس ۱ در مسیر: ۴۰۳
+        self.assertEqual(self.client.get(url(a1)).status_code, 403)

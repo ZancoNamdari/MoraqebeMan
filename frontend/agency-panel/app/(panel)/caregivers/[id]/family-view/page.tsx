@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
 import { CaregiverProfileView } from "@/components/caregiver-public/profile-view"
+import { agencyService } from "@/services/agency.service"
 import { caregiverFamilyViewService } from "@/services/caregiver_family_view.service"
 import type { CaregiverFamilyViewPreview } from "@/types/caregiver-public"
 import { ROUTES } from "@/lib/routes"
@@ -21,7 +22,7 @@ export default function CaregiverFamilyViewPage() {
 
   useEffect(() => {
     if (!user || !id) return
-    caregiverFamilyViewService.get(id).then(setP).catch(() => setError("این مراقب پیدا نشد.")).finally(() => setLoading(false))
+    agencyService.me().then((agency) => caregiverFamilyViewService.get(agency.id, id)).then(setP).catch(() => setError("این مراقب پیدا نشد.")).finally(() => setLoading(false))
   }, [user, id])
 
   if (authLoading || !user) return null

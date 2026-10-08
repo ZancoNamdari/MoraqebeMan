@@ -316,20 +316,24 @@ class PublicCaregiverDetailView(APIView):
 
 
 class CaregiverFamilyViewPreviewView(APIView):
-    """GET /api/caregivers/<user_id>/family-view/ — همان پروفایلی که خانواده/بیمار
+    """GET /api/agencies/<agency_id>/caregivers/<user_id>/family-view/ — همان پروفایلی که خانواده/بیمار
     می‌بیند، اما برای کارمند آژانس/ادمین (پیش‌نمایش، با هر وضعیتی از مراقب —
     حتی هنوز تأییدنشده، تا آژانس قبل از انتشار ببیند خانواده چه می‌بیند).
-    دسترسی همان قاعده‌ی بررسی مدارک: ادمین پلتفرم یا آژانسِ صاحب همین مراقب."""
+    آژانس صراحتاً در مسیر آمده و باید همان آژانسِ خودِ کاربر باشد (مثل بقیه‌ی endpointهای
+    آژانس) و مراقب باید در فهرست تأییدشده‌ی همین آژانس باشد؛ وگرنه ۴۰۳/۴۰۴."""
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, user_id):
-        from apps.agencies.tenancy import can_review_caregiver_document
+    def get(self, request, agency_id, user_id):
+        from apps.agencies.tenancy import caregiver_visible_to_tenant, resolve_tenant_context
+        ctx = resolve_tenant_context(request, agency_id, allow_admin=True)
+        if ctx is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=403)
         caregiver = (
             CaregiverProfile.objects.filter(user_id=user_id)
             .select_related("user", "user__caregiver_identity_profile", "user__caregiver_identity_profile__city", "user__caregiver_identity_profile__province")
             .first()
         )
-        if caregiver is None or not can_review_caregiver_document(request.user, caregiver):
+        if caregiver is None or not caregiver_visible_to_tenant(ctx.agency, caregiver.user_id):
             return Response({"detail": "مراقب یافت نشد."}, status=404)
         data = serialize_profile(caregiver)
         data["status"] = caregiver.status
