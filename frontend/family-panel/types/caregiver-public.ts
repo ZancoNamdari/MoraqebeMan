@@ -1,6 +1,3 @@
-export interface PublicTrait { key: string; label: string; percent: number; questions: number }
-export interface PublicTraitProfile { id: string; title: string; traits: PublicTrait[] }
-
 export interface PublicCaregiverService { key: string; label: string; subtypes: string[] }
 
 export interface PublicCaregiverCard {
@@ -52,5 +49,5 @@ export interface PublicCaregiverProfile extends PublicCaregiverCard {
     overnight_stay: boolean | null
     holiday_work: boolean | null
   }
-  trait_profiles: PublicTraitProfile[]
+  highlights: string[]
 }

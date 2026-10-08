@@ -91,6 +91,57 @@ def _areas(caregiver):
     return names
 
 
+# ویژگی‌های برجسته: به خانواده نتیجه‌ی کامل پرسشنامه نشان داده نمی‌شود، فقط
+# عنوانِ ویژگی‌هایی که مراقب در آن‌ها بالاتر از متوسط (درصد بالا) بوده است.
+HIGHLIGHT_MIN_PERCENT = 67
+HIGHLIGHT_MAX = 8
+HIGHLIGHT_TITLES = {
+    "empathy": "مهربان و دلسوز", "kindness": "مهربان و گرم", "patience": "صبور و باحوصله",
+    "calmness": "آرام و خونسرد در بحران", "gentleness": "ملایم و دقیق با نوزاد",
+    "attentiveness": "دقیق و تیزبین", "observation": "تیزبین در پایش بیمار",
+    "safety": "ایمنی‌محور و محتاط", "hygiene": "اهل بهداشت و نظافت",
+    "foodHygiene": "رعایت‌کننده‌ی بهداشت غذا", "infectionControl": "دقیق در کنترل عفونت",
+    "night_endurance": "پرتحمل در بیداری شبانه", "maternal_empathy": "همدل با مادر",
+    "parent_respect": "محترم نسبت به انتخاب والدین", "adherence": "پایبند به دستورات مراقبتی",
+    "followsInstructions": "پایبند به دستور پرستار", "instruction": "مجری دقیق خواسته‌ها",
+    "communication": "اهل گزارش‌دهی و ارتباط روشن", "responsibility": "مسئولیت‌پذیر",
+    "trustworthiness": "قابل اعتماد و امانت‌دار", "confidentiality": "رازدار",
+    "privacy": "رازدار و محترم حریم خانه", "adaptability": "انعطاف‌پذیر", "flexibility": "انعطاف‌پذیر",
+    "precision": "دقیق و جزئی‌نگر", "discipline": "منظم و مرتب", "organization": "منظم و سازمان‌یافته",
+    "punctuality": "وقت‌شناس", "respect": "خوش‌برخورد و محترم", "politeness": "مؤدب و خوش‌رفتار",
+    "independence": "مستقل و قابل اتکا", "stamina": "پرتوان در کار طولانی",
+    "resilience": "مقاوم در شیفت‌های سخت", "speed": "سریع و اولویت‌بند",
+    "grooming": "آراسته و مرتب", "hosting": "خوش‌پذیرایی", "protocol": "پایبند به ضوابط محیط کار",
+    "janitor": "پیگیر و مسئول در سرایداری", "taste": "خوش‌سلیقه", "planning": "برنامه‌ریز و منظم‌کار",
+    "kitchenOrder": "آشپزخانه را تمیز و منظم نگه می‌دارد", "economy": "صرفه‌جو و حسابگر",
+    "dietCare": "مراقب رژیم و حساسیت‌های غذایی", "learning": "علاقه‌مند به یادگیری",
+    "creativity": "خلاق", "clinicalJudgment": "تصمیم‌گیر درست در شرایط حساس",
+    "medication": "دقیق در دارو و دستور پزشک", "dignity": "حافظ شأن و حریم بیمار",
+    "education": "آموزش‌دهنده‌ی خوب به بیمار و خانواده", "scope": "آگاه به حدود وظایف",
+    "teamwork": "همکار تیمی خوب", "dailyCare": "کارآمد در مراقبت روزمره",
+    "physical": "جابه‌جایی ایمن و توان بدنی خوب", "companionship": "همدم و خوش‌صحبت",
+    "firmness": "قاطع و مهربان", "cheerfulness": "شاداب و بانشاط",
+}
+
+
+def trait_highlights(profiles):
+    """از trait_profiles ذخیره‌شده فقط عنوان ویژگی‌های بالای متوسط را برمی‌گرداند
+    (بدون درصد و بدون نتیجه‌ی کامل)؛ تکراری‌ها ادغام و به ۸ مورد محدود می‌شوند."""
+    best = {}
+    for prof in profiles or []:
+        for t in (prof or {}).get("traits") or []:
+            try:
+                pct = float(t.get("percent"))
+            except (TypeError, ValueError):
+                continue
+            if pct < HIGHLIGHT_MIN_PERCENT:
+                continue
+            title = HIGHLIGHT_TITLES.get(t.get("key")) or (t.get("label") or "").strip()
+            if title and pct > best.get(title, -1):
+                best[title] = pct
+    return [title for title, _ in sorted(best.items(), key=lambda kv: -kv[1])][:HIGHLIGHT_MAX]
+
+
 def _trait_profiles(caregiver):
     q = getattr(caregiver, "compatibility_questionnaire", None)
     return list(q.trait_profiles or []) if q else []
@@ -162,7 +213,7 @@ def serialize_profile(caregiver):
         "overnight_stay": prefs.overnight_stay_ok if prefs else None,
         "holiday_work": prefs.holiday_work_ok if prefs else None,
     }
-    data["trait_profiles"] = _trait_profiles(caregiver)
+    data["highlights"] = trait_highlights(_trait_profiles(caregiver))
     return data
 
 

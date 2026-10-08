@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CaregiverAvatar } from "@/components/caregivers/caregiver-avatar"
-import { TraitView } from "@/components/caregivers/trait-view"
 import { caregiverDirectoryService } from "@/services/caregiver-directory.service"
 import type { PublicCaregiverProfile } from "@/types/caregiver-public"
 import { ROUTES } from "@/lib/routes"
@@ -140,8 +139,8 @@ function Content() {
               {p.serves_all_areas ? <Row label="مناطق خدمت" value="همه‌ی مناطق" /> : p.areas.length > 0 && (<><p className="text-xs text-muted-foreground">مناطق خدمت</p><Chips items={p.areas} /></>)}
             </Section>
 
-            <Section title="سبک کار و برخورد" show={p.trait_profiles.length > 0}>
-              <TraitView profiles={p.trait_profiles} />
+            <Section title="ویژگی‌های برجسته" show={p.highlights.length > 0}>
+              <Chips items={p.highlights} />
             </Section>
 
             <p className="px-2 text-center text-[11px] text-muted-foreground">

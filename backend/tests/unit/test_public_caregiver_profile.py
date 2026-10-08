@@ -22,7 +22,11 @@ class PublicCaregiverProfileTests(TestCase):
         IdentityProfile.objects.create(user=self.cg_user, national_id="0012345678", gender="female",
                                        full_address="خیابان secret", landline_phone="02112345678")
         CaregiverCompatibilityQuestionnaire.objects.create(
-            caregiver=self.cg, trait_profiles=[{"id": "x", "title": "t", "traits": []}],
+            caregiver=self.cg, trait_profiles=[{"id": "x", "title": "t", "traits": [
+                {"key": "empathy", "label": "همدلی", "percent": 80, "questions": 3},
+                {"key": "patience", "label": "صبر", "percent": 40, "questions": 3},
+                {"key": "punctuality", "label": "وقت", "percent": 67, "questions": 2},
+            ]}],
         )
         self.pending = CaregiverProfile.objects.create(
             user=mk_user("09122220000", "caregiver", first_name="علی", last_name="رضایی"),
@@ -47,11 +51,13 @@ class PublicCaregiverProfileTests(TestCase):
             self.assertNotIn(secret, body)
         self.assertEqual(res.json()["results"][0]["display_name"], "مریم ا.")
 
-    def test_detail_includes_trait_profiles_and_404s_unapproved(self):
+    def test_detail_shows_only_high_trait_titles_and_404s_unapproved(self):
         self.client.force_authenticate(self.family)
         ok = self.client.get(f"/api/caregivers/public/{self.cg_user.id}/")
         self.assertEqual(ok.status_code, 200)
-        self.assertEqual(ok.json()["trait_profiles"][0]["id"], "x")
+        self.assertEqual(ok.json()["highlights"], ["مهربان و دلسوز", "وقت‌شناس"])
+        self.assertNotIn("trait_profiles", ok.json())
+        self.assertNotIn("صبور", ok.content.decode())
         self.assertNotIn("0012345678", ok.content.decode())
         self.assertEqual(self.client.get(f"/api/caregivers/public/{self.pending.user_id}/").status_code, 404)
 

@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
 import { CaregiverAvatar } from "@/components/caregiver-public/caregiver-avatar"
-import { TraitView } from "@/components/caregiver-public/trait-view"
 import { caregiverFamilyViewService } from "@/services/caregiver_family_view.service"
 import type { CaregiverFamilyViewPreview } from "@/types/caregiver-public"
 import { ROUTES } from "@/lib/routes"
@@ -143,8 +142,8 @@ function Content() {
               {p.serves_all_areas ? <Row label="مناطق خدمت" value="همه‌ی مناطق" /> : p.areas.length > 0 && (<><p className="text-xs text-muted-foreground">مناطق خدمت</p><Chips items={p.areas} /></>)}
             </Section>
 
-            <Section title="سبک کار و برخورد" show={p.trait_profiles.length > 0}>
-              <TraitView profiles={p.trait_profiles} />
+            <Section title="ویژگی‌های برجسته" show={p.highlights.length > 0}>
+              <Chips items={p.highlights} />
             </Section>
 
             <p className="px-2 text-center text-[11px] text-muted-foreground">
