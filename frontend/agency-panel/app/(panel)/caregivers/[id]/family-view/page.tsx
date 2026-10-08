@@ -36,11 +36,12 @@ export default function CaregiverFamilyViewPage() {
           <p className="py-10 text-center text-sm text-destructive">{error || "این مراقب پیدا نشد."}</p>
         ) : (
           <>
-            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-              این همان صفحه‌ای است که خانواده و بیمار می‌بینند (بدون اطلاعات تماس و هویتی).
-              {p.status !== "approved" && " این مراقب هنوز تأیید نشده و برای خانواده‌ها نمایش داده نمی‌شود."}
-              {p.photo_status && p.photo_status !== "approved" && " عکس پروفایل هنوز تأیید نشده و برای خانواده‌ها نمایش داده نمی‌شود."}
-            </div>
+            {(p.status !== "approved" || (p.photo_status && p.photo_status !== "approved")) && (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                {p.status !== "approved" && "این مراقب هنوز تأیید نشده و برای خانواده‌ها نمایش داده نمی‌شود."}
+                {p.photo_status && p.photo_status !== "approved" && " عکس پروفایل هنوز تأیید نشده و برای خانواده‌ها نمایش داده نمی‌شود."}
+              </div>
+            )}
             <CaregiverProfileView p={p} />
           </>
         )}
