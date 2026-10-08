@@ -212,3 +212,32 @@ class PublicCaregiverDetailView(APIView):
         if caregiver is None:
             return Response({"detail": "مراقب یافت نشد."}, status=404)
         return Response(serialize_profile(caregiver))
+
+
+class CaregiverFamilyViewPreviewView(APIView):
+    """GET /api/caregivers/<user_id>/family-view/ — همان پروفایلی که خانواده/بیمار
+    می‌بیند، اما برای کارمند آژانس/ادمین (پیش‌نمایش، با هر وضعیتی از مراقب —
+    حتی هنوز تأییدنشده، تا آژانس قبل از انتشار ببیند خانواده چه می‌بیند).
+    دسترسی همان قاعده‌ی بررسی مدارک: ادمین پلتفرم یا آژانسِ صاحب همین مراقب."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        from apps.agencies.tenancy import can_review_caregiver_document
+        caregiver = (
+            CaregiverProfile.objects.filter(user_id=user_id)
+            .select_related("user", "user__caregiver_identity_profile", "user__caregiver_identity_profile__city")
+            .first()
+        )
+        if caregiver is None or not can_review_caregiver_document(request.user, caregiver):
+            return Response({"detail": "مراقب یافت نشد."}, status=404)
+        data = serialize_profile(caregiver)
+        data["status"] = caregiver.status
+        # پیش‌نمایش: عکس در انتظار تأیید هم دیده شود، با نشانگر وضعیت.
+        from .models import CaregiverDocumentType, CaregiverDocumentUpload
+        up = CaregiverDocumentUpload.objects.filter(
+            caregiver=caregiver, document_type=CaregiverDocumentType.PERSONAL_PHOTO,
+        ).first()
+        data["photo_status"] = up.status if up else None
+        if up and up.file and not data["photo_url"]:
+            data["photo_url"] = up.file.url
+        return Response(data)

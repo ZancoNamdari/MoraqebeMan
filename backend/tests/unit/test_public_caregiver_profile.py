@@ -59,3 +59,15 @@ class PublicCaregiverProfileTests(TestCase):
         self.client.force_authenticate(self.family)
         self.assertEqual(self.client.get("/api/caregivers/public/?service_type=salmandyar").json()["count"], 1)
         self.assertEqual(self.client.get("/api/caregivers/public/?service_type=parastar").json()["count"], 0)
+
+
+class FamilyViewPreviewTests(PublicCaregiverProfileTests):
+    def test_admin_sees_preview_even_when_pending_family_cannot(self):
+        admin = mk_user("09124440000", "admin", first_name="a", last_name="b")
+        self.client.force_authenticate(admin)
+        res = self.client.get(f"/api/caregivers/{self.pending.user_id}/family-view/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["status"], "pending")
+        self.assertNotIn("09122220000", res.content.decode())
+        self.client.force_authenticate(self.family)
+        self.assertEqual(self.client.get(f"/api/caregivers/{self.pending.user_id}/family-view/").status_code, 404)

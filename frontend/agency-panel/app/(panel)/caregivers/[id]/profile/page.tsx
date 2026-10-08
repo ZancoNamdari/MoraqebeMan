@@ -131,6 +131,7 @@ export default function CaregiverProfilePage() {
         }
         maxWidth="max-w-3xl"
       >
+        <Button variant="outline" size="sm" onClick={() => router.push(`${ROUTES.caregivers}/${id}/family-view`)}>نمای خانواده</Button>
         <Button variant="outline" size="sm" onClick={() => router.push(`${ROUTES.caregivers}/${id}/register`)}>ویرایش / ادامه ثبت‌نام</Button>
         <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.caregivers)}>بازگشت به لیست</Button>
       </AppHeader>
