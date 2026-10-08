@@ -50,6 +50,8 @@ export interface PublicCaregiverProfile extends PublicCaregiverCard {
     holiday_work: boolean | null
   }
   highlights: string[]
+  rating_distribution: Record<string, number>
+  reviews: { id: number; name: string; rating: number; comment: string; when: string }[]
 }
 
 export interface CaregiverFamilyViewPreview extends PublicCaregiverProfile {

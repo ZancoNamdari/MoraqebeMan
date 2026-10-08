@@ -142,6 +142,56 @@ def trait_highlights(profiles):
     return [title for title, _ in sorted(best.items(), key=lambda kv: -kv[1])][:HIGHLIGHT_MAX]
 
 
+_FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
+
+
+def _relative_fa(created_at):
+    """«امروز / ۳ روز قبل / ۸ ماه قبل / یک سال قبل» از روی تاریخ ثبت نظر."""
+    from django.utils import timezone
+    try:
+        g = created_at.togregorian() if hasattr(created_at, "togregorian") else created_at
+        if timezone.is_naive(g):
+            g = timezone.make_aware(g)
+        days = max((timezone.now() - g).days, 0)
+    except Exception:
+        return ""
+    if days < 1:
+        return "امروز"
+    if days < 30:
+        return f"{days} روز قبل".translate(_FA_DIGITS)
+    if days < 365:
+        return f"{days // 30} ماه قبل".translate(_FA_DIGITS)
+    years = days // 365
+    return "یک سال قبل" if years == 1 else f"{years} سال قبل".translate(_FA_DIGITS)
+
+
+def _reviewer_name(user):
+    if user is None:
+        return "کاربر"
+    first = (user.first_name or "").strip()
+    last = (user.last_name or "").strip()
+    if not first and not last:
+        return "کاربر"
+    return f"{first} {last[:1]}." if last else first
+
+
+def review_summary(caregiver, limit=30):
+    """توزیع امتیازها (۱ تا ۵) + آخرین نظرهای دارای متن. فقط نام کوچک و حرف
+    اول فامیلِ نظردهنده؛ هیچ اطلاعاتی از سالمند/بیمار نمایش داده نمی‌شود."""
+    dist = {str(i): 0 for i in range(1, 6)}
+    for row in caregiver.reviews.values("rating").annotate(n=Count("id")):
+        dist[str(row["rating"])] = row["n"]
+    rows = (
+        caregiver.reviews.exclude(comment="").select_related("reviewer").order_by("-created_at")[:limit]
+    )
+    items = [
+        {"id": r.id, "name": _reviewer_name(r.reviewer), "rating": r.rating,
+         "comment": r.comment.strip(), "when": _relative_fa(r.created_at)}
+        for r in rows
+    ]
+    return dist, items
+
+
 def _trait_profiles(caregiver):
     q = getattr(caregiver, "compatibility_questionnaire", None)
     return list(q.trait_profiles or []) if q else []
@@ -214,6 +264,7 @@ def serialize_profile(caregiver):
         "holiday_work": prefs.holiday_work_ok if prefs else None,
     }
     data["highlights"] = trait_highlights(_trait_profiles(caregiver))
+    data["rating_distribution"], data["reviews"] = review_summary(caregiver)
     return data
 
 

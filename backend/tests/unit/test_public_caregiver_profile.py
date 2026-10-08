@@ -77,3 +77,20 @@ class FamilyViewPreviewTests(PublicCaregiverProfileTests):
         self.assertNotIn("09122220000", res.content.decode())
         self.client.force_authenticate(self.family)
         self.assertEqual(self.client.get(f"/api/caregivers/{self.pending.user_id}/family-view/").status_code, 404)
+
+
+class ReviewsInProfileTests(PublicCaregiverProfileTests):
+    def test_reviews_distribution_and_masked_reviewer(self):
+        from apps.care.models import CaregiverAssignment, CaregiverReview
+        from apps.families.models import PatientProfile
+        pat = PatientProfile.objects.create(full_name="بیمار محرمانه", access_code="ABC12345")
+        asg = CaregiverAssignment.objects.create(caregiver=self.cg, patient=pat)
+        CaregiverReview.objects.create(assignment=asg, caregiver=self.cg, patient=pat, reviewer=self.family,
+                                       rating=5, comment="خیلی خوب بود")
+        self.client.force_authenticate(self.family)
+        body = self.client.get(f"/api/caregivers/public/{self.cg_user.id}/")
+        d = body.json()
+        self.assertEqual(d["rating_distribution"]["5"], 1)
+        self.assertEqual(d["reviews"][0]["name"], "f g.")
+        self.assertEqual(d["reviews"][0]["comment"], "خیلی خوب بود")
+        self.assertNotIn("محرمانه", body.content.decode())
