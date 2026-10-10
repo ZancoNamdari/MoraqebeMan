@@ -150,7 +150,18 @@ class PatientProfile(models.Model):
         help_text="کد یکتا برای دعوت اعضای خانواده توسط این بیمار — مثلاً ELD-7K4P9X",
     )
 
-    full_name = models.CharField(max_length=150, help_text="نام و نام خانوادگی سالمند")
+    full_name = models.CharField(max_length=150, help_text="نام و نام خانوادگی خدمت‌گیرنده")
+    # نوع خدمتی که خانواده برای این خدمت‌گیرنده می‌خواهد (سالمندیار / مادریار /
+    # امور منزل / پرستار-بهیار). خالی = رکورد قدیمی (قبل از این فیلد؛ همه سالمند بودند).
+    service_type = models.CharField(
+        max_length=20, blank=True, default="", db_index=True,
+        verbose_name="نوع خدمت مورد نیاز",
+        help_text="کلیدی از apps.caregivers.choices.ServiceType؛ خالی برای رکوردهای قدیمی.",
+    )
+    service_subtype = models.CharField(
+        max_length=30, blank=True, default="", verbose_name="زیرشاخه‌ی خدمت",
+        help_text="مثلاً newborn / child برای مادریار، یا inside_home برای امور منزل.",
+    )
     # No `choices=` here on purpose — an agency's actual valid stage
     # values now live in apps.agencies.models.AgencyPipelineStage
     # (per-agency, can grow past the original 7), so a fixed enum

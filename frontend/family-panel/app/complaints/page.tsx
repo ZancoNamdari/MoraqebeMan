@@ -90,7 +90,7 @@ export default function ComplaintsPage() {
           {showForm && (
             <CardContent className="space-y-3">
               {error && <div className="rounded-md bg-rose-50 p-2 text-xs text-rose-700">{error}</div>}
-              <Field label="سالمند مربوطه" required>
+              <Field label="خدمت‌گیرنده‌ی مربوطه" required>
                 <select
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-200"
                   value={patientId ?? ""}
@@ -125,7 +125,7 @@ export default function ComplaintsPage() {
           )}
           {!showForm && patients.length === 0 && !loading && (
             <CardContent>
-              <p className="text-sm text-muted-foreground">برای ثبت شکایت، ابتدا باید حداقل یک سالمند به حساب شما متصل باشد.</p>
+              <p className="text-sm text-muted-foreground">برای ثبت شکایت، ابتدا باید حداقل یک خدمت‌گیرنده به حساب شما متصل باشد.</p>
             </CardContent>
           )}
         </Card>

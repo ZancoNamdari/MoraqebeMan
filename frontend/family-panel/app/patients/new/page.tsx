@@ -14,12 +14,15 @@ import { ErrorSummary } from "@/components/forms/error-summary"
 import { RELATION_TYPE, GENDER } from "@/lib/constants"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
 import { patientService } from "@/services/patient.service"
+import { SERVICE_OPTIONS, recipientNoun } from "@/lib/services"
 import { ROUTES } from "@/lib/routes"
 
 export default function NewPatientPage() {
   const { user, loading: authLoading, logout } = useAuth(["family"])
   const router = useRouter()
 
+  const [serviceType, setServiceType] = useState("")
+  const [serviceSubtype, setServiceSubtype] = useState("")
   const [fullName, setFullName] = useState("")
   const [gender, setGender] = useState("")
   const [relation, setRelation] = useState("")
@@ -35,10 +38,15 @@ export default function NewPatientPage() {
 
   if (authLoading || !user) return null
 
+  const svc = SERVICE_OPTIONS.find((o) => o.key === serviceType)
+  const needsSub = !!svc?.subtypes
+  const noun = serviceType ? recipientNoun(serviceType, serviceSubtype) : "خدمت‌گیرنده"
+
   async function handleSubmit() {
     setSaving(true); setError([])
     try {
       const patient = await patientService.create({
+        service_type: serviceType, service_subtype: serviceSubtype,
         full_name: fullName, gender, relation,
         birth_date: birthDate || null,
         province, city, district,
@@ -57,7 +65,7 @@ export default function NewPatientPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-24">
-      <AppHeader title="افزودن سالمند جدید" maxWidth="max-w-xl">
+      <AppHeader title="افزودن خدمت‌گیرنده‌ی جدید" maxWidth="max-w-xl">
         <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
         <Button variant="ghost" size="sm" className="text-primary-strong" onClick={logout}>خروج</Button>
       </AppHeader>
@@ -66,15 +74,39 @@ export default function NewPatientPage() {
         <ErrorSummary errors={error} />
 
         <Card className="border-border">
+          <CardHeader><CardTitle className="text-foreground">چه خدمتی لازم دارید؟</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              {SERVICE_OPTIONS.map((o) => (
+                <button
+                  key={o.key} type="button"
+                  onClick={() => { setServiceType(o.key); setServiceSubtype("") }}
+                  className={`rounded-xl border p-3 text-right transition ${serviceType === o.key ? "border-primary bg-pink-50 ring-2 ring-primary/30" : "border-border bg-background hover:bg-secondary/40"}`}
+                >
+                  <div className="text-2xl">{o.emoji}</div>
+                  <div className="mt-1 text-sm font-semibold text-foreground">{o.label}</div>
+                  <div className="text-xs text-muted-foreground">{o.description}</div>
+                </button>
+              ))}
+            </div>
+            {needsSub && svc?.subtypes && (
+              <Field label={svc.subtypeLabel ?? "نوع خدمت"} required>
+                <ChoiceSelect choices={svc.subtypes} value={serviceSubtype} onChange={setServiceSubtype} />
+              </Field>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border">
           <CardHeader><CardTitle className="text-foreground">اطلاعات پایه</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <Field label="نام و نام خانوادگی سالمند" required>
+            <Field label={`نام و نام خانوادگی ${noun}`} required>
               <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </Field>
             <Field label="جنسیت">
               <ChoiceSelect choices={GENDER} value={gender} onChange={setGender} />
             </Field>
-            <Field label="نسبت شما با سالمند" required>
+            <Field label={`نسبت شما با ${noun}`} required>
               <ChoiceSelect choices={RELATION_TYPE} value={relation} onChange={setRelation} />
             </Field>
             <Field label="تاریخ تولد">
@@ -94,7 +126,7 @@ export default function NewPatientPage() {
         </Card>
 
         <p className="text-xs text-muted-foreground">
-          اطلاعات بیشتر (پرسشنامه سازگاری و مدارک شناسایی) را می‌توانید پس از ثبت، از صفحه سالمند تکمیل کنید.
+          اطلاعات بیشتر (پرسشنامه سازگاری و مدارک شناسایی) را می‌توانید پس از ثبت، از صفحه‌ی خدمت‌گیرنده تکمیل کنید.
         </p>
       </main>
 
@@ -103,10 +135,10 @@ export default function NewPatientPage() {
           <Button
             className="w-full bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/15 hover:from-primary hover:to-primary"
             size="lg"
-            disabled={saving || !fullName || !relation}
+            disabled={saving || !serviceType || (needsSub && !serviceSubtype) || !fullName || !relation}
             onClick={handleSubmit}
           >
-            {saving ? "در حال ثبت..." : "ثبت سالمند"}
+            {saving ? "در حال ثبت..." : "ثبت خدمت‌گیرنده"}
           </Button>
         </div>
       </footer>

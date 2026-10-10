@@ -53,7 +53,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientProfile
         fields = [
-            "id", "user_id", "access_code", "full_name", "gender", "father_name", "birth_date",
+            "id", "user_id", "access_code", "full_name", "service_type", "service_subtype", "gender", "father_name", "birth_date",
             "national_id", "birth_certificate_number", "birth_certificate_issue_place",
             "full_address", "province", "city", "district", "province_name", "city_name", "district_name",
             "postal_code", "emergency_contact_phone", "family_contacts",
@@ -91,6 +91,20 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         return compute_active_reminders("patients", obj, rules)
 
     def validate(self, attrs):
+        from apps.caregivers import choices as cc
+        st = attrs.get("service_type", getattr(self.instance, "service_type", ""))
+        sub = attrs.get("service_subtype", getattr(self.instance, "service_subtype", ""))
+        if st and st not in cc.ServiceType.values:
+            raise serializers.ValidationError({"service_type": "نوع خدمت معتبر نیست."})
+        allowed_subtypes = {
+            cc.ServiceType.MADARYAR: cc.MadaryarSubtype,
+            cc.ServiceType.NEZAFATCHI: cc.NezafatchiSubtype,
+            cc.ServiceType.PARASTAR: cc.ParastarSubtype,
+        }
+        if sub:
+            allowed = allowed_subtypes.get(st)
+            if allowed is None or sub not in allowed.values:
+                raise serializers.ValidationError({"service_subtype": "زیرشاخه‌ی خدمت با نوع خدمت سازگار نیست."})
         # "آیا وصی یا قیم قانونی دارد؟" — if the answer is yes, the form
         # implies there should be identifying info for that guardian, not
         # just a status flag with nothing behind it.

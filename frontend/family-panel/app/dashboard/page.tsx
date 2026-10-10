@@ -16,6 +16,7 @@ import { familyService } from "@/services/family.service"
 import { agencyService } from "@/services/agency.service"
 import type { PatientListItem } from "@/types/patient"
 import type { FamilyProfile } from "@/types/family"
+import { serviceLabel, subtypeLabel } from "@/lib/services"
 import { ROUTES } from "@/lib/routes"
 
 export default function DashboardPage() {
@@ -84,20 +85,20 @@ export default function DashboardPage() {
       </AppHeader>
 
       <main className="mx-auto max-w-3xl space-y-6 p-4">
-        {/* سالمندان — مهم‌ترین بخش، اول صفحه */}
+        {/* خدمت‌گیرندگان — مهم‌ترین بخش، اول صفحه */}
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-bold text-rose-900">سالمندان شما</h2>
+              <h2 className="text-xl font-bold text-rose-900">خدمت‌گیرندگان شما</h2>
               <p className="text-sm text-muted-foreground">
-                {loading ? "در حال بارگذاری…" : patients.length ? `${patients.length} سالمند تحت نظر شما` : "مدیریت اطلاعات و مراقبت سالمندان"}
+                {loading ? "در حال بارگذاری…" : patients.length ? `${patients.length} خدمت‌گیرنده تحت نظر شما` : "برای هر نفر، نوع خدمت مورد نیاز را ثبت کنید"}
               </p>
             </div>
             <Button
               className="bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
               onClick={() => router.push(ROUTES.newPatient)}
             >
-              <UserPlus className="ml-1.5 h-4 w-4" /> افزودن سالمند
+              <UserPlus className="ml-1.5 h-4 w-4" /> افزودن خدمت‌گیرنده
             </Button>
           </div>
 
@@ -107,8 +108,8 @@ export default function DashboardPage() {
             <Card className="border-pink-100">
               <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
                 <span className="text-3xl">🌷</span>
-                <p className="text-muted-foreground">هنوز سالمندی ثبت نشده. سالمند جدید اضافه کنید یا با کد یک بیمار درخواست دسترسی دهید.</p>
-                <Button onClick={() => router.push(ROUTES.newPatient)}>افزودن اولین سالمند</Button>
+                <p className="text-muted-foreground">هنوز خدمت‌گیرنده‌ای ثبت نشده. خدمت‌گیرنده‌ی جدید اضافه کنید یا با کد یک بیمار درخواست دسترسی دهید.</p>
+                <Button onClick={() => router.push(ROUTES.newPatient)}>افزودن اولین خدمت‌گیرنده</Button>
               </CardContent>
             </Card>
           ) : (
@@ -127,6 +128,9 @@ export default function DashboardPage() {
                     <p className="truncate text-xs text-muted-foreground">
                       {[p.province_name, p.city_name].filter(Boolean).join("، ") || "بدون آدرس ثبت‌شده"}
                     </p>
+                    <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] ${p.service_type ? "bg-pink-100 text-rose-800" : "bg-amber-50 text-amber-700"}`}>
+                      {p.service_type ? [serviceLabel(p.service_type), subtypeLabel(p.service_type, p.service_subtype)].filter(Boolean).join(" · ") : "نوع خدمت مشخص نشده"}
+                    </span>
                   </div>
                   <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </button>

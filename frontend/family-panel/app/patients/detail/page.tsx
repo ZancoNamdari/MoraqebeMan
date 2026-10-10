@@ -18,6 +18,7 @@ import { patientService } from "@/services/patient.service"
 import { careService } from "@/services/care.service"
 import { auditHistoryService, type AuditLogEntry } from "@/services/audit_history.service"
 import { StarRating } from "@/components/forms/star-rating"
+import { SERVICE_OPTIONS, hasPhysicalCondition, recipientNoun } from "@/lib/services"
 import { ROUTES } from "@/lib/routes"
 import type { AccessLevel, FamilyLink, PatientListItem, Questionnaire } from "@/types/patient"
 import type { CaregiverAssignment, CareLogEntry } from "@/types/care"
@@ -58,6 +59,7 @@ function PatientDetailInner() {
     setSaving(true); setError([]); setMessage("")
     try {
       const updated = await patientService.update(id, {
+        service_type: patient.service_type, service_subtype: patient.service_subtype,
         full_name: patient.full_name, gender: patient.gender, father_name: patient.father_name,
         birth_date: patient.birth_date, national_id: patient.national_id,
         full_address: patient.full_address, province: patient.province,
@@ -147,6 +149,22 @@ function InfoTab({
       <Card className="border-pink-100">
         <CardHeader><CardTitle className="text-rose-900">اطلاعات هویتی</CardTitle></CardHeader>
         <CardContent className="space-y-4">
+          <Field label="نوع خدمت" required>
+            <ChoiceSelect
+              choices={SERVICE_OPTIONS.map((o) => [o.key, o.label] as [string, string])}
+              value={patient.service_type || ""}
+              onChange={(v) => setPatient({ ...patient, service_type: v, service_subtype: "" })}
+            />
+          </Field>
+          {SERVICE_OPTIONS.find((o) => o.key === patient.service_type)?.subtypes && (
+            <Field label={SERVICE_OPTIONS.find((o) => o.key === patient.service_type)?.subtypeLabel ?? "زیرشاخه"}>
+              <ChoiceSelect
+                choices={SERVICE_OPTIONS.find((o) => o.key === patient.service_type)!.subtypes!}
+                value={patient.service_subtype || ""}
+                onChange={(v) => setPatient({ ...patient, service_subtype: v })}
+              />
+            </Field>
+          )}
           <Field label="نام و نام خانوادگی" required>
             <Input value={patient.full_name} onChange={(e) => setPatient({ ...patient, full_name: e.target.value })} />
           </Field>
@@ -188,9 +206,11 @@ function InfoTab({
           <Field label="اطلاعات پزشکی پایه">
             <Textarea value={patient.basic_medical_info} onChange={(e) => setPatient({ ...patient, basic_medical_info: e.target.value })} />
           </Field>
-          <Field label="شرایط جسمانی فعلی سالمند">
-            <ChoiceSelect choices={PHYSICAL_CONDITION} value={patient.physical_condition} onChange={(v) => setPatient({ ...patient, physical_condition: v })} />
-          </Field>
+          {hasPhysicalCondition(patient.service_type) && (
+            <Field label={`شرایط جسمانی فعلی ${recipientNoun(patient.service_type)}`}>
+              <ChoiceSelect choices={PHYSICAL_CONDITION} value={patient.physical_condition} onChange={(v) => setPatient({ ...patient, physical_condition: v })} />
+            </Field>
+          )}
           <Field label="شیفت‌های زمانی مورد نیاز برای مراقبت">
             <CheckboxGroup choices={NEEDED_SHIFT} value={patient.needed_shifts || []} onChange={(v) => setPatient({ ...patient, needed_shifts: v })} />
           </Field>
@@ -441,7 +461,7 @@ function CareTab({ patientId }: { patientId: number }) {
         <CardHeader><CardTitle className="text-rose-900">تیم مراقبت فعلی</CardTitle></CardHeader>
         <CardContent>
           {team.length === 0 ? (
-            <p className="text-sm text-muted-foreground">هنوز مراقبی برای این سالمند تخصیص داده نشده است.</p>
+            <p className="text-sm text-muted-foreground">هنوز مراقبی برای این خدمت‌گیرنده تخصیص داده نشده است.</p>
           ) : (
             <div className="space-y-2">
               {team.map((a) => (
@@ -554,7 +574,7 @@ function HistoryTab({ patientId }: { patientId: number }) {
       <CardHeader>
         <CardTitle className="text-rose-900">تاریخچه اقدامات</CardTitle>
         <p className="text-xs text-muted-foreground">
-          هر اقدام مهم روی پرونده این سالمند — اینکه چه کسی، چه کاری، در چه زمانی انجام داده.
+          هر اقدام مهم روی پرونده‌ی این خدمت‌گیرنده — اینکه چه کسی، چه کاری، در چه زمانی انجام داده.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">

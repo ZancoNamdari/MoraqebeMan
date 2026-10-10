@@ -3,7 +3,7 @@
 // "نام کامل: این فیلد الزامی است." — pointing at exactly which field
 // is wrong, not just a generic "something failed."
 export const FIELD_LABELS: Record<string, string> = {
-  full_name: "نام کامل سالمند", father_name: "نام پدر", birth_date: "تاریخ تولد",
+  full_name: "نام کامل خدمت‌گیرنده", service_type: "نوع خدمت", service_subtype: "زیرشاخه‌ی خدمت", father_name: "نام پدر", birth_date: "تاریخ تولد",
   national_id: "شماره ملی", birth_certificate_number: "شماره شناسنامه",
   birth_certificate_issue_place: "محل صدور شناسنامه",
   full_address: "نشانی", province: "استان", city: "شهر", district: "منطقه",

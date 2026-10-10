@@ -20,7 +20,7 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
 // sub-tool within it.
 export const metadata: Metadata = {
   title: "پنل خانواده — مراقب من",
-  description: "مدیریت اطلاعات و مراقبت سالمندان شما",
+  description: "مدیریت اطلاعات و خدمات مراقبتی خانواده‌ی شما",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
