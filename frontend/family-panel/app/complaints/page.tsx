@@ -153,7 +153,7 @@ export default function ComplaintsPage() {
                     <p className="mt-1 text-xs text-muted-foreground">
                       {COMPLAINT_CATEGORY.find((x) => x[0] === c.category)?.[1] || c.category}
                       {c.caregiver_name ? ` · درباره: ${c.caregiver_name}` : ""}
-                      {c.created_at ? ` · ${new Date(c.created_at).toLocaleDateString("fa-IR")}` : ""}
+                      {c.created_at ? ` · ${String(c.created_at).slice(0, 10).replace(/-/g, "/").replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)])}` : ""}
                     </p>
                   </div>
                 ))}
