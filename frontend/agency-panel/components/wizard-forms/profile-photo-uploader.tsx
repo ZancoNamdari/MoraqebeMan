@@ -44,7 +44,7 @@ async function shrinkImage(file: File, maxSide = 800): Promise<File> {
 
 // آپلود/تعویض عکس پروفایل مراقب. با «canApprove» دکمه‌ی تأیید هم نشان داده می‌شود
 // (سمت سرور فقط مالک/سرپرست آژانس یا ادمین اجازه‌ی تأیید دارد).
-export function ProfilePhotoUploader({ userId, canApprove = false }: { userId: number; canApprove?: boolean }) {
+export function ProfilePhotoUploader({ userId, canApprove = false, stacked = false }: { userId: number; canApprove?: boolean; stacked?: boolean }) {
   const [photo, setPhoto] = useState<PhotoUpload | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
@@ -89,11 +89,11 @@ export function ProfilePhotoUploader({ userId, canApprove = false }: { userId: n
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted text-3xl">
+    <div className={stacked ? "flex w-44 flex-col items-center gap-3 text-center" : "flex items-center gap-4"}>
+      <div className={`flex ${stacked ? "h-32 w-32" : "h-24 w-24"} shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-muted text-3xl`}>
         {preview || photo?.file ? <img src={preview ?? mediaUrl(photo?.file)} alt="عکس پروفایل" className="h-full w-full object-cover" /> : "👤"}
       </div>
-      <div className="space-y-2">
+      <div className={stacked ? "flex flex-col items-center space-y-2" : "space-y-2"}>
         {photo && (
           <span className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[photo.status]}`}>{STATUS_LABEL[photo.status]}</span>
         )}
@@ -108,7 +108,7 @@ export function ProfilePhotoUploader({ userId, canApprove = false }: { userId: n
             <Button type="button" size="sm" disabled={busy} onClick={handleApprove}>تأیید عکس</Button>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">عکس واضح از چهره، با پس‌زمینه ساده. فقط عکس تأییدشده به خانواده نمایش داده می‌شود.</p>
+        <p className="text-[11px] leading-5 text-muted-foreground">{stacked ? "فقط عکس تأییدشده به خانواده نمایش داده می‌شود." : "عکس واضح از چهره، با پس‌زمینه ساده. فقط عکس تأییدشده به خانواده نمایش داده می‌شود."}</p>
         {error && <p className="text-xs text-rose-600">{error}</p>}
       </div>
       <input ref={input} type="file" accept="image/*" className="hidden" onChange={handleFile} />
