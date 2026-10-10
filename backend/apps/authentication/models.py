@@ -44,6 +44,44 @@ class PhoneOTP(models.Model):
         return check_password(raw_code, self.code_hash)
 
 
+class RegistrationOTP(models.Model):
+    """کد تأیید شماره‌ی موبایل *قبل از* ساخت حساب (ثبت‌نام). PhoneOTP به user وصل است
+    و هنوز کاربری وجود ندارد، پس این یکی با خودِ شماره کلید می‌خورد. کد هش‌شده
+    نگه داشته می‌شود؛ بعد از ثبت‌نامِ موفق هم مصرف‌شده علامت می‌خورد."""
+    phone_number = models.CharField(max_length=11, db_index=True)
+    code_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+    attempts = models.PositiveSmallIntegerField(default=0)
+
+    MAX_ATTEMPTS = 5
+    VALID_MINUTES = 5
+    RESEND_SECONDS = 60
+
+    @classmethod
+    def last_issued_recently(cls, phone_number) -> bool:
+        cutoff = timezone.now() - timedelta(seconds=cls.RESEND_SECONDS)
+        return cls.objects.filter(phone_number=phone_number, created_at__gte=cutoff).exists()
+
+    @classmethod
+    def issue_for(cls, phone_number) -> tuple["RegistrationOTP", str]:
+        cls.objects.filter(phone_number=phone_number, is_used=False).update(is_used=True)
+        raw_code = "".join(random.choices(string.digits, k=6))
+        otp = cls.objects.create(
+            phone_number=phone_number,
+            code_hash=make_password(raw_code),
+            expires_at=timezone.now() + timedelta(minutes=cls.VALID_MINUTES),
+        )
+        return otp, raw_code
+
+    def is_expired(self) -> bool:
+        return timezone.now() > self.expires_at
+
+    def check_code(self, raw_code: str) -> bool:
+        return check_password(raw_code, self.code_hash)
+
+
 class PasswordResetToken(models.Model):
     """Same shape/lifecycle idea as PhoneOTP, separate model since the
     verification channel (link vs typed code) and validity window differ."""

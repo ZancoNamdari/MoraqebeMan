@@ -160,6 +160,37 @@ class AuthService:
         return user, tokens
 
 
+class RegistrationOTPService:
+    """OTP پیش از ثبت‌نام: ۱) صدور و پیامک کد برای یک شماره‌ی هنوز ثبت‌نشده،
+    ۲) بررسی و مصرف کد هنگام ساخت حساب."""
+
+    def request(self, phone_number: str) -> None:
+        from .models import RegistrationOTP
+        if User.objects.filter(phone_number=phone_number).exists():
+            raise RegistrationError("این شماره تلفن قبلاً ثبت شده است. وارد شوید.")
+        if RegistrationOTP.last_issued_recently(phone_number):
+            raise OTPError("کد تازه ارسال شده؛ لطفاً کمی صبر کنید و دوباره درخواست دهید.")
+        _otp, raw_code = RegistrationOTP.issue_for(phone_number)
+        try:
+            send_otp_sms.delay(0, phone_number, raw_code)
+        except Exception:
+            logger.exception("Failed to queue registration OTP SMS for phone=%s", phone_number)
+
+    def consume(self, phone_number: str, raw_code: str) -> None:
+        from .models import RegistrationOTP
+        otp = RegistrationOTP.objects.filter(phone_number=phone_number, is_used=False).order_by("-created_at").first()
+        if otp is None or otp.is_expired():
+            raise OTPError("کد تأیید منقضی شده یا یافت نشد. لطفاً کد جدید درخواست کنید.")
+        if otp.attempts >= RegistrationOTP.MAX_ATTEMPTS:
+            raise OTPError("تعداد تلاش‌های مجاز برای این کد به پایان رسیده. لطفاً کد جدید درخواست کنید.")
+        if not otp.check_code(raw_code):
+            otp.attempts += 1
+            otp.save(update_fields=["attempts"])
+            raise OTPError("کد تأیید نادرست است.")
+        otp.is_used = True
+        otp.save(update_fields=["is_used"])
+
+
 class OTPService:
     """
     Phone verification via a 6-digit code, valid for PhoneOTP.VALID_MINUTES.

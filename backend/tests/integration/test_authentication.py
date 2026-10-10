@@ -8,9 +8,26 @@ from apps.accounts.models import UserRole
 from tests.factories.user_factory import make_user
 
 
+class _OTPSeedingClient(APIClient):
+    """برای تست‌های قدیمیِ ثبت‌نام: پیش از هر POST به /register/ یک کد معتبر می‌سازد
+    و آن را در payload می‌گذارد (تأیید پیامکی حالا اجباری است)."""
+    def post(self, path, data=None, *args, **kwargs):
+        if path == "/api/auth/register/" and isinstance(data, dict) and "code" not in data:
+            from apps.authentication.models import RegistrationOTP
+            from django.contrib.auth.hashers import make_password
+            from django.utils import timezone
+            from datetime import timedelta
+            RegistrationOTP.objects.create(
+                phone_number=data.get("phone_number", ""), code_hash=make_password("123456"),
+                expires_at=timezone.now() + timedelta(minutes=5),
+            )
+            data = {**data, "code": "123456"}
+        return super().post(path, data, *args, **kwargs)
+
+
 class RegisterViewTests(BaseAPITestCase):
     def setUp(self):
-        self.client = APIClient()
+        self.client = _OTPSeedingClient()
 
     def test_register_success_returns_tokens(self):
         response = self.client.post("/api/auth/register/", {
@@ -232,7 +249,7 @@ class RegistrationWithoutPasswordTests(BaseAPITestCase):
     family/patient account never needs to know or type one at all."""
 
     def setUp(self):
-        self.client = APIClient()
+        self.client = _OTPSeedingClient()
 
     def test_register_without_password_succeeds(self):
         response = self.client.post("/api/auth/register/", {
@@ -254,7 +271,7 @@ class OTPLoginTests(BaseAPITestCase):
     username or password anywhere in the flow."""
 
     def setUp(self):
-        self.client = APIClient()
+        self.client = _OTPSeedingClient()
         self.reg = self.client.post("/api/auth/register/", {
             "first_name": "زهرا", "last_name": "کریمی", "phone_number": "09121230110", "role": "family",
         }, format="json")
@@ -308,7 +325,56 @@ class OTPLoginTests(BaseAPITestCase):
         from apps.authentication.models import PhoneOTP
 
         user = User.objects.get(phone_number="09121230110")
+        # ثبت‌نام حالا شماره را تأیید می‌کند؛ برای این تست صراحتاً تأییدنشده‌اش می‌کنیم
+        # (مثل حساب‌هایی که سرپرست/ادمین ساخته).
+        User.objects.filter(pk=user.pk).update(is_phone_verified=False)
+        user.refresh_from_db()
         self.assertFalse(user.is_phone_verified)
         _, raw_code = PhoneOTP.issue_for(user)
         response = self.client.post("/api/auth/otp-login/verify/", {"phone_number": "09121230110", "code": raw_code}, format="json")
         self.assertEqual(response.status_code, 200)
+
+
+class RegisterOTPTests(BaseAPITestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+
+    def _payload(self, **extra):
+        return {"first_name": "سارا", "last_name": "الف", "phone_number": "09125550001", "role": "family", **extra}
+
+    @patch("apps.authentication.services.send_otp_sms")
+    def test_request_sends_code_and_register_with_it_succeeds(self, mock_sms):
+        r = self.client.post("/api/auth/register/otp/request/", {"phone_number": "09125550001"}, format="json")
+        self.assertEqual(r.status_code, 202)
+        code = mock_sms.delay.call_args[0][2]
+        ok = self.client.post("/api/auth/register/", self._payload(code=code), format="json")
+        self.assertEqual(ok.status_code, 201, ok.content)
+        self.assertTrue(ok.data["user"]["is_phone_verified"] if "is_phone_verified" in ok.data["user"] else True)
+
+    def test_register_without_code_rejected(self):
+        r = self.client.post("/api/auth/register/", self._payload(), format="json")
+        self.assertEqual(r.status_code, 400)
+
+    @patch("apps.authentication.services.send_otp_sms")
+    def test_wrong_code_rejected_and_no_account_created(self, mock_sms):
+        from apps.accounts.models import User
+        self.client.post("/api/auth/register/otp/request/", {"phone_number": "09125550001"}, format="json")
+        bad = self.client.post("/api/auth/register/", self._payload(code="000000"), format="json")
+        self.assertEqual(bad.status_code, 400)
+        self.assertFalse(User.objects.filter(phone_number="09125550001").exists())
+
+    @patch("apps.authentication.services.send_otp_sms")
+    def test_code_cannot_be_reused_and_resend_is_throttled(self, mock_sms):
+        self.client.post("/api/auth/register/otp/request/", {"phone_number": "09125550001"}, format="json")
+        again = self.client.post("/api/auth/register/otp/request/", {"phone_number": "09125550001"}, format="json")
+        self.assertEqual(again.status_code, 429)
+        code = mock_sms.delay.call_args[0][2]
+        self.assertEqual(self.client.post("/api/auth/register/", self._payload(code=code), format="json").status_code, 201)
+        reuse = self.client.post("/api/auth/register/", self._payload(code=code, phone_number="09125550001"), format="json")
+        self.assertEqual(reuse.status_code, 400)
+
+    def test_request_for_existing_phone_rejected(self):
+        make_user(phone_number="09125550009")
+        r = self.client.post("/api/auth/register/otp/request/", {"phone_number": "09125550009"}, format="json")
+        self.assertEqual(r.status_code, 400)

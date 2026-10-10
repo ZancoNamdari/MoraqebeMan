@@ -11,12 +11,14 @@ from .views import (
     OTPLoginVerifyView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
+    RegisterOTPRequestView,
     RegisterView,
     RequestOTPView,
     VerifyOTPView,
 )
 
 urlpatterns = [
+    path("register/otp/request/", RegisterOTPRequestView.as_view(), name="register-otp-request"),
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
     path("otp-login/request/", OTPLoginRequestView.as_view(), name="otp-login-request"),

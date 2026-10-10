@@ -22,6 +22,7 @@ from .serializers import (
     OTPLoginVerifySerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    RegisterOTPRequestSerializer,
     RegisterSerializer,
     VerifyOTPSerializer,
 )
@@ -35,6 +36,7 @@ from .services import (
     PasswordResetService,
     RegisterUserRequest,
     RegistrationError,
+    RegistrationOTPService,
     SimpleJWTTokenIssuer,
 )
 
@@ -52,6 +54,23 @@ def build_auth_service() -> AuthService:
     )
 
 
+class RegisterOTPRequestView(APIView):
+    """POST /api/auth/register/otp/request/ {"phone_number"} — مرحله‌ی ۱ ثبت‌نام: پیامک کد تأیید."""
+    permission_classes = [AllowAny]
+    throttle_scope = "register"
+
+    def post(self, request):
+        serializer = RegisterOTPRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            RegistrationOTPService().request(serializer.validated_data["phone_number"])
+        except RegistrationError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        except OTPError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        return Response({"detail": "کد تأیید برای شماره‌ی شما پیامک شد."}, status=status.HTTP_202_ACCEPTED)
+
+
 class RegisterView(APIView):
     permission_classes = [AllowAny]
     throttle_scope = "register"
@@ -60,6 +79,11 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = dict(serializer.validated_data)
+        code = data.pop("code")
+        try:
+            RegistrationOTPService().consume(data["phone_number"], code)
+        except OTPError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         if not data.get("password"):
             # OTP login never needs this — a real, unguessable value
             # still has to exist since password auth stays available
@@ -73,6 +97,10 @@ class RegisterView(APIView):
             user, tokens = auth_service.register(RegisterUserRequest(**data))
         except RegistrationError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # شماره با کد پیامکی تأیید شده است.
+        user.is_phone_verified = True
+        user.save(update_fields=["is_phone_verified"])
 
         return Response(
             {"user": UserSerializer(user).data, "tokens": tokens},

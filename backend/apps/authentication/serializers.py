@@ -18,6 +18,8 @@ class RegisterSerializer(serializers.Serializer):
     # blank, a random one is generated server-side, same as how a
     # supervisor-created caregiver account already works.
     password = serializers.CharField(write_only=True, min_length=8, required=False, allow_blank=True)
+    # کد پیامکیِ تأیید شماره (از /auth/register/otp/request/) — بدون آن حساب ساخته نمی‌شود.
+    code = serializers.RegexField(regex=r"^\d{6}$", write_only=True, error_messages={"invalid": "کد تأیید باید ۶ رقم باشد."})
     phone_number = serializers.RegexField(
         regex=r"^09\d{9}$",
         error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
@@ -37,6 +39,13 @@ class RegisterSerializer(serializers.Serializer):
             (UserRole.CAREGIVER, UserRole.CAREGIVER.label),
         ],
         default=UserRole.FAMILY,
+    )
+
+
+class RegisterOTPRequestSerializer(serializers.Serializer):
+    phone_number = serializers.RegexField(
+        regex=r"^09\d{9}$",
+        error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
     )
 
 

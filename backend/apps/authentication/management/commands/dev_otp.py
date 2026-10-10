@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.accounts.models import User
-from apps.authentication.models import PhoneOTP
+from apps.authentication.models import PhoneOTP, RegistrationOTP
 
 
 class Command(BaseCommand):
@@ -20,6 +20,9 @@ class Command(BaseCommand):
             raise CommandError("این دستور فقط روی محیط توسعه (DEBUG روشن و بدون پنل پیامک) کار می‌کند.")
         user = User.objects.filter(phone_number=opts["phone_number"]).first()
         if user is None:
-            raise CommandError("کاربری با این شماره پیدا نشد.")
+            # شماره هنوز ثبت‌نام نکرده → کد ثبت‌نام (جایگزین کدی که پیامک می‌شد)
+            _, code = RegistrationOTP.issue_for(opts["phone_number"])
+            self.stdout.write(self.style.SUCCESS(f"کد ثبت‌نام برای {opts['phone_number']}: {code}  (۵ دقیقه معتبر است)"))
+            return
         _, code = PhoneOTP.issue_for(user)
         self.stdout.write(self.style.SUCCESS(f"کد ورود برای {user.phone_number}: {code}  (۵ دقیقه معتبر است)"))
