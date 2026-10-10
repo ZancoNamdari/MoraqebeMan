@@ -56,7 +56,10 @@ export function TagEditor({ tags, suggestions, onAdd, onRemove }: {
     setDraft("")
   }
 
-  const availableSuggestions = (suggestions || []).filter((s) => !tags.includes(s))
+  const availableSuggestions = (suggestions || []).filter((s) => !tags.includes(s) && s !== RAPID_RESPONSE_TAG)
+  // «فورس‌ماژور» همیشه در لیست هست؛ اگر زده شده باشد با تیک نشان داده می‌شود و با کلیک برداشته می‌شود.
+  const showRapidToggle = (suggestions || []).includes(RAPID_RESPONSE_TAG)
+  const rapidOn = tags.includes(RAPID_RESPONSE_TAG)
 
   return (
     <div className="mt-1.5">
@@ -82,6 +85,21 @@ export function TagEditor({ tags, suggestions, onAdd, onRemove }: {
 
       {open && (
         <div className="mt-1.5 rounded-md border border-slate-200 bg-white p-2">
+          {showRapidToggle && (
+            <button
+              type="button"
+              onClick={() => (rapidOn ? onRemove(RAPID_RESPONSE_TAG) : onAdd(RAPID_RESPONSE_TAG))}
+              aria-pressed={rapidOn}
+              className={cn(
+                "mb-1.5 flex min-h-8 items-center gap-1 rounded-full border border-red-600 px-3 py-1 text-xs font-extrabold",
+                rapidOn ? "bg-red-600 text-white" : "bg-white text-red-600 hover:bg-red-50"
+              )}
+            >
+              <Zap className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+              {RAPID_RESPONSE_TAG}
+              {rapidOn && <span aria-hidden="true">✓</span>}
+            </button>
+          )}
           {availableSuggestions.length > 0 && (
             <div className="mb-1.5 flex flex-wrap gap-1">
               {availableSuggestions.map((s) => (
