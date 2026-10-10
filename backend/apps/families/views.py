@@ -124,7 +124,20 @@ class MyPatientsView(APIView):
         patients = PatientProfile.objects.filter(
             family_links__family=family, family_links__status=LinkStatus.APPROVED,
         ).distinct()
-        return Response(PatientProfileSerializer(patients, many=True).data)
+        data = PatientProfileSerializer(patients, many=True).data
+        # مراقبِ فعالِ هر خدمت‌گیرنده (برای کارت داشبورد) — با یک کوئری برای همه
+        from apps.care.models import AssignmentStatus, CaregiverAssignment
+        from apps.caregivers.public_views import public_display_name
+        by_patient = {}
+        for a in CaregiverAssignment.objects.filter(
+            patient_id__in=[row["id"] for row in data], status=AssignmentStatus.ACTIVE,
+        ).select_related("caregiver__user"):
+            by_patient.setdefault(a.patient_id, []).append(
+                {"id": a.caregiver.user_id, "name": public_display_name(a.caregiver)}
+            )
+        for row in data:
+            row["assigned_caregivers"] = by_patient.get(row["id"], [])
+        return Response(data)
 
     def post(self, request):
         serializer = AddPatientSerializer(data=request.data)

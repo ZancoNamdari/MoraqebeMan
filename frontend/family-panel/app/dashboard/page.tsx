@@ -137,6 +137,11 @@ export default function DashboardPage() {
                     <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] ${p.service_type ? "bg-pink-100 text-rose-800" : "bg-amber-50 text-amber-700"}`}>
                       {p.service_type ? [serviceLabel(p.service_type), subtypeLabel(p.service_type, p.service_subtype)].filter(Boolean).join(" · ") : "نوع خدمت مشخص نشده"}
                     </span>
+                    <p className="mt-1 truncate text-[11px] text-muted-foreground">
+                      {p.assigned_caregivers && p.assigned_caregivers.length > 0
+                        ? `مراقب: ${p.assigned_caregivers.map((c) => c.name).join("، ")}`
+                        : "هنوز مراقبی تخصیص داده نشده"}
+                    </p>
                   </div>
                   <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </button>

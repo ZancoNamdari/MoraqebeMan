@@ -49,3 +49,21 @@ class PatientEthnicityTests(TestCase):
         self.assertEqual(ok.json()["ethnicity_details"], {"kurd": ["sanandaji", "ilami"]})
         bad = self.client.post("/api/patients/", {**base, "ethnicities": ["kurd"], "ethnicity_details": {"kurd": ["tabrizi"]}}, format="json")
         self.assertEqual(bad.status_code, 400)
+
+
+class FamilyListAssignedCaregiverTests(TestCase):
+    def test_list_includes_active_assigned_caregiver(self):
+        from apps.care.models import CaregiverAssignment
+        from apps.caregivers.models import CaregiverProfile, CaregiverStatus
+        from apps.families.models import PatientProfile
+        fam = mk("09127770003", "family")
+        client = APIClient(); client.force_authenticate(fam)
+        created = client.post("/api/patients/", {"full_name": "الف", "relation": "child"}, format="json")
+        self.assertEqual(created.status_code, 201, created.content)
+        self.assertEqual(client.get("/api/patients/").json()[0]["assigned_caregivers"], [])
+        cg_user = mk("09127770004", "caregiver")
+        cg = CaregiverProfile.objects.create(user=cg_user, status=CaregiverStatus.APPROVED)
+        CaregiverAssignment.objects.create(caregiver=cg, patient=PatientProfile.objects.get(pk=created.json()["id"]))
+        row = client.get("/api/patients/").json()[0]
+        self.assertEqual(len(row["assigned_caregivers"]), 1)
+        self.assertEqual(row["assigned_caregivers"][0]["id"], cg_user.id)

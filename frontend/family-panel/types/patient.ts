@@ -5,6 +5,7 @@ export interface PatientListItem {
   full_name: string
   service_type: string
   service_subtype: string
+  assigned_caregivers?: { id: number; name: string }[]
   gender: string
   father_name: string
   birth_date: string | null
