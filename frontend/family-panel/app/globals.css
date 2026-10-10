@@ -106,3 +106,15 @@ body {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+
+/* Tailwind v4: بدون این قاعده، هر `border` بدون رنگ صریح به رنگ متن (تقریباً مشکی)
+   رندر می‌شود — خط‌های تیره‌ی سربرگ/کارت/جدول. رنگ پیش‌فرض را همان توکن border می‌کنیم. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border, currentColor);
+  }
+}

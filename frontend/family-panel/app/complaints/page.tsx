@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
+import { MessageSquareWarning } from "lucide-react"
 import { Field, ChoiceSelect } from "@/components/forms/fields"
 import { complaintsService, type ComplaintListItem } from "@/services/complaints.service"
 import { patientService } from "@/services/patient.service"
@@ -73,12 +75,9 @@ export default function ComplaintsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">شکایات و بازخورد</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-        </div>
-      </header>
+      <AppHeader title="شکایات و بازخورد" maxWidth="max-w-2xl">
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
         <Card className="border-pink-100">
@@ -93,7 +92,7 @@ export default function ComplaintsPage() {
               {error && <div className="rounded-md bg-rose-50 p-2 text-xs text-rose-700">{error}</div>}
               <Field label="سالمند مربوطه" required>
                 <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-200"
                   value={patientId ?? ""}
                   onChange={(e) => setPatientId(Number(e.target.value) || null)}
                 >
@@ -137,18 +136,25 @@ export default function ComplaintsPage() {
             {loading ? (
               <Skeleton className="h-40 w-full rounded-2xl" />
             ) : complaints.length === 0 ? (
-              <p className="text-sm text-muted-foreground">هنوز شکایتی ثبت نکرده‌اید.</p>
+              <div className="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground">
+                <MessageSquareWarning className="h-8 w-8 text-pink-300" />
+                <p className="text-sm">هنوز شکایتی ثبت نکرده‌اید.</p>
+              </div>
             ) : (
               <div className="space-y-2">
                 {complaints.map((c) => (
-                  <div key={c.id} className="rounded-lg border border-pink-100 bg-pink-50/40 p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{c.patient_name || "—"}</span>
+                  <div key={c.id} className="rounded-xl border border-pink-100 bg-pink-50/40 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-rose-950">{c.patient_name || "—"}</span>
                       <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", STATUS_CLASS[c.status])}>
                         {COMPLAINT_STATUS_LABEL[c.status]}
                       </span>
                     </div>
-                    {c.caregiver_name && <p className="mt-1 text-xs text-muted-foreground">درباره: {c.caregiver_name}</p>}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {COMPLAINT_CATEGORY.find((x) => x[0] === c.category)?.[1] || c.category}
+                      {c.caregiver_name ? ` · درباره: ${c.caregiver_name}` : ""}
+                      {c.created_at ? ` · ${new Date(c.created_at).toLocaleDateString("fa-IR")}` : ""}
+                    </p>
                   </div>
                 ))}
               </div>

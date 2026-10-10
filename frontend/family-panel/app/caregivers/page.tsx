@@ -4,9 +4,10 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
+import { MapPin, Search, Star } from "lucide-react"
 import { CaregiverAvatar } from "@/components/caregivers/caregiver-avatar"
 import { caregiverDirectoryService } from "@/services/caregiver-directory.service"
 import type { PublicCaregiverCard } from "@/types/caregiver-public"
@@ -49,16 +50,16 @@ export default function CaregiversDirectoryPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">مراقبان</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-        </div>
-      </header>
+      <AppHeader title="مراقبان تأییدشده">
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-3xl space-y-4 p-4">
         <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); setPage(1); setQuery(q.trim()) }}>
-          <Input placeholder="جستجوی نام یا شهر/منطقه..." value={q} onChange={(e) => setQ(e.target.value)} />
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input className="pr-9" placeholder="جستجوی نام یا شهر/منطقه..." value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
           <Button type="submit" size="sm">جستجو</Button>
         </form>
 
@@ -78,37 +79,61 @@ export default function CaregiversDirectoryPage() {
         {error && <div className="rounded-md bg-rose-50 p-2 text-xs text-rose-700">{error}</div>}
 
         {loading ? (
-          <Skeleton className="h-60 w-full rounded-2xl" />
+          <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 w-full rounded-2xl" />)}</div>
         ) : rows.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted-foreground">مراقبی با این مشخصات پیدا نشد.</p>
         ) : (
           <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">{total} مراقب</p>
             {rows.map((c) => (
-              <Card key={c.id} className="cursor-pointer border-pink-100 transition hover:shadow-md" onClick={() => router.push(ROUTES.caregiverDetail(c.id))}>
-                <CardContent className="flex gap-3 p-4">
-                  <CaregiverAvatar url={c.photo_url} name={c.display_name} gender={c.gender} className="h-16 w-16" />
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex flex-wrap items-center gap-x-2">
-                      <p className="font-semibold text-rose-900">{c.display_name}</p>
-                      {c.age ? <span className="text-xs text-muted-foreground">{c.age} ساله</span> : null}
-                      {c.city ? <span className="text-xs text-muted-foreground">· {c.city}</span> : null}
+              <button
+                key={c.id}
+                onClick={() => router.push(ROUTES.caregiverDetail(c.id))}
+                className="flex w-full gap-4 rounded-2xl border border-pink-100 bg-white p-4 text-right shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-pink-100"
+              >
+                <CaregiverAvatar url={c.photo_url} name={c.display_name} gender={c.gender} className="h-20 w-20 border border-pink-100" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-bold text-rose-900">{c.display_name}</p>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                        {c.age ? <span>{c.age} ساله</span> : null}
+                        {c.city ? <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3" />{c.city}</span> : null}
+                        {c.elderly_experience ? <span>سابقه: {c.elderly_experience}</span> : null}
+                      </p>
                     </div>
-                    <div className="flex flex-wrap gap-1">
-                      {c.services.map((s) => (
-                        <span key={s.key} className="rounded-full bg-pink-100 px-2 py-0.5 text-[11px] text-rose-800">{s.label}</span>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {c.avg_rating != null ? `⭐ ${c.avg_rating} (${c.review_count} نظر)` : "هنوز نظری ثبت نشده"}
-                      {c.care_count ? ` · ${c.care_count} مراقبت` : ""}
-                      {c.satisfaction_percent != null ? ` · رضایت ${c.satisfaction_percent}٪` : ""}
-                    </p>
-                    {c.special_talents.length > 0 && (
-                      <p className="truncate text-xs text-muted-foreground">استعدادها: {c.special_talents.join("، ")}</p>
+                    {c.avg_rating != null ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />{c.avg_rating}
+                        <span className="font-normal text-amber-700/70">({c.review_count})</span>
+                      </span>
+                    ) : (
+                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-muted-foreground">جدید</span>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                  {c.services.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {c.services.map((sv) => (
+                        <span key={sv.key} className="rounded-full bg-pink-100 px-2 py-0.5 text-[11px] text-rose-800">{sv.label}</span>
+                      ))}
+                    </div>
+                  )}
+                  {c.special_talents.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {c.special_talents.slice(0, 3).map((t) => (
+                        <span key={t} className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800">{t}</span>
+                      ))}
+                    </div>
+                  )}
+                  {(c.care_count > 0 || c.satisfaction_percent != null) && (
+                    <p className="text-xs text-muted-foreground">
+                      {c.care_count ? `${c.care_count} مراقبت انجام‌شده` : ""}
+                      {c.care_count && c.satisfaction_percent != null ? " · " : ""}
+                      {c.satisfaction_percent != null ? `رضایت ${c.satisfaction_percent}٪` : ""}
+                    </p>
+                  )}
+                </div>
+              </button>
             ))}
           </div>
         )}

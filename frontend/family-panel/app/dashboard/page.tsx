@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppHeader } from "@/components/layout/app-header"
+import { Building2, KeyRound, MessageSquareWarning, UserPlus, UsersRound, Copy, Check, ChevronLeft } from "lucide-react"
 import { ChoiceSelect } from "@/components/forms/fields"
 import { RELATION_TYPE, patientAvatar } from "@/lib/constants"
 import { patientService } from "@/services/patient.service"
@@ -23,6 +25,7 @@ export default function DashboardPage() {
   const [family, setFamily] = useState<FamilyProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const [copied, setCopied] = useState(false)
   const [showConnect, setShowConnect] = useState(false)
   const [patientCode, setPatientCode] = useState("")
   const [relation, setRelation] = useState("")
@@ -70,142 +73,53 @@ export default function DashboardPage() {
     }
   }
 
+  const tile = "flex items-center gap-3 rounded-2xl border border-pink-100 bg-white p-4 text-right transition hover:-translate-y-0.5 hover:shadow-md hover:shadow-pink-100"
+  const tileIcon = "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-100 text-rose-700"
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/60 via-background to-background">
-      <header className="border-b border-pink-100 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🌸</span>
-            <h1 className="text-base font-bold text-rose-900">مراقب من</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {user && <span className="text-sm text-muted-foreground">سلام، {user.username}</span>}
-            <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={logout}>
-              خروج
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-rose-50/60 via-background to-background pb-10">
+      <AppHeader title="مراقب من">
+        {user && <span className="hidden text-sm text-muted-foreground sm:inline">سلام، {user.username}</span>}
+        <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={logout}>خروج</Button>
+      </AppHeader>
 
-      <main className="mx-auto max-w-3xl space-y-5 p-4">
-        {family && (
-          <Card className="border-pink-100 bg-gradient-to-l from-pink-50 to-rose-50">
-            <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-              <div>
-                <p className="text-xs text-muted-foreground">کد عضویت شما — برای دریافت دعوت از یک بیمار</p>
-                <p dir="ltr" className="text-left text-lg font-bold tracking-wider text-rose-700">{family.access_code}</p>
-              </div>
-              <Button
-                size="sm" variant="outline"
-                className="border-pink-200 text-rose-700 hover:bg-pink-50"
-                onClick={() => setShowConnect((v) => !v)}
-              >
-                {showConnect ? "بستن" : "دسترسی به بیمار با کد"}
-              </Button>
-            </CardContent>
-            {showConnect && (
-              <CardContent className="border-t border-pink-100 pt-4">
-                <p className="mb-2 text-xs text-muted-foreground">کد بیماری که می‌خواهید وضعیت و مراقبت او را ببینید وارد کنید — دسترسی شما بلافاصله فعال می‌شود.</p>
-                {connectMessage && (
-                  <div className={`mb-2 rounded-md p-2 text-xs ${connectMessage.kind === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>
-                    {connectMessage.text}
-                  </div>
-                )}
-                <div className="flex flex-wrap items-center gap-2">
-                  <Input placeholder="کد بیمار (مثلاً ELD-7K4P9X)" className="w-48" value={patientCode} onChange={(e) => setPatientCode(e.target.value)} dir="ltr" />
-                  <div className="w-32"><ChoiceSelect choices={RELATION_TYPE} value={relation} onChange={setRelation} placeholder="نسبت شما" /></div>
-                  <Button size="sm" disabled={connecting || !patientCode || !relation} onClick={handleConnect}>
-                    اتصال
-                  </Button>
-                </div>
-              </CardContent>
-            )}
-          </Card>
-        )}
-
-        <Card className="border-pink-100">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+      <main className="mx-auto max-w-3xl space-y-6 p-4">
+        {/* سالمندان — مهم‌ترین بخش، اول صفحه */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-rose-900">عضویت در آژانس</p>
-              <p className="text-xs text-muted-foreground">اگر خدمت شما از طریق یک شرکت یا آژانس مراقبتی تأمین می‌شود، با کد آژانس درخواست عضویت دهید.</p>
+              <h2 className="text-xl font-bold text-rose-900">سالمندان شما</h2>
+              <p className="text-sm text-muted-foreground">
+                {loading ? "در حال بارگذاری…" : patients.length ? `${patients.length} سالمند تحت نظر شما` : "مدیریت اطلاعات و مراقبت سالمندان"}
+              </p>
             </div>
             <Button
-              size="sm" variant="outline"
-              className="border-pink-200 text-rose-700 hover:bg-pink-50"
-              onClick={() => setShowJoinAgency((v) => !v)}
+              className="bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
+              onClick={() => router.push(ROUTES.newPatient)}
             >
-              {showJoinAgency ? "بستن" : "پیوستن با کد آژانس"}
+              <UserPlus className="ml-1.5 h-4 w-4" /> افزودن سالمند
             </Button>
-          </CardContent>
-          {showJoinAgency && (
-            <CardContent className="border-t border-pink-100 pt-4">
-              {agencyMessage && (
-                <div className={`mb-2 rounded-md p-2 text-xs ${agencyMessage.kind === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>
-                  {agencyMessage.text}
-                </div>
-              )}
-              <div className="flex flex-wrap items-center gap-2">
-                <Input placeholder="کد آژانس (مثلاً AGN-92K7XQ)" className="w-48" value={agencyCode} onChange={(e) => setAgencyCode(e.target.value)} dir="ltr" />
-                <Button size="sm" disabled={joiningAgency || !agencyCode} onClick={handleJoinAgency}>
-                  ارسال درخواست
-                </Button>
-              </div>
-            </CardContent>
-          )}
-        </Card>
-
-        <Card className="border-pink-100">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <p className="text-sm text-rose-900">مراقبان تأییدشده — پروفایل و سوابق</p>
-            <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => router.push(ROUTES.caregivers)}>
-              مشاهده‌ی مراقبان
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-pink-100">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <p className="text-sm text-rose-900">شکایات و بازخورد</p>
-            <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={() => router.push(ROUTES.complaints)}>
-              مشاهده / ثبت شکایت
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-rose-900">سالمندان شما</h2>
-            <p className="text-sm text-muted-foreground">مدیریت اطلاعات و مراقبت سالمندان تحت نظر شما</p>
           </div>
-          <Button
-            className="bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
-            onClick={() => router.push(ROUTES.newPatient)}
-          >
-            + افزودن سالمند
-          </Button>
-        </div>
 
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2].map((i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}
-          </div>
-        ) : patients.length === 0 ? (
-          <Card className="border-pink-100">
-            <CardContent className="flex flex-col items-center gap-2 p-10 text-center">
-              <span className="text-3xl">🌷</span>
-              <p className="text-muted-foreground">هنوز سالمندی ثبت نشده. با دکمه بالا شروع کنید یا با کد یک بیمار درخواست دسترسی دهید.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {patients.map((p) => (
-              <Card
-                key={p.id}
-                className="cursor-pointer border-pink-100 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-pink-100"
-                onClick={() => router.push(ROUTES.patientDetail(p.id))}
-              >
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-lg">
+          {loading ? (
+            <div className="grid gap-3 sm:grid-cols-2">{[1, 2].map((i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}</div>
+          ) : patients.length === 0 ? (
+            <Card className="border-pink-100">
+              <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
+                <span className="text-3xl">🌷</span>
+                <p className="text-muted-foreground">هنوز سالمندی ثبت نشده. سالمند جدید اضافه کنید یا با کد یک بیمار درخواست دسترسی دهید.</p>
+                <Button onClick={() => router.push(ROUTES.newPatient)}>افزودن اولین سالمند</Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {patients.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => router.push(ROUTES.patientDetail(p.id))}
+                  className="flex items-center gap-3 rounded-2xl border border-pink-100 bg-white p-4 text-right shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-pink-100"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-xl">
                     {patientAvatar(p.gender)}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -214,9 +128,76 @@ export default function DashboardPage() {
                       {[p.province_name, p.city_name].filter(Boolean).join("، ") || "بدون آدرس ثبت‌شده"}
                     </p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* دسترسی‌های سریع */}
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button className={tile} onClick={() => router.push(ROUTES.caregivers)}>
+            <span className={tileIcon}><UsersRound className="h-5 w-5" /></span>
+            <span><span className="block text-sm font-semibold text-rose-900">مراقبان تأییدشده</span><span className="block text-xs text-muted-foreground">پروفایل، مهارت‌ها و نظر خانواده‌ها</span></span>
+          </button>
+          <button className={tile} onClick={() => router.push(ROUTES.complaints)}>
+            <span className={tileIcon}><MessageSquareWarning className="h-5 w-5" /></span>
+            <span><span className="block text-sm font-semibold text-rose-900">شکایات و بازخورد</span><span className="block text-xs text-muted-foreground">مشاهده یا ثبت شکایت</span></span>
+          </button>
+          <button className={tile} onClick={() => { setShowConnect((v) => !v); setShowJoinAgency(false) }}>
+            <span className={tileIcon}><KeyRound className="h-5 w-5" /></span>
+            <span><span className="block text-sm font-semibold text-rose-900">دسترسی به بیمار با کد</span><span className="block text-xs text-muted-foreground">وضعیت و مراقبت یک بیمار را ببینید</span></span>
+          </button>
+          <button className={tile} onClick={() => { setShowJoinAgency((v) => !v); setShowConnect(false) }}>
+            <span className={tileIcon}><Building2 className="h-5 w-5" /></span>
+            <span><span className="block text-sm font-semibold text-rose-900">عضویت در آژانس</span><span className="block text-xs text-muted-foreground">با کد آژانس درخواست عضویت دهید</span></span>
+          </button>
+        </section>
+
+        {showConnect && (
+          <Card className="border-pink-100">
+            <CardContent className="space-y-3 p-4">
+              <p className="text-xs text-muted-foreground">کد بیماری که می‌خواهید وضعیت و مراقبت او را ببینید وارد کنید — دسترسی شما بلافاصله فعال می‌شود.</p>
+              {connectMessage && (
+                <div className={`rounded-md p-2 text-xs ${connectMessage.kind === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>{connectMessage.text}</div>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                <Input placeholder="کد بیمار (مثلاً ELD-7K4P9X)" className="w-48" value={patientCode} onChange={(e) => setPatientCode(e.target.value)} dir="ltr" />
+                <div className="w-32"><ChoiceSelect choices={RELATION_TYPE} value={relation} onChange={setRelation} placeholder="نسبت شما" /></div>
+                <Button size="sm" disabled={connecting || !patientCode || !relation} onClick={handleConnect}>اتصال</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {showJoinAgency && (
+          <Card className="border-pink-100">
+            <CardContent className="space-y-3 p-4">
+              <p className="text-xs text-muted-foreground">اگر خدمت شما از طریق یک شرکت یا آژانس مراقبتی تأمین می‌شود، با کد آژانس درخواست عضویت دهید.</p>
+              {agencyMessage && (
+                <div className={`rounded-md p-2 text-xs ${agencyMessage.kind === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>{agencyMessage.text}</div>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                <Input placeholder="کد آژانس (مثلاً AGN-92K7XQ)" className="w-48" value={agencyCode} onChange={(e) => setAgencyCode(e.target.value)} dir="ltr" />
+                <Button size="sm" disabled={joiningAgency || !agencyCode} onClick={handleJoinAgency}>ارسال درخواست</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {family && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-pink-100 bg-gradient-to-l from-pink-50 to-rose-50 p-4">
+            <div>
+              <p className="text-xs text-muted-foreground">کد عضویت شما — برای دریافت دعوت از یک بیمار</p>
+              <p dir="ltr" className="text-left text-lg font-bold tracking-wider text-rose-700">{family.access_code}</p>
+            </div>
+            <Button
+              size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50"
+              onClick={() => { navigator.clipboard?.writeText(family.access_code); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
+            >
+              {copied ? <><Check className="ml-1.5 h-4 w-4" /> کپی شد</> : <><Copy className="ml-1.5 h-4 w-4" /> کپی کد</>}
+            </Button>
           </div>
         )}
       </main>

@@ -156,3 +156,15 @@ body {
 .hex-field--on-deep::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='64' viewBox='0 0 56 64'%3E%3Cpath d='M28 1 54 16v32L28 63 2 48V16Z' fill='none' stroke='%23F5EAE9' stroke-opacity='0.08' stroke-width='1.5'/%3E%3C/svg%3E");
 }
+
+/* Tailwind v4: بدون این قاعده، هر `border` بدون رنگ صریح به رنگ متن (تقریباً مشکی)
+   رندر می‌شود — خط‌های تیره‌ی سربرگ/کارت/جدول. رنگ پیش‌فرض را همان توکن border می‌کنیم. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border, currentColor);
+  }
+}
