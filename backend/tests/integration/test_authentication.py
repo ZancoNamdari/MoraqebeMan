@@ -375,6 +375,19 @@ class RegisterOTPTests(BaseAPITestCase):
         self.assertEqual(reuse.status_code, 400)
 
     @patch("apps.authentication.services.send_otp_sms")
+    def test_persian_digits_in_code_and_phone_are_accepted(self, mock_sms):
+        """کیبورد فارسیِ موبایل رقم فارسی تایپ می‌کند؛ کد «۱۲۳۴۵۶» باید همان «123456» حساب شود."""
+        fa = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
+        r = self.client.post("/api/auth/register/otp/request/", {"phone_number": "09125550001".translate(fa)}, format="json")
+        self.assertEqual(r.status_code, 202, r.content)
+        code = mock_sms.delay.call_args[0][2]
+        ok = self.client.post(
+            "/api/auth/register/", self._payload(code=code.translate(fa), phone_number="09125550001".translate(fa)),
+            format="json",
+        )
+        self.assertEqual(ok.status_code, 201, ok.content)
+
+    @patch("apps.authentication.services.send_otp_sms")
     def test_request_for_existing_phone_is_neutral_and_sends_nothing(self, mock_sms):
         from apps.authentication.models import RegistrationOTP
         make_user(phone_number="09125550009")

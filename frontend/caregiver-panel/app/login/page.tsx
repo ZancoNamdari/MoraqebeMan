@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { authService } from "@/services/auth.service"
 import { api } from "@/services/api"
 import { ROUTES } from "@/lib/routes"
+import { toEnglishDigits } from "@/lib/utils"
 import { extractErrorMessage } from "@/lib/errors"
 
 type Mode = "register" | "register-code" | "login-phone" | "login-code"
@@ -160,7 +161,7 @@ function LoginForm() {
             <form onSubmit={handleRequestCode} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="phone">شماره موبایل</Label>
-                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" required autoFocus />
+                <Input id="phone" value={phone} onChange={(e) => setPhone(toEnglishDigits(e.target.value))} placeholder="09xxxxxxxxx" dir="ltr" required autoFocus />
               </div>
               <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
                 {loading ? "در حال ارسال..." : "ارسال کد ورود"}
@@ -175,7 +176,7 @@ function LoginForm() {
             <form onSubmit={handleVerifyCode} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="code">کد ۶ رقمی</Label>
-                <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} dir="ltr" inputMode="numeric" maxLength={6} required autoFocus />
+                <Input id="code" value={code} onChange={(e) => setCode(toEnglishDigits(e.target.value))} dir="ltr" inputMode="numeric" maxLength={6} required autoFocus />
               </div>
 
               {secondsLeft > 0 ? (
@@ -216,7 +217,7 @@ function LoginForm() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="rphone">شماره موبایل</Label>
-                <Input id="rphone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxxx" dir="ltr" required />
+                <Input id="rphone" value={phone} onChange={(e) => setPhone(toEnglishDigits(e.target.value))} placeholder="09xxxxxxxxx" dir="ltr" required />
               </div>
               <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
                 {loading ? "در حال ارسال کد..." : "ارسال کد تأیید"}
@@ -231,7 +232,7 @@ function LoginForm() {
               <p className="text-center text-sm text-muted-foreground">کد ۶ رقمی ارسال‌شده به <span dir="ltr" className="font-medium">{phone}</span> را وارد کنید.</p>
               <div className="space-y-2">
                 <Label htmlFor="rcode">کد ۶ رقمی</Label>
-                <Input id="rcode" value={code} onChange={(e) => setCode(e.target.value)} dir="ltr" inputMode="numeric" maxLength={6} required autoFocus />
+                <Input id="rcode" value={code} onChange={(e) => setCode(toEnglishDigits(e.target.value))} dir="ltr" inputMode="numeric" maxLength={6} required autoFocus />
               </div>
               {secondsLeft > 0 ? (
                 <p className="text-center text-sm text-muted-foreground">

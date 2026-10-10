@@ -2,6 +2,22 @@ from rest_framework import serializers
 
 from apps.accounts.models import UserRole
 
+_DIGIT_MAP = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+
+
+def to_ascii_digits(value):
+    """ارقام فارسی/عربی (که کیبورد فارسیِ موبایل تایپ می‌کند) را به انگلیسی تبدیل می‌کند."""
+    return value.translate(_DIGIT_MAP).strip() if isinstance(value, str) else value
+
+
+class NormalizedRegexField(serializers.RegexField):
+    """RegexField که قبل از اعتبارسنجی ارقام فارسی/عربی را انگلیسی می‌کند؛ وگرنه کدِ تأیید
+    با ارقام فارسی (مثلاً «۱۲۳۴۵۶») هرگز با هشِ کد انگلیسی یکی نمی‌شد و «کد نادرست است» می‌آمد."""
+
+    def to_internal_value(self, data):
+        return super().to_internal_value(to_ascii_digits(data))
+
+
 
 class RegisterSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=50)
@@ -19,8 +35,8 @@ class RegisterSerializer(serializers.Serializer):
     # supervisor-created caregiver account already works.
     password = serializers.CharField(write_only=True, min_length=8, required=False, allow_blank=True)
     # کد پیامکیِ تأیید شماره (از /auth/register/otp/request/) — بدون آن حساب ساخته نمی‌شود.
-    code = serializers.RegexField(regex=r"^\d{6}$", write_only=True, error_messages={"invalid": "کد تأیید باید ۶ رقم باشد."})
-    phone_number = serializers.RegexField(
+    code = NormalizedRegexField(regex=r"^\d{6}$", write_only=True, error_messages={"invalid": "کد تأیید باید ۶ رقم باشد."})
+    phone_number = NormalizedRegexField(
         regex=r"^09\d{9}$",
         error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
     )
@@ -43,7 +59,7 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class RegisterOTPRequestSerializer(serializers.Serializer):
-    phone_number = serializers.RegexField(
+    phone_number = NormalizedRegexField(
         regex=r"^09\d{9}$",
         error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
     )
@@ -59,7 +75,7 @@ class OTPLoginRequestSerializer(serializers.Serializer):
     password needed at all. Deliberately doesn't reveal whether the
     phone number is actually registered (same enumeration-protection
     reasoning as password reset) — the view always responds success."""
-    phone_number = serializers.RegexField(
+    phone_number = NormalizedRegexField(
         regex=r"^09\d{9}$",
         error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
     )
@@ -67,23 +83,23 @@ class OTPLoginRequestSerializer(serializers.Serializer):
 
 class OTPLoginVerifySerializer(serializers.Serializer):
     """Passwordless login, step 2 — the 6-digit code from the SMS."""
-    phone_number = serializers.RegexField(regex=r"^09\d{9}$")
-    code = serializers.RegexField(regex=r"^\d{6}$", error_messages={"invalid": "کد تأیید باید ۶ رقم باشد."})
+    phone_number = NormalizedRegexField(regex=r"^09\d{9}$")
+    code = NormalizedRegexField(regex=r"^\d{6}$", error_messages={"invalid": "کد تأیید باید ۶ رقم باشد."})
 
 
 class VerifyOTPSerializer(serializers.Serializer):
-    code = serializers.RegexField(regex=r"^\d{6}$", error_messages={"invalid": "کد تأیید باید ۶ رقم باشد."})
+    code = NormalizedRegexField(regex=r"^\d{6}$", error_messages={"invalid": "کد تأیید باید ۶ رقم باشد."})
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    phone_number = serializers.RegexField(
+    phone_number = NormalizedRegexField(
         regex=r"^09\d{9}$",
         error_messages={"invalid": "شماره تلفن باید با فرمت 09xxxxxxxxx باشد."},
     )
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    phone_number = serializers.RegexField(regex=r"^09\d{9}$")
+    phone_number = NormalizedRegexField(regex=r"^09\d{9}$")
     token = serializers.CharField(max_length=64)
     new_password = serializers.CharField(write_only=True, min_length=8)
 
