@@ -198,7 +198,7 @@ export default function MatchingPage() {
     <div className="flex h-full flex-col p-4 sm:p-6">
       <div className="mb-4">
         <h1 className="text-lg font-bold text-foreground">فرآیند تطبیق</h1>
-        <p className="text-xs text-muted-foreground">پیشنهاد بهترین مراقب برای هر خدمت‌گیرنده، بر اساس استخر مراقبان همین آژانس</p>
+        <p className="text-xs text-muted-foreground">پیشنهاد بهترین مراقب برای هر خدمت‌گیرنده، بر اساس مراقبان همین آژانس</p>
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
@@ -293,7 +293,7 @@ export default function MatchingPage() {
                   <div className="flex flex-col items-center gap-2 p-8 text-center">
                     <ChevronLeft className="h-6 w-6 rotate-90 text-slate-300" />
                     <p className="text-sm text-muted-foreground">
-                      هیچ مراقب مناسبی در استخر این آژانس یافت نشد — ابتدا مراقب به آژانس اضافه کنید.
+                      هیچ مراقب مناسبی در میان مراقبان این آژانس یافت نشد — ابتدا مراقب به آژانس اضافه کنید.
                     </p>
                   </div>
                 ) : (

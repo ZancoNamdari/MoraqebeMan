@@ -59,14 +59,14 @@ export default function AgencyPatientMatchPage() {
                 <p className="text-sm text-muted-foreground">پیشنهاد مراقب برای</p>
                 <p className="text-lg font-bold text-foreground">{data.patient_name}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  این فهرست فقط از میان مراقبان استخر همین آژانس ساخته شده — نه کل پلتفرم.
+                  این فهرست فقط از میان مراقبان همین آژانس ساخته شده — نه کل پلتفرم.
                 </p>
               </CardContent>
             </Card>
 
             {data.suggestions.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                هیچ مراقب مناسبی در استخر این آژانس یافت نشد — ابتدا مراقب به آژانس اضافه کنید.
+                هیچ مراقب مناسبی در میان مراقبان این آژانس یافت نشد — ابتدا مراقب به آژانس اضافه کنید.
               </p>
             ) : (
               <div className="space-y-3">

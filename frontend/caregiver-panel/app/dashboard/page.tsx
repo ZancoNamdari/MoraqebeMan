@@ -69,7 +69,7 @@ export default function DashboardPage() {
     setJoiningAgency(true); setAgencyMessage(null)
     try {
       await agencyService.joinAsCaregiver(agencyCode.trim().toUpperCase())
-      setAgencyMessage({ kind: "success", text: "درخواست شما ثبت شد — پس از تأیید آژانس، به استخر مراقبان آن اضافه می‌شوید." })
+      setAgencyMessage({ kind: "success", text: "درخواست شما ثبت شد — پس از تأیید آژانس، به تیم مراقبان آن می‌پیوندید." })
       setAgencyCode("")
     } catch (err: any) {
       setAgencyMessage({ kind: "error", text: err?.response?.data?.detail || "کد آژانس معتبر نیست." })

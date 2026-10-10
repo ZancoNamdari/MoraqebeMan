@@ -894,7 +894,7 @@ function CaregiversPageInner() {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-slate-900">{isAddOnly ? "افزودن خدمت‌دهنده" : "خدمت‌دهنده"}</h1>
-          {!isAddOnly && <p className="text-xs text-slate-500">{pipelineItems.length} مراقب در استخر آژانس</p>}
+          {!isAddOnly && <p className="text-xs text-slate-500">{pipelineItems.length} مراقب زیرمجموعه‌ی آژانس</p>}
         </div>
         {!isAddOnly && !loadingPipeline && (
           <div className="flex items-center gap-2">
