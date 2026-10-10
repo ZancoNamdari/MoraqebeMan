@@ -133,7 +133,7 @@ export function YesNo({
         type="button"
         onClick={() => onChange(true)}
         className={cn(
-          "flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+          "min-h-11 flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
           value === true
             ? "border-emerald-400 bg-emerald-50 text-emerald-800"
             : "border-input text-muted-foreground hover:bg-accent"
@@ -145,7 +145,7 @@ export function YesNo({
         type="button"
         onClick={() => onChange(false)}
         className={cn(
-          "flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+          "min-h-11 flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
           value === false
             ? "border-primary/40 bg-secondary text-foreground"
             : "border-input text-muted-foreground hover:bg-accent"

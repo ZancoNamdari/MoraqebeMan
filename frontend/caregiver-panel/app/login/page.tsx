@@ -156,7 +156,7 @@ function LoginForm() {
                 </Button>
               )}
 
-              <button type="button" onClick={() => { setMode("phone"); setError(""); setMessage(""); setSecondsLeft(0) }} className="w-full text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("phone"); setError(""); setMessage(""); setSecondsLeft(0) }} className="w-full py-3 text-center text-sm text-rose-600 hover:underline">
                 تغییر شماره موبایل
               </button>
             </form>

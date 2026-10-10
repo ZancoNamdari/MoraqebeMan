@@ -130,7 +130,7 @@ export default function BlacklistAppealPage() {
                       <div key={a.id} className="rounded-lg border border-pink-100 bg-pink-50/40 p-3">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">{a.created_at.slice(0, 16).replace("T", " — ")}</span>
-                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${STATUS_CLASS[a.status]}`}>
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASS[a.status]}`}>
                             {STATUS_LABEL[a.status]}
                           </span>
                         </div>
