@@ -584,6 +584,19 @@ class CaregiverProfile(models.Model):
             self.staff_notes = note
         self.save(update_fields=["interview_score", "interview_date", "interviewed_by", "staff_notes"])
 
+    def submit_for_review(self):
+        """مراقب پس از تکمیل فرم‌ها پرونده را برای بررسی ادمین می‌فرستد (پیش‌نویس/ردشده → در انتظار)."""
+        if self.status not in (CaregiverStatus.DRAFT, CaregiverStatus.REJECTED):
+            raise ValueError("این پروفایل در وضعیتی نیست که بتوان آن را برای بررسی ارسال کرد.")
+        old_status = self.status
+        self.status = CaregiverStatus.PENDING
+        self.rejection_reason = ""
+        self.save(update_fields=["status", "rejection_reason"])
+        CaregiverApprovalLog.objects.create(
+            caregiver=self, old_status=old_status, new_status=CaregiverStatus.PENDING,
+            performed_by=self.user, note="ارسال برای بررسی توسط مراقب",
+        )
+
     def request_more_documents(self, staff_user, note):
         """
         Only valid from PENDING — a candidate already approved,

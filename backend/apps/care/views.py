@@ -3,11 +3,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.audit.services import AuditService
-from apps.caregivers.models import CaregiverProfile
+from apps.caregivers.models import CaregiverProfile, CaregiverStatus
 from apps.families.models import FamilyPatientLink, LinkStatus, PatientProfile
 
 from .models import AssignmentStatus, CareLogEntry, CaregiverAssignment, CaregiverReview, MCDMWeightConfig
 from .matching import suggest_caregivers_for_patient
+from apps.caregivers.permissions import IsApprovedCaregiver
 from .permissions import IsAdminOrSuperuser, IsCaregiver, IsFamilyOrPatient
 from .serializers import (
     CareLogEntrySerializer,
@@ -69,6 +70,12 @@ class SupervisorAssignmentsView(APIView):
         if patient is None:
             return Response({"detail": "کد بیمار معتبر نیست."}, status=status.HTTP_404_NOT_FOUND)
 
+        if caregiver.status != CaregiverStatus.APPROVED:
+            return Response(
+                {"detail": "این مراقب هنوز فعال (تأییدشده) نیست و نمی‌توان او را تخصیص داد."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if CaregiverAssignment.objects.filter(caregiver=caregiver, patient=patient, status=AssignmentStatus.ACTIVE).exists():
             return Response({"detail": "این مراقب از قبل به این بیمار تخصیص یافته است."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -92,11 +99,14 @@ class SupervisorEndAssignmentView(APIView):
 
 
 class MyAssignedPatientsView(APIView):
-    """GET /api/care/me/patients/ — a caregiver's own active assignments."""
+    """GET /api/care/me/patients/ — a caregiver's own active assignments.
+    تا تأیید ادمین (غیرفعال) فهرست همیشه خالی است."""
     permission_classes = [IsCaregiver]
 
     def get(self, request):
-        caregiver = CaregiverProfile.objects.filter(user_id=request.user.id).first()
+        caregiver = CaregiverProfile.objects.filter(
+            user_id=request.user.id, status=CaregiverStatus.APPROVED,
+        ).first()
         if caregiver is None:
             return Response([])
         assignments = CaregiverAssignment.objects.filter(
@@ -112,8 +122,9 @@ class MyCareLogEntriesView(APIView):
     POST /api/care/me/log-entries/ — submit a new report. Only allowed
          for a patient this caregiver is actively assigned to — a
          caregiver can't report on someone they're not caring for.
+    فقط مراقبِ تأییدشده (فعال).
     """
-    permission_classes = [IsCaregiver]
+    permission_classes = [IsApprovedCaregiver]
 
     def get(self, request):
         caregiver = CaregiverProfile.objects.filter(user_id=request.user.id).first()

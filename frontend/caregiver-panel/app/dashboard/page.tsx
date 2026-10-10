@@ -58,6 +58,8 @@ export default function DashboardPage() {
   const [joiningAgency, setJoiningAgency] = useState(false)
   const [agencyMessage, setAgencyMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null)
   const [profileStatus, setProfileStatus] = useState<MyFullProfileStatus | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitMsg, setSubmitMsg] = useState<{ kind: "success" | "error"; text: string; missing?: string[] } | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -81,6 +83,20 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleSubmitForReview() {
+    setSubmitting(true); setSubmitMsg(null)
+    try {
+      const res = await myProfileStatusService.submit()
+      setSubmitMsg({ kind: "success", text: res.detail })
+      setProfileStatus(await myProfileStatusService.get())
+    } catch (err: any) {
+      const d = err?.response?.data
+      setSubmitMsg({ kind: "error", text: d?.detail || "ارسال با خطا مواجه شد.", missing: d?.missing })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const displayName = profileStatus?.identity?.full_name || user?.username
 
   return (
@@ -101,6 +117,32 @@ export default function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-3xl space-y-6 p-4">
+        {(profileStatus?.status === "draft" || profileStatus?.status === "rejected") && (
+          <Card className="border-sky-200 bg-sky-50">
+            <CardContent className="space-y-3 p-4 text-sm text-sky-900">
+              <p className="font-medium">
+                {profileStatus.status === "draft"
+                  ? "حساب شما ساخته شد، اما تا تأیید ادمین غیرفعال است."
+                  : "پروفایل شما تأیید نشد؛ پس از اصلاح می‌توانید دوباره ارسال کنید."}
+              </p>
+              <p className="text-xs">فرم‌های پروفایل را کامل کنید، شرایط را بپذیرید و سپس پرونده را برای بررسی ارسال کنید. پس از تأیید ادمین می‌توانید فعالیت را شروع کنید.</p>
+              {(profileStatus.missing_forms?.length ?? 0) > 0 && (
+                <ul className="list-disc space-y-0.5 pr-5 text-xs">
+                  {profileStatus.missing_forms!.map((m) => <li key={m}>{m}</li>)}
+                </ul>
+              )}
+              {submitMsg && (
+                <div className={`rounded-md p-2 text-xs ${submitMsg.kind === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>
+                  {submitMsg.text}
+                  {submitMsg.missing && <ul className="mt-1 list-disc pr-5">{submitMsg.missing.map((m) => <li key={m}>{m}</li>)}</ul>}
+                </div>
+              )}
+              <Button className="w-full sm:w-auto" disabled={submitting} onClick={handleSubmitForReview}>
+                {submitting ? "در حال ارسال..." : "ارسال برای بررسی ادمین"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         {profileStatus?.status === "pending" && (
           <Card className="border-blue-200 bg-blue-50">
             <CardContent className="p-4 text-sm text-blue-900">

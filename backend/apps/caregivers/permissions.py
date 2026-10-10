@@ -7,6 +7,19 @@ class IsCaregiver(BasePermission):
         return bool(user and getattr(user, "is_authenticated", False) and user.role == "caregiver")
 
 
+class IsApprovedCaregiver(BasePermission):
+    """مراقب فقط پس از تأییدِ ادمین «فعال» است: تا آن زمان (پیش‌نویس، در انتظار بررسی، رد یا
+    تعلیق) نمی‌تواند فعالیت (گزارش، یادداشت و ...) شروع کند."""
+    message = "حساب شما هنوز توسط ادمین تأیید نشده است؛ پس از تأیید می‌توانید فعالیت را شروع کنید."
+
+    def has_permission(self, request, view):
+        user = getattr(request, "user", None)
+        if not (user and getattr(user, "is_authenticated", False) and user.role == "caregiver"):
+            return False
+        from .models import CaregiverProfile, CaregiverStatus
+        return CaregiverProfile.objects.filter(user_id=user.id, status=CaregiverStatus.APPROVED).exists()
+
+
 class IsAdminOrSuperuser(BasePermission):
     def has_permission(self, request, view):
         user = getattr(request, "user", None)

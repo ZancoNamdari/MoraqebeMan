@@ -217,6 +217,7 @@ class MyFullProfileView(APIView):
             "rejection_reason": profile.rejection_reason,
             "blacklist_reason": profile.blacklist_reason,
             "needs_more_docs_note": profile.needs_more_docs_note,
+            "missing_forms": _missing_forms(profile, request.user.id),
             "identity": _get_identity_dict(request.user.id),
             "work_preferences": getattr(profile, "work_preferences", None),
             "service_areas": profile.service_areas.all(),
@@ -225,6 +226,29 @@ class MyFullProfileView(APIView):
             "references": profile.references.all(),
         }
         return Response(CaregiverFullProfileSerializer(data).data)
+
+
+class SubmitMyProfileForReviewView(APIView):
+    """
+    POST /api/caregivers/me/submit/
+    مراقبِ ثبت‌نام‌کرده پس از تکمیل فرم‌ها (و پذیرش شرایط) پرونده را برای بررسی ادمین می‌فرستد.
+    تا تأیید ادمین، حساب «غیرفعال» می‌ماند (تخصیص/گزارش/یادداشت ممکن نیست).
+    """
+    permission_classes = [IsCaregiver]
+
+    def post(self, request):
+        profile = _get_or_create_profile(request.user.id)
+        missing = _missing_forms(profile, request.user.id)
+        if missing:
+            return Response(
+                {"detail": "برای ارسال، ابتدا فرم‌های زیر را کامل کنید.", "missing": missing},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            profile.submit_for_review()
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "پرونده‌ی شما برای بررسی ارسال شد.", "status": profile.status})
 
 
 def _missing_forms(profile: CaregiverProfile, user_id: int) -> list[str]:

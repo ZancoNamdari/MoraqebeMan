@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from apps.audit.services import AuditService
 from apps.authentication.tasks import send_urgent_alert_sms
 from apps.authorization.permissions import IsAdminOrSuperuser, IsCaregiver, IsFamily
+from apps.caregivers.permissions import IsApprovedCaregiver
 
 from .models import CaregiverNoteAboutPatient, Complaint
 from .serializers import (
@@ -176,7 +177,7 @@ class MyPatientNotesView(APIView):
     CAREGIVER only, same "the account making this request must be the
     one it's actually about" reasoning as MyComplaintsView.
     """
-    permission_classes = [IsCaregiver]
+    permission_classes = [IsApprovedCaregiver]
 
     def get(self, request):
         notes = CaregiverNoteAboutPatient.objects.filter(caregiver__user=request.user).select_related(

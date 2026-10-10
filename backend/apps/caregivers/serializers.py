@@ -515,6 +515,7 @@ class CaregiverFullProfileSerializer(serializers.Serializer):
     rejection_reason = serializers.CharField(allow_blank=True)
     blacklist_reason = serializers.CharField(allow_blank=True)
     needs_more_docs_note = serializers.CharField(allow_blank=True)
+    missing_forms = serializers.ListField(child=serializers.CharField(), required=False)
     service_types = serializers.ListField(child=serializers.CharField(), required=False)
     service_subtypes = serializers.DictField(required=False)
     identity = serializers.DictField(allow_null=True)

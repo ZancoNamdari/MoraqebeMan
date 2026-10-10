@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 from apps.accounts.models import User, UserRole
 from apps.authentication.services import SimpleJWTTokenIssuer
 from apps.care.models import AssignmentStatus, CaregiverAssignment
-from apps.caregivers.models import CaregiverProfile
+from apps.caregivers.models import CaregiverProfile, CaregiverStatus
 from apps.families.models import FamilyProfile, PatientProfile
 
 
@@ -28,7 +28,7 @@ class CaregiverAssignmentTests(TestCase):
         self.sup_client = _client_for(self.supervisor)
 
         self.caregiver_user = _make_user("cg1", UserRole.CAREGIVER, "09121110070")
-        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user)
+        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user, status=CaregiverStatus.APPROVED)
 
         self.family_user = _make_user("fam1", UserRole.FAMILY, "09121110071")
         self.family_client = _client_for(self.family_user)
@@ -103,7 +103,7 @@ class CareLogEntryTests(TestCase):
     def setUp(self):
         self.supervisor = _make_user("sup2", UserRole.SUPERUSER, "09100000002")
         self.caregiver_user = _make_user("cg2", UserRole.CAREGIVER, "09121110080")
-        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user)
+        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user, status=CaregiverStatus.APPROVED)
         self.caregiver_client = _client_for(self.caregiver_user)
 
         self.family_user = _make_user("fam2", UserRole.FAMILY, "09121110081")
@@ -284,7 +284,7 @@ class CaregiverReviewTests(TestCase):
     def setUp(self):
         self.supervisor = _make_user("sup_review", UserRole.SUPERUSER, "09100000091")
         self.caregiver_user = _make_user("cg_review", UserRole.CAREGIVER, "09121118001")
-        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user)
+        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user, status=CaregiverStatus.APPROVED)
 
         self.family_user = _make_user("fam_review", UserRole.FAMILY, "09121118002")
         self.family_client = _client_for(self.family_user)
@@ -390,7 +390,7 @@ class CaregiverReviewsForStaffViewTests(TestCase):
         self.admin_client = _client_for(self.admin)
 
         self.caregiver_user = _make_user("review_staff_cg", UserRole.CAREGIVER, "09121119001")
-        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user)
+        self.caregiver = CaregiverProfile.objects.create(user=self.caregiver_user, status=CaregiverStatus.APPROVED)
 
         self.family_user = _make_user("review_staff_family", UserRole.FAMILY, "09121119002")
         self.family_client = _client_for(self.family_user)
