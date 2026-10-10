@@ -17,7 +17,6 @@ import {
   ShieldQuestionMark,
   HeartHandshake,
   ShieldCheck,
-  Activity,
   Receipt,
   LogOut,
   UserPlus,
@@ -71,9 +70,6 @@ export const NAV_ITEMS: NavItem[] = [
       // that page's isAddOnly. Submitting continues straight into
       // the new caregiver's wizard at caregivers/[id]/register.
       { label: "افزودن خدمت‌دهنده", href: `${ROUTES.caregivers}?add=1`, icon: UserPlus },
-      { label: "ارزیابی عملکرد", href: ROUTES.caregiverPerformance, icon: BarChart3 },
-      { label: "فعالیت", href: ROUTES.caregiverActivity, icon: Activity },
-      { label: "تنظیمات", href: ROUTES.caregiverSettings, icon: Settings },
       { label: "شکایات", href: ROUTES.complaints, icon: AlertTriangle },
       { label: "بانک اطلاعات خدمت‌دهندگان", href: ROUTES.candidates, icon: ClipboardList },
       { label: "درخواست‌های بازبینی مسدودیت", href: ROUTES.blacklistAppeals, icon: ShieldQuestionMark },
