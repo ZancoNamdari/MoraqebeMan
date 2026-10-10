@@ -60,13 +60,13 @@ export default function AnalyticsPage() {
         </div>
       ) : (
         <div className="space-y-5">
-          {/* بخش ۱: قیف پذیرش مراقبان */}
+          {/* بخش ۱: مراحل پذیرش مراقبان */}
           <div>
-            <h2 className="mb-2 px-1 text-sm font-semibold text-slate-900">قیف پذیرش مراقبان</h2>
+            <h2 className="mb-2 px-1 text-sm font-semibold text-slate-900">مراحل پذیرش مراقبان</h2>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <StatTile
                 label="نرخ تأیید" value={`${toPersianDigits(data.vetting_funnel.approval_rate_percent)}٪`}
-                sub={`از ${toPersianDigits(data.vetting_funnel.total_candidates)} کاندید`}
+                sub={`از ${toPersianDigits(data.vetting_funnel.total_candidates)} متقاضی`}
                 icon={BarChart3} colorClass="bg-emerald-50 text-emerald-700"
               />
               <StatTile

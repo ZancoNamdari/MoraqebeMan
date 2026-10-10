@@ -366,7 +366,7 @@ export default function CaregiverDetailPage() {
                     )}
                     {profile.status === "approved" && (
                       <Button size="sm" variant="outline" className="border-red-300 text-red-800 hover:bg-red-50" onClick={() => setReasonBox("blacklist")}>
-                        مسدود کردن (بلک‌لیست)
+                        مسدود کردن
                       </Button>
                     )}
                     {profile.status === "suspended" && (

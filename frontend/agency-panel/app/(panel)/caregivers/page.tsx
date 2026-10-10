@@ -912,7 +912,7 @@ function CaregiversPageInner() {
           {createError && <div className="rounded-md bg-red-50 p-2 text-xs text-red-700">{createError}</div>}
           <p className="text-xs text-slate-500">
             حساب مراقب با همین نام و شماره ساخته می‌شود — رمز عبور بعداً از طریق شماره موبایل خودِ مراقب بازیابی می‌شود.
-            این کاندید فقط زیر نظر همون کسی که الان ثبتش می‌کنه (شما، یا سوپروایزر/مدیر بالادستتون) در این کاریز دیده می‌شه.
+            این متقاضی فقط زیر نظر همون کسی که الان ثبتش می‌کنه (شما، یا سوپروایزر/مدیر بالادستتون) در این فهرست دیده می‌شه.
           </p>
           <div className="grid grid-cols-2 gap-3">
             <Field label="نام" required>

@@ -146,7 +146,7 @@ export default function DashboardPage() {
                 <AlertTriangle className="h-5 w-5 shrink-0 text-amber-700" />
                 <p className="text-sm text-amber-900">
                   <span className="font-bold">{toPersianDigits(needsAttentionCount)} مورد</span> نیاز به رسیدگی دارد —
-                  شامل شکایات باز، درخواست‌های بازبینی، و کاندیداهای در انتظار مدارک.
+                  شامل شکایات باز، درخواست‌های بازبینی، و متقاضیان در انتظار مدارک.
                 </p>
               </CardContent>
             </Card>
@@ -261,7 +261,7 @@ export default function DashboardPage() {
                 onClick={() => router.push(ROUTES.blacklistAppeals)}
               />
               <ActionCard
-                icon={ClipboardList} title="بانک اطلاعات مراقبان" description="پیگیری مصاحبه و وضعیت کاندیداها"
+                icon={ClipboardList} title="فهرست مراقبان" description="پیگیری مصاحبه و وضعیت متقاضیان"
                 badge={dashboard.candidates_needing_docs_count}
                 onClick={() => router.push(ROUTES.candidates)}
               />
