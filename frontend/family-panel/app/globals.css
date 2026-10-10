@@ -7,34 +7,35 @@
    Tailwind v4 @theme wiring already proven working in
    supervisor-panel; only the color values change here. */
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.99 0.006 15);
-  --foreground: oklch(0.32 0.03 15);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.32 0.03 15);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.32 0.03 15);
-  --primary: oklch(0.72 0.11 8);
-  --primary-foreground: oklch(0.99 0.005 15);
-  --secondary: oklch(0.96 0.02 12);
-  --secondary-foreground: oklch(0.4 0.05 10);
-  --muted: oklch(0.96 0.015 12);
-  --muted-foreground: oklch(0.55 0.03 12);
-  --accent: oklch(0.94 0.03 10);
-  --accent-foreground: oklch(0.4 0.06 10);
-  --destructive: oklch(0.6 0.19 20);
-  --destructive-foreground: oklch(0.99 0.005 15);
-  --border: oklch(0.92 0.015 12);
-  --input: oklch(0.92 0.015 12);
-  --ring: oklch(0.75 0.09 10);
-  --sidebar: oklch(0.98 0.01 12);
-  --sidebar-foreground: oklch(0.4 0.04 12);
-  --sidebar-primary: oklch(0.72 0.11 8);
-  --sidebar-primary-foreground: oklch(0.99 0.005 15);
-  --sidebar-accent: oklch(0.94 0.03 10);
-  --sidebar-accent-foreground: oklch(0.4 0.06 10);
-  --sidebar-border: oklch(0.92 0.015 12);
-  --sidebar-ring: oklch(0.75 0.09 10);
+  --radius: 1rem;
+  --background: #FFF7F5;
+  --foreground: #3B2A2C;
+  --card: #FFFFFF;
+  --card-foreground: #3B2A2C;
+  --popover: #FFFFFF;
+  --popover-foreground: #3B2A2C;
+  --primary: #C0516A;
+  --primary-strong: #A8405A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #FDE3E0;
+  --secondary-foreground: #7A3040;
+  --muted: #FBEDEA;
+  --muted-foreground: #7A5F62;
+  --accent: #FDE3E0;
+  --accent-foreground: #7A3040;
+  --destructive: #C2373A;
+  --destructive-foreground: #FFFFFF;
+  --border: #F3E3E0;
+  --input: #EBD3CF;
+  --ring: #E98A8A;
+  --sidebar: #FFF7F5;
+  --sidebar-foreground: #3B2A2C;
+  --sidebar-primary: #C0516A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #FDE3E0;
+  --sidebar-accent-foreground: #7A3040;
+  --sidebar-border: #F3E3E0;
+  --sidebar-ring: #E98A8A;
 }
 
 body {
@@ -51,6 +52,7 @@ body {
   --popover: oklch(0.27 0.025 12);
   --popover-foreground: oklch(0.96 0.01 12);
   --primary: oklch(0.78 0.1 8);
+  --primary-strong: oklch(0.85 0.09 8);
   --primary-foreground: oklch(0.2 0.02 12);
   --secondary: oklch(0.32 0.03 12);
   --secondary-foreground: oklch(0.96 0.01 12);
@@ -85,6 +87,7 @@ body {
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);

@@ -8,9 +8,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
-import { Building2, KeyRound, MessageSquareWarning, UserPlus, UsersRound, Copy, Check, ChevronLeft } from "lucide-react"
+import { BottomNav } from "@/components/layout/bottom-nav"
+import { Building2, KeyRound, MessageSquareWarning, UserPlus, UsersRound, Copy, Check, ChevronLeft, Heart, LogOut } from "lucide-react"
 import { ChoiceSelect } from "@/components/forms/fields"
-import { RELATION_TYPE, patientAvatar } from "@/lib/constants"
+import { RELATION_TYPE } from "@/lib/constants"
 import { patientService } from "@/services/patient.service"
 import { familyService } from "@/services/family.service"
 import { agencyService } from "@/services/agency.service"
@@ -75,40 +76,59 @@ export default function DashboardPage() {
     }
   }
 
-  const tile = "flex items-center gap-3 rounded-2xl border border-pink-100 bg-white p-4 text-right transition hover:-translate-y-0.5 hover:shadow-md hover:shadow-pink-100"
-  const tileIcon = "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-100 text-rose-700"
+  const tile = "flex min-h-11 items-center gap-3 rounded-2xl border border-border bg-white p-4 text-right shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+  const tileIcon = "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary-strong"
+  const todayParts = Object.fromEntries(
+    new Intl.DateTimeFormat("fa-IR-u-ca-persian", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+      .formatToParts(new Date()).map((x) => [x.type, x.value])
+  ) as Record<string, string>
+  const today = `${todayParts.weekday}، ${todayParts.day} ${todayParts.month} ${todayParts.year}`
+  const withCaregiver = patients.filter((p) => p.assigned_caregivers && p.assigned_caregivers.length > 0).length
+  const withoutCaregiver = patients.length - withCaregiver
+  const stat = "flex-1 text-center"
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/60 via-background to-background pb-10">
-      <AppHeader title="مراقب من">
-        {user && <span className="hidden text-sm text-muted-foreground sm:inline">سلام، {user.username}</span>}
-        <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={logout}>خروج</Button>
+    <div className="min-h-screen bg-background pb-28 md:pb-10">
+      <AppHeader tall subtitle={today} title={`سلام، ${family?.display_name || user?.username || ""}`}>
+        <Button size="sm" variant="ghost" className="bg-white/55 text-[#8A3B3B] hover:bg-white/80" onClick={logout} aria-label="خروج">
+          <LogOut className="h-4 w-4" aria-hidden="true" /> خروج
+        </Button>
       </AppHeader>
 
-      <main className="mx-auto max-w-3xl space-y-6 p-4">
+      <main className="mx-auto max-w-3xl space-y-6 px-4 pb-4">
+        {/* خلاصه‌ی وضعیت — روی سربرگ می‌نشیند */}
+        <section aria-label="خلاصه‌ی وضعیت" className="-mt-10 rounded-3xl border border-border bg-white p-4 shadow-[0_6px_20px_rgba(138,59,59,0.14)]">
+          {loading ? (
+            <Skeleton className="h-14 w-full rounded-2xl" />
+          ) : (
+            <div className="flex items-stretch divide-x divide-x-reverse divide-border">
+              <div className={stat}><p className="text-2xl font-extrabold">{patients.length.toLocaleString("fa-IR")}</p><p className="text-xs text-muted-foreground">خدمت‌گیرنده</p></div>
+              <div className={stat}><p className="text-2xl font-extrabold text-emerald-700">{withCaregiver.toLocaleString("fa-IR")}</p><p className="text-xs text-muted-foreground">دارای مراقب</p></div>
+              <div className={stat}><p className={`text-2xl font-extrabold ${withoutCaregiver ? "text-amber-700" : ""}`}>{withoutCaregiver.toLocaleString("fa-IR")}</p><p className="text-xs text-muted-foreground">بدون مراقب</p></div>
+            </div>
+          )}
+        </section>
+
         {/* خدمت‌گیرندگان — مهم‌ترین بخش، اول صفحه */}
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-bold text-rose-900">خدمت‌گیرندگان شما</h2>
+              <h2 className="text-lg font-extrabold">خدمت‌گیرندگان شما</h2>
               <p className="text-sm text-muted-foreground">
                 {loading ? "در حال بارگذاری…" : patients.length ? `${patients.length} خدمت‌گیرنده تحت نظر شما` : "برای هر نفر، نوع خدمت مورد نیاز را ثبت کنید"}
               </p>
             </div>
-            <Button
-              className="bg-gradient-to-l from-pink-400 to-rose-400 shadow-md shadow-pink-200/50 hover:from-pink-500 hover:to-rose-500"
-              onClick={() => router.push(ROUTES.newPatient)}
-            >
-              <UserPlus className="ml-1.5 h-4 w-4" /> افزودن خدمت‌گیرنده
+            <Button className="rounded-xl" onClick={() => router.push(ROUTES.newPatient)}>
+              <UserPlus className="h-4 w-4" aria-hidden="true" /> افزودن
             </Button>
           </div>
 
           {loading ? (
             <div className="grid gap-3 sm:grid-cols-2">{[1, 2].map((i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}</div>
           ) : patients.length === 0 ? (
-            <Card className="border-pink-100">
+            <Card>
               <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
-                <span className="text-3xl">🌷</span>
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-primary-strong"><Heart className="h-7 w-7" aria-hidden="true" /></span>
                 <p className="text-muted-foreground">هنوز خدمت‌گیرنده‌ای ثبت نشده. خدمت‌گیرنده‌ی جدید اضافه کنید یا با کد یک بیمار درخواست دسترسی دهید.</p>
                 <Button onClick={() => router.push(ROUTES.newPatient)}>افزودن اولین خدمت‌گیرنده</Button>
               </CardContent>
@@ -119,13 +139,13 @@ export default function DashboardPage() {
                 <button
                   key={p.id}
                   onClick={() => router.push(ROUTES.patientDetail(p.id))}
-                  className="flex items-center gap-3 rounded-2xl border border-pink-100 bg-white p-4 text-right shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-pink-100"
+                  className="flex items-center gap-3 rounded-3xl border border-border bg-white p-4 text-right shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-xl">
-                    {patientAvatar(p.gender)}
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#F6C9C4] text-lg font-extrabold text-[#8A3B3B]" aria-hidden="true">
+                    {(p.full_name || "؟").trim().charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-rose-950">
+                    <p className="truncate font-bold">
                       {p.full_name}
                       {jalaliAge(p.birth_date) !== null && (
                         <span className="mr-1.5 text-xs font-normal text-muted-foreground">{jalaliAge(p.birth_date)!.toLocaleString("fa-IR")} ساله</span>
@@ -134,7 +154,7 @@ export default function DashboardPage() {
                     <p className="truncate text-xs text-muted-foreground">
                       {[p.province_name, p.city_name].filter(Boolean).join("، ") || "بدون آدرس ثبت‌شده"}
                     </p>
-                    <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs ${p.service_type ? "bg-pink-100 text-rose-800" : "bg-amber-50 text-amber-700"}`}>
+                    <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs ${p.service_type ? "bg-accent text-secondary-foreground" : "bg-amber-50 text-amber-800"}`}>
                       {p.service_type ? [serviceLabel(p.service_type), subtypeLabel(p.service_type, p.service_subtype)].filter(Boolean).join(" · ") : "نوع خدمت مشخص نشده"}
                     </span>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
@@ -151,27 +171,27 @@ export default function DashboardPage() {
         </section>
 
         {/* دسترسی‌های سریع */}
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label="دسترسی‌های سریع">
           <button className={tile} onClick={() => router.push(ROUTES.caregivers)}>
             <span className={tileIcon}><UsersRound className="h-5 w-5" /></span>
-            <span><span className="block text-sm font-semibold text-rose-900">مراقبان تأییدشده</span><span className="block text-xs text-muted-foreground">پروفایل، مهارت‌ها و نظر خانواده‌ها</span></span>
+            <span><span className="block text-sm font-bold">مراقبان تأییدشده</span><span className="block text-xs text-muted-foreground">پروفایل، مهارت‌ها و نظر خانواده‌ها</span></span>
           </button>
           <button className={tile} onClick={() => router.push(ROUTES.complaints)}>
             <span className={tileIcon}><MessageSquareWarning className="h-5 w-5" /></span>
-            <span><span className="block text-sm font-semibold text-rose-900">شکایات و بازخورد</span><span className="block text-xs text-muted-foreground">مشاهده یا ثبت شکایت</span></span>
+            <span><span className="block text-sm font-bold">شکایات و بازخورد</span><span className="block text-xs text-muted-foreground">مشاهده یا ثبت شکایت</span></span>
           </button>
           <button className={tile} onClick={() => { setShowConnect((v) => !v); setShowJoinAgency(false) }}>
             <span className={tileIcon}><KeyRound className="h-5 w-5" /></span>
-            <span><span className="block text-sm font-semibold text-rose-900">دسترسی به بیمار با کد</span><span className="block text-xs text-muted-foreground">وضعیت و مراقبت یک بیمار را ببینید</span></span>
+            <span><span className="block text-sm font-bold">دسترسی به بیمار با کد</span><span className="block text-xs text-muted-foreground">وضعیت و مراقبت یک بیمار را ببینید</span></span>
           </button>
           <button className={tile} onClick={() => { setShowJoinAgency((v) => !v); setShowConnect(false) }}>
             <span className={tileIcon}><Building2 className="h-5 w-5" /></span>
-            <span><span className="block text-sm font-semibold text-rose-900">عضویت در آژانس</span><span className="block text-xs text-muted-foreground">با کد آژانس درخواست عضویت دهید</span></span>
+            <span><span className="block text-sm font-bold">عضویت در آژانس</span><span className="block text-xs text-muted-foreground">با کد آژانس درخواست عضویت دهید</span></span>
           </button>
         </section>
 
         {showConnect && (
-          <Card className="border-pink-100">
+          <Card>
             <CardContent className="space-y-3 p-4">
               <p className="text-xs text-muted-foreground">کد بیماری که می‌خواهید وضعیت و مراقبت او را ببینید وارد کنید — دسترسی شما بلافاصله فعال می‌شود.</p>
               {connectMessage && (
@@ -187,7 +207,7 @@ export default function DashboardPage() {
         )}
 
         {showJoinAgency && (
-          <Card className="border-pink-100">
+          <Card>
             <CardContent className="space-y-3 p-4">
               <p className="text-xs text-muted-foreground">اگر خدمت شما از طریق یک شرکت یا آژانس مراقبتی تأمین می‌شود، با کد آژانس درخواست عضویت دهید.</p>
               {agencyMessage && (
@@ -202,13 +222,13 @@ export default function DashboardPage() {
         )}
 
         {family && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-pink-100 bg-gradient-to-l from-pink-50 to-rose-50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-border bg-accent/60 p-4">
             <div>
               <p className="text-xs text-muted-foreground">کد عضویت شما — برای دریافت دعوت از یک بیمار</p>
-              <p dir="ltr" className="text-left text-lg font-bold tracking-wider text-rose-700">{family.access_code}</p>
+              <p dir="ltr" className="text-left text-lg font-bold tracking-wider text-primary-strong">{family.access_code}</p>
             </div>
             <Button
-              size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50"
+              size="sm" variant="outline" className="bg-white"
               onClick={() => { navigator.clipboard?.writeText(family.access_code); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
             >
               {copied ? <><Check className="ml-1.5 h-4 w-4" /> کپی شد</> : <><Copy className="ml-1.5 h-4 w-4" /> کپی کد</>}
@@ -216,6 +236,7 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+      <BottomNav />
     </div>
   )
 }

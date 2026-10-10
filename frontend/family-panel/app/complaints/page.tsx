@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
+import { BottomNav } from "@/components/layout/bottom-nav"
 import { MessageSquareWarning } from "lucide-react"
 import { Field, ChoiceSelect } from "@/components/forms/fields"
 import { complaintsService, type ComplaintListItem } from "@/services/complaints.service"
@@ -74,13 +75,13 @@ export default function ComplaintsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
+    <div className="min-h-screen bg-background pb-28 md:pb-10">
       <AppHeader title="شکایات و بازخورد" maxWidth="max-w-2xl">
         <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
       </AppHeader>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
-        <Card className="border-pink-100">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base text-rose-900">ثبت شکایت جدید</CardTitle>
             {!showForm && patients.length > 0 && (
@@ -130,7 +131,7 @@ export default function ComplaintsPage() {
           )}
         </Card>
 
-        <Card className="border-pink-100">
+        <Card>
           <CardHeader><CardTitle className="text-base text-rose-900">شکایات ثبت‌شده ({complaints.length})</CardTitle></CardHeader>
           <CardContent>
             {loading ? (
@@ -162,6 +163,7 @@ export default function ComplaintsPage() {
           </CardContent>
         </Card>
       </main>
+      <BottomNav />
     </div>
   )
 }

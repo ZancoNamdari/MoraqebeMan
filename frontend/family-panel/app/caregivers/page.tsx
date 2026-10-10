@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
+import { BottomNav } from "@/components/layout/bottom-nav"
 import { MapPin, Search, Star } from "lucide-react"
 import { CaregiverAvatar } from "@/components/caregivers/caregiver-avatar"
 import { caregiverDirectoryService } from "@/services/caregiver-directory.service"
@@ -49,7 +50,7 @@ export default function CaregiversDirectoryPage() {
   const pages = Math.max(1, Math.ceil(total / pageSize))
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
+    <div className="min-h-screen bg-background pb-28 md:pb-10">
       <AppHeader title="مراقبان تأییدشده">
         <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
       </AppHeader>
@@ -146,6 +147,7 @@ export default function CaregiversDirectoryPage() {
           </div>
         )}
       </main>
+      <BottomNav />
     </div>
   )
 }
