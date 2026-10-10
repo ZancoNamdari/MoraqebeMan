@@ -48,7 +48,7 @@ def public_display_name(caregiver):
 def _approved_qs():
     return (
         CaregiverProfile.objects.filter(status=CaregiverStatus.APPROVED)
-        .select_related("user", "user__caregiver_identity_profile", "user__caregiver_identity_profile__city", "user__caregiver_identity_profile__province")
+        .select_related("user", "user__caregiver_identity_profile", "user__caregiver_identity_profile__city", "user__caregiver_identity_profile__province", "experience")
     )
 
 
@@ -193,21 +193,62 @@ def _trait_profiles(caregiver):
     return list(q.trait_profiles or []) if q else []
 
 
-def serialize_card(caregiver):
+def card_stats(caregivers):
+    """آمارِ کارت‌ها (امتیاز، تعداد مراقبت، عکس) برای یک صفحه‌ی کامل با ۳ کوئری —
+    به‌جای ۴ کوئری برای هر کارت (۱۰۰+ کوئری در هر صفحه)."""
+    ids = [cg.id for cg in caregivers]
+    if not ids:
+        return {}
+    from .models import CaregiverDocumentReviewStatus, CaregiverDocumentType, CaregiverDocumentUpload
+    review_model = CaregiverProfile.reviews.rel.related_model
+    assignment_model = CaregiverProfile.assignments.rel.related_model
+    ratings = {
+        row["caregiver_id"]: (row["avg"], row["n"])
+        for row in review_model.objects.filter(caregiver_id__in=ids)
+        .values("caregiver_id").annotate(avg=Avg("rating"), n=Count("id"))
+    }
+    cares = {
+        row["caregiver_id"]: row["n"]
+        for row in assignment_model.objects.filter(caregiver_id__in=ids)
+        .values("caregiver_id").annotate(n=Count("id"))
+    }
+    photos = {}
+    for up in CaregiverDocumentUpload.objects.filter(
+        caregiver_id__in=ids, document_type=CaregiverDocumentType.PERSONAL_PHOTO,
+        status=CaregiverDocumentReviewStatus.APPROVED,
+    ):
+        photos.setdefault(up.caregiver_id, up.file.url if up.file else None)
+    out = {}
+    for cg in caregivers:
+        avg, n = ratings.get(cg.id, (None, 0))
+        out[cg.id] = {
+            "avg": round(avg, 1) if avg is not None else None,
+            "n": n,
+            "care": cares.get(cg.id, 0),
+            "sat": None if avg is None else round(avg / 5 * 100),
+            "photo": photos.get(cg.id),
+        }
+    return out
+
+
+def serialize_card(caregiver, stats=None):
     identity = getattr(caregiver.user, "caregiver_identity_profile", None)
-    avg, n = _rating(caregiver)
+    if stats is not None:
+        avg, n = stats["avg"], stats["n"]
+    else:
+        avg, n = _rating(caregiver)
     return {
         "id": caregiver.user_id,
         "display_name": public_display_name(caregiver),
         "gender": identity.gender if identity else "",
         "age": identity.age if identity else None,
-        "photo_url": profile_photo_url(caregiver),
+        "photo_url": stats["photo"] if stats is not None else profile_photo_url(caregiver),
         "city": getattr(getattr(identity, "city", None), "name", "") if identity else "",
         "services": _service_labels(caregiver),
         "avg_rating": avg,
         "review_count": n,
-        "care_count": care_count(caregiver),
-        "satisfaction_percent": satisfaction_percent(caregiver),
+        "care_count": stats["care"] if stats is not None else care_count(caregiver),
+        "satisfaction_percent": stats["sat"] if stats is not None else satisfaction_percent(caregiver),
         "special_talents": special_talent_labels(caregiver),
         "elderly_experience": _one(
             getattr(getattr(caregiver, "experience", None), "elderly_care_experience", ""), c.ExperienceRange,
@@ -299,7 +340,9 @@ class PublicCaregiverListView(APIView):
         except ValueError:
             page = 1
         start = (page - 1) * self.PAGE_SIZE
-        rows = [serialize_card(cg) for cg in qs[start:start + self.PAGE_SIZE]]
+        page_items = list(qs[start:start + self.PAGE_SIZE])
+        stats = card_stats(page_items)
+        rows = [serialize_card(cg, stats[cg.id]) for cg in page_items]
         return Response({"count": total, "page": page, "page_size": self.PAGE_SIZE, "results": rows})
 
 

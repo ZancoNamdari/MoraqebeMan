@@ -122,3 +122,17 @@ class FamilyViewAgencyIsolationTests(FamilyViewPreviewTests):
         self.assertEqual(self.client.get(url(a2)).status_code, 404)
         # آژانس ۲ با id آژانس ۱ در مسیر: ۴۰۳
         self.assertEqual(self.client.get(url(a1)).status_code, 403)
+
+
+class PublicListQueryBudgetTests(PublicCaregiverProfileTests):
+    def test_list_query_count_does_not_grow_with_page_size(self):
+        for i in range(12):
+            u = mk_user(f"0913{i:07d}", "caregiver", first_name=f"م{i}", last_name="ک")
+            CaregiverProfile.objects.create(user=u, status=CaregiverStatus.APPROVED, service_types=["salmandyar"])
+        self.client.force_authenticate(self.family)
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        with CaptureQueriesContext(connection) as q:
+            res = self.client.get("/api/caregivers/public/")
+        self.assertEqual(res.json()["count"], 13)
+        self.assertLessEqual(len(q), 10)
