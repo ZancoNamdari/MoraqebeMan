@@ -77,7 +77,7 @@ export default function ExperienceFormPage() {
             {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
             <FormSection title="سابقه مراقبت">
-                <Field label="سابقه مراقبت از سالمند">
+                <Field label="سابقه ارائه خدمت">
                   <ChoiceSelect choices={EXPERIENCE_RANGE} value={form.elderly_care_experience || ""} onChange={(v) => set("elderly_care_experience", v)} />
                 </Field>
                 <Field label="سابقه سایر خدمات مراقبتی">
@@ -86,7 +86,7 @@ export default function ExperienceFormPage() {
                 <Field label="محل‌های سابق فعالیت">
                   <CheckboxGroup choices={PREVIOUS_WORKPLACE} value={form.previous_workplaces || []} onChange={(v) => set("previous_workplaces", v)} />
                 </Field>
-                <Field label="تعداد سالمندانی که تاکنون مراقبت کرده‌اید">
+                <Field label="تعداد افرادی که تاکنون به آن‌ها خدمت داده‌اید">
                   <ChoiceSelect choices={PATIENTS_CARED_FOR_COUNT} value={form.patients_cared_for_count || ""} onChange={(v) => set("patients_cared_for_count", v)} />
                 </Field>
             </FormSection>
@@ -96,8 +96,8 @@ export default function ExperienceFormPage() {
                 </Field>
 
                 <Field label="سابقه مراقبت مقیم (شبانه‌روزی)"><YesNo value={form.live_in_experience ?? null} onChange={(v) => set("live_in_experience", v)} /></Field>
-                <Field label="سابقه مراقبت هم‌زمان از زوج سالمند"><YesNo value={form.couple_care_experience ?? null} onChange={(v) => set("couple_care_experience", v)} /></Field>
-                <Field label="سابقه مراقبت تنها از یک سالمند"><YesNo value={form.solo_elderly_care_experience ?? null} onChange={(v) => set("solo_elderly_care_experience", v)} /></Field>
+                <Field label="سابقه خدمت هم‌زمان به یک زوج"><YesNo value={form.couple_care_experience ?? null} onChange={(v) => set("couple_care_experience", v)} /></Field>
+                <Field label="سابقه خدمت تنها به یک نفر"><YesNo value={form.solo_elderly_care_experience ?? null} onChange={(v) => set("solo_elderly_care_experience", v)} /></Field>
                 <Field label="سابقه رانندگی برای بیمار"><YesNo value={form.driving_for_patient_experience ?? null} onChange={(v) => set("driving_for_patient_experience", v)} /></Field>
             </FormSection>
             <FormSection title="آخرین محل فعالیت و توضیحات">

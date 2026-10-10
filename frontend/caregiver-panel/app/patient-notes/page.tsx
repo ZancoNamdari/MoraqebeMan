@@ -66,14 +66,14 @@ export default function PatientNotesPage() {
     <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
       <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">یادداشت درباره سالمند</h1>
+          <h1 className="font-bold text-rose-900">یادداشت درباره دریافت‌کننده خدمت</h1>
           <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
         </div>
       </header>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
         <p className="text-xs text-muted-foreground">
-          این یادداشت‌ها فقط توسط تیم مراقب من دیده می‌شود، نه خانواده سالمند.
+          این یادداشت‌ها فقط توسط تیم مراقب من دیده می‌شود، نه خانواده‌ی دریافت‌کننده خدمت.
         </p>
 
         <Card className="border-pink-100">
@@ -86,7 +86,7 @@ export default function PatientNotesPage() {
           {showForm && (
             <CardContent className="space-y-3">
               {error && <div className="rounded-md bg-rose-50 p-2 text-xs text-rose-700">{error}</div>}
-              <Field label="سالمند مربوطه" required>
+              <Field label="دریافت‌کننده‌ی خدمت" required>
                 <select
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={patientId ?? ""}
@@ -116,7 +116,7 @@ export default function PatientNotesPage() {
           )}
           {!showForm && assignments.length === 0 && !loading && (
             <CardContent>
-              <p className="text-sm text-muted-foreground">در حال حاضر به سالمندی تخصیص ندارید.</p>
+              <p className="text-sm text-muted-foreground">در حال حاضر به خدمتی تخصیص ندارید.</p>
             </CardContent>
           )}
         </Card>

@@ -151,7 +151,7 @@ export default function DashboardPage() {
         {profileStatus?.status === "pending" && (
           <Card className="border-blue-200 bg-blue-50">
             <CardContent className="p-4 text-sm text-blue-900">
-              پروفایل شما در انتظار بررسی تیم مراقب من است. تا زمان تأیید، امکان تخصیص سالمند وجود ندارد.
+              پروفایل شما در انتظار بررسی تیم مراقب من است. تا زمان تأیید، امکان تخصیص خدمت وجود ندارد.
             </CardContent>
           </Card>
         )}
@@ -212,7 +212,8 @@ export default function DashboardPage() {
         <div>
           <h2 className="mb-2 px-1 text-sm font-semibold text-rose-900">ابزارها</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <ActionCard icon={NotebookPen} title="یادداشت درباره سالمند" description="ثبت مشاهدات یا نگرانی‌ها" onClick={() => router.push(ROUTES.patientNotes)} />
+            <ActionCard icon={NotebookPen} title="یادداشت درباره دریافت‌کننده خدمت" description="ثبت مشاهدات یا نگرانی‌ها" onClick={() => router.push(ROUTES.patientNotes)} />
+            <ActionCard icon={ClipboardList} title="سوابق خدمت من" description="افرادی که خدمتشان را پذیرفته‌اید" onClick={() => router.push(ROUTES.serviceHistory)} />
             <ActionCard icon={RotateCcwClock} title="تاریخچه حساب من" description="رویدادهای مهم حساب شما" onClick={() => router.push(ROUTES.history)} />
           </div>
         </div>

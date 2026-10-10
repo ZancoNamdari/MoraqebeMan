@@ -115,8 +115,8 @@ export default function MyProfilePage() {
             <Section title="سوابق شغلی">
               {profile.experience ? (
                 <>
-                  <Row label="سابقه مراقبت از سالمند" value={labelForValue(PATIENTS_CARED_FOR_COUNT, profile.experience.elderly_care_experience)} />
-                  <Row label="تعداد سالمندانی که مراقبت کرده‌اید" value={labelForValue(PATIENTS_CARED_FOR_COUNT, profile.experience.patients_cared_for_count)} />
+                  <Row label="سابقه ارائه خدمت" value={labelForValue(PATIENTS_CARED_FOR_COUNT, profile.experience.elderly_care_experience)} />
+                  <Row label="تعداد افرادی که به آن‌ها خدمت داده‌اید" value={labelForValue(PATIENTS_CARED_FOR_COUNT, profile.experience.patients_cared_for_count)} />
                   <Row label="آخرین محل کار" value={profile.experience.last_workplace} />
                   <TagList label="محل‌های کار قبلی" values={profile.experience.previous_workplaces} choices={PREVIOUS_WORKPLACE} />
                   <TagList label="تجربه شرایط خاص" values={profile.experience.special_conditions_experience} choices={SPECIAL_CONDITION_EXPERIENCE} />

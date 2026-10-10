@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -113,6 +114,42 @@ class MyAssignedPatientsView(APIView):
             caregiver=caregiver, status=AssignmentStatus.ACTIVE,
         ).select_related("patient")
         return Response(CaregiverAssignmentSerializer(assignments, many=True).data)
+
+
+class MyServiceHistoryView(APIView):
+    """GET /api/care/me/service-history/ — سوابق: every service-recipient this
+    caregiver has accepted (current and finished), newest first. Only the
+    recipient's name and the assignment facts are exposed — no access code,
+    no contact data."""
+    permission_classes = [IsCaregiver]
+
+    def get(self, request):
+        caregiver = CaregiverProfile.objects.filter(
+            user_id=request.user.id, status=CaregiverStatus.APPROVED,
+        ).first()
+        if caregiver is None:
+            return Response([])
+        assignments = (
+            CaregiverAssignment.objects.filter(caregiver=caregiver)
+            .select_related("patient").order_by("-assigned_at", "-id")
+        )
+        log_counts = dict(
+            CareLogEntry.objects.filter(caregiver=caregiver)
+            .values_list("assignment_id").annotate(n=Count("id"))
+        )
+        return Response([
+            {
+                "id": a.id,
+                "recipient_name": a.patient.full_name,
+                "service_type": a.service_type,
+                "service_type_display": a.get_service_type_display() if a.service_type else "",
+                "status": a.status,
+                "assigned_at": str(a.assigned_at)[:10] if a.assigned_at else None,
+                "ended_at": str(a.ended_at)[:10] if a.ended_at else None,
+                "report_count": log_counts.get(a.id, 0),
+            }
+            for a in assignments
+        ])
 
 
 class MyCareLogEntriesView(APIView):

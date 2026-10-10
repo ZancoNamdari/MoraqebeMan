@@ -80,7 +80,7 @@ export default function ServiceAreasPage() {
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
         <p className="text-sm text-muted-foreground">
-          مناطقی را اضافه کنید که حاضرید در آن‌ها به سالمندان سر بزنید. می‌توانید فقط استان،
+          مناطقی را اضافه کنید که حاضرید در آن‌ها خدمت ارائه دهید. می‌توانید فقط استان،
           یا استان و شهر، یا هر سه سطح را برای هر منطقه مشخص کنید.
         </p>
 

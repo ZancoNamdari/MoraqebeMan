@@ -45,6 +45,24 @@ class CaregiverAssignmentTests(TestCase):
         self.assertEqual(response.data["status"], "active")
         self.assertEqual(CaregiverAssignment.objects.count(), 1)
 
+    def test_caregiver_service_history_lists_current_and_ended_without_access_code(self):
+        other = PatientProfile.objects.create(full_name="مراجع قبلی")
+        CaregiverAssignment.objects.create(caregiver=self.caregiver, patient=self.patient, status="active")
+        CaregiverAssignment.objects.create(caregiver=self.caregiver, patient=other, status="ended")
+        response = _client_for(self.caregiver_user).get("/api/care/me/service-history/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({r["recipient_name"] for r in response.data}, {"بیمار تست", "مراجع قبلی"})
+        self.assertEqual({r["status"] for r in response.data}, {"active", "ended"})
+        self.assertNotIn("access_code", str(response.data))
+        self.assertNotIn(self.patient.access_code, str(response.data))
+
+    def test_service_history_forbidden_for_family_and_empty_when_not_approved(self):
+        self.assertEqual(self.family_client.get("/api/care/me/service-history/").status_code, 403)
+        self.caregiver.status = CaregiverStatus.PENDING
+        self.caregiver.save()
+        CaregiverAssignment.objects.create(caregiver=self.caregiver, patient=self.patient)
+        self.assertEqual(_client_for(self.caregiver_user).get("/api/care/me/service-history/").data, [])
+
     def test_assigning_same_pair_twice_while_active_rejected(self):
         self.sup_client.post("/api/care/assignments/", {
             "caregiver_user_id": self.caregiver_user.id, "patient_code": self.patient.access_code,

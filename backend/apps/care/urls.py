@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     MyAssignedPatientsView,
+    MyServiceHistoryView,
     MyCareLogEntriesView,
     AssignmentReviewView,
     CaregiverReviewsForStaffView,
@@ -28,6 +29,7 @@ urlpatterns = [
 
     # Caregiver-facing
     path("care/me/patients/", MyAssignedPatientsView.as_view(), name="care-my-patients"),
+    path("care/me/service-history/", MyServiceHistoryView.as_view(), name="care-my-service-history"),
     path("care/me/log-entries/", MyCareLogEntriesView.as_view(), name="care-my-log-entries"),
 
     # Family/patient-facing

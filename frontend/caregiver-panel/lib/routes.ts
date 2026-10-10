@@ -11,6 +11,7 @@ export const ROUTES = {
   patientNotes: "/patient-notes",
   references: "/profile/references",
   history: "/history",
+  serviceHistory: "/service-history",
   blacklistAppeal: "/blacklist-appeal",
   myProfile: "/my-profile",
 }
