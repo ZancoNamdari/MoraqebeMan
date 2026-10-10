@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, X } from "lucide-react"
+import { Plus, X, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Per-tag color, keyed by the exact tag text — the service-category
@@ -23,7 +23,13 @@ const TAG_COLORS: Record<string, string> = {
 }
 const DEFAULT_TAG_COLOR = "bg-blue-50 text-blue-700"
 
+// برچسب ویژه: خدمت‌دهنده‌ای که هیچ شرط همکاری‌ای ندارد و هر شرایطی را می‌پذیرد، فقط باید
+// سریع‌السیر (فوری) در محل خدمت حاضر شود. فقط آژانس/ادمین می‌زند؛ قابل فیلتر است.
+export const RAPID_RESPONSE_TAG = "سریع‌السیر (فورس‌ماژور)"
+export const RAPID_RESPONSE_DESCRIPTION = "بدون شرط همکاری؛ هر شرایطی را می‌پذیرد — فقط باید سریعاً در محل خدمت حاضر شود."
+
 function tagColorClass(tag: string) {
+  if (tag === RAPID_RESPONSE_TAG) return "bg-red-100 text-red-800 ring-1 ring-red-300"
   return TAG_COLORS[tag] || DEFAULT_TAG_COLOR
 }
 
@@ -57,8 +63,12 @@ export function TagEditor({ tags, suggestions, onAdd, onRemove }: {
     <div className="mt-1.5">
       <div className="flex flex-wrap items-center gap-1">
         {tags.map((tag) => (
-          <span key={tag} className={cn("flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium", tagColorClass(tag))}>
-            #{tag}
+          <span
+            key={tag}
+            title={tag === RAPID_RESPONSE_TAG ? RAPID_RESPONSE_DESCRIPTION : undefined}
+            className={cn("flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium", tagColorClass(tag), tag === RAPID_RESPONSE_TAG && "text-xs font-bold")}
+          >
+            {tag === RAPID_RESPONSE_TAG ? <Zap className="h-3 w-3" aria-hidden="true" /> : "#"}{tag}
             <button onClick={() => onRemove(tag)} className="opacity-60 hover:opacity-100">
               <X className="h-2.5 w-2.5" />
             </button>
@@ -72,6 +82,10 @@ export function TagEditor({ tags, suggestions, onAdd, onRemove }: {
         </button>
       </div>
 
+      {tags.includes(RAPID_RESPONSE_TAG) && (
+        <p className="mt-1 text-xs leading-5 text-red-700">{RAPID_RESPONSE_DESCRIPTION}</p>
+      )}
+
       {open && (
         <div className="mt-1.5 rounded-md border border-slate-200 bg-white p-2">
           {availableSuggestions.length > 0 && (
@@ -80,6 +94,7 @@ export function TagEditor({ tags, suggestions, onAdd, onRemove }: {
                 <button
                   key={s}
                   onClick={() => onAdd(s)}
+                  title={s === RAPID_RESPONSE_TAG ? RAPID_RESPONSE_DESCRIPTION : undefined}
                   className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium opacity-80 hover:opacity-100", tagColorClass(s))}
                 >
                   {s}
