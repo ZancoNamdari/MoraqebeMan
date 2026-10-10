@@ -17,7 +17,9 @@ class AgencyProfileTests(BaseAPITestCase):
     def test_get_before_any_profile_auto_creates_one(self):
         response = self.client_.get("/api/agencies/me/")
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.data["access_code"].startswith("AGN-"))
+        # هر آژانس پیشوند سه‌حرفیِ مخصوص خودش را دارد: «QXK-92K7XQ»
+        import re
+        self.assertRegex(response.data["access_code"], r"^[A-Z]{3}-[A-Z0-9]{6}$")
         self.assertEqual(AgencyProfile.objects.filter(user_id=self.agency_user.id).count(), 1)
 
     def test_put_updates_company_name(self):
