@@ -163,6 +163,9 @@ export default function CaregiverRegistrationWizard() {
   const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, any>>({})
   const [traitProfiles, setTraitProfiles] = useState<TraitProfile[]>([])
   const [serviceTypes, setServiceTypes] = useState<string[]>([])
+  // «سریع‌السیر (فورس‌ماژور)»: بدون شرط همکاری — فقط باید سریعاً در محل خدمت حاضر شود. مراحل
+  // شرایط همکاری، سوابق و مهارت و پرسشنامه‌ی سازگاری حذف می‌شوند؛ فقط محل خدمت می‌ماند.
+  const [rapid, setRapid] = useState(false)
   const [serviceSubtypes, setServiceSubtypes] = useState<Record<string, string[]>>({})
 
   // Load whatever's already saved for this (always pre-existing)
@@ -178,6 +181,7 @@ export default function CaregiverRegistrationWizard() {
     caregiverWizardService.getServiceTypes(caregiverId).then((st) => {
       setServiceTypes(st.service_types)
       setServiceSubtypes(st.service_subtypes)
+      setRapid(!!st.rapid_response)
     }).catch(() => {})
     caregiverWizardService.getIdentity(caregiverId).then(setIdentity).catch(() => {})
     caregiverWizardService.getWorkPreferences(caregiverId).then(setWorkPrefs).catch(() => {})
@@ -201,6 +205,11 @@ export default function CaregiverRegistrationWizard() {
   // Same Enter-to-advance / smart-next-field keyboard navigation as
   // the original wizard — see its own comment for why advanceRef is
   // refreshed every render instead of just when `step` changes.
+  const stepOrder = rapid ? [0, 1, 2, 3, 5] : [0, 1, 2, 3, 4, 5, 6]
+  const visibleSteps = stepOrder.map((i) => (rapid && i === 3 ? "محل خدمت" : STEPS[i]))
+  const goNext = () => setStep((cur) => stepOrder[Math.min(stepOrder.indexOf(cur) + 1, stepOrder.length - 1)])
+  const goPrev = () => setStep((cur) => stepOrder[Math.max(stepOrder.indexOf(cur) - 1, 0)])
+
   const advanceRef = useRef<() => void>(() => {})
   useEffect(() => {
     advanceRef.current = () => {
@@ -425,7 +434,7 @@ export default function CaregiverRegistrationWizard() {
   async function handleServiceTypesStep() {
     setError([]); setSaving(true)
     try {
-      await caregiverWizardService.saveServiceTypes(caregiverId, { service_types: serviceTypes, service_subtypes: serviceSubtypes })
+      await caregiverWizardService.saveServiceTypes(caregiverId, { service_types: serviceTypes, service_subtypes: serviceSubtypes, rapid_response: rapid })
       setStep(2)
     } catch (err: any) {
       showErrors(err, "خطا در ذخیره نوع خدمت.")
@@ -454,6 +463,19 @@ export default function CaregiverRegistrationWizard() {
   }
 
   async function handleStep2() {
+    if (rapid) {
+      // فقط محل خدمت؛ شرایط همکاری لازم نیست.
+      setError([]); setSaving(true)
+      try {
+        await caregiverWizardService.saveWorkPreferences(caregiverId, { serves_all_areas: workPrefs.serves_all_areas } as any)
+        setStep(5)
+      } catch (err: any) {
+        showErrors(err, "ذخیره‌ی محل خدمت با خطا مواجه شد.")
+      } finally {
+        setSaving(false)
+      }
+      return
+    }
     const problems = collaborationProblems(workPrefs.collaboration_types, workPrefs.collaboration_schedule as CollaborationSchedule)
     if (problems.length > 0) {
       setError([{ field: "collaboration_schedule", messages: problems }])
@@ -486,8 +508,9 @@ export default function CaregiverRegistrationWizard() {
   async function handleStep4() {
     setError([]); setSaving(true)
     try {
-      await caregiverWizardService.saveReferences(caregiverId, references)
-      setStep(6)
+      await caregiverWizardService.saveReferences(caregiverId, references.filter((r) => r.full_name.trim() || r.phone_number.trim() || r.occupation.trim()))
+      if (rapid) setDone(true)
+      else setStep(6)
     } catch (err: any) {
       showErrors(err, "ثبت معرف‌ها با خطا مواجه شد.")
     } finally {
@@ -550,8 +573,8 @@ export default function CaregiverRegistrationWizard() {
         maxWidth="max-w-5xl"
         subheader={
           <>
-            <StepIndicator steps={STEPS} current={step} onNavigate={setStep} canNavigate />
-            <p className="mt-2 text-center text-sm font-medium text-muted-foreground">{STEPS[step]}</p>
+            <StepIndicator steps={visibleSteps} current={stepOrder.indexOf(step)} onNavigate={(i) => setStep(stepOrder[i])} canNavigate />
+            <p className="mt-2 text-center text-sm font-medium text-muted-foreground">{rapid && step === 3 ? "محل خدمت" : STEPS[step]}</p>
           </>
         }
       >
@@ -653,6 +676,20 @@ export default function CaregiverRegistrationWizard() {
                   </div>
                 )
               })}
+
+              <div className="rounded-md border border-red-200 bg-red-50 p-3">
+                <label className="flex cursor-pointer items-start gap-2 text-sm">
+                  <input type="checkbox" checked={rapid} onChange={(e) => setRapid(e.target.checked)} className="mt-1 accent-red-600" />
+                  <span>
+                    <span className="block font-bold text-red-800">سریع‌السیر (فورس‌ماژور)</span>
+                    <span className="block text-xs leading-5 text-red-900">
+                      این خدمت‌دهنده هیچ شرط همکاری‌ای ندارد و هر شرایطی را می‌پذیرد؛ فقط باید سریعاً در محل خدمت حاضر شود.
+                      با فعال کردن این گزینه مراحل «شرایط همکاری»، «سوابق و مهارت» و «پرسشنامه سازگاری» حذف می‌شوند و
+                      فقط هویت، محل خدمت و معرف‌ها (اختیاری) تکمیل می‌شود. برچسب «سریع‌السیر» روی کارت او نمایش داده می‌شود.
+                    </span>
+                  </span>
+                </label>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -797,7 +834,7 @@ export default function CaregiverRegistrationWizard() {
           </Card>
         )}
 
-        {step === 3 && (
+        {step === 3 && !rapid && (
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">💼</span> فرم ۲ — شرایط همکاری</CardTitle></CardHeader>
             <CardContent className="space-y-4">
@@ -913,6 +950,63 @@ export default function CaregiverRegistrationWizard() {
                   اطلاعات فوق تأیید و مسئولیت صحت آن پذیرفته می‌شود.
                 </label>
               </Field>
+            </CardContent>
+          </Card>
+        )}
+
+        {step === 3 && rapid && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">📍</span> محل خدمت</CardTitle>
+              <p className="text-sm text-muted-foreground">خدمت‌دهنده‌ی «سریع‌السیر» باید سریعاً در محل خدمت حاضر شود؛ مناطقی را که می‌تواند فوراً در آن‌ها حاضر شود ثبت کنید.</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormSection title="مناطق خدماتی" defaultOpen>
+                <div>
+                  <label className="mb-3 flex cursor-pointer items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={workPrefs.serves_all_areas}
+                      onChange={(e) => setWorkPrefs({ ...workPrefs, serves_all_areas: e.target.checked })}
+                      className="accent-primary"
+                    />
+                    همه مناطق / فرقی نداره
+                  </label>
+                  {!workPrefs.serves_all_areas && (
+                  <>
+                  <div className="mb-3 space-y-2">
+                    {areas.map((a, i) => (
+                      <div key={a.id ?? i} className="flex items-center justify-between rounded bg-muted p-2 text-sm">
+                        <span>{[a.province_name, a.city_name, a.district_name].filter(Boolean).join(" / ") || "(بدون منطقه انتخابی)"}</span>
+                        {a.id && (
+                          <button
+                            type="button"
+                            className="text-xs text-destructive underline"
+                            onClick={async () => {
+                              await caregiverWizardService.deleteServiceArea(caregiverId, a.id!)
+                              setAreas(areas.filter((x) => x.id !== a.id))
+                            }}
+                          >
+                            حذف
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    {areas.length === 0 && <p className="text-xs text-muted-foreground">هنوز منطقه‌ای اضافه نشده.</p>}
+                  </div>
+                  <LocationPicker
+                    province={newArea.province}
+                    city={newArea.city}
+                    district={newArea.district}
+                    onChange={setNewArea}
+                  />
+                  <Button type="button" variant="outline" className="mt-2" onClick={handleAddArea} disabled={!newArea.province || !newArea.city}>
+                    + افزودن این منطقه
+                  </Button>
+                  </>
+                  )}
+                </div>
+              </FormSection>
             </CardContent>
           </Card>
         )}
@@ -1212,7 +1306,7 @@ export default function CaregiverRegistrationWizard() {
       <footer className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl gap-2 p-3">
           {step > 0 && (
-            <Button variant="outline" size="lg" onClick={() => setStep(step - 1)} disabled={saving}>
+            <Button variant="outline" size="lg" onClick={goPrev} disabled={saving}>
               مرحله قبل
             </Button>
           )}
@@ -1243,7 +1337,7 @@ export default function CaregiverRegistrationWizard() {
           )}
           {step === 5 && (
             <Button className="flex-1" size="lg" onClick={handleStep4} disabled={saving}>
-              {saving ? "در حال ذخیره..." : "ذخیره و ادامه"}
+              {saving ? "در حال ذخیره..." : rapid ? "ذخیره و پایان" : "ذخیره و ادامه"}
             </Button>
           )}
           {step === 6 && (

@@ -340,11 +340,14 @@ def _reviewing_agency(profile: CaregiverProfile):
 
 
 def _missing_forms(profile: CaregiverProfile, user_id: int) -> list[str]:
+    from .rapid import is_rapid_response
+    rapid = is_rapid_response(profile)
     missing = []
     if not _get_identity_dict(user_id):
         missing.append("اطلاعات هویتی (فرم ۱)")
     if not hasattr(profile, "work_preferences"):
-        missing.append("شرایط همکاری (فرم ۲)")
+        # «سریع‌السیر»: فقط پذیرش قوانین لازم است، نه شرایط همکاری.
+        missing.append("پذیرش شرایط و تعهدات عضویت (باید توسط خود مراقب انجام شود)" if rapid else "شرایط همکاری (فرم ۲)")
     elif not profile.work_preferences.terms_accepted:
         # A supervisor can fill out every other field in form 2 on the
         # caregiver's behalf, but never this one (see
@@ -353,6 +356,11 @@ def _missing_forms(profile: CaregiverProfile, user_id: int) -> list[str]:
         # still can't be approved until they personally log into
         # their own account and accept the terms themselves.
         missing.append("پذیرش شرایط و تعهدات عضویت (باید توسط خود مراقب انجام شود)")
+    if rapid:
+        # باید سریعاً در محل خدمت حاضر شود ⇒ محل خدمت الزامی است؛ سوابق/مهارت لازم نیست.
+        if not profile.serves_all_areas and not profile.service_areas.exists():
+            missing.append("محل خدمت (حداقل یک منطقه خدماتی)")
+        return missing
     if not hasattr(profile, "experience"):
         missing.append("سوابق کاری (فرم ۳)")
     if not hasattr(profile, "skills"):

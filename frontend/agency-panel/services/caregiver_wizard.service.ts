@@ -63,10 +63,10 @@ export const caregiverWizardService = {
 
   async getServiceTypes(userId: number) {
     const { data } = await api.get(`${base}/${userId}/service-types/`)
-    return data as { service_types: string[]; service_subtypes: Record<string, string[]> }
+    return data as { service_types: string[]; service_subtypes: Record<string, string[]>; rapid_response?: boolean }
   },
 
-  async saveServiceTypes(userId: number, payload: { service_types: string[]; service_subtypes: Record<string, string[]> }) {
+  async saveServiceTypes(userId: number, payload: { service_types: string[]; service_subtypes: Record<string, string[]>; rapid_response?: boolean }) {
     const { data } = await api.put(`${base}/${userId}/service-types/`, payload)
     return data
   },

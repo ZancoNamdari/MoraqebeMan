@@ -302,9 +302,11 @@ class SupervisorCaregiverListView(APIView):
             if getattr(user, "caregiver_identity_profile", None) is not None:
                 done += 1
             if profile:
-                if getattr(profile, "work_preferences", None) is not None:
+                from .rapid import is_rapid_response
+                rapid = is_rapid_response(profile)
+                if rapid or getattr(profile, "work_preferences", None) is not None:
                     done += 1
-                if getattr(profile, "experience", None) is not None and getattr(profile, "skills", None) is not None:
+                if rapid or (getattr(profile, "experience", None) is not None and getattr(profile, "skills", None) is not None):
                     done += 1
                 if user.reference_count >= 1:
                     done += 1
@@ -395,9 +397,11 @@ class SupervisorServiceTypesView(APIView):
         profile = _get_target_profile(request, user_id)
         if profile is None:
             return Response({"detail": "مراقب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+        from .rapid import is_rapid_response
         return Response({
             "service_types": profile.service_types,
             "service_subtypes": profile.service_subtypes,
+            "rapid_response": is_rapid_response(profile),
         })
 
     def put(self, request, user_id):
@@ -409,10 +413,15 @@ class SupervisorServiceTypesView(APIView):
         profile.service_types = serializer.validated_data.get("service_types", [])
         profile.service_subtypes = serializer.validated_data.get("service_subtypes", {})
         profile.save(update_fields=["service_types", "service_subtypes"])
+        # «سریع‌السیر (فورس‌ماژور)» — فقط آژانس/ادمین (این view)؛ خود مراقب endpoint مشابهی ندارد.
+        from .rapid import is_rapid_response, set_rapid_response
+        if "rapid_response" in request.data:
+            set_rapid_response(profile, bool(request.data["rapid_response"]))
         audit.caregiver_updated(request.user.id, user_id, section="service_types")
         return Response({
             "service_types": profile.service_types,
             "service_subtypes": profile.service_subtypes,
+            "rapid_response": is_rapid_response(profile),
         })
 
 

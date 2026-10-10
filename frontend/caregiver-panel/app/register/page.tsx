@@ -455,7 +455,7 @@ export default function CaregiverRegistrationWizard() {
   async function handleStep4() {
     setError([]); setSaving(true)
     try {
-      await caregiverWizardService.saveReferences(references)
+      await caregiverWizardService.saveReferences(references.filter((r) => r.full_name.trim() || r.phone_number.trim() || r.occupation.trim()))
       setStep(6)
     } catch (err: any) {
       showErrors(err, "ثبت معرف‌ها با خطا مواجه شد.")
