@@ -288,15 +288,32 @@ class AgencyDashboardInsightsView(APIView):
             j = jdatetime.date.fromgregorian(date=g_date)
             return f"{j.day} {j.j_months_fa[j.month - 1]}".translate(_fa_digits)
 
-        weekly_growth_trend = []
-        for i in range(7, -1, -1):
-            start = this_week_start - timedelta(weeks=i)
-            end = start + timedelta(weeks=1)
-            weekly_growth_trend.append({
-                "week_label": _jalali_week_label(start.date()),
-                "new_families": agency.family_links.filter(requested_at__gte=start, requested_at__lt=end).count(),
-                "new_caregivers": agency.caregiver_links.filter(requested_at__gte=start, requested_at__lt=end).count(),
-            })
+        # به‌جای ۱۶ کوئری count (هفته × نوع)، فقط ۲ کوئری: زمان درخواست‌های ۸ هفته‌ی اخیر
+        # را می‌گیریم و در پایتون به هفته‌ها تقسیم می‌کنیم.
+        first_start = this_week_start - timedelta(weeks=7)
+        end_all = this_week_start + timedelta(weeks=1)
+        family_times = list(agency.family_links.filter(
+            requested_at__gte=first_start, requested_at__lt=end_all).values_list("requested_at", flat=True))
+        caregiver_times = list(agency.caregiver_links.filter(
+            requested_at__gte=first_start, requested_at__lt=end_all).values_list("requested_at", flat=True))
+
+        def _week_index(ts):
+            return int((ts - first_start) // timedelta(weeks=1))
+
+        fam_buckets = [0] * 8
+        cg_buckets = [0] * 8
+        for ts in family_times:
+            fam_buckets[_week_index(ts)] += 1
+        for ts in caregiver_times:
+            cg_buckets[_week_index(ts)] += 1
+        weekly_growth_trend = [
+            {
+                "week_label": _jalali_week_label((first_start + timedelta(weeks=i)).date()),
+                "new_families": fam_buckets[i],
+                "new_caregivers": cg_buckets[i],
+            }
+            for i in range(8)
+        ]
 
         # ------------------------------------------------------------
         # 5) Caregiver gender/city breakdowns — same "approved roster"
