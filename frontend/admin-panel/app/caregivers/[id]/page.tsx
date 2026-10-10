@@ -73,7 +73,7 @@ function DocumentReviewRow({ userId, docType, label, upload, onReviewed }: {
   }
 
   return (
-    <div className="rounded-lg border border-pink-100 bg-pink-50/40 p-2.5 text-sm">
+    <div className="rounded-lg border border-border bg-muted/50 p-2.5 text-sm">
       <div className="flex items-center justify-between gap-2">
         <span>{label}</span>
         {upload ? (
@@ -207,10 +207,10 @@ export default function CaregiverDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+    <div className="min-h-screen bg-background pb-10">
+      <header className="sticky top-0 z-10 border-b bg-card">
         <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">بررسی پروفایل مراقب</h1>
+          <h1 className="font-bold text-foreground">بررسی پروفایل مراقب</h1>
           <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
         </div>
       </header>
@@ -225,9 +225,9 @@ export default function CaregiverDetailPage() {
             {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{message}</div>}
             {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
-            <Card className="border-pink-100">
+            <Card className="border-border">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-rose-900">
+                <CardTitle className="text-foreground">
                   {(profile.identity?.full_name as string) || `کاربر #${userId}`}
                 </CardTitle>
                 <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", STATUS_CLASS[profile.status])}>
@@ -245,13 +245,13 @@ export default function CaregiverDetailPage() {
             </Card>
 
             {complaints.length > 0 && (
-              <Card className={complaints.some((c) => c.status === "open" || c.status === "under_review") ? "border-amber-300" : "border-pink-100"}>
+              <Card className={complaints.some((c) => c.status === "open" || c.status === "under_review") ? "border-amber-300" : "border-border"}>
                 <CardHeader>
-                  <CardTitle className="text-sm text-rose-900">شکایات ثبت‌شده درباره این مراقب ({complaints.length})</CardTitle>
+                  <CardTitle className="text-sm text-foreground">شکایات ثبت‌شده درباره این مراقب ({complaints.length})</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {complaints.map((c) => (
-                    <div key={c.id} className="flex items-center justify-between rounded-lg border border-pink-100 bg-pink-50/40 p-2.5 text-sm">
+                    <div key={c.id} className="flex items-center justify-between rounded-lg border border-border bg-muted/50 p-2.5 text-sm">
                       <span>{c.patient_name || "—"}</span>
                       <span className={cn(
                         "rounded-full px-2 py-0.5 text-[11px] font-medium",
@@ -268,15 +268,15 @@ export default function CaregiverDetailPage() {
             )}
 
             {reviews.length > 0 && (
-              <Card className="border-pink-100">
+              <Card className="border-border">
                 <CardHeader>
-                  <CardTitle className="text-sm text-rose-900">
+                  <CardTitle className="text-sm text-foreground">
                     نظرات ثبت‌شده ({reviews.length}) — میانگین امتیاز: {(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)} از ۵
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {reviews.map((r) => (
-                    <div key={r.id} className="rounded-lg border border-pink-100 bg-pink-50/40 p-2.5 text-sm">
+                    <div key={r.id} className="rounded-lg border border-border bg-muted/50 p-2.5 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
                         <span className="text-xs text-muted-foreground">{r.reviewer_name || "—"}</span>
@@ -288,7 +288,7 @@ export default function CaregiverDetailPage() {
               </Card>
             )}
 
-            <Card className="border-pink-100">
+            <Card className="border-border">
               {(() => {
                 // مدارک اقامت اتباع فقط برای کسانی که در فرم هویتی
                 // تابعیت غیرایرانی را تأیید کرده‌اند نشان داده می‌شود.
@@ -296,7 +296,7 @@ export default function CaregiverDetailPage() {
                 const checklist = isNonIranian ? DOC_CHECKLIST : DOC_CHECKLIST.filter((d) => d.docType !== "residency_documents")
                 return (
                   <>
-                    <CardHeader><CardTitle className="text-sm text-rose-900">تکمیل مدارک ({checklist.filter((d) => profile.documents?.[d.docType]?.status === "approved").length} از {checklist.length})</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-sm text-foreground">تکمیل مدارک ({checklist.filter((d) => profile.documents?.[d.docType]?.status === "approved").length} از {checklist.length})</CardTitle></CardHeader>
                     <CardContent className="space-y-2">
                       {checklist.map((d) => (
                         <DocumentReviewRow
@@ -314,8 +314,8 @@ export default function CaregiverDetailPage() {
               })()}
             </Card>
 
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-sm text-rose-900">اطلاعات کامل ثبت‌شده</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader><CardTitle className="text-sm text-foreground">اطلاعات کامل ثبت‌شده</CardTitle></CardHeader>
               <CardContent>
                 <pre dir="ltr" className="max-h-96 overflow-auto rounded-lg bg-gray-50 p-3 text-[11px] leading-relaxed text-gray-700">
                   {JSON.stringify({
@@ -330,8 +330,8 @@ export default function CaregiverDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-pink-100">
-              <CardHeader><CardTitle className="text-sm text-rose-900">اقدامات</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader><CardTitle className="text-sm text-foreground">اقدامات</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 {reasonBox && (
                   <div className="space-y-2">

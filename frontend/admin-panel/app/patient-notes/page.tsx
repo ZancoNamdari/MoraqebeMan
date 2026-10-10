@@ -56,22 +56,22 @@ export default function PatientNotesReviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background">
+    <div className="min-h-screen bg-background">
       <Sidebar onLogout={logout} />
 
       <div className="sm:mr-64">
-        <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b bg-card">
           <div className="p-4 sm:px-6">
-            <h1 className="font-bold text-rose-900">یادداشت‌های مراقبان درباره سالمندان</h1>
+            <h1 className="font-bold text-foreground">یادداشت‌های مراقبان درباره سالمندان</h1>
           </div>
         </header>
 
         <main className="space-y-4 p-4 sm:p-6">
           <p className="text-xs text-muted-foreground">این یادداشت‌ها هرگز به خانواده سالمند نمایش داده نمی‌شود.</p>
 
-          <Card className="border-pink-100">
+          <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-rose-900">فهرست یادداشت‌ها ({notes.length})</CardTitle>
+              <CardTitle className="text-foreground">فهرست یادداشت‌ها ({notes.length})</CardTitle>
               <div className="flex gap-1">
                 {([["unacknowledged", "دیده‌نشده"], ["urgent", "فوری"], ["all", "همه"]] as [FilterMode, string][]).map(([value, label]) => (
                   <Button key={value} size="sm" variant={filter === value ? "default" : "outline"} onClick={() => setFilter(value)}>
@@ -91,7 +91,7 @@ export default function PatientNotesReviewPage() {
                     const detail = expanded[n.id]
                     const isOpen = expandedId === n.id
                     return (
-                      <div key={n.id} className="rounded-lg border border-pink-100 bg-pink-50/40">
+                      <div key={n.id} className="rounded-lg border border-border bg-muted/50">
                         <button onClick={() => handleExpand(n.id)} className="flex w-full items-center justify-between p-3 text-right">
                           <div>
                             <p className="text-sm font-medium">{n.patient_name || "—"}</p>
@@ -112,7 +112,7 @@ export default function PatientNotesReviewPage() {
                           </div>
                         </button>
                         {isOpen && (
-                          <div className="border-t border-pink-100 p-3">
+                          <div className="border-t border-border p-3">
                             {!detail ? (
                               <Skeleton className="h-16 w-full" />
                             ) : (

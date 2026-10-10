@@ -94,13 +94,13 @@ export default function ArticleDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background">
+    <div className="min-h-screen bg-background">
       <Sidebar onLogout={logout} />
 
       <div className="sm:mr-64">
-        <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b bg-card">
           <div className="flex items-center justify-between p-4 sm:px-6">
-            <h1 className="font-bold text-rose-900">ویرایش مقاله</h1>
+            <h1 className="font-bold text-foreground">ویرایش مقاله</h1>
             <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.articles)}>بازگشت</Button>
           </div>
         </header>
@@ -109,9 +109,9 @@ export default function ArticleDetailPage() {
           {loading || !article ? (
             <Skeleton className="mx-auto h-96 max-w-2xl w-full rounded-2xl" />
           ) : (
-            <Card className="mx-auto max-w-2xl border-pink-100">
+            <Card className="mx-auto max-w-2xl border-border">
               <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                <CardTitle className="text-rose-900">
+                <CardTitle className="text-foreground">
                   {article.is_published ? "منتشرشده" : "پیش‌نویس"}
                   {article.is_featured && " — در صفحه اصلی"}
                 </CardTitle>

@@ -20,23 +20,28 @@ export function HexMark({ className }: { className?: string }) {
   )
 }
 
+/** Platform logo in a circle — same mark as the other panels. */
+export function BrandLogo({ className }: { className?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/logo.jpg" alt="" aria-hidden="true" className={cn("rounded-full", className)} />
+}
+
 /**
- * The one consistent app-shell header used across every top-level page in
- * every panel — replaces the ad-hoc per-page <header> blocks that used to
- * duplicate slightly different markup (and, in a couple of places, emoji
- * logos) per page. Pass the panel's title (plain text, or JSX for cases
- * like an avatar + name) and put page-specific actions (nav links, logout
- * button, user greeting) in `children`. `subheader` renders a second row
- * still inside the sticky bordered header — e.g. a tab strip.
+ * The one consistent app-shell header: solid teal with white text.
+ * `subtitle` is a small line above the title (date/greeting), `children`
+ * hold page actions (their buttons are forced white for contrast), and
+ * `subheader` renders on a white rounded strip (e.g. the step indicator).
  */
 export function AppHeader({
   title,
+  subtitle,
   maxWidth = "max-w-3xl",
   sticky = true,
   children,
   subheader,
 }: {
   title: React.ReactNode
+  subtitle?: React.ReactNode
   maxWidth?: string
   sticky?: boolean
   children?: React.ReactNode
@@ -45,19 +50,22 @@ export function AppHeader({
   return (
     <header
       className={cn(
-        "border-b border-border bg-background/80 backdrop-blur",
+        "rounded-b-[1.5rem] bg-primary text-white shadow-sm",
         sticky && "sticky top-0 z-10"
       )}
     >
-      <div className={cn("mx-auto px-4 py-4", maxWidth)}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <HexMark className="h-6 w-6 shrink-0 text-primary-strong" />
-            <h1 className="truncate text-base font-bold text-foreground">{title}</h1>
+      <div className={cn("mx-auto px-4 pb-4 pt-5", maxWidth)}>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <div className="flex min-w-0 items-center gap-3">
+            <BrandLogo className="h-11 w-11 shrink-0 ring-2 ring-white/60" />
+            <div className="min-w-0">
+              {subtitle && <p className="truncate text-sm text-white/90">{subtitle}</p>}
+              <h1 className="truncate text-lg font-extrabold">{title}</h1>
+            </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">{children}</div>
+          <div className="flex w-full shrink-0 items-center justify-end gap-1 sm:w-auto sm:gap-2 [&_button]:text-white [&_button:hover]:text-foreground">{children}</div>
         </div>
-        {subheader && <div className="mt-3">{subheader}</div>}
+        {subheader && <div className="mt-3 rounded-2xl bg-white p-2 text-foreground">{subheader}</div>}
       </div>
     </header>
   )

@@ -44,10 +44,10 @@ export function Sidebar({ onLogout }: { onLogout: () => void }) {
   const router = useRouter()
 
   return (
-    <aside className="fixed inset-y-0 right-0 z-30 hidden w-64 flex-col border-l border-border bg-card sm:flex">
-      <div className="flex items-center gap-2.5 border-b border-border px-5 py-5">
-        <HexMark className="h-7 w-7 shrink-0 text-primary-strong" />
-        <span className="text-sm font-bold text-foreground">پنل ادمین — مراقب من</span>
+    <aside className="fixed inset-y-0 right-0 z-30 hidden w-64 flex-col bg-sidebar text-sidebar-foreground sm:flex">
+      <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-5">
+        <HexMark className="h-7 w-7 shrink-0 text-sidebar-foreground" />
+        <span className="text-sm font-bold">پنل ادمین — مراقب من</span>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
@@ -62,10 +62,10 @@ export function Sidebar({ onLogout }: { onLogout: () => void }) {
               key={item.href}
               onClick={() => router.push(item.href)}
               className={cn(
-                "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-sm font-medium transition-colors",
+                "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-right text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-primary/15 text-primary-strong"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  ? "bg-sidebar-accent font-bold text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -75,10 +75,10 @@ export function Sidebar({ onLogout }: { onLogout: () => void }) {
         })}
       </nav>
 
-      <div className="border-t border-border p-3">
+      <div className="border-t border-sidebar-border p-3">
         <button
           onClick={onLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50"
+          className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-right text-sm font-medium text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           خروج

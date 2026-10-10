@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { AuthShell } from "@/components/layout/auth-shell"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authService } from "@/services/auth.service"
@@ -136,24 +136,15 @@ function LoginForm() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-rose-50 via-pink-50 to-orange-50 p-4">
-      <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-pink-200/40 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -right-16 h-80 w-80 rounded-full bg-rose-200/40 blur-3xl" />
-
-      <Card className="relative w-full max-w-sm border-0 shadow-xl shadow-pink-200/50">
-        <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-300 to-rose-400 text-2xl shadow-lg shadow-pink-300/40">
-            🌸
-          </div>
-          <CardTitle className="text-xl">مراقب من</CardTitle>
-          <CardDescription>
+    <AuthShell
+      title="مراقب من"
+      subtitle={<>
             {mode === "login-phone" && "ورود با شماره موبایل"}
             {mode === "login-code" && "کد ورود را وارد کنید"}
             {mode === "register" && "ثبت‌نام در پنل خانواده"}
             {mode === "register-code" && "کد تأیید ثبت‌نام را وارد کنید"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </>}
+    >
           {message && <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 p-2.5 text-sm text-emerald-800">{message}</div>}
           {error && <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 p-2.5 text-sm text-rose-700">{error}</div>}
 
@@ -163,10 +154,10 @@ function LoginForm() {
                 <Label htmlFor="phone">شماره موبایل</Label>
                 <Input id="phone" value={phone} onChange={(e) => setPhone(toEnglishDigits(e.target.value))} placeholder="09xxxxxxxxx" dir="ltr" required autoFocus />
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
+              <Button type="submit" className="w-full rounded-xl text-base font-medium" size="lg" disabled={loading}>
                 {loading ? "در حال ارسال..." : "ارسال کد ورود"}
               </Button>
-              <button type="button" onClick={() => { setMode("register"); setError(""); setMessage("") }} className="w-full py-3 text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("register"); setError(""); setMessage("") }} className="w-full py-3 text-center text-sm text-primary hover:underline">
                 حساب ندارید؟ ثبت‌نام کنید
               </button>
             </form>
@@ -187,7 +178,7 @@ function LoginForm() {
                 <p className="text-center text-sm text-rose-600">کد منقضی شده — یک کد جدید درخواست کنید.</p>
               )}
 
-              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading || secondsLeft <= 0}>
+              <Button type="submit" className="w-full rounded-xl text-base font-medium" size="lg" disabled={loading || secondsLeft <= 0}>
                 {loading ? "در حال ورود..." : "ورود"}
               </Button>
 
@@ -197,7 +188,7 @@ function LoginForm() {
                 </Button>
               )}
 
-              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage(""); setSecondsLeft(0) }} className="w-full py-3 text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage(""); setSecondsLeft(0) }} className="w-full py-3 text-center text-sm text-primary hover:underline">
                 تغییر شماره موبایل
               </button>
             </form>
@@ -219,10 +210,10 @@ function LoginForm() {
                 <Label htmlFor="rphone">شماره موبایل</Label>
                 <Input id="rphone" value={phone} onChange={(e) => setPhone(toEnglishDigits(e.target.value))} placeholder="09xxxxxxxxx" dir="ltr" required />
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
+              <Button type="submit" className="w-full rounded-xl text-base font-medium" size="lg" disabled={loading}>
                 {loading ? "در حال ارسال کد..." : "ارسال کد تأیید"}
               </Button>
-              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage("") }} className="w-full py-3 text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage("") }} className="w-full py-3 text-center text-sm text-primary hover:underline">
                 قبلاً ثبت‌نام کرده‌اید؟ وارد شوید
               </button>
             </form>
@@ -241,7 +232,7 @@ function LoginForm() {
               ) : (
                 <p className="text-center text-sm text-rose-600">کد منقضی شده — یک کد جدید درخواست کنید.</p>
               )}
-              <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading || secondsLeft <= 0 || code.length !== 6}>
+              <Button type="submit" className="w-full rounded-xl text-base font-medium" size="lg" disabled={loading || secondsLeft <= 0 || code.length !== 6}>
                 {loading ? "در حال ثبت‌نام..." : "تأیید و ثبت‌نام"}
               </Button>
               {secondsLeft <= 0 && (
@@ -249,13 +240,11 @@ function LoginForm() {
                   ارسال دوباره کد
                 </Button>
               )}
-              <button type="button" onClick={() => { setMode("register"); setError(""); setMessage(""); setSecondsLeft(0); setCode("") }} className="w-full py-3 text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("register"); setError(""); setMessage(""); setSecondsLeft(0); setCode("") }} className="w-full py-3 text-center text-sm text-primary hover:underline">
                 تغییر شماره موبایل
               </button>
             </form>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </AuthShell>
   )
 }

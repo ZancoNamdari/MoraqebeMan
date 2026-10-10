@@ -45,13 +45,13 @@ export default function ComplaintsListPage() {
   const openCount = complaints.filter((c) => c.status === "open").length
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background">
+    <div className="min-h-screen bg-background">
       <Sidebar onLogout={logout} />
 
       <div className="sm:mr-64">
-        <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b bg-card">
           <div className="p-4 sm:px-6">
-            <h1 className="font-bold text-rose-900">شکایات و بازخورد</h1>
+            <h1 className="font-bold text-foreground">شکایات و بازخورد</h1>
           </div>
         </header>
 
@@ -62,9 +62,9 @@ export default function ComplaintsListPage() {
             </div>
           )}
 
-          <Card className="border-pink-100">
+          <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-rose-900">فهرست شکایات ({complaints.length})</CardTitle>
+              <CardTitle className="text-foreground">فهرست شکایات ({complaints.length})</CardTitle>
               <select
                 className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                 value={statusFilter}
@@ -86,7 +86,7 @@ export default function ComplaintsListPage() {
                     <button
                       key={c.id}
                       onClick={() => router.push(ROUTES.complaintDetail(c.id))}
-                      className="flex w-full items-center justify-between rounded-lg border border-pink-100 bg-pink-50/40 p-3 text-right transition-colors hover:bg-pink-50"
+                      className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/50 p-3 text-right transition-colors hover:bg-muted"
                     >
                       <div>
                         <p className="text-sm font-medium">{c.patient_name || "—"}</p>

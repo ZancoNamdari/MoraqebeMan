@@ -51,13 +51,13 @@ export default function AnalyticsPage() {
   if (authLoading || !user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background">
+    <div className="min-h-screen bg-background">
       <Sidebar onLogout={logout} />
 
       <div className="sm:mr-64">
-        <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b bg-card">
           <div className="p-4 sm:px-6">
-            <h1 className="font-bold text-rose-900">آمار و ترافیک</h1>
+            <h1 className="font-bold text-foreground">آمار و ترافیک</h1>
           </div>
         </header>
 
@@ -79,8 +79,8 @@ export default function AnalyticsPage() {
             )}
 
             {counts && (
-              <Card className="border-pink-100">
-                <CardHeader><CardTitle className="text-rose-900">کاربران بر اساس نقش</CardTitle></CardHeader>
+              <Card className="border-border">
+                <CardHeader><CardTitle className="text-foreground">کاربران بر اساس نقش</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                   {Object.entries({
                     "خانواده": counts.users_by_role.family,
@@ -111,7 +111,7 @@ export default function AnalyticsPage() {
               </div>
             )}
 
-            <Card className="border-pink-100">
+            <Card className="border-border">
               <CardContent className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="path">جست‌وجوی مسیر صفحه</Label>
@@ -135,9 +135,9 @@ export default function AnalyticsPage() {
 
             {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-            <Card className="border-pink-100">
+            <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-rose-900">
+                <CardTitle className="text-foreground">
                   پربازدیدترین صفحات
                   {pageStats && ` (${pageStats.range_start} تا ${pageStats.range_end} — مجموع ${pageStats.range_total_visits} بازدید، ${pageStats.range_unique_visitors} بازدیدکننده یکتا)`}
                 </CardTitle>
@@ -150,7 +150,7 @@ export default function AnalyticsPage() {
                 ) : (
                   <div className="space-y-2">
                     {pageStats.most_viewed_pages.map((p) => (
-                      <div key={p.path} className="flex items-center justify-between rounded-lg border border-pink-100 bg-pink-50/40 p-3">
+                      <div key={p.path} className="flex items-center justify-between rounded-lg border border-border bg-muted/50 p-3">
                         <p className="text-sm font-medium" dir="ltr">{p.path}</p>
                         <span className="rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-medium text-primary-strong">
                           {p.views} بازدید

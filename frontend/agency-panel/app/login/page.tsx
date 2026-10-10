@@ -4,7 +4,7 @@ import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { AuthShell } from "@/components/layout/auth-shell"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authService } from "@/services/auth.service"
@@ -86,23 +86,14 @@ function LoginForm() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-brand-pink via-brand-pink to-brand-mint-strong p-4">
-      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-fuchsia-400/20 blur-3xl" />
-
-      <Card className="relative w-full max-w-sm border-0 shadow-2xl">
-        <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-pink to-brand-mint-strong text-2xl shadow-lg shadow-brand-pink/30">
-            🏢
-          </div>
-          <CardTitle className="text-xl">ورود آژانس</CardTitle>
-          <CardDescription>
+    <AuthShell
+      title="ورود آژانس"
+      subtitle={<>
             {mode === "login" && "مدیریت خانواده‌ها و مراقبان زیرمجموعه — مراقب من"}
             {mode === "forgot-request" && "بازیابی رمز عبور"}
             {mode === "forgot-confirm" && "تعیین رمز عبور جدید"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </>}
+    >
           {message && <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 p-2.5 text-sm text-emerald-800">{message}</div>}
           {error && <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 p-2.5 text-sm text-rose-700">{error}</div>}
 
@@ -142,7 +133,7 @@ function LoginForm() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-l from-brand-pink to-brand-mint-strong text-base font-medium shadow-md shadow-brand-pink/30 hover:from-brand-pink-strong hover:to-brand-mint-strong"
+                className="w-full rounded-xl text-base font-medium"
                 size="lg"
                 disabled={loading}
               >
@@ -174,7 +165,7 @@ function LoginForm() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-l from-brand-pink to-brand-mint-strong text-base font-medium shadow-md shadow-brand-pink/30 hover:from-brand-pink-strong hover:to-brand-mint-strong"
+                className="w-full rounded-xl text-base font-medium"
                 size="lg"
                 disabled={loading}
               >
@@ -234,7 +225,7 @@ function LoginForm() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-l from-brand-pink to-brand-mint-strong text-base font-medium shadow-md shadow-brand-pink/30 hover:from-brand-pink-strong hover:to-brand-mint-strong"
+                className="w-full rounded-xl text-base font-medium"
                 size="lg"
                 disabled={loading}
               >
@@ -249,8 +240,6 @@ function LoginForm() {
               </button>
             </form>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </AuthShell>
   )
 }

@@ -30,21 +30,21 @@ export default function ArticlesListPage() {
   const featuredCount = articles.filter((a) => a.is_featured).length
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background">
+    <div className="min-h-screen bg-background">
       <Sidebar onLogout={logout} />
 
       <div className="sm:mr-64">
-        <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b bg-card">
           <div className="flex items-center justify-between p-4 sm:px-6">
-            <h1 className="font-bold text-rose-900">مقالات و اخبار</h1>
+            <h1 className="font-bold text-foreground">مقالات و اخبار</h1>
             <Button size="sm" onClick={() => router.push(ROUTES.articleNew)}>مقاله جدید</Button>
           </div>
         </header>
 
         <main className="space-y-4 p-4 sm:p-6">
-          <Card className="border-pink-100">
+          <Card className="border-border">
             <CardHeader>
-              <CardTitle className="text-rose-900">
+              <CardTitle className="text-foreground">
                 فهرست مقالات ({articles.length}) — {publishedCount} منتشرشده، {draftCount} پیش‌نویس، {featuredCount} در صفحه اصلی
               </CardTitle>
             </CardHeader>
@@ -59,7 +59,7 @@ export default function ArticlesListPage() {
                     <button
                       key={a.id}
                       onClick={() => router.push(ROUTES.articleDetail(a.id))}
-                      className="flex w-full items-center justify-between rounded-lg border border-pink-100 bg-pink-50/40 p-3 text-right transition-colors hover:bg-pink-50"
+                      className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/50 p-3 text-right transition-colors hover:bg-muted"
                     >
                       <div>
                         <p className="text-sm font-medium">{a.title}</p>

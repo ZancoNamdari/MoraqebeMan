@@ -73,10 +73,10 @@ export default function ComplaintDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+    <div className="min-h-screen bg-background pb-10">
+      <header className="sticky top-0 z-10 border-b bg-card">
         <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">جزئیات شکایت</h1>
+          <h1 className="font-bold text-foreground">جزئیات شکایت</h1>
           <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.complaints)}>بازگشت</Button>
         </div>
       </header>
@@ -90,9 +90,9 @@ export default function ComplaintDetailPage() {
           <>
             {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
-            <Card className="border-pink-100">
+            <Card className="border-border">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-rose-900">{complaint.patient_name || "—"}</CardTitle>
+                <CardTitle className="text-foreground">{complaint.patient_name || "—"}</CardTitle>
                 <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", STATUS_CLASS[complaint.status])}>
                   {COMPLAINT_STATUS_LABEL[complaint.status]}
                 </span>
@@ -108,7 +108,7 @@ export default function ComplaintDetailPage() {
                   </audio>
                 )}
                 {complaint.resolution_note && (
-                  <div className="mt-2 rounded-lg bg-pink-50/60 p-3">
+                  <div className="mt-2 rounded-lg bg-muted/60 p-3">
                     <p className="text-xs font-medium text-rose-800">یادداشت رسیدگی:</p>
                     <p className="text-sm">{complaint.resolution_note}</p>
                   </div>
@@ -117,8 +117,8 @@ export default function ComplaintDetailPage() {
             </Card>
 
             {(complaint.status === "open" || complaint.status === "under_review") && (
-              <Card className="border-pink-100">
-                <CardHeader><CardTitle className="text-sm text-rose-900">اقدامات</CardTitle></CardHeader>
+              <Card className="border-border">
+                <CardHeader><CardTitle className="text-sm text-foreground">اقدامات</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   {actionType && (
                     <div className="space-y-2">

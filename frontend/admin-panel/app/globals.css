@@ -3,39 +3,35 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.625rem;
-  /* Brand colors — exact hex as specified, not an oklch approximation. */
-  --brand-pink: #FFC5C5;
-  --brand-mint: #D9F0E1;
-  --brand-pink-strong: #FF9E9E;
-  --brand-mint-strong: #B8E0C7;
-  --background: #FFFBFB;
-  --foreground: #4a2f2f;
+  --radius: 0.75rem;
+  --background: #F1F7F7;
+  --foreground: #10363A;
   --card: #ffffff;
-  --card-foreground: #4a2f2f;
+  --card-foreground: #10363A;
   --popover: #ffffff;
-  --popover-foreground: #4a2f2f;
-  --primary: #FFC5C5;
-  --primary-foreground: #5c2626;
-  --secondary: #D9F0E1;
-  --secondary-foreground: #1f4a34;
-  --muted: #FDEDED;
-  --muted-foreground: #8a6a6a;
-  --accent: #D9F0E1;
-  --accent-foreground: #1f4a34;
+  --popover-foreground: #10363A;
+  --primary: #0E6B72;
+  --primary-strong: #0E6B72;
+  --primary-foreground: #ffffff;
+  --secondary: #D4EDEE;
+  --secondary-foreground: #0E6B72;
+  --muted: #E8F1F1;
+  --muted-foreground: #4A6A6E;
+  --accent: #D4EDEE;
+  --accent-foreground: #0E6B72;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: #FADADA;
-  --input: #FADADA;
-  --ring: #FFC5C5;
-  --sidebar: hsl(0 0% 98%);
-  --sidebar-foreground: hsl(240 5.3% 26.1%);
-  --sidebar-primary: hsl(240 5.9% 10%);
-  --sidebar-primary-foreground: hsl(0 0% 98%);
-  --sidebar-accent: hsl(240 4.8% 95.9%);
-  --sidebar-accent-foreground: hsl(240 5.9% 10%);
-  --sidebar-border: hsl(220 13% 91%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --border: #D9E7E8;
+  --input: #C5DADB;
+  --ring: #0E6B72;
+  --sidebar: #0E6B72;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #0E6B72;
+  --sidebar-accent: rgba(255,255,255,.18);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255,255,255,.18);
+  --sidebar-ring: #7EE0A8;
 }
 
 body {
@@ -90,6 +86,7 @@ body {
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);

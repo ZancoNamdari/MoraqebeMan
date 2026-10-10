@@ -37,21 +37,21 @@ export default function NewArticlePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background">
+    <div className="min-h-screen bg-background">
       <Sidebar onLogout={logout} />
 
       <div className="sm:mr-64">
-        <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b bg-card">
           <div className="flex items-center justify-between p-4 sm:px-6">
-            <h1 className="font-bold text-rose-900">مقاله جدید</h1>
+            <h1 className="font-bold text-foreground">مقاله جدید</h1>
             <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.articles)}>بازگشت</Button>
           </div>
         </header>
 
         <main className="p-4 sm:p-6">
-          <Card className="mx-auto max-w-2xl border-pink-100">
+          <Card className="mx-auto max-w-2xl border-border">
             <CardHeader>
-              <CardTitle className="text-rose-900">نوشتن مقاله</CardTitle>
+              <CardTitle className="text-foreground">نوشتن مقاله</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {error && <div className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">{error}</div>}
