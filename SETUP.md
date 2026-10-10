@@ -100,6 +100,13 @@ correctly on localhost:
 | admin-panel | 3006 | `npm run dev` |
 | landing-page | 3007 | `npm run dev` |
 
+> **سرعت لوکال:** `npm run dev` هر صفحه را در اولین بازدید همان لحظه کامپایل می‌کند
+> (۳ تا ۱۷ ثانیه برای هر صفحه‌ی جدید در agency-panel؛ این در پروداکشن وجود ندارد).
+> برای سرعت واقعی پروداکشن (کلیک سایدبار ≈ ۱۰۰–۲۰۰ms) در agency-panel و supervisor-panel
+> به‌جای dev این را اجرا کنید: `npm run preview` (یک‌بار build می‌کند و بعد روی همان پورت بالا می‌آید).
+> برای پنل‌های دیگر: `npm run build && npm run start`.
+
+
 You almost certainly don't want all 8 running at once for day-to-day
 work — pick the one you're actually working on and run just that:
 ```bash
