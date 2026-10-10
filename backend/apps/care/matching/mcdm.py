@@ -382,6 +382,12 @@ def _ranking_sort_key(
         else -1
     )
 
+    origin_score = (
+        item.get("origin_match_score")
+        if item.get("origin_match_score") is not None
+        else -1
+    )
+
     location_score = (
         objective_criterion_scores.get("location")
         if objective_criterion_scores.get("location") is not None
@@ -404,6 +410,7 @@ def _ranking_sort_key(
         mcdm_score,
         specialization_score,
         hours_score,
+        origin_score,
         location_score,
         cultural_score,
         lifestyle_score,

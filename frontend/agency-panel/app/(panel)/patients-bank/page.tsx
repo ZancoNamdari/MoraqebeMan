@@ -11,6 +11,8 @@ import { usePinned } from "@/hooks/use-pinned"
 import { agencyService } from "@/services/agency.service"
 import { agencyManagementService } from "@/services/agency_management.service"
 import { GENDER, PHYSICAL_CONDITION, GUARDIANSHIP_STATUS, labelForValue } from "@/lib/constants"
+import { SERVICE_OPTIONS, serviceLabel, subtypeLabel } from "@/lib/services"
+import { EthnicityPicker } from "@/components/wizard-forms/ethnicity-picker"
 import { ROUTES } from "@/lib/routes"
 import { toPersianDigits } from "@/lib/persian_digits"
 import { cn } from "@/lib/utils"
@@ -138,6 +140,8 @@ export default function PatientsBankPage() {
     national_id: "", emergency_contact_phone: "", full_address: "",
     physical_condition: BLANK, guardianship_status: BLANK,
     guardian_details: "", language_dialect: "", basic_medical_info: "",
+    service_type: "", service_subtype: "",
+    ethnicities: [] as string[], ethnicity_details: {} as Record<string, string[]>,
   })
 
   function refresh(id: number) {
@@ -169,6 +173,8 @@ export default function PatientsBankPage() {
       guardianship_status: p.guardianship_status || BLANK,
       guardian_details: p.guardian_details || "",
       language_dialect: p.language_dialect || "",
+      service_type: p.service_type || "", service_subtype: p.service_subtype || "",
+      ethnicities: p.ethnicities || [], ethnicity_details: p.ethnicity_details || {},
       basic_medical_info: p.basic_medical_info || "",
     })
     setEditingId(p.id)
@@ -305,7 +311,14 @@ export default function PatientsBankPage() {
                           <td className="p-2 print:hidden">
                             <PinButton pinned={isPinned(p.id)} onToggle={() => togglePin(p.id)} />
                           </td>
-                          <td className="p-2 font-medium text-slate-900">{p.full_name}</td>
+                          <td className="p-2 font-medium text-slate-900">
+                            {p.full_name}
+                            {p.service_type && (
+                              <span className="mr-1.5 inline-block rounded-full bg-pink-100 px-1.5 py-0.5 text-[10px] font-normal text-rose-800">
+                                {[serviceLabel(p.service_type), subtypeLabel(p.service_type, p.service_subtype)].filter(Boolean).join(" · ")}
+                              </span>
+                            )}
+                          </td>
                           <td className="p-2 text-slate-500">{p.gender ? labelForValue(GENDER, p.gender) : "—"}</td>
                           <td className="p-2 text-slate-500" dir="ltr">{p.access_code}</td>
                           <td className="p-2 text-slate-500">{p.city_name || "—"}</td>
@@ -396,8 +409,21 @@ export default function PatientsBankPage() {
                                     <input value={draft.guardian_details} onChange={(e) => setDraft((d) => ({ ...d, guardian_details: e.target.value }))} className="w-full rounded-md border border-input bg-background p-2 text-sm" />
                                   </div>
                                   <div className="space-y-1">
-                                    <label className="text-xs text-muted-foreground">زبان/لهجه</label>
-                                    <input value={draft.language_dialect} onChange={(e) => setDraft((d) => ({ ...d, language_dialect: e.target.value }))} className="w-full rounded-md border border-input bg-background p-2 text-sm" />
+                                    <label className="text-xs text-muted-foreground">نوع خدمت</label>
+                                    <select value={draft.service_type} onChange={(e) => setDraft((d) => ({ ...d, service_type: e.target.value, service_subtype: "" }))} className="w-full rounded-md border border-input bg-background p-2 text-sm">
+                                      <option value="">—</option>
+                                      {SERVICE_OPTIONS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+                                    </select>
+                                    {SERVICE_OPTIONS.find((o) => o.key === draft.service_type)?.subtypes && (
+                                      <select value={draft.service_subtype} onChange={(e) => setDraft((d) => ({ ...d, service_subtype: e.target.value }))} className="mt-1 w-full rounded-md border border-input bg-background p-2 text-sm">
+                                        <option value="">—</option>
+                                        {SERVICE_OPTIONS.find((o) => o.key === draft.service_type)!.subtypes!.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                                      </select>
+                                    )}
+                                  </div>
+                                  <div className="space-y-1 sm:col-span-3">
+                                    <label className="text-xs text-muted-foreground">قومیت / زبان مادری</label>
+                                    <EthnicityPicker ethnicities={draft.ethnicities} details={draft.ethnicity_details} onChange={(v) => setDraft((d) => ({ ...d, ...v }))} />
                                   </div>
                                   <div className="space-y-1 sm:col-span-3">
                                     <label className="text-xs text-muted-foreground">اطلاعات پایه پزشکی</label>

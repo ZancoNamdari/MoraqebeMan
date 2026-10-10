@@ -20,7 +20,7 @@ from apps.caregivers.models import (
 from .explanations import build_match_explanation
 from .mcdm import rank_candidates_with_topsis
 from .objective import calculate_objective_score
-from .specialization import physical_condition_score, shift_availability_score
+from .specialization import origin_match_score, physical_condition_score, shift_availability_score
 from .waterfall import evaluate_waterfall
 
 
@@ -264,6 +264,11 @@ def _build_candidate(
         ),
 
         "shift_availability_score": shift_availability_score(
+            caregiver,
+            patient,
+        ),
+
+        "origin_match_score": origin_match_score(
             caregiver,
             patient,
         ),

@@ -142,6 +142,29 @@ def _service_area_passes(
     )
 
 
+def _service_type_passes(
+    caregiver: CaregiverProfile,
+    patient,
+) -> tuple[bool, str | None]:
+    """
+    اگر خانواده نوع خدمت را مشخص کرده باشد (patient.service_type)، مراقب باید همان
+    خدمت را ارائه کند. بیمار قدیمی بدون نوع خدمت، یا مراقبی که هنوز نوع خدمتی
+    ثبت نکرده، مشمول این فیلتر نمی‌شوند (داده‌ی ناموجود جریمه نیست).
+    """
+    patient_service = getattr(patient, "service_type", "") or ""
+    if not patient_service:
+        return True, None
+
+    caregiver_services = list(getattr(caregiver, "service_types", None) or [])
+    if not caregiver_services:
+        return True, "نوع خدمت مراقب هنوز ثبت نشده؛ تطابق خدمت قابل بررسی نیست"
+
+    if patient_service not in caregiver_services:
+        return False, "مراقب خدمت درخواستی خانواده را ارائه نمی‌دهد"
+
+    return True, "نوع خدمت مراقب با درخواست خانواده منطبق است"
+
+
 def evaluate_waterfall(
     caregiver: CaregiverProfile,
     patient,
@@ -222,6 +245,17 @@ def evaluate_waterfall(
         reasons.append(
             area_message
         )
+
+    # ---------------------------------------------------------
+    # 5. Requested service type
+    # ---------------------------------------------------------
+
+    service_ok, service_message = _service_type_passes(caregiver, patient)
+
+    if not service_ok and service_message:
+        failures.append(service_message)
+    elif service_message:
+        reasons.append(service_message)
 
     return WaterfallResult(
         eligible=not failures,

@@ -210,6 +210,10 @@ export interface AgencyPatient {
   guardianship_status: string
   guardian_details: string
   language_dialect: string
+  service_type: string
+  service_subtype: string
+  ethnicities: string[]
+  ethnicity_details: Record<string, string[]>
   basic_medical_info: string
   physical_condition: string
   pipeline_status: string

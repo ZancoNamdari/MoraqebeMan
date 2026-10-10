@@ -11,6 +11,7 @@ from apps.accounts.models import User, UserRole
 from apps.agencies.models import AgencyCaregiverLink, AgencyFamilyLink, AgencyLinkStatus, AgencyPatientLink, AgencyProfile
 from apps.caregivers.models import (
     CaregiverCompatibilityQuestionnaire,
+    ScoreAnswer,
     CaregiverExperience,
     CaregiverProfile,
     CaregiverServiceArea,
@@ -38,17 +39,11 @@ PHYSICAL_CONDITION_POOL = [
 CAREGIVER_ACCEPTED_CONDITION_POOL = PHYSICAL_CONDITION_POOL + ["no_preference"]
 SHIFT_POOL = ["morning", "afternoon", "night", "24h"]
 
+# پرسشنامه‌ی سازگاریِ مراقب حالا ۴ سؤال با مقیاس ۰/۵۰/۱۰۰ (ScoreAnswer) است، نه ۱۶ سؤال a/b/c/d.
 CAREGIVER_QUESTIONNAIRE_FIELDS = [
-    "religious_belief_accommodation", "physical_contact_sensitivity_adaptation",
-    "prayer_time_scheduling_flexibility", "traditional_belief_acceptance",
-    "family_event_participation", "false_accusation_reaction",
-    "confidentiality_commitment", "gender_based_task_flexibility",
-    "home_environment_adaptability", "schedule_flexibility_for_family_events",
-    "traditional_food_treatment_openness", "personal_conversation_patience",
-    "home_organization_adaptability", "cultural_expression_tolerance",
-    "unfamiliar_custom_acceptance", "dialect_communication_effort",
+    "religiosity_level", "family_compatibility_level", "patience_level", "clinical_compatibility_level",
 ]
-CAREGIVER_ANSWER_OPTIONS = ["a", "b", "c", "d"]
+CAREGIVER_ANSWER_OPTIONS = list(ScoreAnswer.values)
 
 # Verified against the real per-field scale enums (AgreementScale,
 # IntensityScale, YesNoPartial, AcceptanceScale, TimingStrictnessScale,

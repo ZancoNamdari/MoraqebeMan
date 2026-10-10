@@ -17,6 +17,7 @@ import { agencyService } from "@/services/agency.service"
 import type { PatientListItem } from "@/types/patient"
 import type { FamilyProfile } from "@/types/family"
 import { serviceLabel, subtypeLabel } from "@/lib/services"
+import { jalaliAge } from "@/lib/jalali"
 import { ROUTES } from "@/lib/routes"
 
 export default function DashboardPage() {
@@ -124,7 +125,12 @@ export default function DashboardPage() {
                     {patientAvatar(p.gender)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-rose-950">{p.full_name}</p>
+                    <p className="truncate font-semibold text-rose-950">
+                      {p.full_name}
+                      {jalaliAge(p.birth_date) !== null && (
+                        <span className="mr-1.5 text-xs font-normal text-muted-foreground">{jalaliAge(p.birth_date)!.toLocaleString("fa-IR")} ساله</span>
+                      )}
+                    </p>
                     <p className="truncate text-xs text-muted-foreground">
                       {[p.province_name, p.city_name].filter(Boolean).join("، ") || "بدون آدرس ثبت‌شده"}
                     </p>

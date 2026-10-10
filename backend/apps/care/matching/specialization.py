@@ -121,3 +121,31 @@ def shift_availability_score(
     )
 
     return 100 if has_overlap else 0
+
+
+def origin_match_score(
+    caregiver: CaregiverProfile,
+    patient,
+) -> int | None:
+    """
+    تطابق قومیت / «اهل کجا» (فقط تای‌بریکر، مثل دو امتیاز بالا).
+    100: قومیت اصلی مشترک و دست‌کم یک زیرگروه (مثلاً سنندجی) هم مشترک.
+    70 : قومیت اصلی مشترک ولی زیرگروه مشترک نیست (یا یک طرف زیرگروه نگفته).
+    0  : هر دو طرف قومیت ثبت کرده‌اند ولی هیچ قومیت مشترکی ندارند.
+    None: یکی از طرفین قومیتی ثبت نکرده — جریمه نمی‌شود.
+    """
+    patient_main = list(getattr(patient, "ethnicities", None) or [])
+    caregiver_main = list(getattr(caregiver, "ethnicities", None) or [])
+    if not patient_main or not caregiver_main:
+        return None
+
+    shared = [m for m in patient_main if m in caregiver_main]
+    if not shared:
+        return 0
+
+    patient_details = getattr(patient, "ethnicity_details", None) or {}
+    caregiver_details = getattr(caregiver, "ethnicity_details", None) or {}
+    for main in shared:
+        if set(patient_details.get(main, [])) & set(caregiver_details.get(main, [])):
+            return 100
+    return 70

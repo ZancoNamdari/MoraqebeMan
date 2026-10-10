@@ -1,5 +1,6 @@
 "use client"
 
+import { serviceLabel, subtypeLabel } from "@/lib/services"
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
@@ -228,6 +229,11 @@ function PatientCard({ patient, stages, onMove, moving, router, pinned, onToggle
                 defeats break-words and pushes the name off the
                 (overflow-auto, so scrollable-but-invisible) card. */}
             <p className="min-w-0 break-words text-base font-bold text-slate-900">{patient.full_name}</p>
+            {patient.service_type && (
+              <span className="shrink-0 rounded-full bg-pink-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-800">
+                {[serviceLabel(patient.service_type), subtypeLabel(patient.service_type, patient.service_subtype)].filter(Boolean).join(" · ")}
+              </span>
+            )}
             {patient.is_urgent && (
               <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700">
                 <AlertTriangle className="h-2.5 w-2.5" /> فوری

@@ -167,7 +167,7 @@ class RankingTieBreakTests(TestCase):
 
     def test_missing_tie_break_fields_do_not_crash(self):
         bare = {"mcdm_score": 80}
-        self.assertEqual(_ranking_sort_key(bare), (80, -1, -1, -1, -1, -1))
+        self.assertEqual(_ranking_sort_key(bare), (80, -1, -1, -1, -1, -1, -1))
 
 
 class ProjectAHPConfigurationTests(TestCase):
