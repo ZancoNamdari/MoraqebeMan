@@ -165,7 +165,7 @@ function LoginForm() {
               <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
                 {loading ? "در حال ارسال..." : "ارسال کد ورود"}
               </Button>
-              <button type="button" onClick={() => { setMode("register"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("register"); setError(""); setMessage("") }} className="w-full py-3 text-center text-sm text-rose-600 hover:underline">
                 حساب ندارید؟ ثبت‌نام کنید
               </button>
             </form>
@@ -196,7 +196,7 @@ function LoginForm() {
                 </Button>
               )}
 
-              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage(""); setSecondsLeft(0) }} className="w-full text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage(""); setSecondsLeft(0) }} className="w-full py-3 text-center text-sm text-rose-600 hover:underline">
                 تغییر شماره موبایل
               </button>
             </form>
@@ -221,7 +221,7 @@ function LoginForm() {
               <Button type="submit" className="w-full bg-gradient-to-l from-pink-400 to-rose-400 text-base font-medium shadow-md shadow-pink-300/40 hover:from-pink-500 hover:to-rose-500" size="lg" disabled={loading}>
                 {loading ? "در حال ارسال کد..." : "ارسال کد تأیید"}
               </Button>
-              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("login-phone"); setError(""); setMessage("") }} className="w-full py-3 text-center text-sm text-rose-600 hover:underline">
                 قبلاً ثبت‌نام کرده‌اید؟ وارد شوید
               </button>
             </form>
@@ -248,7 +248,7 @@ function LoginForm() {
                   ارسال دوباره کد
                 </Button>
               )}
-              <button type="button" onClick={() => { setMode("register"); setError(""); setMessage(""); setSecondsLeft(0); setCode("") }} className="w-full text-center text-sm text-rose-600 hover:underline">
+              <button type="button" onClick={() => { setMode("register"); setError(""); setMessage(""); setSecondsLeft(0); setCode("") }} className="w-full py-3 text-center text-sm text-rose-600 hover:underline">
                 تغییر شماره موبایل
               </button>
             </form>

@@ -146,7 +146,7 @@ export default function ComplaintsPage() {
                   <div key={c.id} className="rounded-xl border border-pink-100 bg-pink-50/40 p-3">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-medium text-rose-950">{c.patient_name || "—"}</span>
-                      <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", STATUS_CLASS[c.status])}>
+                      <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", STATUS_CLASS[c.status])}>
                         {COMPLAINT_STATUS_LABEL[c.status]}
                       </span>
                     </div>

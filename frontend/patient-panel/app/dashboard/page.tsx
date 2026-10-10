@@ -78,7 +78,7 @@ export default function DashboardPage() {
               <CardContent className="p-4">
                 <p className="text-lg font-bold text-foreground">{profile?.full_name || "پروفایل شما"}</p>
                 {profile?.service_type && (
-                  <span className="mt-1 inline-block rounded-full bg-pink-100 px-2 py-0.5 text-[11px] text-rose-800">
+                  <span className="mt-1 inline-block rounded-full bg-pink-100 px-2 py-0.5 text-xs text-rose-800">
                     {[serviceLabel(profile.service_type), subtypeLabel(profile.service_type, profile.service_subtype)].filter(Boolean).join(" · ")}
                   </span>
                 )}

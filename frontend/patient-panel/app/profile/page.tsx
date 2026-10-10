@@ -173,7 +173,7 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 className="flex-1 bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/15 hover:from-primary hover:to-primary"
                 size="lg" onClick={() => handleSave(false)} disabled={saving}

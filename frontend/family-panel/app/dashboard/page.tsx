@@ -134,10 +134,10 @@ export default function DashboardPage() {
                     <p className="truncate text-xs text-muted-foreground">
                       {[p.province_name, p.city_name].filter(Boolean).join("، ") || "بدون آدرس ثبت‌شده"}
                     </p>
-                    <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] ${p.service_type ? "bg-pink-100 text-rose-800" : "bg-amber-50 text-amber-700"}`}>
+                    <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs ${p.service_type ? "bg-pink-100 text-rose-800" : "bg-amber-50 text-amber-700"}`}>
                       {p.service_type ? [serviceLabel(p.service_type), subtypeLabel(p.service_type, p.service_subtype)].filter(Boolean).join(" · ") : "نوع خدمت مشخص نشده"}
                     </span>
-                    <p className="mt-1 truncate text-[11px] text-muted-foreground">
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
                       {p.assigned_caregivers && p.assigned_caregivers.length > 0
                         ? `مراقب: ${p.assigned_caregivers.map((c) => c.name).join("، ")}`
                         : "هنوز مراقبی تخصیص داده نشده"}

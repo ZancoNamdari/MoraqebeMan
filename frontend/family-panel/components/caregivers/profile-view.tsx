@@ -153,7 +153,7 @@ export function CaregiverProfileView({ p, stickyTop = 0 }: { p: PublicCaregiverP
         <section ref={(el) => { refs.current.overview = el }} className="space-y-4">
           <div className={cn(card, "relative p-4 pb-5")}>
             {p.elderly_experience && (
-              <div className="absolute left-4 top-4 text-left text-[11px] leading-5 text-[#8a8f98]">
+              <div className="absolute left-4 top-4 text-left text-xs leading-5 text-[#8a8f98]">
                 سابقه کار
                 <p className="text-[12px] font-bold text-[#222]">{p.elderly_experience}</p>
               </div>
@@ -173,15 +173,15 @@ export function CaregiverProfileView({ p, stickyTop = 0 }: { p: PublicCaregiverP
             <div className="mt-4 grid grid-cols-3 rounded-md bg-[#f1f2f4] py-3 text-center">
               <div className="border-l border-[#dcdfe3]">
                 <p className="text-[15px] font-bold text-[#222]">{fa(p.care_count)}</p>
-                <p className="mt-0.5 text-[11px] text-[#8a8f98]">مراقبت موفق</p>
+                <p className="mt-0.5 text-xs text-[#8a8f98]">مراقبت موفق</p>
               </div>
               <div className="border-l border-[#dcdfe3]">
                 <p className="text-[15px] font-bold text-[#222]">{p.avg_rating != null ? <>{fa(p.avg_rating.toFixed ? p.avg_rating.toFixed(1) : p.avg_rating)} <span className="text-[#f5a623]">★</span></> : "—"}</p>
-                <p className="mt-0.5 text-[11px] text-[#8a8f98]">({fa(p.review_count)} نظر)</p>
+                <p className="mt-0.5 text-xs text-[#8a8f98]">({fa(p.review_count)} نظر)</p>
               </div>
               <div>
                 <p className="text-[15px] font-bold text-[#222]">{p.satisfaction_percent != null ? `${fa(p.satisfaction_percent)}٪` : "—"}</p>
-                <p className="mt-0.5 text-[11px] text-[#8a8f98]">رضایت کاربران</p>
+                <p className="mt-0.5 text-xs text-[#8a8f98]">رضایت کاربران</p>
               </div>
             </div>
 
@@ -199,12 +199,12 @@ export function CaregiverProfileView({ p, stickyTop = 0 }: { p: PublicCaregiverP
               <div className="mt-4 rounded-md bg-[#f1f2f4] px-4 py-5 text-center">
                 <p className="text-[28px] font-bold leading-none text-[#222]">{fa((p.avg_rating ?? 0).toFixed(1))}</p>
                 <div className="mt-2"><Stars value={p.avg_rating ?? 0} size={18} /></div>
-                <p className="mb-4 mt-1.5 text-[11px] text-[#8a8f98]">({fa(total)} نفر امتیاز داده‌اند)</p>
+                <p className="mb-4 mt-1.5 text-xs text-[#8a8f98]">({fa(total)} نفر امتیاز داده‌اند)</p>
                 <div className="mx-auto max-w-[260px] space-y-2">
                   {[5, 4, 3, 2, 1].map((i) => {
                     const n = dist[String(i)] ?? 0
                     return (
-                      <div key={i} className="flex items-center gap-2 text-[11px] text-[#8a8f98]">
+                      <div key={i} className="flex items-center gap-2 text-xs text-[#8a8f98]">
                         <span className="w-5 shrink-0 text-left">{fa(i)}<span className="text-[#f5a623]">★</span></span>
                         <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[#d9dce1]">
                           <div className="h-full rounded-full bg-[#f5a623]" style={{ width: `${(n / total) * 100}%` }} />
@@ -312,7 +312,7 @@ export function CaregiverProfileView({ p, stickyTop = 0 }: { p: PublicCaregiverP
           )}
         </section>
 
-        <p className="px-2 text-center text-[11px] text-[#9aa0a8]">
+        <p className="px-2 text-center text-xs text-[#9aa0a8]">
           برای حفظ حریم خصوصی، اطلاعات تماس و هویتی مراقب در این صفحه نمایش داده نمی‌شود.
         </p>
       </div>

@@ -95,7 +95,7 @@ export default function CarePage() {
                             {a.caregiver_special_talents.length > 0 && (
                               <div className="mt-1 flex flex-wrap gap-1">
                                 {a.caregiver_special_talents.map((x) => (
-                                  <span key={x} className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-foreground">{x}</span>
+                                  <span key={x} className="rounded-full bg-secondary px-2 py-0.5 text-xs text-foreground">{x}</span>
                                 ))}
                               </div>
                             )}

@@ -137,7 +137,7 @@ export default function NewPatientPage() {
       </main>
 
       <footer className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto max-w-xl p-3">
+        <div className="mx-auto max-w-xl p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button
             className="w-full bg-gradient-to-l from-primary to-primary shadow-md shadow-primary/15 hover:from-primary hover:to-primary"
             size="lg"

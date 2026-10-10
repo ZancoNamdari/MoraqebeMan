@@ -17,7 +17,7 @@ export function Field({
         <span className={cn(required && "font-bold text-foreground")}>{label}</span>
         {" "}
         {required && (
-          <span className="mr-1.5 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-primary-strong">
+          <span className="mr-1.5 rounded-full bg-secondary px-1.5 py-0.5 text-xs font-semibold text-primary-strong">
             الزامی
           </span>
         )}

@@ -68,7 +68,7 @@ export default function CaregiversDirectoryPage() {
               key={f.key}
               onClick={() => { setPage(1); setService(f.key) }}
               className={cn(
-                "rounded-full border px-3 py-1 text-xs",
+                "min-h-10 rounded-full border px-4 py-2 text-sm",
                 service === f.key ? "border-rose-400 bg-rose-100 text-rose-800" : "border-pink-100 bg-background text-muted-foreground hover:bg-pink-50",
               )}
             >{f.label}</button>
@@ -95,7 +95,7 @@ export default function CaregiversDirectoryPage() {
                     </div>
                     <div className="flex flex-wrap gap-1">
                       {c.services.map((s) => (
-                        <span key={s.key} className="rounded-full bg-pink-100 px-2 py-0.5 text-[11px] text-rose-800">{s.label}</span>
+                        <span key={s.key} className="rounded-full bg-pink-100 px-2 py-0.5 text-xs text-rose-800">{s.label}</span>
                       ))}
                     </div>
                     <p className="text-xs text-muted-foreground">

@@ -69,7 +69,7 @@ export default function CaregiversDirectoryPage() {
               key={f.key}
               onClick={() => { setPage(1); setService(f.key) }}
               className={cn(
-                "rounded-full border px-3 py-1 text-xs",
+                "min-h-10 rounded-full border px-4 py-2 text-sm",
                 service === f.key ? "border-rose-400 bg-rose-100 text-rose-800" : "border-pink-100 bg-background text-muted-foreground hover:bg-pink-50",
               )}
             >{f.label}</button>
@@ -108,20 +108,20 @@ export default function CaregiversDirectoryPage() {
                         <span className="font-normal text-amber-700/70">({c.review_count})</span>
                       </span>
                     ) : (
-                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-muted-foreground">جدید</span>
+                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-muted-foreground">جدید</span>
                     )}
                   </div>
                   {c.services.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {c.services.map((sv) => (
-                        <span key={sv.key} className="rounded-full bg-pink-100 px-2 py-0.5 text-[11px] text-rose-800">{sv.label}</span>
+                        <span key={sv.key} className="rounded-full bg-pink-100 px-2 py-0.5 text-xs text-rose-800">{sv.label}</span>
                       ))}
                     </div>
                   )}
                   {c.special_talents.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {c.special_talents.slice(0, 3).map((t) => (
-                        <span key={t} className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800">{t}</span>
+                        <span key={t} className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800">{t}</span>
                       ))}
                     </div>
                   )}
