@@ -19,6 +19,7 @@ import { careService } from "@/services/care.service"
 import { auditHistoryService, type AuditLogEntry } from "@/services/audit_history.service"
 import { StarRating } from "@/components/forms/star-rating"
 import { SERVICE_OPTIONS, hasPhysicalCondition, recipientNoun } from "@/lib/services"
+import { LanguageDialectField } from "@/components/forms/language-dialect-field"
 import { ROUTES } from "@/lib/routes"
 import type { AccessLevel, FamilyLink, PatientListItem, Questionnaire } from "@/types/patient"
 import type { CaregiverAssignment, CareLogEntry } from "@/types/care"
@@ -200,9 +201,7 @@ function InfoTab({
               <Textarea value={patient.guardian_details} onChange={(e) => setPatient({ ...patient, guardian_details: e.target.value })} />
             </Field>
           )}
-          <Field label="زبان و گویش">
-            <SelectWithOther choices={LANGUAGE_DIALECT} value={patient.language_dialect} onChange={(v) => setPatient({ ...patient, language_dialect: v })} />
-          </Field>
+          <LanguageDialectField value={patient.language_dialect} onChange={(v) => setPatient({ ...patient, language_dialect: v })} />
           <Field label="اطلاعات پزشکی پایه">
             <Textarea value={patient.basic_medical_info} onChange={(e) => setPatient({ ...patient, basic_medical_info: e.target.value })} />
           </Field>

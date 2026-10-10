@@ -15,6 +15,7 @@ import { RELATION_TYPE, GENDER } from "@/lib/constants"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
 import { patientService } from "@/services/patient.service"
 import { SERVICE_OPTIONS, recipientNoun } from "@/lib/services"
+import { LanguageDialectField } from "@/components/forms/language-dialect-field"
 import { ROUTES } from "@/lib/routes"
 
 export default function NewPatientPage() {
@@ -31,6 +32,7 @@ export default function NewPatientPage() {
   const [city, setCity] = useState<number | null>(null)
   const [district, setDistrict] = useState<number | null>(null)
   const [fullAddress, setFullAddress] = useState("")
+  const [languageDialect, setLanguageDialect] = useState("")
   const [emergencyPhone, setEmergencyPhone] = useState("")
 
   const [saving, setSaving] = useState(false)
@@ -52,6 +54,7 @@ export default function NewPatientPage() {
         province, city, district,
         full_address: fullAddress,
         emergency_contact_phone: emergencyPhone,
+        language_dialect: languageDialect,
       } as any)
       router.push(ROUTES.patientDetail(patient.id))
     } catch (err: any) {
@@ -109,6 +112,7 @@ export default function NewPatientPage() {
             <Field label={`نسبت شما با ${noun}`} required>
               <ChoiceSelect choices={RELATION_TYPE} value={relation} onChange={setRelation} />
             </Field>
+            <LanguageDialectField value={languageDialect} onChange={setLanguageDialect} />
             <Field label="تاریخ تولد">
               <JalaliDatePicker value={birthDate} onChange={setBirthDate} />
             </Field>

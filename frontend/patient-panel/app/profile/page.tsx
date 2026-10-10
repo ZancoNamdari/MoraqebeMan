@@ -17,6 +17,7 @@ import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
 import { GUARDIANSHIP_STATUS, LANGUAGE_DIALECT, GENDER, PHYSICAL_CONDITION, NEEDED_SHIFT } from "@/lib/constants"
 import { myPatientService } from "@/services/patient.service"
 import { SERVICE_OPTIONS, hasPhysicalCondition } from "@/lib/services"
+import { LanguageDialectField } from "@/components/forms/language-dialect-field"
 import { ROUTES } from "@/lib/routes"
 import type { PatientProfile } from "@/types/patient"
 
@@ -151,9 +152,7 @@ export default function ProfilePage() {
                     <Textarea value={profile.guardian_details} onChange={(e) => setProfile({ ...profile, guardian_details: e.target.value })} />
                   </Field>
                 )}
-                <Field label="زبان و گویش">
-                  <SelectWithOther choices={LANGUAGE_DIALECT} value={profile.language_dialect} onChange={(v) => setProfile({ ...profile, language_dialect: v })} />
-                </Field>
+                <LanguageDialectField value={profile.language_dialect} onChange={(v) => setProfile({ ...profile, language_dialect: v })} />
                 <Field label="اطلاعات پزشکی پایه">
                   <Textarea value={profile.basic_medical_info} onChange={(e) => setProfile({ ...profile, basic_medical_info: e.target.value })} />
                 </Field>
