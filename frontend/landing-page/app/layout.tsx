@@ -3,7 +3,7 @@ import localFont from "next/font/local"
 import "./globals.css"
 import { VisitTracker } from "@/components/visit-tracker"
 
-// Self-hosted from app/fonts (works where Google Fonts is blocked). El Messiri is
+// Self-hosted from app/fonts (works where Google Fonts is blocked). Rubik is
 // only for the «مراقب من» wordmark (class "font-brand").
 const vazirmatn = localFont({
   src: "./fonts/Vazirmatn-Variable.woff2",
@@ -12,7 +12,7 @@ const vazirmatn = localFont({
   display: "swap",
 })
 const brandFont = localFont({
-  src: "./fonts/ElMessiri-Bold.woff2",
+  src: "./fonts/Rubik-Bold.woff2",
   weight: "700",
   variable: "--font-brand",
   display: "swap",

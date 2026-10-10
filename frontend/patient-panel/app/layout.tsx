@@ -4,7 +4,7 @@ import "./globals.css"
 
 // Fonts are self-hosted from app/fonts (no download from Google at build or
 // dev time, so they also work where Google Fonts is blocked).
-// Vazirmatn is the platform font; El Messiri is used only for the
+// Vazirmatn is the platform font; Rubik is used only for the
 // «مراقب من» wordmark (class "font-brand").
 const vazirmatn = localFont({
   src: "./fonts/Vazirmatn-Variable.woff2",
@@ -13,7 +13,7 @@ const vazirmatn = localFont({
   display: "swap",
 })
 const brandFont = localFont({
-  src: "./fonts/ElMessiri-Bold.woff2",
+  src: "./fonts/Rubik-Bold.woff2",
   weight: "700",
   variable: "--font-brand",
   display: "swap",
