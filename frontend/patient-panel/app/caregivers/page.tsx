@@ -80,7 +80,7 @@ export default function CaregiversDirectoryPage() {
         {loading ? (
           <Skeleton className="h-60 w-full rounded-2xl" />
         ) : rows.length === 0 ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">مراقبی با این مشخصات پیدا نشد.</p>
+          <div className="py-10 text-center text-sm text-muted-foreground"><p>مراقبی با این مشخصات پیدا نشد.</p><p className="mt-2 text-xs">فهرست فقط مراقبان تأییدشده‌ی آژانسِ شما را نشان می‌دهد؛ اگر هنوز به آژانسی وصل نیستید، از آژانس خود بخواهید پرونده‌ی شما را ثبت کند.</p></div>
         ) : (
           <div className="space-y-3">
             {rows.map((c) => (

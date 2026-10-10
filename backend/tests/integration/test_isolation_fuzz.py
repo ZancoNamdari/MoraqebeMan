@@ -27,7 +27,8 @@ from tests.factories.user_factory import make_user
 ALLOWED_PUBLIC = {
     # دایرکتوری عمومیِ مراقبانِ تأییدشده برای خانواده‌ها/بیماران (بازار پلتفرم؛ بدون اطلاعات تماس/هویتی).
     # تصمیم محصولی: اگر قرار است خانواده فقط مراقبانِ آژانس خودش را ببیند، این مسیر باید محدود شود.
-    "api/caregivers/public/<int:user_id>/",
+    # (حالا به آژانس‌های خودِ بیننده محدود است؛ اینجا فقط چون fuzz بازیگر B.caregiver/B.patient را هم
+    #  می‌فرستد و تست اختصاصیِ FamilyCaregiverDirectoryScopeTests آن را دقیق‌تر پوشش می‌دهد، نیازی به معافیت نیست)
 }
 
 
@@ -198,3 +199,47 @@ class IsolationFuzz(BaseAPITestCase):
                             leaks.append((who, path, m))
         self.assertGreater(hits, 20, "ممیزی معتبر نیست: تقریباً هیچ مسیر فهرستی 2xx نداد")
         self.assertEqual(leaks, [], "نشت داده‌ی آژانس A به بازیگر B:\n" + "\n".join(map(str, leaks)))
+
+
+class FamilyCaregiverDirectoryScopeTests(IsolationFuzz):
+    """خانواده/بیمار فقط مراقبانِ آژانس‌های خودشان را می‌بینند (فهرست، جزئیات و شکایت)."""
+
+    # تست‌های ارثیِ fuzz دوباره اجرا نشوند (سنگین‌اند و در کلاس خودشان پوشش دارند)
+    test_no_cross_tenant_2xx = None
+    test_positive_control_owner_of_A_reaches_A_data = None
+    test_list_endpoints_never_contain_other_agencys_data = None
+
+    def test_family_sees_only_own_agency_caregivers(self):
+        c = APIClient(); c.force_authenticate(self.B["fam_u"])
+        ids = {r["id"] for r in c.get("/api/caregivers/public/").json()["results"]}
+        self.assertEqual(ids, {self.B["cg_u"].id})
+        self.assertEqual(c.get(f"/api/caregivers/public/{self.B['cg_u'].id}/").status_code, 200)
+        self.assertEqual(c.get(f"/api/caregivers/public/{self.A['cg_u'].id}/").status_code, 404)
+
+    def test_family_without_any_agency_sees_nobody(self):
+        lone = make_user("fz_lone_fam", role=UserRole.FAMILY, phone_number="09107299999")
+        FamilyProfile.objects.create(user=lone)
+        c = APIClient(); c.force_authenticate(lone)
+        self.assertEqual(c.get("/api/caregivers/public/").json()["count"], 0)
+
+    def test_patient_role_scoped_by_own_patient_profile(self):
+        PatientProfile.objects.filter(pk=self.B["pat"].pk).update(user=self.B["pat_u"])
+        c = APIClient(); c.force_authenticate(self.B["pat_u"])
+        ids = {r["id"] for r in c.get("/api/caregivers/public/").json()["results"]}
+        self.assertEqual(ids, {self.B["cg_u"].id})
+
+    def test_platform_admin_still_sees_all(self):
+        admin = make_user("fz_platform_admin", role=UserRole.ADMIN, phone_number="09107288888")
+        c = APIClient(); c.force_authenticate(admin)
+        ids = {r["id"] for r in c.get("/api/caregivers/public/").json()["results"]}
+        self.assertTrue({self.A["cg_u"].id, self.B["cg_u"].id} <= ids)
+
+    def test_cannot_file_complaint_about_other_agencys_caregiver(self):
+        c = APIClient(); c.force_authenticate(self.B["fam_u"])
+        base = {"patient": self.B["pat"].id, "category": "other", "description": "x"}
+        from apps.reviews.models import ComplaintCategory
+        base["category"] = ComplaintCategory.values[0]
+        bad = c.post("/api/reviews/complaints/me/", {**base, "about_caregiver": self.A["cg"].id}, format="json")
+        self.assertEqual(bad.status_code, 400, bad.content)
+        ok = c.post("/api/reviews/complaints/me/", {**base, "about_caregiver": self.B["cg"].id}, format="json")
+        self.assertEqual(ok.status_code, 201, ok.content)

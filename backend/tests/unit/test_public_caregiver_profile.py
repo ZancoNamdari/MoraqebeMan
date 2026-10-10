@@ -33,6 +33,21 @@ class PublicCaregiverProfileTests(TestCase):
             status=CaregiverStatus.PENDING, service_types=["salmandyar"],
         )
         self.family = mk_user("09123330000", "family", first_name="f", last_name="g")
+        # دایرکتوری به آژانس‌های خودِ بیننده محدود است: خانواده و مراقب باید عضو تأییدشده‌ی یک آژانس باشند.
+        from apps.agencies.models import (
+            AgencyCaregiverLink, AgencyFamilyLink, AgencyLinkStatus, AgencyProfile,
+        )
+        from apps.families.models import FamilyProfile
+        self.home_agency = AgencyProfile.objects.create(
+            user=mk_user("09129990000", "agency"), company_name="آژانس خانه",
+        )
+        AgencyFamilyLink.objects.create(
+            agency=self.home_agency, family=FamilyProfile.objects.create(user=self.family),
+            status=AgencyLinkStatus.APPROVED,
+        )
+        AgencyCaregiverLink.objects.create(
+            agency=self.home_agency, caregiver=self.cg, status=AgencyLinkStatus.APPROVED,
+        )
         self.client = APIClient()
 
     def test_requires_family_patient_login(self):
@@ -128,7 +143,9 @@ class PublicListQueryBudgetTests(PublicCaregiverProfileTests):
     def test_list_query_count_does_not_grow_with_page_size(self):
         for i in range(12):
             u = mk_user(f"0913{i:07d}", "caregiver", first_name=f"م{i}", last_name="ک")
-            CaregiverProfile.objects.create(user=u, status=CaregiverStatus.APPROVED, service_types=["salmandyar"])
+            cg = CaregiverProfile.objects.create(user=u, status=CaregiverStatus.APPROVED, service_types=["salmandyar"])
+            from apps.agencies.models import AgencyCaregiverLink, AgencyLinkStatus
+            AgencyCaregiverLink.objects.create(agency=self.home_agency, caregiver=cg, status=AgencyLinkStatus.APPROVED)
         self.client.force_authenticate(self.family)
         from django.db import connection
         from django.test.utils import CaptureQueriesContext

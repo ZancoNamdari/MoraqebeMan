@@ -45,7 +45,52 @@ def public_display_name(caregiver):
     return full or "مراقب"
 
 
-def _approved_qs():
+def viewer_agency_ids(user):
+    """
+    آژانس‌هایی که این بیننده حق دیدنِ فهرست مراقبانشان را دارد؛ None یعنی بدون محدودیت
+    (ادمین/سوپریوزر پلتفرم).
+
+    خانواده: آژانس‌هایی که خانواده‌اش با آن‌ها پیوند «تأییدشده» دارد + آژانس‌هایی که
+    یکی از بیمارانِ تأییدشده‌ی همین خانواده در فهرستشان است.
+    بیمار: آژانس‌هایی که پرونده‌ی خودش در آن‌هاست.
+    هر نقش دیگری: مجموعه‌ی خالی (هیچ مراقبی).
+    """
+    from apps.agencies.models import AgencyFamilyLink, AgencyLinkStatus, AgencyPatientLink
+    from apps.families.models import LinkStatus, PatientProfile
+
+    if user.role in ("admin", "superuser"):
+        return None
+    ids = set()
+    if user.role == "family":
+        ids |= set(AgencyFamilyLink.objects.filter(
+            family__user=user, status=AgencyLinkStatus.APPROVED,
+        ).values_list("agency_id", flat=True))
+        ids |= set(AgencyPatientLink.objects.filter(
+            status=AgencyLinkStatus.APPROVED,
+            patient__family_links__family__user=user,
+            patient__family_links__status=LinkStatus.APPROVED,
+        ).values_list("agency_id", flat=True))
+    elif user.role == "patient":
+        ids |= set(AgencyPatientLink.objects.filter(
+            status=AgencyLinkStatus.APPROVED, patient__user=user,
+        ).values_list("agency_id", flat=True))
+    return ids
+
+
+def _approved_qs(user=None):
+    """مراقبانِ تأییدشده. اگر user داده شود، فقط مراقبانِ عضو تأییدشده‌ی آژانس‌های همان بیننده."""
+    qs = _approved_qs_all()
+    if user is None:
+        return qs
+    agency_ids = viewer_agency_ids(user)
+    if agency_ids is None:
+        return qs
+    return qs.filter(
+        agency_links__agency_id__in=agency_ids, agency_links__status="approved",
+    ).distinct()
+
+
+def _approved_qs_all():
     return (
         CaregiverProfile.objects.filter(status=CaregiverStatus.APPROVED)
         .select_related("user", "user__caregiver_identity_profile", "user__caregiver_identity_profile__city", "user__caregiver_identity_profile__province", "experience")
@@ -315,7 +360,7 @@ class PublicCaregiverListView(APIView):
     PAGE_SIZE = 20
 
     def get(self, request):
-        qs = _approved_qs()
+        qs = _approved_qs(request.user)
         st = request.query_params.get("service_type")
         gender = request.query_params.get("gender")
         if gender in ("female", "male"):
@@ -352,7 +397,7 @@ class PublicCaregiverDetailView(APIView):
     permission_classes = [CanViewPublicCaregiver]
 
     def get(self, request, user_id):
-        caregiver = _approved_qs().filter(user_id=user_id).first()
+        caregiver = _approved_qs(request.user).filter(user_id=user_id).first()
         if caregiver is None:
             return Response({"detail": "مراقب یافت نشد."}, status=404)
         return Response(serialize_profile(caregiver))

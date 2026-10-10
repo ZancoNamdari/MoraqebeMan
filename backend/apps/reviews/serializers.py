@@ -35,8 +35,28 @@ class CreateComplaintSerializer(serializers.ModelSerializer):
             family__user=request.user, patient=patient, status=LinkStatus.APPROVED,
         ).exists()
         if not is_linked:
-            raise serializers.ValidationError("شما به این سالمند دسترسی تأییدشده ندارید.")
+            raise serializers.ValidationError("شما به این خدمت‌گیرنده دسترسی تأییدشده ندارید.")
         return patient
+
+    def validate_about_caregiver(self, caregiver):
+        # فقط مراقبی که خانواده حق دیدنش را دارد (مراقبانِ آژانس‌های خودش) یا مراقبی که
+        # واقعاً به یکی از خدمت‌گیرندگانش تخصیص داده شده؛ وگرنه با شناسه‌ی دلخواه می‌شد
+        # علیه مراقبِ آژانس دیگر شکایت ثبت کرد.
+        if caregiver is None:
+            return caregiver
+        from apps.care.models import CaregiverAssignment
+        from apps.caregivers.public_views import _approved_qs
+
+        request = self.context["request"]
+        visible = _approved_qs(request.user).filter(pk=caregiver.pk).exists()
+        assigned = CaregiverAssignment.objects.filter(
+            caregiver=caregiver,
+            patient__family_links__family__user=request.user,
+            patient__family_links__status=LinkStatus.APPROVED,
+        ).exists()
+        if not (visible or assigned):
+            raise serializers.ValidationError("این مراقب برای شما قابل انتخاب نیست.")
+        return caregiver
 
 
 class ComplaintListItemSerializer(serializers.ModelSerializer):

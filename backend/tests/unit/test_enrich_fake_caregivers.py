@@ -33,6 +33,23 @@ class EnrichFakeCaregiversTests(TestCase):
             self.assertEqual(CaregiverDocumentUpload.objects.count(), 3)
             self.assertTrue(CaregiverDocumentUpload.objects.first().file.size > 1000)
 
+            # دایرکتوری به آژانس بیننده محدود است: خانواده و مراقبان را عضو یک آژانس می‌کنیم.
+            from apps.agencies.models import (
+                AgencyCaregiverLink, AgencyFamilyLink, AgencyLinkStatus, AgencyProfile,
+            )
+            from apps.families.models import FamilyProfile
+            agency = AgencyProfile.objects.create(
+                user=User.objects.create_user(username="ag1", password="x", role="agency",
+                                              phone_number="989128888888", email="a@t.ir"),
+                company_name="آژانس",
+            )
+            AgencyFamilyLink.objects.create(
+                agency=agency, family=FamilyProfile.objects.get_or_create(user=self.family)[0],
+                status=AgencyLinkStatus.APPROVED,
+            )
+            for cp in CaregiverProfile.objects.filter(status=CaregiverStatus.APPROVED):
+                AgencyCaregiverLink.objects.create(agency=agency, caregiver=cp, status=AgencyLinkStatus.APPROVED)
+
             client = APIClient()
             client.force_authenticate(self.family)
             res = client.get("/api/caregivers/public/")
