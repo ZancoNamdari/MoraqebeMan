@@ -985,9 +985,8 @@ class ScoreAnswer(models.TextChoices):
     (apps.care.trait_matching) still reads section_scores()/
     overall_flexibility_score() below, which is why those methods
     are kept working (against the new 4 fields) rather than removed
-    — but the DB-seeded QuestionTraitMapping rows still reference the
-    old 16 field names, so trait matching quietly gets no signal from
-    caregivers until that's separately rewired."""
+    — and seed_trait_mappings now maps these 4 fields onto the traits
+    (the old 16-field rows are removed on re-seed)."""
     NONE = "0", "هیچ‌وجه"
     SOME = "50", "تا حدی"
     FULL = "100", "کاملاً"

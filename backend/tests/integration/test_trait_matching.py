@@ -209,3 +209,26 @@ class FullMatchComputationTests(TestCase):
         }
         skewed_result = compute_full_match(self.patient_q, cg_q, weights=skewed_weights)
         self.assertNotEqual(default_result["overall_score"], skewed_result["overall_score"])
+
+
+class RealSeedCaregiverMappingTests(TestCase):
+    """seed_trait_mappings (بدون هیچ کمکی از تست) باید به پرسشنامه‌ی ۴ سؤالیِ مراقب سیگنال بدهد."""
+
+    def test_four_question_caregiver_gets_every_trait_and_flexible_beats_rigid(self):
+        call_command("seed_trait_mappings")
+        cg = CaregiverProfile.objects.create(user=make_user("cg_real_seed", role=UserRole.CAREGIVER, phone_number="09121149001"))
+        cg2 = CaregiverProfile.objects.create(user=make_user("cg_real_seed2", role=UserRole.CAREGIVER, phone_number="09121149002"))
+        flex = CaregiverCompatibilityQuestionnaire.objects.create(caregiver=cg, **FLEX_ANSWERS)
+        rigid = CaregiverCompatibilityQuestionnaire.objects.create(caregiver=cg2, **RIGID_ANSWERS)
+        t_flex = compute_trait_profile(MatchingProfileSide.CAREGIVER, flex)
+        self.assertEqual(set(t_flex), set(TraitName.values))
+        self.assertGreater(compute_cfi(t_flex), compute_cfi(compute_trait_profile(MatchingProfileSide.CAREGIVER, rigid)))
+
+    def test_reseed_removes_stale_old_field_rows(self):
+        from apps.care.models import QuestionTraitMapping
+        QuestionTraitMapping.objects.create(
+            profile_type=MatchingProfileSide.CAREGIVER, question_field="family_event_participation",
+            answer_option="a", trait=TraitName.EMOTIONAL_INVOLVEMENT, value=100,
+        )
+        call_command("seed_trait_mappings")
+        self.assertFalse(QuestionTraitMapping.objects.filter(question_field="family_event_participation").exists())

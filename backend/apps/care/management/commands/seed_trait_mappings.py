@@ -24,99 +24,32 @@ from apps.care.models import MatchingProfileSide, QuestionTraitMapping, TraitNam
 T = TraitName
 
 # profile_type -> question_field -> answer_option -> {trait: value}
-CAREGIVER_MAPPINGS = {
-    # بخش اول: هم‌راستایی عقیدتی و مناسکی
-    "religious_belief_accommodation": {
-        "a": {T.RELIGIOUS_FLEXIBILITY: 90}, "b": {T.RELIGIOUS_FLEXIBILITY: 65},
-        "c": {T.RELIGIOUS_FLEXIBILITY: 70}, "d": {T.RELIGIOUS_FLEXIBILITY: 25},
-    },
-    "physical_contact_sensitivity_adaptation": {
-        "a": {T.GENDER_SENSITIVITY: 90}, "b": {T.GENDER_SENSITIVITY: 75},
-        "c": {T.GENDER_SENSITIVITY: 40}, "d": {T.GENDER_SENSITIVITY: 20},
-    },
-    "prayer_time_scheduling_flexibility": {
-        "a": {T.RITUAL_FLEXIBILITY: 90}, "b": {T.RITUAL_FLEXIBILITY: 65},
-        "c": {T.RITUAL_FLEXIBILITY: 30}, "d": {T.RITUAL_FLEXIBILITY: 15},
-    },
-    # "hidden" flexibility question #1 (per spec: Q4/Q8/Q13 feed the CFI)
-    "traditional_belief_acceptance": {
-        "a": {T.TRADITIONAL_BELIEF_TOLERANCE: 90}, "b": {T.TRADITIONAL_BELIEF_TOLERANCE: 70},
-        "c": {T.TRADITIONAL_BELIEF_TOLERANCE: 35}, "d": {T.TRADITIONAL_BELIEF_TOLERANCE: 15},
-    },
-    # بخش دوم: هم‌راستایی ارزش‌های بنیادین و مرزهای حرفه‌ای
-    # Q5 values are the ONE worked example given in the source spec —
-    # used verbatim, "Family Integration" mapped to the closest
-    # official trait name, emotional_involvement.
-    "family_event_participation": {
-        "a": {T.EMOTIONAL_INVOLVEMENT: 100, T.PROFESSIONAL_BOUNDARY: 20},
-        "b": {T.EMOTIONAL_INVOLVEMENT: 75, T.PROFESSIONAL_BOUNDARY: 70},
-        "c": {T.EMOTIONAL_INVOLVEMENT: 20, T.PROFESSIONAL_BOUNDARY: 100},
-        "d": {T.EMOTIONAL_INVOLVEMENT: 50, T.PROFESSIONAL_BOUNDARY: 40},
-    },
-    "false_accusation_reaction": {
-        "a": {T.EMOTIONAL_INVOLVEMENT: 90, T.PROFESSIONAL_BOUNDARY: 30},
-        "b": {T.EMOTIONAL_INVOLVEMENT: 60, T.PROFESSIONAL_BOUNDARY: 70},
-        "c": {T.EMOTIONAL_INVOLVEMENT: 30, T.PROFESSIONAL_BOUNDARY: 80},
-        "d": {T.EMOTIONAL_INVOLVEMENT: 20, T.PROFESSIONAL_BOUNDARY: 40},
-    },
-    "confidentiality_commitment": {
-        "a": {T.PRIVACY_ORIENTATION: 95}, "b": {T.PRIVACY_ORIENTATION: 80},
-        "c": {T.PRIVACY_ORIENTATION: 45}, "d": {T.PRIVACY_ORIENTATION: 25},
-    },
-    # "hidden" flexibility question #2
-    "gender_based_task_flexibility": {
-        "a": {T.GENDER_ROLE_FLEXIBILITY: 85}, "b": {T.GENDER_ROLE_FLEXIBILITY: 70},
-        "c": {T.GENDER_ROLE_FLEXIBILITY: 55}, "d": {T.GENDER_ROLE_FLEXIBILITY: 15},
-    },
-    # بخش سوم: هم‌راستایی سبک زندگی و محیط کاری
-    "home_environment_adaptability": {
-        "a": {T.ENVIRONMENT_TOLERANCE: 90}, "b": {T.ENVIRONMENT_TOLERANCE: 70},
-        "c": {T.ENVIRONMENT_TOLERANCE: 40}, "d": {T.ENVIRONMENT_TOLERANCE: 15},
-    },
-    # Documented in docs/MATCHING.md as a genuine source-content
-    # inconsistency: option A here reads as rigid ("I keep my
-    # schedule, family adapts"), not clearly more flexible than D
-    # ("strict unchanged schedule") the way option A is in every other
-    # question. Scored to reflect the CONTENT of each option as
-    # written, not forced into the A>B>C>D pattern used elsewhere.
-    "schedule_flexibility_for_family_events": {
-        "a": {T.SCHEDULE_FLEXIBILITY: 35}, "b": {T.SCHEDULE_FLEXIBILITY: 85},
-        "c": {T.SCHEDULE_FLEXIBILITY: 75}, "d": {T.SCHEDULE_FLEXIBILITY: 20},
-    },
-    "traditional_food_treatment_openness": {
-        "a": {T.TRADITIONAL_MEDICINE_ORIENTATION: 90}, "b": {T.TRADITIONAL_MEDICINE_ORIENTATION: 70},
-        "c": {T.TRADITIONAL_MEDICINE_ORIENTATION: 40}, "d": {T.TRADITIONAL_MEDICINE_ORIENTATION: 15},
-    },
-    "personal_conversation_patience": {
-        "a": {T.EMOTIONAL_INTERACTION_PREFERENCE: 90}, "b": {T.EMOTIONAL_INTERACTION_PREFERENCE: 70},
-        "c": {T.EMOTIONAL_INTERACTION_PREFERENCE: 55}, "d": {T.EMOTIONAL_INTERACTION_PREFERENCE: 25},
-    },
-    # "hidden" flexibility question #3
-    "home_organization_adaptability": {
-        "a": {T.ORDERLINESS_TOLERANCE: 90}, "b": {T.ORDERLINESS_TOLERANCE: 70},
-        "c": {T.ORDERLINESS_TOLERANCE: 40}, "d": {T.ORDERLINESS_TOLERANCE: 15},
-    },
-    # بخش چهارم: انعطاف‌پذیری فرهنگی و هوش فرهنگی
-    "cultural_expression_tolerance": {
-        "a": {T.OFFENSIVE_SPEECH_TOLERANCE: 90}, "b": {T.OFFENSIVE_SPEECH_TOLERANCE: 70},
-        "c": {T.OFFENSIVE_SPEECH_TOLERANCE: 35}, "d": {T.OFFENSIVE_SPEECH_TOLERANCE: 15},
-    },
-    # Secondary cultural_tolerance value here specifically because the
-    # trait list has 17 named traits across 16 questions — this is the
-    # one question given two Dimension-4 traits, since accepting an
-    # unfamiliar family custom is both ritual-specific tolerance and a
-    # general cultural-tolerance signal at once.
-    "unfamiliar_custom_acceptance": {
-        "a": {T.RITUAL_TOLERANCE: 90, T.CULTURAL_TOLERANCE: 85},
-        "b": {T.RITUAL_TOLERANCE: 80, T.CULTURAL_TOLERANCE: 75},
-        "c": {T.RITUAL_TOLERANCE: 55, T.CULTURAL_TOLERANCE: 50},
-        "d": {T.RITUAL_TOLERANCE: 20, T.CULTURAL_TOLERANCE: 20},
-    },
-    "dialect_communication_effort": {
-        "a": {T.LANGUAGE_DIALECT_FLEXIBILITY: 90}, "b": {T.LANGUAGE_DIALECT_FLEXIBILITY: 65},
-        "c": {T.LANGUAGE_DIALECT_FLEXIBILITY: 55}, "d": {T.LANGUAGE_DIALECT_FLEXIBILITY: 20},
-    },
+# پرسشنامه‌ی مراقب فقط ۴ سؤال ۰/۵۰/۱۰۰ دارد (religiosity_level, family_compatibility_level,
+# patience_level, clinical_compatibility_level)؛ هر پاسخ روی چند ویژگی نگاشت می‌شود تا هر ۱۷ ویژگی
+# سیگنال بگیرد. مقدار = ۰→۱۵، ۵۰→۵۵، ۱۰۰→۹۰ (یکنوا: پاسخِ بالاتر = انعطاف/تطبیق بیشتر).
+# این‌ها Product Configuration‌اند و بدون migration با اجرای مجدد این دستور قابل تغییرند.
+_LEVEL_VALUE = {"0": 15, "50": 55, "100": 90}
+_CAREGIVER_FIELD_TRAITS = {
+    "religiosity_level": [
+        T.RELIGIOUS_FLEXIBILITY, T.RITUAL_FLEXIBILITY, T.TRADITIONAL_BELIEF_TOLERANCE, T.RITUAL_TOLERANCE,
+    ],
+    "family_compatibility_level": [
+        T.EMOTIONAL_INVOLVEMENT, T.EMOTIONAL_INTERACTION_PREFERENCE, T.CULTURAL_TOLERANCE,
+        T.LANGUAGE_DIALECT_FLEXIBILITY, T.GENDER_ROLE_FLEXIBILITY,
+    ],
+    "patience_level": [
+        T.OFFENSIVE_SPEECH_TOLERANCE, T.ORDERLINESS_TOLERANCE, T.SCHEDULE_FLEXIBILITY, T.ENVIRONMENT_TOLERANCE,
+    ],
+    "clinical_compatibility_level": [
+        T.TRADITIONAL_MEDICINE_ORIENTATION, T.GENDER_SENSITIVITY, T.PROFESSIONAL_BOUNDARY, T.PRIVACY_ORIENTATION,
+    ],
 }
+CAREGIVER_MAPPINGS = {
+    field: {opt: {trait: val for trait in traits} for opt, val in _LEVEL_VALUE.items()}
+    for field, traits in _CAREGIVER_FIELD_TRAITS.items()
+}
+assert {t for ts in _CAREGIVER_FIELD_TRAITS.values() for t in ts} == set(TraitName.values)
+
 
 # Patient traits represent SENSITIVITY/IMPORTANCE on the same named
 # axis, not flexibility — a HIGH value means the patient needs a
@@ -190,6 +123,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         with transaction.atomic():
             created, updated = 0, 0
+            # ردیف‌های قدیمیِ ۱۶ سؤالیِ مراقب دیگر فیلدی ندارند؛ پاک می‌شوند.
+            QuestionTraitMapping.objects.filter(profile_type=MatchingProfileSide.CAREGIVER).exclude(
+                question_field__in=list(CAREGIVER_MAPPINGS)
+            ).delete()
             for profile_type, mapping in [
                 (MatchingProfileSide.CAREGIVER, CAREGIVER_MAPPINGS),
                 (MatchingProfileSide.PATIENT, PATIENT_MAPPINGS),
