@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
+import { BottomNav } from "@/components/layout/bottom-nav"
 import { StarRating } from "@/components/forms/star-rating"
 import { myPatientService } from "@/services/patient.service"
 import { careService } from "@/services/care.service"
@@ -56,7 +57,7 @@ export default function CarePage() {
   if (authLoading || !user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+    <div className="min-h-screen bg-background pb-28 md:pb-10">
       <AppHeader title="تیم مراقبت" maxWidth="max-w-xl">
         <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
@@ -159,6 +160,7 @@ export default function CarePage() {
           </>
         )}
       </main>
+      <BottomNav />
     </div>
   )
 }

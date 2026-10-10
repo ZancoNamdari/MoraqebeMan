@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
+import { BottomNav } from "@/components/layout/bottom-nav"
 import { Field, ChoiceSelect, SelectWithOther, CheckboxGroup } from "@/components/forms/fields"
 import { JalaliDatePicker } from "@/components/forms/jalali-date-picker"
 import { LocationPicker } from "@/components/forms/location-picker"
@@ -82,7 +83,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+    <div className="min-h-screen bg-background pb-28 md:pb-10">
       <AppHeader title="اطلاعات پروفایل" maxWidth="max-w-xl">
         <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
@@ -190,6 +191,7 @@ export default function ProfilePage() {
           </>
         )}
       </main>
+      <BottomNav />
     </div>
   )
 }

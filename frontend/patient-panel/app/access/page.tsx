@@ -10,6 +10,7 @@ import { ChoiceSelect } from "@/components/forms/fields"
 import { RELATION_TYPE } from "@/lib/constants"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
+import { BottomNav } from "@/components/layout/bottom-nav"
 import { myPatientService } from "@/services/patient.service"
 import { ROUTES } from "@/lib/routes"
 import type { AccessLevel, FamilyLink } from "@/types/patient"
@@ -60,7 +61,7 @@ export default function AccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+    <div className="min-h-screen bg-background pb-28 md:pb-10">
       <AppHeader title="دسترسی خانواده" maxWidth="max-w-xl">
         <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
@@ -144,6 +145,7 @@ export default function AccessPage() {
           </>
         )}
       </main>
+      <BottomNav />
     </div>
   )
 }

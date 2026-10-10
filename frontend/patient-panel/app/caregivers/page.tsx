@@ -48,7 +48,7 @@ export default function CaregiversDirectoryPage() {
   const pages = Math.max(1, Math.ceil(total / pageSize))
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
+    <div className="min-h-screen bg-background pb-10">
       <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between p-4">
           <h1 className="font-bold text-rose-900">مراقبان</h1>

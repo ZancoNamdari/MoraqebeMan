@@ -46,7 +46,7 @@ export default function QuestionnairePage() {
   const axes = Array.from(new Set(QUESTIONNAIRE_FIELDS.map((f) => f.axis)))
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+    <div className="min-h-screen bg-background pb-10">
       <AppHeader title="پرسشنامه سازگاری" maxWidth="max-w-xl">
         <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
