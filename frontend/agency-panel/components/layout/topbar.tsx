@@ -26,7 +26,7 @@ export function TopBar({ role, hasSubSidebar }: { role?: string; hasSubSidebar: 
     <header
       className={cn(
         "fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between bg-slate-900 px-5 transition-[margin]",
-        hasSubSidebar ? "lg:mr-[18rem]" : "lg:mr-16"
+        hasSubSidebar ? "lg:mr-[20rem]" : "lg:mr-16"
       )}
     >
       <div className="flex items-center gap-2.5">

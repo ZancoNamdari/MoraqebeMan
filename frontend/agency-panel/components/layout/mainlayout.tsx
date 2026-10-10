@@ -39,7 +39,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <main
         className={cn(
           "h-screen overflow-y-auto pt-14 transition-[margin]",
-          hasSubSidebar ? "lg:mr-[18rem]" : "lg:mr-16"
+          hasSubSidebar ? "lg:mr-[20rem]" : "lg:mr-16"
         )}
       >
         {children}

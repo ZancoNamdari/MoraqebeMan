@@ -38,14 +38,14 @@ export function SubSidebar() {
   const ParentIcon = activeParent.icon
 
   return (
-    <aside className="fixed inset-y-0 z-30 hidden w-56 flex-col bg-slate-900/95 py-4 lg:flex" style={{ right: "4rem" }}>
+    <aside className="fixed inset-y-0 z-30 hidden w-64 flex-col bg-slate-900/95 py-4 lg:flex" style={{ right: "4rem" }}>
       <p className="px-4 pb-3 text-sm font-bold text-white">{activeParent.label}</p>
 
       <nav className="flex-1 space-y-1 px-2">
         <Link
           href={activeParent.href}
           className={cn(
-            "flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+            "flex items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2.5 text-[13px] font-medium transition-colors",
             isActive(activeParent.href) && !activeParent.children!.some((c) => isActive(c.href))
               ? "bg-white text-slate-900"
               : "text-slate-300 hover:bg-slate-800"
@@ -62,7 +62,7 @@ export function SubSidebar() {
               key={child.href}
               href={child.href}
               className={cn(
-                "flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2.5 text-[13px] font-medium transition-colors",
                 isActive(child.href) ? "bg-white text-slate-900" : "text-slate-300 hover:bg-slate-800"
               )}
             >
