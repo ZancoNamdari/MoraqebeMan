@@ -20,13 +20,23 @@ const LEGACY: Record<string, string> = {
   az: "azeri", ku: "kurdish", lr: "lori", gl: "gilaki", mz: "mazandarani", ar: "arabic", bl: "baluchi",
 }
 
-export function parseLanguages(value: string | null | undefined): string[] {
-  const keys = (value || "").split(",").map((x) => x.trim()).filter(Boolean).map((x) => LEGACY[x] ?? x)
-  return keys.filter((k) => LOCAL_LANGUAGE.some((l) => l[0] === k))
+// هر مورد: "kurdish" یا "kurdish:12" (۱۲ = شناسه‌ی استانِ محل آن زبان/گویش)
+export interface LanguagePick { key: string; province: number | null }
+
+export function parseLanguagePicks(value: string | null | undefined): LanguagePick[] {
+  return (value || "").split(",").map((x) => x.trim()).filter(Boolean).map((x) => {
+    const [head, prov] = x.split(":")
+    const key = LEGACY[head] ?? head
+    return { key, province: prov && /^\d+$/.test(prov) ? Number(prov) : null }
+  }).filter((p) => LOCAL_LANGUAGE.some((l) => l[0] === p.key))
 }
 
-export function serializeLanguages(keys: string[]): string {
-  return keys.join(",")
+export function serializeLanguagePicks(picks: LanguagePick[]): string {
+  return picks.map((p) => (p.province ? `${p.key}:${p.province}` : p.key)).join(",")
+}
+
+export function parseLanguages(value: string | null | undefined): string[] {
+  return parseLanguagePicks(value).map((p) => p.key)
 }
 
 export function languageLabel(value: string | null | undefined): string {
