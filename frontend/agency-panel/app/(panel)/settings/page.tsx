@@ -541,7 +541,7 @@ function RemindersTab() {
           <div>
             <h2 className="text-sm font-bold text-slate-800">قوانین یادآوری</h2>
             <p className="text-xs text-slate-500">
-              مثال: «۷ روز بعد از اعزام، در مرحله‌ی پیگیری یادآوری تماس نشان بده» — برای هر کاریز (بورد) جدا قابل تنظیم است.
+              مثال: «۷ روز بعد از اعزام، در مرحله‌ی پیگیری یادآوری تماس نشان بده» — برای هر فهرست مراحل جدا قابل تنظیم است.
             </p>
           </div>
           <Button size="sm" variant="outline" onClick={() => setShowForm((v) => !v)} className="gap-1.5">
@@ -553,7 +553,7 @@ function RemindersTab() {
           <div className="mb-4 space-y-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
             {error && <p className="text-xs text-destructive">{error}</p>}
             <label className="space-y-1 block">
-              <span className="text-xs text-slate-600">کاریز (بورد)</span>
+              <span className="text-xs text-slate-600">فهرست مراحل</span>
               <select
                 value={form.pipeline_key}
                 onChange={(e) => onPickPipeline(e.target.value)}

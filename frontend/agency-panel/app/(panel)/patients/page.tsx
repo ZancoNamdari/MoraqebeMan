@@ -703,7 +703,7 @@ function PatientsPageInner() {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-slate-900">{isAddOnly ? "افزودن خدمت‌گیرنده" : "خدمت‌گیرنده"}</h1>
-          {!isAddOnly && <p className="text-xs text-slate-500">کاریز خدمت‌رسانی به سالمندها ({patients.length} خدمت‌گیرنده)</p>}
+          {!isAddOnly && <p className="text-xs text-slate-500">مراحل خدمت‌رسانی به سالمندها ({patients.length} خدمت‌گیرنده)</p>}
         </div>
         {!isAddOnly && (
           <div className="flex items-center gap-2">

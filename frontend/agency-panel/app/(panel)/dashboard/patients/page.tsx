@@ -57,7 +57,7 @@ export default function PatientsDashboardPage() {
               <KpiTile label="کل خدمت‌گیرندگان" value={totalPatients} icon={Users} accentColor={CATEGORICAL_PALETTE[0]} />
               <KpiTile label="در حال دریافت خدمت" value={activeCount} icon={HeartPulse} accentColor={CATEGORICAL_PALETTE[2]} />
               <KpiTile
-                label="تعداد مراحل کاریز"
+                label="تعداد مراحل"
                 value={insights.patient_pipeline_breakdown.length}
                 icon={AlertTriangle}
                 accentColor={CATEGORICAL_PALETTE[3]}

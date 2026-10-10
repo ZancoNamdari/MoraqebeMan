@@ -698,7 +698,7 @@ export default function CaregiverRegistrationWizard() {
                     {identity.nationality_country === "other" && (
                       <Field label="نام کشور را بنویسید"><Input value={identity.nationality_country_other} onChange={(e) => setIdentity({ ...identity, nationality_country_other: e.target.value })} /></Field>
                     )}
-                    <p className="-mt-2 text-xs text-muted-foreground">مدارک پاسپورت/اقامت از بخش «مدارک» در کاریز خدمت‌دهنده آپلود می‌شود.</p>
+                    <p className="-mt-2 text-xs text-muted-foreground">مدارک پاسپورت/اقامت از بخش «مدارک» در پرونده‌ی خدمت‌دهنده آپلود می‌شود.</p>
                   </>
                 )}
                 {serviceTypes.includes("parastar") && ((serviceSubtypes.parastar ?? []).length === 0 || (serviceSubtypes.parastar ?? []).some((s) => s === "specialized_nurse" || s === "nursing_specialist")) && (
