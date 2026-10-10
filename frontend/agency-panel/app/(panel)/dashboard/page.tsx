@@ -152,6 +152,17 @@ export default function DashboardPage() {
             </Card>
           )}
 
+          {(dashboard.pending_registration_reviews ?? 0) > 0 && (
+            <Card className="border-sky-200 bg-sky-50">
+              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-sky-900">
+                  <span className="font-bold">{toPersianDigits(dashboard.pending_registration_reviews ?? 0)} ثبت‌نام مراقب</span> با کد آژانس شما منتظر تأیید شماست.
+                </p>
+                <Button size="sm" onClick={() => router.push(ROUTES.caregivers)}>بررسی ثبت‌نام‌ها</Button>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <StatCard
               icon={HeartHandshake} count={dashboard.approved_family_count} label="خانواده عضو"

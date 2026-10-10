@@ -39,7 +39,16 @@ export interface AgencyDashboard {
   pending_family_requests: number
   approved_caregiver_count: number
   pending_caregiver_requests: number
+  pending_registration_reviews?: number
   open_complaints_count: number
   pending_appeals_count: number
   candidates_needing_docs_count: number
+}
+
+export interface CaregiverRegistrationReview {
+  user_id: number
+  full_name: string
+  phone_number: string
+  service_types: string[]
+  submitted_at: string | null
 }

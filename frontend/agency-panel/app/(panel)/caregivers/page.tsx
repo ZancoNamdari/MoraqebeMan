@@ -1,5 +1,6 @@
 "use client"
 
+import { RegistrationReviews } from "@/components/agency/registration-reviews"
 import { Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react"
 import {
   DndContext, DragOverlay, useDraggable, useDroppable,
@@ -968,6 +969,8 @@ function CaregiversPageInner() {
               </CardContent>
             </Card>
           )}
+
+          <RegistrationReviews onChanged={() => { if (agencyId !== null) refreshPipeline(agencyId) }} />
 
           {requests.length > 0 && (
             <Card className="border-amber-200 bg-amber-50/60">

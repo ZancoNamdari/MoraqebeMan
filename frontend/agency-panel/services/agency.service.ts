@@ -1,5 +1,5 @@
 import { api } from "./api"
-import type { AgencyCaregiverLink, AgencyDashboard, AgencyFamilyLink, AgencyProfile } from "@/types/agency"
+import type { AgencyCaregiverLink, AgencyDashboard, CaregiverRegistrationReview, AgencyFamilyLink, AgencyProfile } from "@/types/agency"
 import type { DashboardInsights, StaffDashboardData } from "@/types/dashboard"
 
 // پروفایل آژانس تقریباً هیچ‌وقت عوض نمی‌شود ولی ~۱۸ صفحه در هر باز شدن آن را
@@ -34,6 +34,17 @@ export const agencyService = {
   async dashboard() {
     const { data } = await api.get("/api/agencies/me/dashboard/")
     return data as AgencyDashboard
+  },
+
+  // ثبت‌نام‌هایی که مراقب با کد این آژانس برای تأیید فرستاده.
+  async caregiverRegistrations() {
+    const { data } = await api.get("/api/agencies/me/caregivers/registrations/")
+    return data as CaregiverRegistrationReview[]
+  },
+
+  async decideCaregiverRegistration(userId: number, decision: "approve" | "reject", reason?: string) {
+    const { data } = await api.post(`/api/agencies/me/caregivers/registrations/${userId}/${decision}/`, decision === "reject" ? { reason } : {})
+    return data as { detail: string; status: string }
   },
 
   async dashboardInsights() {

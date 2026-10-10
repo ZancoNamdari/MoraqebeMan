@@ -127,7 +127,15 @@ def _caregiver_visible_to_actor(request, user_id: int) -> bool:
     if agency is None:
         return False
 
-    return caregiver_visible_to_tenant(agency, user_id)
+    if caregiver_visible_to_tenant(agency, user_id):
+        return True
+
+    # فقط‌خواندنی: مراقبی که ثبت‌نامش را با کد این آژانس برای تأیید فرستاده، تا آژانس
+    # پروفایل را ببیند و تصمیم بگیرد (ویرایش همچنان فقط پس از تأیید).
+    if request.method in ("GET", "HEAD", "OPTIONS"):
+        from apps.agencies.views import pending_registrations_qs
+        return pending_registrations_qs(agency).filter(user_id=user_id).exists()
+    return False
 
 
 class SupervisorCaregiverDetailView(APIView):

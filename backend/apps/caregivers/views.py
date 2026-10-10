@@ -271,6 +271,7 @@ class MyFullProfileView(APIView):
             "missing_forms": _missing_forms(profile, request.user.id),
             "service_types": profile.service_types,
             "service_subtypes": profile.service_subtypes,
+            "reviewing_agency": (_reviewing_agency(profile).company_name if _reviewing_agency(profile) else None),
             "identity": _get_identity_dict(request.user.id),
             "work_preferences": getattr(profile, "work_preferences", None),
             "service_areas": profile.service_areas.all(),
@@ -304,11 +305,38 @@ class SubmitMyProfileForReviewView(APIView):
                 {"detail": "برای ارسال، ابتدا فرم‌های زیر را کامل کنید.", "missing": missing},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        # اگر کد آژانس داده شود (یا مراقب قبلاً به آژانسی درخواست داده باشد) بررسی با آژانس است؛
+        # وگرنه مثل قبل با ادمین پلتفرم.
+        agency = None
+        code = (request.data.get("agency_code") or "").strip()
+        if code:
+            from apps.agencies.models import AgencyCaregiverLink, AgencyProfile
+            agency = AgencyProfile.objects.filter(access_code__iexact=code).first()
+            if agency is None:
+                return Response({"agency_code": ["کد آژانس نامعتبر است."]}, status=status.HTTP_400_BAD_REQUEST)
+            AgencyCaregiverLink.objects.get_or_create(agency=agency, caregiver=profile)
         try:
             profile.submit_for_review()
         except ValueError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"detail": "پرونده‌ی شما برای بررسی ارسال شد.", "status": profile.status})
+        agency = agency or _reviewing_agency(profile)
+        return Response({
+            "detail": "پرونده‌ی شما برای بررسی ارسال شد.", "status": profile.status,
+            "reviewer": "agency" if agency else "platform",
+            "agency_name": agency.company_name if agency else None,
+        })
+
+
+def _reviewing_agency(profile: CaregiverProfile):
+    """The agency whose staff review this caregiver's registration, or None (= platform admin).
+    Most recent pending/approved link wins."""
+    from apps.agencies.models import AgencyCaregiverLink, AgencyLinkStatus
+    link = (
+        AgencyCaregiverLink.objects.filter(
+            caregiver=profile, status__in=[AgencyLinkStatus.PENDING, AgencyLinkStatus.APPROVED],
+        ).select_related("agency").order_by("-requested_at", "-id").first()
+    )
+    return link.agency if link else None
 
 
 def _missing_forms(profile: CaregiverProfile, user_id: int) -> list[str]:

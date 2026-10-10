@@ -163,6 +163,7 @@ class AgencyDashboardView(APIView):
             "pending_family_requests": agency.family_links.filter(status=AgencyLinkStatus.PENDING).count(),
             "approved_caregiver_count": agency.caregiver_links.filter(status=AgencyLinkStatus.APPROVED).count(),
             "pending_caregiver_requests": agency.caregiver_links.filter(status=AgencyLinkStatus.PENDING).count(),
+            "pending_registration_reviews": pending_registrations_qs(agency).count(),
             # "Needs attention" counts — added so the dashboard can
             # actually surface urgent items at a glance instead of an
             # agency owner having to click into every section to find
@@ -755,6 +756,94 @@ class AgencyCaregiverRequestsView(APIView):
             return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
         links = agency.caregiver_links.filter(status=AgencyLinkStatus.PENDING).select_related("caregiver", "caregiver__user")
         return Response(AgencyCaregiverLinkSerializer(links, many=True).data)
+
+
+class IsAgencyStaff(BasePermission):
+    """Owner, supervisor or admin of an agency (the three agency-panel roles)."""
+    def has_permission(self, request, view):
+        user = getattr(request, "user", None)
+        return bool(
+            user and getattr(user, "is_authenticated", False)
+            and user.role in (UserRole.AGENCY, UserRole.AGENCY_SUPERVISOR, UserRole.AGENCY_ADMIN)
+        )
+
+
+def _agency_for_staff(user):
+    from .tenancy import resolve_own_agency_for_agency_staff
+    return resolve_own_agency_for_agency_staff(user)
+
+
+def pending_registrations_qs(agency):
+    """CaregiverProfiles that submitted their self-registration for review to THIS agency
+    (profile PENDING + a pending/approved link to the agency)."""
+    link_ids = agency.caregiver_links.filter(
+        status__in=[AgencyLinkStatus.PENDING, AgencyLinkStatus.APPROVED],
+    ).values_list("caregiver_id", flat=True)
+    return CaregiverProfile.objects.filter(id__in=link_ids, status=CaregiverStatus.PENDING)
+
+
+class AgencyCaregiverRegistrationsView(APIView):
+    """GET /api/agencies/me/caregivers/registrations/ — ثبت‌نام‌هایی که مراقب با کد این آژانس
+    برای تأیید فرستاده؛ تأیید نهایی (فعال شدن حساب) با کارکنان همین آژانس است."""
+    permission_classes = [IsAgencyStaff]
+
+    def get(self, request):
+        from apps.caregivers.models import CaregiverApprovalLog
+        agency = _agency_for_staff(request.user)
+        if agency is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        profiles = pending_registrations_qs(agency).select_related("user", "user__caregiver_identity_profile")
+        out = []
+        for cg in profiles:
+            identity = getattr(cg.user, "caregiver_identity_profile", None)
+            log = cg.approval_logs.filter(new_status=CaregiverStatus.PENDING).first()
+            out.append({
+                "user_id": cg.user_id,
+                "full_name": (identity.full_name if identity else "") or cg.user.username,
+                "phone_number": cg.user.phone_number,
+                "service_types": cg.service_types,
+                "submitted_at": str(log.created_at)[:10] if log else None,
+            })
+        return Response(out)
+
+
+class AgencyCaregiverRegistrationDecisionView(APIView):
+    """POST /api/agencies/me/caregivers/registrations/<user_id>/<approve|reject>/  {"reason": "..."}
+    تأیید = فعال شدن حساب مراقب (و عضویت در فهرست آژانس)؛ رد نیازمند دلیل است."""
+    permission_classes = [IsAgencyStaff]
+
+    def post(self, request, user_id, decision):
+        from apps.caregivers.views import _missing_forms
+        if decision not in ("approve", "reject"):
+            return Response({"detail": "تصمیم نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+        agency = _agency_for_staff(request.user)
+        if agency is None:
+            return Response({"detail": "دسترسی مجاز نیست."}, status=status.HTTP_403_FORBIDDEN)
+        profile = pending_registrations_qs(agency).filter(user_id=user_id).first()
+        if profile is None:
+            return Response({"detail": "درخواست یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+        if decision == "approve":
+            missing = _missing_forms(profile, user_id)
+            if missing:
+                return Response({"detail": "پروفایل ناقص است و قابل تأیید نیست.", "missing": missing},
+                                status=status.HTTP_400_BAD_REQUEST)
+            profile.approve(request.user)
+            link = agency.caregiver_links.filter(caregiver=profile).first()
+            if link is not None and link.status != AgencyLinkStatus.APPROVED:
+                link.status = AgencyLinkStatus.APPROVED
+                link.decided_by = request.user
+                link.decided_at = timezone.now()
+                link.save(update_fields=["status", "decided_by", "decided_at"])
+            audit.agency_caregiver_link_decided(request.user.id, user_id, "approved")
+            return Response({"detail": "ثبت‌نام تأیید و حساب مراقب فعال شد.", "status": profile.status})
+
+        reason = (request.data.get("reason") or "").strip()
+        if not reason:
+            return Response({"reason": ["دلیل رد الزامی است."]}, status=status.HTTP_400_BAD_REQUEST)
+        profile.reject(request.user, reason)
+        audit.agency_caregiver_link_decided(request.user.id, user_id, "rejected")
+        return Response({"detail": "ثبت‌نام رد شد.", "status": profile.status})
 
 
 class AgencyCaregiverRequestDecisionView(APIView):

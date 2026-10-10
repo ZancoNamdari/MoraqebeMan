@@ -6,6 +6,8 @@ from .views import (
     AgencyAnalyticsView,
     AgencyCandidateHistoryView,
     AgencyCaregiverRequestDecisionView,
+    AgencyCaregiverRegistrationDecisionView,
+    AgencyCaregiverRegistrationsView,
     AgencyCaregiverRequestsView,
     AgencyCandidateTrackingView,
     AgencyCaregiverRosterView,
@@ -64,6 +66,8 @@ urlpatterns = [
     ),
     path("agencies/me/caregivers/", AgencyCaregiverRosterView.as_view(), name="agencies-caregiver-roster"),
     path("agencies/me/candidates/", AgencyCandidateTrackingView.as_view(), name="agencies-candidate-tracking"),
+    path("agencies/me/caregivers/registrations/", AgencyCaregiverRegistrationsView.as_view(), name="agencies-caregiver-registrations"),
+    path("agencies/me/caregivers/registrations/<int:user_id>/<str:decision>/", AgencyCaregiverRegistrationDecisionView.as_view(), name="agencies-caregiver-registration-decision"),
     path("agencies/me/caregivers/requests/", AgencyCaregiverRequestsView.as_view(), name="agencies-caregiver-requests"),
     path(
         "agencies/me/caregivers/requests/<int:link_id>/approve/",

@@ -119,7 +119,8 @@ export default function CaregiverRegistrationWizard() {
   const [error, setError] = useState<ApiFieldError[]>([])
   const fieldErrors = errorsByField(error)
   const [done, setDone] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [submitted, setSubmitted] = useState<null | { reviewer: "agency" | "platform"; agency_name: string | null }>(null)
+  const [agencyCode, setAgencyCode] = useState("")
   const [missing, setMissing] = useState<string[]>([])
 
   const [identity, setIdentity] = useState<IdentityFormData>(EMPTY_IDENTITY)
@@ -484,8 +485,8 @@ export default function CaregiverRegistrationWizard() {
   async function handleSubmitForReview() {
     setError([]); setMissing([]); setSaving(true)
     try {
-      await myProfileStatusService.submit()
-      setSubmitted(true)
+      const res = await myProfileStatusService.submit(agencyCode.trim() || undefined)
+      setSubmitted({ reviewer: res.reviewer, agency_name: res.agency_name })
     } catch (err: any) {
       const data = err?.response?.data
       if (Array.isArray(data?.missing) && data.missing.length) {
@@ -516,7 +517,11 @@ export default function CaregiverRegistrationWizard() {
               <>
                 <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-4xl text-white shadow-lg shadow-emerald-500/30">✓</div>
                 <h2 className="text-xl font-bold text-emerald-900">ثبت‌نام شما برای بررسی ارسال شد</h2>
-                <p className="text-sm text-muted-foreground">پس از تأیید مدیر، حساب شما فعال می‌شود و می‌توانید فعالیت را شروع کنید.</p>
+                <p className="text-sm text-muted-foreground">
+                  {submitted.reviewer === "agency"
+                    ? `ثبت‌نام شما برای ${submitted.agency_name ?? "آژانس"} ارسال شد. پس از تأیید آژانس، حساب شما فعال می‌شود.`
+                    : "پس از تأیید مدیر پلتفرم، حساب شما فعال می‌شود و می‌توانید فعالیت را شروع کنید."}
+                </p>
                 <Button size="lg" className="w-full" onClick={() => router.push(ROUTES.dashboard)}>رفتن به داشبورد</Button>
               </>
             ) : (
@@ -529,7 +534,12 @@ export default function CaregiverRegistrationWizard() {
                     <TraitProfileView profiles={traitProfiles} />
                   </div>
                 )}
-                <p className="text-sm text-muted-foreground">برای شروع فعالیت، ثبت‌نام را برای بررسی مدیر ارسال کنید.</p>
+                <p className="text-sm text-muted-foreground">برای شروع فعالیت، ثبت‌نام را برای بررسی ارسال کنید.</p>
+                <div className="space-y-1 text-start">
+                  <label htmlFor="agency-code" className="text-sm font-medium">کد آژانس (اختیاری)</label>
+                  <Input id="agency-code" dir="ltr" value={agencyCode} onChange={(e) => setAgencyCode(e.target.value.toUpperCase())} placeholder="مثلاً AXK-BDKNT5" />
+                  <p className="text-xs text-muted-foreground">اگر کد آژانس دارید وارد کنید تا ثبت‌نام شما برای تأیید به همان آژانس برود؛ در غیر این صورت مدیر پلتفرم بررسی می‌کند.</p>
+                </div>
                 <ErrorSummary errors={error} />
                 {missing.length > 0 && (
                   <ul className="list-disc space-y-1 pe-5 text-start text-sm text-destructive">
@@ -538,7 +548,7 @@ export default function CaregiverRegistrationWizard() {
                 )}
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button size="lg" className="flex-1" onClick={handleSubmitForReview} disabled={saving}>
-                    {saving ? "در حال ارسال..." : "ارسال برای بررسی مدیر"}
+                    {saving ? "در حال ارسال..." : "ارسال برای بررسی"}
                   </Button>
                   <Button size="lg" variant="outline" onClick={() => { setDone(false); setStep(1) }} disabled={saving}>
                     ویرایش اطلاعات

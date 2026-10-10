@@ -122,10 +122,10 @@ export default function DashboardPage() {
             <CardContent className="space-y-3 p-4 text-sm text-sky-900">
               <p className="font-medium">
                 {profileStatus.status === "draft"
-                  ? "حساب شما ساخته شد، اما تا تأیید ادمین غیرفعال است."
+                  ? "حساب شما ساخته شد، اما تا تأیید غیرفعال است."
                   : "پروفایل شما تأیید نشد؛ پس از اصلاح می‌توانید دوباره ارسال کنید."}
               </p>
-              <p className="text-xs">فرم‌های پروفایل را کامل کنید، شرایط را بپذیرید و سپس پرونده را برای بررسی ارسال کنید. پس از تأیید ادمین می‌توانید فعالیت را شروع کنید.</p>
+              <p className="text-xs">فرم‌های پروفایل را کامل کنید، شرایط را بپذیرید و سپس پرونده را برای بررسی ارسال کنید. پس از تأیید می‌توانید فعالیت را شروع کنید.</p>
               {(profileStatus.missing_forms?.length ?? 0) > 0 && (
                 <ul className="list-disc space-y-0.5 pr-5 text-xs">
                   {profileStatus.missing_forms!.map((m) => <li key={m}>{m}</li>)}
@@ -142,7 +142,7 @@ export default function DashboardPage() {
                   تکمیل ثبت‌نام (مرحله‌به‌مرحله)
                 </Button>
                 <Button variant="outline" className="w-full sm:w-auto" disabled={submitting} onClick={handleSubmitForReview}>
-                  {submitting ? "در حال ارسال..." : "ارسال برای بررسی ادمین"}
+                  {submitting ? "در حال ارسال..." : "ارسال برای بررسی"}
                 </Button>
               </div>
             </CardContent>
@@ -151,7 +151,7 @@ export default function DashboardPage() {
         {profileStatus?.status === "pending" && (
           <Card className="border-blue-200 bg-blue-50">
             <CardContent className="p-4 text-sm text-blue-900">
-              پروفایل شما در انتظار بررسی تیم مراقب من است. تا زمان تأیید، امکان تخصیص خدمت وجود ندارد.
+              {profileStatus.reviewing_agency ? `پروفایل شما در انتظار تأیید آژانس «${profileStatus.reviewing_agency}» است.` : "پروفایل شما در انتظار بررسی تیم مراقب من است."} تا زمان تأیید، امکان تخصیص خدمت وجود ندارد.
             </CardContent>
           </Card>
         )}
