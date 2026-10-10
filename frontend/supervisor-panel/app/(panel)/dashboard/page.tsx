@@ -76,7 +76,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
-      <AppHeader title="پنل ناظر — مراقب من" maxWidth="max-w-6xl">
+      <AppHeader title={<>پنل ناظر — <span className="font-brand text-lg">مراقب من</span></>} maxWidth="max-w-6xl">
         {user && <span className="text-sm text-muted-foreground">{user.username}</span>}
         <Button size="sm" variant="outline" className="border-border text-primary-strong hover:bg-secondary" onClick={logout}>خروج</Button>
       </AppHeader>

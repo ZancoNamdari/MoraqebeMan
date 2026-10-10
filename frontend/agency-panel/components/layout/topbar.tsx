@@ -31,7 +31,7 @@ export function TopBar({ role, hasSubSidebar }: { role?: string; hasSubSidebar: 
     >
       <div className="flex items-center gap-2.5">
         <Building2 className="h-5 w-5 text-primary" />
-        <span className="text-sm font-bold text-white">مراقب من — پنل آژانس</span>
+        <span className="text-sm font-bold text-white"><span className="font-brand text-base">مراقب من</span> — پنل آژانس</span>
       </div>
 
       {title && (

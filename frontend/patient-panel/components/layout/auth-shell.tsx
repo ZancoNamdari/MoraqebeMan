@@ -18,7 +18,8 @@ export function AuthShell({
       <div className={cn("rounded-b-[2.5rem] px-6 pb-24 pt-14 text-center shadow-sm", "bg-[#DCEBDD] text-[#1F3A2C]")}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.jpg" alt="" aria-hidden="true" className="mx-auto h-20 w-20 rounded-full shadow-lg ring-4 ring-white/70" />
-        <h1 className="mt-4 text-2xl font-extrabold">{title}</h1>
+        <h1 className="font-brand mt-4 text-3xl">مراقب من</h1>
+        {title !== "مراقب من" && <p className="mt-1 text-base font-bold">{title}</p>}
         {subtitle && <p className={cn("mt-1 text-sm", "text-[#4E6B5B]")}>{subtitle}</p>}
       </div>
       <div className="mx-auto -mt-14 w-full max-w-sm px-4 pb-10">

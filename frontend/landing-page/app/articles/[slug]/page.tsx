@@ -16,7 +16,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">
             <HexIcon className="h-9 w-9 shrink-0 text-primary-strong" />
-            <span className="text-base font-bold text-foreground">مراقب من</span>
+            <span className="font-brand text-xl text-foreground">مراقب من</span>
           </Link>
           <Link href="/#articles" className="text-sm text-muted-foreground hover:text-foreground">
             بازگشت به مطالب
@@ -50,7 +50,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <Link href="/" className="flex items-center gap-2.5">
               <HexIcon className="h-7 w-7 text-deep-foreground/80" />
-              <span className="text-sm font-semibold text-deep-foreground">مراقب من</span>
+              <span className="font-brand text-lg text-deep-foreground">مراقب من</span>
             </Link>
             <p className="text-sm text-deep-muted">پلتفرم تطبیق مراقب و سالمند — بر پایهٔ سازگاری واقعی</p>
           </div>

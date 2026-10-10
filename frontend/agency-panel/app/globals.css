@@ -188,3 +188,9 @@ html, body {
     border-color: var(--border, currentColor);
   }
 }
+
+/* «مراقب من» wordmark */
+.font-brand {
+  font-family: var(--font-brand), var(--font-vazirmatn), sans-serif;
+  font-weight: 700;
+}

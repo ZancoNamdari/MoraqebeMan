@@ -23,7 +23,7 @@ export function Sidebar() {
       "
     >
       <div className="border-b border-sidebar-border px-5 py-5">
-        <div className="text-lg font-bold">
+        <div className="font-brand text-2xl">
           مراقب من
         </div>
 

@@ -47,7 +47,7 @@ export function Sidebar({ onLogout }: { onLogout: () => void }) {
     <aside className="fixed inset-y-0 right-0 z-30 hidden w-64 flex-col bg-sidebar text-sidebar-foreground sm:flex">
       <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-5">
         <HexMark className="h-7 w-7 shrink-0 text-sidebar-foreground" />
-        <span className="text-sm font-bold">پنل ادمین — مراقب من</span>
+        <span className="text-sm font-bold">پنل ادمین — <span className="font-brand text-base">مراقب من</span></span>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">

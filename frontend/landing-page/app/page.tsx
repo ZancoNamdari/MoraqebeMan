@@ -13,7 +13,7 @@ export default function LandingPage() {
 
           <a href="/" className="flex items-center gap-2.5">
             <HexIcon className="h-9 w-9 shrink-0 text-primary-strong" />
-            <span className="text-base font-bold text-foreground">
+            <span className="font-brand text-xl text-foreground">
               مراقب من
             </span>
           </a>
@@ -340,7 +340,7 @@ export default function LandingPage() {
             <div>
               <a href="/" className="flex items-center gap-2.5">
                 <HexIcon className="h-8 w-8 text-deep-foreground/80" />
-                <span className="text-base font-semibold text-deep-foreground">مراقب من</span>
+                <span className="font-brand text-xl text-deep-foreground">مراقب من</span>
               </a>
               <p className="mt-4 text-sm leading-7 text-deep-muted">
                 همراهی هماهنگ با شخصیت شما — انتخاب هوشمند مراقب، بر پایهٔ سازگاری واقعی.
