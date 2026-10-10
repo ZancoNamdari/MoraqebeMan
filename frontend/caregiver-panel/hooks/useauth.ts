@@ -29,31 +29,53 @@ import { ROUTES } from "@/lib/routes"
  * was never supposed to see it.
  */
 export function useAuth(allowedRoles?: string[]) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  // اگر قبلاً (در همین نشست) کاربر را گرفته‌ایم، صفحه همان لحظه رندر می‌شود —
+  // بدون صفحه‌ی خالی و بدون رفت‌وبرگشت اضافه؛ فقط در پس‌زمینه تازه می‌شود.
+  const cached = typeof window !== "undefined" ? authService.peekMe() : null
+  const [user, setUser] = useState<User | null>(cached?.user ?? null)
+  const [loading, setLoading] = useState(!cached)
   const router = useRouter()
 
   useEffect(() => {
+    let cancelled = false
     if (!authService.isLoggedIn()) {
+      authService.clearMeCache()
       setLoading(false)
       router.replace(ROUTES.login)
       return
     }
+
+    const reject = () => {
+      authService.logout()
+      router.replace(`${ROUTES.login}?error=wrong_role`)
+    }
+
+    const peek = authService.peekMe()
+    if (peek) {
+      if (allowedRoles && !allowedRoles.includes(peek.user.role)) return reject()
+      setUser(peek.user)
+      setLoading(false)
+      if (peek.fresh) return
+    }
+
     authService
-      .me()
+      .meCached()
       .then((fetchedUser) => {
-        if (allowedRoles && !allowedRoles.includes(fetchedUser.role)) {
-          authService.logout()
-          router.replace(`${ROUTES.login}?error=wrong_role`)
-          return
-        }
+        if (cancelled) return
+        if (allowedRoles && !allowedRoles.includes(fetchedUser.role)) return reject()
         setUser(fetchedUser)
       })
       .catch(() => {
+        if (cancelled) return
         authService.logout()
         router.replace(ROUTES.login)
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [router])
 
   const logout = () => {
