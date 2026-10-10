@@ -1,5 +1,6 @@
 import { api } from "./api"
 import type {
+  FullCaregiverProfile,
   ExperienceFormData,
   IdentityFormData,
   ReferenceFormData,
@@ -16,7 +17,7 @@ const base = "/api/caregivers/me"
 export const caregiverWizardService = {
   async fullProfile() {
     const { data } = await api.get(`${base}/full/`)
-    return data as { first_name?: string; last_name?: string; full_name?: string; status?: string; missing_forms?: string[] }
+    return data as FullCaregiverProfile & { missing_forms?: string[] }
   },
 
   async getCompatibilityQuestionnaire() {

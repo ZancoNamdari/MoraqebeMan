@@ -114,6 +114,27 @@ class CaregiverSelfServiceWizardEndpointsTests(TestCase):
         }, format="json")
         self.client.credentials(HTTP_AUTHORIZATION="Bearer " + r.json()["tokens"]["access"])
 
+    def test_my_family_view_matches_what_families_see_and_works_while_draft(self):
+        from apps.caregivers.models import CaregiverProfile
+        from apps.caregivers.public_views import serialize_profile
+        r = self.client.get("/api/caregivers/me/family-view/")
+        self.assertEqual(r.status_code, 200, r.content)
+        profile = CaregiverProfile.objects.get(user__phone_number=PHONE)
+        self.assertEqual(r.json()["status"], "draft")
+        expected = set(serialize_profile(profile).keys()) | {"status", "photo_status"}
+        self.assertEqual(set(r.json().keys()), expected)
+
+    def test_my_family_view_forbidden_for_family_role(self):
+        from tests.integration.test_care import _make_user, _client_for
+        from apps.accounts.models import UserRole
+        fam = _client_for(_make_user("famx", UserRole.FAMILY, "09121110099"))
+        self.assertEqual(fam.get("/api/caregivers/me/family-view/").status_code, 403)
+
+    def test_my_full_profile_has_showcase(self):
+        full = self.client.get("/api/caregivers/me/full/").json()
+        self.assertIn("care_count", full["showcase"])
+        self.assertIn("satisfaction_percent", full["showcase"])
+
     def test_service_types_roundtrip_and_validation(self):
         r = self.client.put("/api/caregivers/me/service-types/", {
             "service_types": ["nezafatchi", "madaryar"],

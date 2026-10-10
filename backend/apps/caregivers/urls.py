@@ -41,7 +41,7 @@ from .views import (
     RejectCaregiverView,
     ServiceAreaDetailView,
 )
-from .public_views import PublicCaregiverDetailView, PublicCaregiverListView
+from .public_views import MyFamilyViewPreviewView, PublicCaregiverDetailView, PublicCaregiverListView
 from .document_views import CaregiverDocumentApproveView, CaregiverDocumentRejectView, CaregiverProfilePhotoView
 
 urlpatterns = [
@@ -56,6 +56,7 @@ urlpatterns = [
     path("caregivers/me/references/", MyReferencesView.as_view(), name="my-references"),
     path("caregivers/me/service-types/", MyServiceTypesView.as_view(), name="my-service-types"),
     path("caregivers/me/compatibility-questionnaire/", MyCompatibilityQuestionnaireView.as_view(), name="my-compatibility-questionnaire"),
+    path("caregivers/me/family-view/", MyFamilyViewPreviewView.as_view(), name="my-family-view"),
     path("caregivers/me/full/", MyFullProfileView.as_view(), name="my-full-profile"),
     path("caregivers/me/submit/", SubmitMyProfileForReviewView.as_view(), name="my-profile-submit"),
     path("caregivers/me/blacklist-appeal/", MyBlacklistAppealView.as_view(), name="my-blacklist-appeal"),

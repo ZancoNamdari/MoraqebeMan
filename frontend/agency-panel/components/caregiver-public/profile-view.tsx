@@ -262,12 +262,12 @@ export function CaregiverProfileView({ p, stickyTop = 0 }: { p: PublicCaregiverP
             </div>
 
             <div className={cn(card, "px-4 py-1")}>
-              <Row label="تجربه‌ی مراقبت از سالمند" value={e.elderly_care} />
+              <Row label="تجربه‌ی ارائه خدمت" value={e.elderly_care} />
               <Row label="تجربه‌ی خدمات دیگر" value={e.other_services} />
               <Row label="تعداد افراد مراقبت‌شده" value={e.patients_cared_for} />
               {e.live_in && <Row label="مراقبت مقیم" value="تجربه دارد" />}
               {e.couple_care && <Row label="مراقبت از زوج" value="تجربه دارد" />}
-              {e.solo_elderly_care && <Row label="مراقبت تنها از سالمند" value="تجربه دارد" />}
+              {e.solo_elderly_care && <Row label="خدمت تنها به یک نفر" value="تجربه دارد" />}
               <Row label="تحصیلات" value={[sk.education, sk.field_of_study].filter(Boolean).join(" — ")} />
               {sk.driving_license && <Row label="گواهینامه" value="دارد" />}
               <Tags title="استعدادهای ویژه" items={p.special_talents} />

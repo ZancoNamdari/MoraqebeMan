@@ -160,7 +160,7 @@ export default function CaregiverRegistrationWizard() {
   // Resume in progress: load whatever the caregiver already saved.
   useEffect(() => {
     caregiverWizardService.fullProfile().then((p) => {
-      setCaregiverName(p.full_name || `${p.first_name || ""} ${p.last_name || ""}`.trim())
+      setCaregiverName(p.identity?.full_name || "")
     }).catch(() => {})
     caregiverWizardService.getServiceTypes().then((st) => {
       setServiceTypes(st.service_types)

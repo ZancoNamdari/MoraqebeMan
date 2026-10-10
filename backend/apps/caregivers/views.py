@@ -15,6 +15,7 @@ from .models import (
     IdentityProfile,
 )
 from .permissions import IsAdminOrSuperuser, IsCaregiver
+from .showcase import care_count, satisfaction_percent
 from .serializers import (
     BlacklistAppealSerializer,
     CandidateTrackingSerializer,
@@ -276,6 +277,11 @@ class MyFullProfileView(APIView):
             "experience": getattr(profile, "experience", None),
             "skills": getattr(profile, "skills", None),
             "references": profile.references.all(),
+            "showcase": {
+                "care_count": care_count(profile),
+                "satisfaction_percent": satisfaction_percent(profile),
+                "review_count": profile.reviews.count(),
+            },
         }
         return Response(CaregiverFullProfileSerializer(data).data)
 

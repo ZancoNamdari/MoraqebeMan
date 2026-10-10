@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 
 from . import choices as c
 from .models import CaregiverProfile, CaregiverStatus
+from .permissions import IsCaregiver
 from .showcase import care_count, profile_photo_url, satisfaction_percent, special_talent_labels
 
 PUBLIC_VIEWER_ROLES = ("family", "patient", "admin", "superuser")
@@ -423,14 +424,35 @@ class CaregiverFamilyViewPreviewView(APIView):
         )
         if caregiver is None or not caregiver_visible_to_tenant(ctx.agency, caregiver.user_id):
             return Response({"detail": "مراقب یافت نشد."}, status=404)
-        data = serialize_profile(caregiver)
-        data["status"] = caregiver.status
-        # پیش‌نمایش: عکس در انتظار تأیید هم دیده شود، با نشانگر وضعیت.
-        from .models import CaregiverDocumentType, CaregiverDocumentUpload
-        up = CaregiverDocumentUpload.objects.filter(
-            caregiver=caregiver, document_type=CaregiverDocumentType.PERSONAL_PHOTO,
-        ).first()
-        data["photo_status"] = up.status if up else None
-        if up and up.file and not data["photo_url"]:
-            data["photo_url"] = up.file.url
-        return Response(data)
+        return Response(build_family_view_preview(caregiver))
+
+
+class MyFamilyViewPreviewView(APIView):
+    """GET /api/caregivers/me/family-view/ — مراقب دقیقاً همان پروفایلی را می‌بیند
+    که خانواده/بیمار (و پیش‌نمایش آژانس) می‌بینند، با هر وضعیتی از حساب خودش."""
+    permission_classes = [IsCaregiver]
+
+    def get(self, request):
+        CaregiverProfile.objects.get_or_create(user_id=request.user.id)
+        caregiver = (
+            CaregiverProfile.objects.filter(user_id=request.user.id)
+            .select_related("user", "user__caregiver_identity_profile", "user__caregiver_identity_profile__city", "user__caregiver_identity_profile__province")
+            .first()
+        )
+        return Response(build_family_view_preview(caregiver))
+
+
+def build_family_view_preview(caregiver):
+    """Shared by the agency/admin preview and the caregiver's own preview, so
+    both always match what families and patients see (serialize_profile)."""
+    data = serialize_profile(caregiver)
+    data["status"] = caregiver.status
+    # پیش‌نمایش: عکس در انتظار تأیید هم دیده شود، با نشانگر وضعیت.
+    from .models import CaregiverDocumentType, CaregiverDocumentUpload
+    up = CaregiverDocumentUpload.objects.filter(
+        caregiver=caregiver, document_type=CaregiverDocumentType.PERSONAL_PHOTO,
+    ).first()
+    data["photo_status"] = up.status if up else None
+    if up and up.file and not data["photo_url"]:
+        data["photo_url"] = up.file.url
+    return data

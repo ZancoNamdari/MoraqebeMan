@@ -14,4 +14,5 @@ export const ROUTES = {
   serviceHistory: "/service-history",
   blacklistAppeal: "/blacklist-appeal",
   myProfile: "/my-profile",
+  familyView: "/my-profile/family-view",
 }
