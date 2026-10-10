@@ -1,18 +1,12 @@
 import type { Metadata } from "next"
-import { IBM_Plex_Sans_Arabic } from "next/font/google"
+import { Vazirmatn } from "next/font/google"
 import "./globals.css"
 import { PersianDigitsProvider } from "@/components/persian-digits-provider"
 
-// Self-hosted via next/font/google — downloaded and served from this
-// app's own domain at build time, not fetched from Google at runtime.
-// Fourth font tried here: Vazirmatn was actually chosen after a
-// side-by-side comparison of four real candidates, deployed, then
-// rejected again after being seen in the full app rather than a small
-// comparison card — a genuinely different context that can change how
-// a font reads. IBM Plex Sans Arabic won a second, four-way visual
-// comparison against the other candidates from round one.
-const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
-  subsets: ["arabic"],
+// Vazirmatn — the platform font, self-hosted via next/font/google (downloaded at
+// build time and served from this app's own domain, not fetched at runtime).
+const vazirmatn = Vazirmatn({
+  subsets: ["arabic", "latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-vazirmatn",
   display: "swap",
@@ -29,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fa" dir="rtl" className={ibmPlexSansArabic.variable}>
+    <html lang="fa" dir="rtl" className={vazirmatn.variable}>
       <body className="antialiased min-h-screen bg-background">
         <PersianDigitsProvider />
         {children}
