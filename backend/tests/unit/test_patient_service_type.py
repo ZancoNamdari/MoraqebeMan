@@ -35,3 +35,17 @@ class PatientServiceTypeTests(TestCase):
         self.assertEqual(self._create(service_type="nope").status_code, 400)
         self.assertEqual(self._create(service_type="salmandyar", service_subtype="newborn").status_code, 400)
         self.assertEqual(self._create(service_type="madaryar", service_subtype="inside_home").status_code, 400)
+
+
+class PatientEthnicityTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.client.force_authenticate(mk("09127770002", "family"))
+
+    def test_saves_valid_ethnicity_and_rejects_bad_subgroup(self):
+        base = {"full_name": "الف", "relation": "child", "service_type": "salmandyar"}
+        ok = self.client.post("/api/patients/", {**base, "ethnicities": ["kurd"], "ethnicity_details": {"kurd": ["sanandaji", "ilami"]}}, format="json")
+        self.assertEqual(ok.status_code, 201, ok.content)
+        self.assertEqual(ok.json()["ethnicity_details"], {"kurd": ["sanandaji", "ilami"]})
+        bad = self.client.post("/api/patients/", {**base, "ethnicities": ["kurd"], "ethnicity_details": {"kurd": ["tabrizi"]}}, format="json")
+        self.assertEqual(bad.status_code, 400)

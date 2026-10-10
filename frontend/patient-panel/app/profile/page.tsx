@@ -17,7 +17,7 @@ import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
 import { GUARDIANSHIP_STATUS, LANGUAGE_DIALECT, GENDER, PHYSICAL_CONDITION, NEEDED_SHIFT } from "@/lib/constants"
 import { myPatientService } from "@/services/patient.service"
 import { SERVICE_OPTIONS, hasPhysicalCondition } from "@/lib/services"
-import { LanguageDialectField } from "@/components/forms/language-dialect-field"
+import { EthnicityPicker } from "@/components/forms/ethnicity-picker"
 import { ROUTES } from "@/lib/routes"
 import type { PatientProfile } from "@/types/patient"
 
@@ -44,7 +44,7 @@ export default function ProfilePage() {
           full_address: "", province: null, city: null, district: null,
           province_name: null, city_name: null, district_name: null, postal_code: "",
           emergency_contact_phone: "", guardianship_status: "none", guardian_details: "",
-          language_dialect: "", basic_medical_info: "", physical_condition: "", needed_shifts: [], created_at: "", updated_at: "",
+          language_dialect: "", ethnicities: [], ethnicity_details: {}, basic_medical_info: "", physical_condition: "", needed_shifts: [], created_at: "", updated_at: "",
         })
       })
       .finally(() => setLoading(false))
@@ -64,7 +64,7 @@ export default function ProfilePage() {
         city: profile.city, district: profile.district, postal_code: profile.postal_code,
         emergency_contact_phone: profile.emergency_contact_phone,
         guardianship_status: profile.guardianship_status, guardian_details: profile.guardian_details,
-        language_dialect: profile.language_dialect, basic_medical_info: profile.basic_medical_info,
+        language_dialect: profile.language_dialect, ethnicities: profile.ethnicities, ethnicity_details: profile.ethnicity_details, basic_medical_info: profile.basic_medical_info,
         physical_condition: profile.physical_condition, needed_shifts: profile.needed_shifts,
       })
       setProfile(updated)
@@ -152,7 +152,13 @@ export default function ProfilePage() {
                     <Textarea value={profile.guardian_details} onChange={(e) => setProfile({ ...profile, guardian_details: e.target.value })} />
                   </Field>
                 )}
-                <LanguageDialectField value={profile.language_dialect} onChange={(v) => setProfile({ ...profile, language_dialect: v })} />
+                <Field label="قومیت / زبان مادری">
+            <EthnicityPicker
+              ethnicities={profile.ethnicities || []}
+              details={profile.ethnicity_details || {}}
+              onChange={(v) => setProfile({ ...profile, ...v })}
+            />
+          </Field>
                 <Field label="اطلاعات پزشکی پایه">
                   <Textarea value={profile.basic_medical_info} onChange={(e) => setProfile({ ...profile, basic_medical_info: e.target.value })} />
                 </Field>

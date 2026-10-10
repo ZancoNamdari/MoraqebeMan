@@ -15,7 +15,7 @@ import { RELATION_TYPE, GENDER } from "@/lib/constants"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
 import { patientService } from "@/services/patient.service"
 import { SERVICE_OPTIONS, recipientNoun } from "@/lib/services"
-import { LanguageDialectField } from "@/components/forms/language-dialect-field"
+import { EthnicityPicker } from "@/components/forms/ethnicity-picker"
 import { ROUTES } from "@/lib/routes"
 
 export default function NewPatientPage() {
@@ -32,7 +32,7 @@ export default function NewPatientPage() {
   const [city, setCity] = useState<number | null>(null)
   const [district, setDistrict] = useState<number | null>(null)
   const [fullAddress, setFullAddress] = useState("")
-  const [languageDialect, setLanguageDialect] = useState("")
+  const [ethn, setEthn] = useState<{ ethnicities: string[]; ethnicity_details: Record<string, string[]> }>({ ethnicities: [], ethnicity_details: {} })
   const [emergencyPhone, setEmergencyPhone] = useState("")
 
   const [saving, setSaving] = useState(false)
@@ -54,7 +54,7 @@ export default function NewPatientPage() {
         province, city, district,
         full_address: fullAddress,
         emergency_contact_phone: emergencyPhone,
-        language_dialect: languageDialect,
+        ethnicities: ethn.ethnicities, ethnicity_details: ethn.ethnicity_details,
       } as any)
       router.push(ROUTES.patientDetail(patient.id))
     } catch (err: any) {
@@ -112,7 +112,9 @@ export default function NewPatientPage() {
             <Field label={`نسبت شما با ${noun}`} required>
               <ChoiceSelect choices={RELATION_TYPE} value={relation} onChange={setRelation} />
             </Field>
-            <LanguageDialectField value={languageDialect} onChange={setLanguageDialect} />
+            <Field label="قومیت / زبان مادری">
+              <EthnicityPicker ethnicities={ethn.ethnicities} details={ethn.ethnicity_details} onChange={setEthn} />
+            </Field>
             <Field label="تاریخ تولد">
               <JalaliDatePicker value={birthDate} onChange={setBirthDate} />
             </Field>

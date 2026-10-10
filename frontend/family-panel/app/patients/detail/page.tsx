@@ -19,7 +19,7 @@ import { careService } from "@/services/care.service"
 import { auditHistoryService, type AuditLogEntry } from "@/services/audit_history.service"
 import { StarRating } from "@/components/forms/star-rating"
 import { SERVICE_OPTIONS, hasPhysicalCondition, recipientNoun } from "@/lib/services"
-import { LanguageDialectField } from "@/components/forms/language-dialect-field"
+import { EthnicityPicker } from "@/components/forms/ethnicity-picker"
 import { ROUTES } from "@/lib/routes"
 import type { AccessLevel, FamilyLink, PatientListItem, Questionnaire } from "@/types/patient"
 import type { CaregiverAssignment, CareLogEntry } from "@/types/care"
@@ -67,7 +67,7 @@ function PatientDetailInner() {
         city: patient.city, district: patient.district, postal_code: patient.postal_code,
         emergency_contact_phone: patient.emergency_contact_phone,
         guardianship_status: patient.guardianship_status, guardian_details: patient.guardian_details,
-        language_dialect: patient.language_dialect, basic_medical_info: patient.basic_medical_info,
+        language_dialect: patient.language_dialect, ethnicities: patient.ethnicities, ethnicity_details: patient.ethnicity_details, basic_medical_info: patient.basic_medical_info,
         physical_condition: patient.physical_condition, needed_shifts: patient.needed_shifts,
       })
       setPatient(updated)
@@ -201,7 +201,13 @@ function InfoTab({
               <Textarea value={patient.guardian_details} onChange={(e) => setPatient({ ...patient, guardian_details: e.target.value })} />
             </Field>
           )}
-          <LanguageDialectField value={patient.language_dialect} onChange={(v) => setPatient({ ...patient, language_dialect: v })} />
+          <Field label="قومیت / زبان مادری">
+            <EthnicityPicker
+              ethnicities={patient.ethnicities || []}
+              details={patient.ethnicity_details || {}}
+              onChange={(v) => setPatient({ ...patient, ...v })}
+            />
+          </Field>
           <Field label="اطلاعات پزشکی پایه">
             <Textarea value={patient.basic_medical_info} onChange={(e) => setPatient({ ...patient, basic_medical_info: e.target.value })} />
           </Field>

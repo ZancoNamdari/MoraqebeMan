@@ -58,7 +58,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
             "full_address", "province", "city", "district", "province_name", "city_name", "district_name",
             "postal_code", "emergency_contact_phone", "family_contacts",
             "guardianship_status", "guardian_details",
-            "language_dialect", "basic_medical_info",
+            "language_dialect", "ethnicities", "ethnicity_details", "basic_medical_info",
             "physical_condition", "needed_shifts", "pipeline_status", "tags", "notes",
             "contract_start_date", "contract_end_date",
             "active_reminders", "created_at", "updated_at",
@@ -90,7 +90,36 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         rules = self.context.get("rules") or []
         return compute_active_reminders("patients", obj, rules)
 
+    def validate_ethnicities(self, value):
+        from apps.caregivers.choices import Ethnicity
+        valid = {c[0] for c in Ethnicity.choices}
+        invalid = [v for v in (value or []) if v not in valid]
+        if invalid:
+            raise serializers.ValidationError(f"قومیت نامعتبر: {invalid}")
+        return list(dict.fromkeys(value or []))
+
+    def validate_ethnicity_details(self, value):
+        from apps.caregivers.choices import ETHNICITY_SUBGROUPS
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("ساختار زیرگروه قومیت باید دیکشنری باشد.")
+        cleaned = {}
+        for main, subs in value.items():
+            if main not in ETHNICITY_SUBGROUPS:
+                raise serializers.ValidationError(f"قومیت نامعتبر: {main}")
+            if not isinstance(subs, list):
+                raise serializers.ValidationError(f"زیرگروه‌های {main} باید فهرست باشد.")
+            allowed = {c[0] for c in ETHNICITY_SUBGROUPS[main]}
+            invalid = [x for x in subs if x not in allowed]
+            if invalid:
+                raise serializers.ValidationError(f"زیرگروه نامعتبر برای {main}: {invalid}")
+            if subs:
+                cleaned[main] = subs
+        return cleaned
+
     def validate(self, attrs):
+        if "ethnicity_details" in attrs:
+            mains = attrs.get("ethnicities", getattr(self.instance, "ethnicities", None)) or []
+            attrs["ethnicity_details"] = {k: v for k, v in attrs["ethnicity_details"].items() if k in mains}
         from apps.caregivers import choices as cc
         st = attrs.get("service_type", getattr(self.instance, "service_type", ""))
         sub = attrs.get("service_subtype", getattr(self.instance, "service_subtype", ""))

@@ -23,6 +23,8 @@ export interface PatientListItem {
   guardianship_status: string
   guardian_details: string
   language_dialect: string
+  ethnicities: string[]
+  ethnicity_details: Record<string, string[]>
   basic_medical_info: string
   physical_condition: string
   needed_shifts: string[]

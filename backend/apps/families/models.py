@@ -229,7 +229,9 @@ class PatientProfile(models.Model):
         blank=True, help_text="نام/اطلاعات تماس وصی یا قیم قانونی، در صورت وجود"
     )
 
-    language_dialect = models.CharField(max_length=100, blank=True, help_text="زبان و گویش")
+    language_dialect = models.CharField(max_length=100, blank=True, help_text="زبان و گویش (قدیمی؛ جایگزین: ethnicities)")
+    ethnicities = models.JSONField(default=list, blank=True, help_text="قومیت / زبان مادری — کلیدهای caregivers.choices.Ethnicity")
+    ethnicity_details = models.JSONField(default=dict, blank=True, help_text="اهل کجا — زیرگروه هر قومیت (ETHNICITY_SUBGROUPS)")
     basic_medical_info = models.TextField(
         blank=True, help_text="اطلاعات پزشکی پایه — بیماری‌های مهم و نیازهای ویژه"
     )

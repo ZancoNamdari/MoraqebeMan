@@ -9,7 +9,7 @@ export const FIELD_LABELS: Record<string, string> = {
   full_address: "نشانی", province: "استان", city: "شهر", district: "منطقه",
   postal_code: "کد پستی", emergency_contact_phone: "شماره تماس اضطراری",
   guardianship_status: "وضعیت سرپرستی", guardian_details: "اطلاعات وصی/قیم",
-  language_dialect: "زبان و گویش", basic_medical_info: "اطلاعات پزشکی پایه",
+  language_dialect: "زبان و گویش", ethnicities: "قومیت / زبان مادری", ethnicity_details: "اهل کجا", basic_medical_info: "اطلاعات پزشکی پایه",
   phone_number: "شماره موبایل", relation: "نسبت", is_primary_contact: "مخاطب اصلی",
   first_name: "نام", last_name: "نام خانوادگی", password: "رمز عبور", email: "ایمیل",
   display_name: "نام نمایشی", detail: "خطا",
