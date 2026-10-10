@@ -42,6 +42,7 @@ export function formatJalaliDate(year: number | null, month: number | null, day:
 // Reasonable range for a caregiver's birth date — current Jalali year
 // is roughly Gregorian year - 621/622.
 const CURRENT_JALALI_YEAR = new Date().getFullYear() - 621
+export const CONTRACT_JALALI_YEAR_RANGE = Array.from({ length: 20 }, (_, i) => 1405 + i)
 export const JALALI_YEAR_RANGE = Array.from({ length: 80 }, (_, i) => CURRENT_JALALI_YEAR - 15 - i)
 
 /**

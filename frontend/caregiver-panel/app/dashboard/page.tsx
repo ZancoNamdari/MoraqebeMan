@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   UserRound, MapPin, Briefcase, Sparkles, NotebookPen, Users,
-  FileUser, RotateCcwClock, Building2,
+  FileUser, RotateCcwClock, Building2, ClipboardList,
 } from "lucide-react"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
@@ -137,9 +137,14 @@ export default function DashboardPage() {
                   {submitMsg.missing && <ul className="mt-1 list-disc pr-5">{submitMsg.missing.map((m) => <li key={m}>{m}</li>)}</ul>}
                 </div>
               )}
-              <Button className="w-full sm:w-auto" disabled={submitting} onClick={handleSubmitForReview}>
-                {submitting ? "در حال ارسال..." : "ارسال برای بررسی ادمین"}
-              </Button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button className="w-full sm:w-auto" onClick={() => router.push(ROUTES.register)}>
+                  تکمیل ثبت‌نام (مرحله‌به‌مرحله)
+                </Button>
+                <Button variant="outline" className="w-full sm:w-auto" disabled={submitting} onClick={handleSubmitForReview}>
+                  {submitting ? "در حال ارسال..." : "ارسال برای بررسی ادمین"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -194,6 +199,7 @@ export default function DashboardPage() {
         <div>
           <h2 className="mb-2 px-1 text-sm font-semibold text-rose-900">پروفایل من</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <ActionCard icon={ClipboardList} title="فرم ثبت‌نام خدمت‌دهنده" description="نوع خدمت، شرایط همکاری، سوابق و پرسشنامه" onClick={() => router.push(ROUTES.register)} />
             <ActionCard icon={UserRound} title="اطلاعات هویتی" description="نام، مشخصات و اطلاعات فردی" onClick={() => router.push(ROUTES.identity)} />
             <ActionCard icon={MapPin} title="مناطق خدماتی" description="شهر و مناطقی که پوشش می‌دهید" onClick={() => router.push(ROUTES.serviceAreas)} />
             <ActionCard icon={Briefcase} title="سوابق کاری" description="تجربه‌های قبلی مراقبت" onClick={() => router.push(ROUTES.experience)} />

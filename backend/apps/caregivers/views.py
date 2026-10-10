@@ -18,11 +18,13 @@ from .permissions import IsAdminOrSuperuser, IsCaregiver
 from .serializers import (
     BlacklistAppealSerializer,
     CandidateTrackingSerializer,
+    CaregiverCompatibilityQuestionnaireSerializer,
     CaregiverExperienceSerializer,
     CaregiverFullProfileSerializer,
     CaregiverReferenceListSerializer,
     CaregiverReferenceSerializer,
     CaregiverServiceAreaSerializer,
+    CaregiverServiceTypesSerializer,
     CaregiverSkillsSerializer,
     CaregiverWorkPreferencesSerializer,
     CreateBlacklistAppealSerializer,
@@ -87,7 +89,9 @@ class MyWorkPreferencesView(APIView):
         prefs = getattr(profile, "work_preferences", None)
         if prefs is None:
             return Response({"detail": "این بخش هنوز تکمیل نشده است."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(CaregiverWorkPreferencesSerializer(prefs).data)
+        data = CaregiverWorkPreferencesSerializer(prefs).data
+        data["serves_all_areas"] = profile.serves_all_areas
+        return Response(data)
 
     def put(self, request):
         profile = _get_or_create_profile(request.user.id)
@@ -103,6 +107,52 @@ class MyWorkPreferencesView(APIView):
             # would generate a misleading duplicate "accepted terms"
             # entry in their own history.
             audit.terms_accepted(request.user.id)
+        if "serves_all_areas" in request.data:
+            profile.serves_all_areas = bool(request.data["serves_all_areas"])
+            profile.save(update_fields=["serves_all_areas"])
+        data = serializer.data
+        data["serves_all_areas"] = profile.serves_all_areas
+        return Response(data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
+
+
+class MyServiceTypesView(APIView):
+    """GET/PUT /api/caregivers/me/service-types/ — نوع(های) خدمتی که مراقب ارائه می‌دهد
+    (سالمندیار، امور منزل، مادریار، بهیار) و زیرشاخه‌ها؛ همان ساختار نسخه‌ی آژانس/سوپروایزر."""
+    permission_classes = [IsCaregiver]
+
+    def get(self, request):
+        profile = _get_or_create_profile(request.user.id)
+        return Response({"service_types": profile.service_types, "service_subtypes": profile.service_subtypes})
+
+    def put(self, request):
+        profile = _get_or_create_profile(request.user.id)
+        serializer = CaregiverServiceTypesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile.service_types = serializer.validated_data.get("service_types", [])
+        profile.service_subtypes = serializer.validated_data.get("service_subtypes", {})
+        profile.save(update_fields=["service_types", "service_subtypes"])
+        audit.caregiver_updated(request.user.id, request.user.id, section="service_types")
+        return Response({"service_types": profile.service_types, "service_subtypes": profile.service_subtypes})
+
+
+class MyCompatibilityQuestionnaireView(APIView):
+    """GET/PUT /api/caregivers/me/compatibility-questionnaire/ — پرسشنامه‌ی سازگاری (اختیاری برای تأیید)."""
+    permission_classes = [IsCaregiver]
+
+    def get(self, request):
+        profile = _get_or_create_profile(request.user.id)
+        questionnaire = getattr(profile, "compatibility_questionnaire", None)
+        if questionnaire is None:
+            return Response({"detail": "این بخش هنوز تکمیل نشده است."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(CaregiverCompatibilityQuestionnaireSerializer(questionnaire).data)
+
+    def put(self, request):
+        profile = _get_or_create_profile(request.user.id)
+        existing = getattr(profile, "compatibility_questionnaire", None)
+        serializer = CaregiverCompatibilityQuestionnaireSerializer(instance=existing, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(caregiver=profile)
+        audit.caregiver_updated(request.user.id, request.user.id, section="compatibility_questionnaire")
         return Response(serializer.data, status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED)
 
 
@@ -218,6 +268,8 @@ class MyFullProfileView(APIView):
             "blacklist_reason": profile.blacklist_reason,
             "needs_more_docs_note": profile.needs_more_docs_note,
             "missing_forms": _missing_forms(profile, request.user.id),
+            "service_types": profile.service_types,
+            "service_subtypes": profile.service_subtypes,
             "identity": _get_identity_dict(request.user.id),
             "work_preferences": getattr(profile, "work_preferences", None),
             "service_areas": profile.service_areas.all(),
@@ -239,6 +291,8 @@ class SubmitMyProfileForReviewView(APIView):
     def post(self, request):
         profile = _get_or_create_profile(request.user.id)
         missing = _missing_forms(profile, request.user.id)
+        if not profile.service_types:
+            missing = ["نوع خدمت (انتخاب حداقل یک نوع خدمت)", *missing]
         if missing:
             return Response(
                 {"detail": "برای ارسال، ابتدا فرم‌های زیر را کامل کنید.", "missing": missing},

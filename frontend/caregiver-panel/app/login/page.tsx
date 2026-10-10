@@ -127,7 +127,7 @@ function LoginForm() {
       authService.clearMeCache()
       window.localStorage.setItem("access_token", data.tokens.access)
       window.localStorage.setItem("refresh_token", data.tokens.refresh)
-      router.push(ROUTES.dashboard)
+      router.push(ROUTES.register)
     } catch (err: any) {
       setError(extractErrorMessage(err, "ثبت‌نام با خطا مواجه شد. اطلاعات را بررسی کنید."))
     } finally {

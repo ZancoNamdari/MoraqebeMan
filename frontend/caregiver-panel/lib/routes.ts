@@ -1,6 +1,7 @@
 export const ROUTES = {
   login: "/login",
   dashboard: "/dashboard",
+  register: "/register",
   patientDetail: (id: number | string) => `/patients/detail?id=${id}`,
   terms: "/terms",
   identity: "/profile/identity",
