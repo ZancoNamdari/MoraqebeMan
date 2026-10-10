@@ -1,5 +1,5 @@
 export const FIELD_LABELS: Record<string, string> = {
-  full_name: "نام کامل", father_name: "نام پدر", birth_date: "تاریخ تولد",
+  full_name: "نام کامل", service_type: "نوع خدمت", service_subtype: "زیرشاخه‌ی خدمت", father_name: "نام پدر", birth_date: "تاریخ تولد",
   national_id: "شماره ملی", birth_certificate_number: "شماره شناسنامه",
   birth_certificate_issue_place: "محل صدور شناسنامه",
   full_address: "نشانی", province: "استان", city: "شهر", district: "منطقه",

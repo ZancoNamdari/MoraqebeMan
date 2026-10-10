@@ -16,6 +16,7 @@ import { ErrorSummary } from "@/components/forms/error-summary"
 import { parseApiErrors, type ApiFieldError } from "@/lib/field-labels"
 import { GUARDIANSHIP_STATUS, LANGUAGE_DIALECT, GENDER, PHYSICAL_CONDITION, NEEDED_SHIFT } from "@/lib/constants"
 import { myPatientService } from "@/services/patient.service"
+import { SERVICE_OPTIONS, hasPhysicalCondition } from "@/lib/services"
 import { ROUTES } from "@/lib/routes"
 import type { PatientProfile } from "@/types/patient"
 
@@ -37,7 +38,7 @@ export default function ProfilePage() {
         // created one. Start an empty, editable draft rather than
         // leaving the page stuck on a loading skeleton forever.
         setProfile({
-          id: 0, user_id: null, access_code: "", full_name: "", gender: "", father_name: "", birth_date: null,
+          id: 0, user_id: null, access_code: "", service_type: "", service_subtype: "", full_name: "", gender: "", father_name: "", birth_date: null,
           national_id: "", birth_certificate_number: "", birth_certificate_issue_place: "",
           full_address: "", province: null, city: null, district: null,
           province_name: null, city_name: null, district_name: null, postal_code: "",
@@ -55,6 +56,7 @@ export default function ProfilePage() {
     setSaving(true); setError([]); setMessage("")
     try {
       const updated = await myPatientService.update({
+        service_type: profile.service_type, service_subtype: profile.service_subtype,
         full_name: profile.full_name, gender: profile.gender, father_name: profile.father_name,
         birth_date: profile.birth_date, national_id: profile.national_id,
         full_address: profile.full_address, province: profile.province,
@@ -98,6 +100,22 @@ export default function ProfilePage() {
             <Card className="border-border">
               <CardHeader><CardTitle className="text-foreground">اطلاعات هویتی</CardTitle></CardHeader>
               <CardContent className="space-y-4">
+                <Field label="چه خدمتی لازم دارید؟">
+                  <ChoiceSelect
+                    choices={SERVICE_OPTIONS.map((o) => [o.key, o.label] as [string, string])}
+                    value={profile.service_type || ""}
+                    onChange={(v) => setProfile({ ...profile, service_type: v, service_subtype: "" })}
+                  />
+                </Field>
+                {SERVICE_OPTIONS.find((o) => o.key === profile.service_type)?.subtypes && (
+                  <Field label={SERVICE_OPTIONS.find((o) => o.key === profile.service_type)?.subtypeLabel ?? "زیرشاخه"}>
+                    <ChoiceSelect
+                      choices={SERVICE_OPTIONS.find((o) => o.key === profile.service_type)!.subtypes!}
+                      value={profile.service_subtype || ""}
+                      onChange={(v) => setProfile({ ...profile, service_subtype: v })}
+                    />
+                  </Field>
+                )}
                 <Field label="نام و نام خانوادگی" required>
                   <Input value={profile.full_name} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} />
                 </Field>
@@ -139,9 +157,11 @@ export default function ProfilePage() {
                 <Field label="اطلاعات پزشکی پایه">
                   <Textarea value={profile.basic_medical_info} onChange={(e) => setProfile({ ...profile, basic_medical_info: e.target.value })} />
                 </Field>
-                <Field label="شرایط جسمانی فعلی">
-                  <ChoiceSelect choices={PHYSICAL_CONDITION} value={profile.physical_condition} onChange={(v) => setProfile({ ...profile, physical_condition: v })} />
-                </Field>
+                {hasPhysicalCondition(profile.service_type) && (
+                  <Field label="شرایط جسمانی فعلی">
+                    <ChoiceSelect choices={PHYSICAL_CONDITION} value={profile.physical_condition} onChange={(v) => setProfile({ ...profile, physical_condition: v })} />
+                  </Field>
+                )}
                 <Field label="شیفت‌های زمانی مورد نیاز برای مراقبت">
                   <CheckboxGroup choices={NEEDED_SHIFT} value={profile.needed_shifts || []} onChange={(v) => setProfile({ ...profile, needed_shifts: v })} />
                 </Field>

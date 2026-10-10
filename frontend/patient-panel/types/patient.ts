@@ -3,6 +3,8 @@ export interface PatientProfile {
   user_id: number | null
   access_code: string
   full_name: string
+  service_type: string
+  service_subtype: string
   gender: string
   father_name: string
   birth_date: string | null

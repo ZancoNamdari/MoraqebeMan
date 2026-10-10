@@ -128,7 +128,7 @@ function LoginForm() {
           <CardDescription>
             {mode === "login-phone" && "ورود با شماره موبایل"}
             {mode === "login-code" && "کد ورود را وارد کنید"}
-            {mode === "register" && "ثبت‌نام به عنوان بیمار/سالمند"}
+            {mode === "register" && "ثبت‌نام به عنوان خدمت‌گیرنده"}
           </CardDescription>
         </CardHeader>
         <CardContent>

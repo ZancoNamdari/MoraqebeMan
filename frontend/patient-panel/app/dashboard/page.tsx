@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
 import { myPatientService } from "@/services/patient.service"
 import type { FamilyLink, PatientProfile } from "@/types/patient"
+import { serviceLabel, subtypeLabel } from "@/lib/services"
 import { ROUTES } from "@/lib/routes"
 
 export default function DashboardPage() {
@@ -76,6 +77,11 @@ export default function DashboardPage() {
             <Card className="border-border bg-gradient-to-l from-secondary to-secondary">
               <CardContent className="p-4">
                 <p className="text-lg font-bold text-foreground">{profile?.full_name || "پروفایل شما"}</p>
+                {profile?.service_type && (
+                  <span className="mt-1 inline-block rounded-full bg-pink-100 px-2 py-0.5 text-[11px] text-rose-800">
+                    {[serviceLabel(profile.service_type), subtypeLabel(profile.service_type, profile.service_subtype)].filter(Boolean).join(" · ")}
+                  </span>
+                )}
                 <p className="mt-2 text-xs text-muted-foreground">کد شما — برای دعوت اعضای خانواده به آنها بدهید</p>
                 <p dir="ltr" className="text-left text-lg font-bold tracking-wider text-primary-strong">{profile?.access_code}</p>
               </CardContent>
