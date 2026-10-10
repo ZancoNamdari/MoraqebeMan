@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Field } from "@/components/forms/fields"
 import { myAuditHistoryService, type AuditLogEntry } from "@/services/my_audit_history.service"
 import { ROUTES } from "@/lib/routes"
+import { AppHeader } from "@/components/layout/app-header"
 
 export default function MyHistoryPage() {
   const { user, loading: authLoading } = useAuth(["caregiver"])
@@ -39,13 +40,10 @@ export default function MyHistoryPage() {
   if (authLoading || !user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">تاریخچه حساب من</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background pb-10">
+      <AppHeader title="تاریخچه حساب من" maxWidth="max-w-2xl">
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
         <p className="text-xs text-muted-foreground">

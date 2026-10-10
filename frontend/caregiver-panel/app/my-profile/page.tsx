@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppHeader } from "@/components/layout/app-header"
+import { BottomNav } from "@/components/layout/bottom-nav"
 import { caregiverWizardService } from "@/services/caregiver_wizard.service"
 import { summarizeSchedule, type CollaborationSchedule } from "@/components/wizard-forms/collaboration-picker"
 import { CAREGIVER_QUESTIONNAIRE } from "@/lib/compatibility-questionnaire"
@@ -107,7 +108,7 @@ export default function CaregiverProfilePage() {
   if (authLoading || !user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+    <div className="min-h-screen bg-background pb-28 md:pb-10">
       <AppHeader
         title={
           <span className="flex flex-col items-start gap-1">
@@ -302,6 +303,7 @@ export default function CaregiverProfilePage() {
           </>
         )}
       </main>
+      <BottomNav />
     </div>
   )
 }

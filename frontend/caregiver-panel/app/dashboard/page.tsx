@@ -4,8 +4,10 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   UserRound, MapPin, Briefcase, Sparkles, NotebookPen, Users,
-  FileUser, RotateCcwClock, Building2, ClipboardList,
+  FileUser, RotateCcwClock, Building2, ClipboardList, LogOut, ChevronLeft, UserX,
 } from "lucide-react"
+import { AppHeader } from "@/components/layout/app-header"
+import { BottomNav } from "@/components/layout/bottom-nav"
 import { useAuth } from "@/hooks/useauth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -17,15 +19,6 @@ import { workPreferencesService } from "@/services/work_preferences.service"
 import { myProfileStatusService, type MyFullProfileStatus } from "@/services/my_profile_status.service"
 import type { CaregiverAssignment } from "@/types/care"
 import { ROUTES } from "@/lib/routes"
-import { patientAvatar } from "@/lib/constants"
-
-function HexIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 46" fill="none" className={className} aria-hidden="true">
-      <path d="M20 1 38 12v22L20 45 2 34V12Z" fill="currentColor" fillOpacity="0.14" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  )
-}
 
 function ActionCard({ icon: Icon, title, description, onClick }: {
   icon: React.ElementType; title: string; description: string; onClick: () => void
@@ -33,13 +26,13 @@ function ActionCard({ icon: Icon, title, description, onClick }: {
   return (
     <button
       onClick={onClick}
-      className="flex items-start gap-3 rounded-2xl border border-pink-100 bg-white p-4 text-right shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+      className="flex items-start gap-3 rounded-2xl border border-border bg-white p-4 text-right shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-rose-700">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary-strong">
         <Icon className="h-5 w-5" />
       </span>
       <span className="flex-1">
-        <span className="block text-sm font-semibold text-rose-900">{title}</span>
+        <span className="block text-sm font-semibold">{title}</span>
         <span className="mt-0.5 block text-xs text-muted-foreground">{description}</span>
       </span>
     </button>
@@ -50,6 +43,7 @@ export default function DashboardPage() {
   const { user, loading: authLoading, logout } = useAuth(["caregiver"])
   const [patients, setPatients] = useState<CaregiverAssignment[]>([])
   const [loading, setLoading] = useState(true)
+  const [historyCount, setHistoryCount] = useState<number | null>(null)
   const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null)
   const router = useRouter()
 
@@ -64,6 +58,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!user) return
     careService.myPatients().then(setPatients).finally(() => setLoading(false))
+    careService.myServiceHistory().then((h) => setHistoryCount(h.length)).catch(() => {})
     workPreferencesService.me().then((data) => setTermsAccepted(data?.terms_accepted === true))
     myProfileStatusService.get().then(setProfileStatus).catch(() => {})
   }, [user])
@@ -99,24 +94,39 @@ export default function DashboardPage() {
 
   const displayName = profileStatus?.identity?.full_name || user?.username
 
+  const todayParts = Object.fromEntries(
+    new Intl.DateTimeFormat("fa-IR-u-ca-persian", { weekday: "long", day: "numeric", month: "long" })
+      .formatToParts(new Date()).map((x) => [x.type, x.value])
+  ) as Record<string, string>
+  const today = `${todayParts.weekday}، ${todayParts.day} ${todayParts.month}`
+  const STATUS_CHIP: Record<string, { label: string; cls: string }> = {
+    approved: { label: "حساب تأییدشده", cls: "bg-[#DDF3E6] text-[#1F6B4D]" },
+    pending: { label: "در انتظار تأیید", cls: "bg-[#FFF1D6] text-[#7A5300]" },
+    draft: { label: "تکمیل نشده", cls: "bg-[#FFF1D6] text-[#7A5300]" },
+    needs_more_docs: { label: "نیازمند مدارک", cls: "bg-[#FFF1D6] text-[#7A5300]" },
+    rejected: { label: "تأیید نشد", cls: "bg-[#FDE3E0] text-[#8A2A2A]" },
+    suspended: { label: "مسدود", cls: "bg-[#FDE3E0] text-[#8A2A2A]" },
+  }
+  const chip = profileStatus ? STATUS_CHIP[profileStatus.status] : undefined
+  const num = (n: number | null) => (n === null ? "—" : n.toLocaleString("fa-IR"))
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/60 via-background to-background">
-      <header className="border-b border-pink-100 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2.5">
-            <HexIcon className="h-8 w-8 shrink-0 text-rose-600" />
-            <h1 className="text-base font-bold text-rose-900">مراقب من</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {displayName && <span className="text-sm text-muted-foreground">سلام، {displayName}</span>}
-            <Button size="sm" variant="outline" className="border-pink-200 text-rose-700 hover:bg-pink-50" onClick={logout}>
-              خروج
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background pb-28 md:pb-10">
+      <AppHeader title={displayName ? `سلام، ${displayName}` : "مراقب من"} subtitle={today} maxWidth="max-w-3xl" sticky={false}>
+        <Button size="sm" variant="ghost" className="bg-white/15" onClick={logout} aria-label="خروج">
+          <LogOut className="h-4 w-4" aria-hidden="true" /> خروج
+        </Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-3xl space-y-6 p-4">
+        <section aria-label="خلاصه‌ی وضعیت" className="-mt-1 flex items-stretch divide-x divide-x-reverse divide-border rounded-3xl border border-border bg-white p-4 shadow-sm">
+          <div className="flex-1 text-center"><p className="text-2xl font-extrabold">{loading ? "—" : num(patients.length)}</p><p className="text-xs text-muted-foreground">خدمت‌گیرنده‌ی فعال</p></div>
+          <div className="flex-1 text-center"><p className="text-2xl font-extrabold">{num(historyCount)}</p><p className="text-xs text-muted-foreground">سابقه‌ی خدمت</p></div>
+          <div className="flex flex-1 items-center justify-center">
+            {chip ? <span className={`rounded-full px-3 py-1 text-xs font-semibold ${chip.cls}`}>{chip.label}</span> : <span className="text-xs text-muted-foreground">—</span>}
+          </div>
+        </section>
+
         {(profileStatus?.status === "draft" || profileStatus?.status === "rejected") && (
           <Card className="border-sky-200 bg-sky-50">
             <CardContent className="space-y-3 p-4 text-sm text-sky-900">
@@ -166,7 +176,7 @@ export default function DashboardPage() {
         )}
         {profileStatus?.status === "rejected" && (
           <Card className="border-rose-200 bg-rose-50">
-            <CardContent className="p-4 text-sm text-rose-900">
+            <CardContent className="p-4 text-sm ">
               <p className="font-medium">پروفایل شما تأیید نشد.</p>
               {profileStatus.rejection_reason && <p className="mt-1">دلیل: {profileStatus.rejection_reason}</p>}
             </CardContent>
@@ -197,7 +207,7 @@ export default function DashboardPage() {
         )}
 
         <div>
-          <h2 className="mb-2 px-1 text-sm font-semibold text-rose-900">پروفایل من</h2>
+          <h2 className="mb-2 px-1 text-sm font-semibold">پروفایل من</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <ActionCard icon={ClipboardList} title="فرم ثبت‌نام خدمت‌دهنده" description="نوع خدمت، شرایط همکاری، سوابق و پرسشنامه" onClick={() => router.push(ROUTES.register)} />
             <ActionCard icon={UserRound} title="اطلاعات هویتی" description="نام، مشخصات و اطلاعات فردی" onClick={() => router.push(ROUTES.identity)} />
@@ -210,7 +220,7 @@ export default function DashboardPage() {
         </div>
 
         <div>
-          <h2 className="mb-2 px-1 text-sm font-semibold text-rose-900">ابزارها</h2>
+          <h2 className="mb-2 px-1 text-sm font-semibold">ابزارها</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <ActionCard icon={NotebookPen} title="یادداشت درباره دریافت‌کننده خدمت" description="ثبت مشاهدات یا نگرانی‌ها" onClick={() => router.push(ROUTES.patientNotes)} />
             <ActionCard icon={ClipboardList} title="سوابق خدمت من" description="افرادی که خدمتشان را پذیرفته‌اید" onClick={() => router.push(ROUTES.serviceHistory)} />
@@ -218,27 +228,27 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <Card className="border-pink-100">
+        <Card className="border-border">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-rose-700">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary-strong">
                 <Building2 className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-sm font-medium text-rose-900">عضویت در آژانس</p>
+                <p className="text-sm font-medium">عضویت در آژانس</p>
                 <p className="text-xs text-muted-foreground">اگر از طریق یک شرکت یا آژانس مراقبتی فعالیت می‌کنید، با کد آژانس درخواست عضویت دهید.</p>
               </div>
             </div>
             <Button
               size="sm" variant="outline"
-              className="border-pink-200 text-rose-700 hover:bg-pink-50"
+              className="border-primary text-primary-strong hover:bg-accent"
               onClick={() => setShowJoinAgency((v) => !v)}
             >
               {showJoinAgency ? "بستن" : "پیوستن با کد آژانس"}
             </Button>
           </CardContent>
           {showJoinAgency && (
-            <CardContent className="border-t border-pink-100 pt-4">
+            <CardContent className="border-t border-border pt-4">
               {agencyMessage && (
                 <div className={`mb-2 rounded-md p-2 text-xs ${agencyMessage.kind === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>
                   {agencyMessage.text}
@@ -255,43 +265,44 @@ export default function DashboardPage() {
         </Card>
 
         <div>
-          <h2 className="text-xl font-bold text-rose-900">بیماران تحت مراقبت شما</h2>
-          <p className="text-sm text-muted-foreground">برای ثبت گزارش مراقبت روی هر بیمار کلیک کنید</p>
+          <h2 className="text-lg font-extrabold">خدمت‌گیرندگان تحت مراقبت شما</h2>
+          <p className="text-sm text-muted-foreground">برای ثبت گزارش مراقبت، روی هر نفر بزنید</p>
         </div>
 
         {loading ? (
           <div className="space-y-3">
-            {[1, 2].map((i) => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)}
+            {[1, 2].map((i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}
           </div>
         ) : patients.length === 0 ? (
-          <Card className="border-pink-100">
+          <Card>
             <CardContent className="flex flex-col items-center gap-2 p-10 text-center">
-              <span className="text-3xl">🌷</span>
-              <p className="text-muted-foreground">در حال حاضر هیچ بیماری به شما تخصیص داده نشده است.</p>
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-primary-strong"><UserX className="h-7 w-7" aria-hidden="true" /></span>
+              <p className="text-muted-foreground">در حال حاضر هیچ خدمت‌گیرنده‌ای به شما تخصیص داده نشده است.</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {patients.map((a) => (
-              <Card
-                key={a.id}
-                className="cursor-pointer border-pink-100 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-pink-100"
-                onClick={() => router.push(ROUTES.patientDetail(a.patient))}
-              >
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-lg">
-                    {patientAvatar(a.patient_gender)}
+              <div key={a.id} className="rounded-3xl border border-border bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent text-lg font-extrabold text-primary-strong" aria-hidden="true">
+                    {(a.patient_name || "؟").trim().charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-rose-950">{a.patient_name}</p>
+                    <p className="truncate font-bold">{a.patient_name}</p>
                     <p className="truncate text-xs text-muted-foreground">از تاریخ {a.assigned_at.slice(0, 10)}</p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Button className="flex-1 rounded-xl" onClick={() => router.push(ROUTES.patientDetail(a.patient))}>ثبت گزارش</Button>
+                  <Button variant="outline" className="flex-1 rounded-xl border-primary text-primary-strong" onClick={() => router.push(ROUTES.patientNotes)}>یادداشت</Button>
+                </div>
+              </div>
             ))}
           </div>
         )}
       </main>
+      <BottomNav />
     </div>
   )
 }

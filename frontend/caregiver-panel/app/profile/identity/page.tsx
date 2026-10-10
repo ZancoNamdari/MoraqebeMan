@@ -21,6 +21,7 @@ import { parseJalaliDate, formatJalaliDate, daysInJalaliMonth, PERSIAN_MONTH_LIS
 import { ProfilePhotoUploader } from "@/components/forms/profile-photo-uploader"
 import { TalentPicker } from "@/components/forms/talent-picker"
 import { ROUTES } from "@/lib/routes"
+import { AppHeader } from "@/components/layout/app-header"
 
 const emptyForm: MyIdentityProfile = {
   full_name: "", father_name: "", birth_certificate_number: "",
@@ -97,13 +98,10 @@ export default function IdentityFormPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-24">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">اطلاعات هویتی</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background pb-24">
+      <AppHeader title="اطلاعات هویتی" maxWidth="max-w-2xl">
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
         {loading ? (

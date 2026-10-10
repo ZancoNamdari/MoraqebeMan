@@ -563,7 +563,7 @@ export default function CaregiverRegistrationWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background">
+    <div className="min-h-screen bg-background">
       <AppHeader
         title="تکمیل ثبت‌نام خدمت‌دهنده"
         maxWidth="max-w-5xl"
@@ -574,7 +574,7 @@ export default function CaregiverRegistrationWizard() {
           </>
         }
       >
-        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت به داشبورد</Button>
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
       </AppHeader>
 
       <main className="mx-auto max-w-5xl space-y-4 p-4 pb-28">

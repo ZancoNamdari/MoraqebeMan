@@ -72,7 +72,7 @@ function PatientDetailInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/50 via-background to-background pb-10">
+    <div className="min-h-screen bg-background pb-10">
       <AppHeader
         title={<span className="flex items-center gap-2"><span className="text-lg">{patientAvatar(patientGender)}</span>{patientName || "..."}</span>}
         maxWidth="max-w-xl"

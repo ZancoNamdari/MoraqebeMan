@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { careService, type ServiceHistoryItem } from "@/services/care.service"
 import { ROUTES } from "@/lib/routes"
+import { AppHeader } from "@/components/layout/app-header"
+import { BottomNav } from "@/components/layout/bottom-nav"
 
 const PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹"
 const fa = (v: string | number) => String(v).replace(/\d/g, (d) => PERSIAN_DIGITS[Number(d)])
@@ -32,13 +34,10 @@ export default function ServiceHistoryPage() {
   if (authLoading || !user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50/50 via-background to-background pb-10">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between p-4">
-          <h1 className="font-bold text-rose-900">سوابق خدمت من</h1>
-          <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background pb-28 md:pb-10">
+      <AppHeader title="سوابق خدمت من" maxWidth="max-w-2xl">
+        <Button variant="ghost" size="sm" onClick={() => router.push(ROUTES.dashboard)}>بازگشت</Button>
+      </AppHeader>
 
       <main className="mx-auto max-w-2xl space-y-3 p-4">
         <p className="text-xs text-muted-foreground">
@@ -68,6 +67,7 @@ export default function ServiceHistoryPage() {
           </Card>
         ))}
       </main>
+      <BottomNav />
     </div>
   )
 }
