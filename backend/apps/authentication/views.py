@@ -68,7 +68,7 @@ class RegisterOTPRequestView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         except OTPError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-        return Response({"detail": "کد تأیید برای شماره‌ی شما پیامک شد."}, status=status.HTTP_202_ACCEPTED)
+        return Response({"detail": "اگر این شماره قبلاً ثبت‌نام نکرده باشد، کد تأیید پیامک شد."}, status=status.HTTP_202_ACCEPTED)
 
 
 class RegisterView(APIView):

@@ -15,20 +15,12 @@ from apps.care.matching.topsis import calculate_topsis
 from apps.care.matching import suggest_caregivers_for_patient
 from apps.caregivers.models import CaregiverCompatibilityQuestionnaire, CaregiverProfile, CaregiverStatus, CaregiverWorkPreferences
 from apps.families.models import PatientCompatibilityQuestionnaire, PatientProfile
+from tests.factories.caregiver_questionnaire import FLEX_ANSWERS, RIGID_ANSWERS, seed_caregiver_test_mappings
 from tests.factories.user_factory import make_user
 
 
-ALL_A = {
-    "religious_belief_accommodation": "a", "physical_contact_sensitivity_adaptation": "a",
-    "prayer_time_scheduling_flexibility": "a", "traditional_belief_acceptance": "a",
-    "family_event_participation": "a", "false_accusation_reaction": "a",
-    "confidentiality_commitment": "a", "gender_based_task_flexibility": "a",
-    "home_environment_adaptability": "a", "schedule_flexibility_for_family_events": "a",
-    "traditional_food_treatment_openness": "a", "personal_conversation_patience": "a",
-    "home_organization_adaptability": "a",
-    "cultural_expression_tolerance": "a", "unfamiliar_custom_acceptance": "a", "dialect_communication_effort": "a",
-}
-ALL_D = {k: "d" for k in ALL_A}
+ALL_A = FLEX_ANSWERS
+ALL_D = RIGID_ANSWERS
 
 DEMANDING_PATIENT = {
     "religious_beliefs_priority": "strongly_agree", "new_treatment_openness": "none",
@@ -197,6 +189,7 @@ class MCDMIntegrationTests(TestCase):
 
     def setUp(self):
         call_command("seed_trait_mappings")
+        seed_caregiver_test_mappings()
         self.patient = PatientProfile.objects.create(full_name="بیمار MCDM تست")
         PatientCompatibilityQuestionnaire.objects.create(patient=self.patient, **DEMANDING_PATIENT)
 

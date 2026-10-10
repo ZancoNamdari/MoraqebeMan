@@ -167,7 +167,8 @@ class RegistrationOTPService:
     def request(self, phone_number: str) -> None:
         from .models import RegistrationOTP
         if User.objects.filter(phone_number=phone_number).exists():
-            raise RegistrationError("این شماره تلفن قبلاً ثبت شده است. وارد شوید.")
+            # پاسخ خنثی: وجودِ حساب برای یک شماره افشا نشود (user enumeration)؛ فقط پیامک نمی‌رود.
+            return
         if RegistrationOTP.last_issued_recently(phone_number):
             raise OTPError("کد تازه ارسال شده؛ لطفاً کمی صبر کنید و دوباره درخواست دهید.")
         _otp, raw_code = RegistrationOTP.issue_for(phone_number)

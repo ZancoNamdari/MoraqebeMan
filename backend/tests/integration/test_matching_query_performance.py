@@ -4,20 +4,12 @@ from django.db import connection
 
 from apps.accounts.models import UserRole
 from apps.care.matching import suggest_caregivers_for_patient
+from tests.factories.caregiver_questionnaire import FLEX_ANSWERS
 from apps.caregivers.models import CaregiverCompatibilityQuestionnaire, CaregiverProfile, CaregiverStatus
 from apps.families.models import PatientCompatibilityQuestionnaire, PatientProfile
 from tests.factories.user_factory import make_user
 
-ALL_A = {
-    "religious_belief_accommodation": "a", "physical_contact_sensitivity_adaptation": "a",
-    "prayer_time_scheduling_flexibility": "a", "traditional_belief_acceptance": "a",
-    "family_event_participation": "a", "false_accusation_reaction": "a",
-    "confidentiality_commitment": "a", "gender_based_task_flexibility": "a",
-    "home_environment_adaptability": "a", "schedule_flexibility_for_family_events": "a",
-    "traditional_food_treatment_openness": "a", "personal_conversation_patience": "a",
-    "home_organization_adaptability": "a",
-    "cultural_expression_tolerance": "a", "unfamiliar_custom_acceptance": "a", "dialect_communication_effort": "a",
-}
+ALL_A = FLEX_ANSWERS
 DEMANDING_PATIENT = {
     "religious_beliefs_priority": "strongly_agree", "new_treatment_openness": "none",
     "caregiver_as_family_member": "yes", "respectful_disagreement_acceptance": "reject",

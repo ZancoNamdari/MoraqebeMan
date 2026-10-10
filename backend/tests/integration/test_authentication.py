@@ -374,7 +374,11 @@ class RegisterOTPTests(BaseAPITestCase):
         reuse = self.client.post("/api/auth/register/", self._payload(code=code, phone_number="09125550001"), format="json")
         self.assertEqual(reuse.status_code, 400)
 
-    def test_request_for_existing_phone_rejected(self):
+    @patch("apps.authentication.services.send_otp_sms")
+    def test_request_for_existing_phone_is_neutral_and_sends_nothing(self, mock_sms):
+        from apps.authentication.models import RegistrationOTP
         make_user(phone_number="09125550009")
         r = self.client.post("/api/auth/register/otp/request/", {"phone_number": "09125550009"}, format="json")
-        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.status_code, 202)  # همان پاسخِ شماره‌ی جدید؛ افشا نمی‌کند حساب هست
+        mock_sms.delay.assert_not_called()
+        self.assertFalse(RegistrationOTP.objects.filter(phone_number="09125550009").exists())

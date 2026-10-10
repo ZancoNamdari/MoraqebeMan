@@ -371,14 +371,8 @@ VALID_PATIENT_QUESTIONNAIRE = {
 }
 
 CAREGIVER_FLEX_ANSWERS = {
-    "religious_belief_accommodation": "a", "physical_contact_sensitivity_adaptation": "a",
-    "prayer_time_scheduling_flexibility": "a", "traditional_belief_acceptance": "a",
-    "family_event_participation": "b", "false_accusation_reaction": "b",
-    "confidentiality_commitment": "b", "gender_based_task_flexibility": "b",
-    "home_environment_adaptability": "c", "schedule_flexibility_for_family_events": "c",
-    "traditional_food_treatment_openness": "c", "personal_conversation_patience": "c",
-    "home_organization_adaptability": "c",
-    "cultural_expression_tolerance": "d", "unfamiliar_custom_acceptance": "d", "dialect_communication_effort": "d",
+    "religiosity_level": "100", "family_compatibility_level": "100",
+    "patience_level": "0", "clinical_compatibility_level": "100",
 }
 
 
@@ -497,8 +491,7 @@ class MatchingIncludesSectionBreakdownTests(TestCase):
     def test_suggestion_includes_per_section_breakdown(self):
         response = self.sup_client.get(f"/api/care/suggest-caregivers/?patient_code={self.patient.access_code}")
         match = next(s for s in response.data["suggestions"] if s["caregiver_user_id"] == self.caregiver_user.id)
-        self.assertEqual(match["flexibility_sections"]["عقیدتی و مناسکی"], 100)
-        self.assertEqual(match["flexibility_sections"]["انعطاف‌پذیری فرهنگی"], 0)
+        self.assertEqual(match["flexibility_sections"]["سازگاری عمومی"], 75)
 
     def test_no_questionnaire_shows_none_sections_not_error(self):
         from apps.caregivers.models import CaregiverStatus

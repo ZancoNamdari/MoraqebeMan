@@ -243,3 +243,18 @@ class FamilyCaregiverDirectoryScopeTests(IsolationFuzz):
         self.assertEqual(bad.status_code, 400, bad.content)
         ok = c.post("/api/reviews/complaints/me/", {**base, "about_caregiver": self.B["cg"].id}, format="json")
         self.assertEqual(ok.status_code, 201, ok.content)
+
+    def test_caregiver_working_for_two_agencies_is_visible_once_to_each(self):
+        """مراقبی که با دو آژانس کار می‌کند: به خانواده‌ی هر دو آژانس نشان داده می‌شود، بدون تکرار در فهرست."""
+        from apps.agencies.models import AgencyCaregiverLink, AgencyLinkStatus
+        AgencyCaregiverLink.objects.create(
+            agency=self.B["agency"], caregiver=self.A["cg"], status=AgencyLinkStatus.APPROVED,
+        )
+        # خانواده‌ی B حالا مراقبِ A و B را می‌بیند، هرکدام یک بار
+        c = APIClient(); c.force_authenticate(self.B["fam_u"])
+        ids = [r["id"] for r in c.get("/api/caregivers/public/").json()["results"]]
+        self.assertCountEqual(ids, [self.A["cg_u"].id, self.B["cg_u"].id])
+        # خانواده‌ی A همچنان مراقبِ B را نمی‌بیند
+        c = APIClient(); c.force_authenticate(self.A["fam_u"])
+        ids_a = [r["id"] for r in c.get("/api/caregivers/public/").json()["results"]]
+        self.assertEqual(ids_a, [self.A["cg_u"].id])
