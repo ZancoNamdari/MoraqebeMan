@@ -163,7 +163,7 @@ export default function CaregiverRegistrationWizard() {
   const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, any>>({})
   const [traitProfiles, setTraitProfiles] = useState<TraitProfile[]>([])
   const [serviceTypes, setServiceTypes] = useState<string[]>([])
-  // «سریع‌السیر (فورس‌ماژور)»: بدون شرط همکاری — فقط باید سریعاً در محل خدمت حاضر شود. مراحل
+  // «فورس‌ماژور»: بدون شرط همکاری — فقط باید سریعاً در محل خدمت حاضر شود. مراحل
   // شرایط همکاری، سوابق و مهارت و پرسشنامه‌ی سازگاری حذف می‌شوند؛ فقط محل خدمت می‌ماند.
   const [rapid, setRapid] = useState(false)
   const [serviceSubtypes, setServiceSubtypes] = useState<Record<string, string[]>>({})
@@ -681,11 +681,11 @@ export default function CaregiverRegistrationWizard() {
                 <label className="flex cursor-pointer items-start gap-2 text-sm">
                   <input type="checkbox" checked={rapid} onChange={(e) => setRapid(e.target.checked)} className="mt-1 accent-red-600" />
                   <span>
-                    <span className="block font-bold text-red-800">سریع‌السیر (فورس‌ماژور)</span>
+                    <span className="block font-bold text-red-800">فورس‌ماژور</span>
                     <span className="block text-xs leading-5 text-red-900">
                       این خدمت‌دهنده هیچ شرط همکاری‌ای ندارد و هر شرایطی را می‌پذیرد؛ فقط باید سریعاً در محل خدمت حاضر شود.
                       با فعال کردن این گزینه مراحل «شرایط همکاری»، «سوابق و مهارت» و «پرسشنامه سازگاری» حذف می‌شوند و
-                      فقط هویت، محل خدمت و معرف‌ها (اختیاری) تکمیل می‌شود. برچسب «سریع‌السیر» روی کارت او نمایش داده می‌شود.
+                      فقط هویت، محل خدمت و معرف‌ها (اختیاری) تکمیل می‌شود. با برداشتن این گزینه، مراحل حذف‌شده دوباره باز می‌شوند. برچسب «فورس‌ماژور» روی کارت او نمایش داده می‌شود.
                     </span>
                   </span>
                 </label>
@@ -958,7 +958,7 @@ export default function CaregiverRegistrationWizard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground"><span className="text-xl">📍</span> محل خدمت</CardTitle>
-              <p className="text-sm text-muted-foreground">خدمت‌دهنده‌ی «سریع‌السیر» باید سریعاً در محل خدمت حاضر شود؛ مناطقی را که می‌تواند فوراً در آن‌ها حاضر شود ثبت کنید.</p>
+              <p className="text-sm text-muted-foreground">خدمت‌دهنده‌ی «فورس‌ماژور» باید سریعاً در محل خدمت حاضر شود؛ مناطقی را که می‌تواند فوراً در آن‌ها حاضر شود ثبت کنید.</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormSection title="مناطق خدماتی" defaultOpen>

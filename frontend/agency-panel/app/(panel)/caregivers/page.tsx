@@ -22,7 +22,7 @@ import { agencyService } from "@/services/agency.service"
 import { agencyManagementService } from "@/services/agency_management.service"
 import { ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
-import { TagEditor, RAPID_RESPONSE_TAG, RAPID_RESPONSE_DESCRIPTION } from "@/components/agency/tag-editor"
+import { TagEditor, RAPID_RESPONSE_TAG } from "@/components/agency/tag-editor"
 import { PinButton } from "@/components/agency/pin-button"
 import { PinnedOnlyToggle } from "@/components/agency/pinned-only-toggle"
 import { usePinned } from "@/hooks/use-pinned"
@@ -1028,10 +1028,9 @@ function CaregiversPageInner() {
                 </DropdownOption>
               </FilterDropdown>
 
-              <FilterDropdown label="سریع‌السیر" active={filters.tags.includes(RAPID_RESPONSE_TAG)} onClear={() => setFilters((f) => ({ ...f, tags: f.tags.filter((t) => t !== RAPID_RESPONSE_TAG) }))}>
+              <FilterDropdown label="فورس‌ماژور" active={filters.tags.includes(RAPID_RESPONSE_TAG)} onClear={() => setFilters((f) => ({ ...f, tags: f.tags.filter((t) => t !== RAPID_RESPONSE_TAG) }))}>
                 <DropdownOption selected={filters.tags.includes(RAPID_RESPONSE_TAG)} onClick={() => setFilters((f) => ({ ...f, tags: toggleInList(f.tags, RAPID_RESPONSE_TAG) }))}>
-                  <span className="block">فقط سریع‌السیرها</span>
-                  <span className="block text-xs text-muted-foreground">{RAPID_RESPONSE_DESCRIPTION}</span>
+                  فقط فورس‌ماژورها
                 </DropdownOption>
               </FilterDropdown>
 

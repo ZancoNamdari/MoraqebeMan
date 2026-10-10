@@ -413,7 +413,7 @@ class SupervisorServiceTypesView(APIView):
         profile.service_types = serializer.validated_data.get("service_types", [])
         profile.service_subtypes = serializer.validated_data.get("service_subtypes", {})
         profile.save(update_fields=["service_types", "service_subtypes"])
-        # «سریع‌السیر (فورس‌ماژور)» — فقط آژانس/ادمین (این view)؛ خود مراقب endpoint مشابهی ندارد.
+        # «فورس‌ماژور» — فقط آژانس/ادمین (این view)؛ خود مراقب endpoint مشابهی ندارد.
         from .rapid import is_rapid_response, set_rapid_response
         if "rapid_response" in request.data:
             set_rapid_response(profile, bool(request.data["rapid_response"]))

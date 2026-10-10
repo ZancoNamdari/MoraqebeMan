@@ -346,7 +346,7 @@ def _missing_forms(profile: CaregiverProfile, user_id: int) -> list[str]:
     if not _get_identity_dict(user_id):
         missing.append("اطلاعات هویتی (فرم ۱)")
     if not hasattr(profile, "work_preferences"):
-        # «سریع‌السیر»: فقط پذیرش قوانین لازم است، نه شرایط همکاری.
+        # «فورس‌ماژور»: فقط پذیرش قوانین لازم است، نه شرایط همکاری.
         missing.append("پذیرش شرایط و تعهدات عضویت (باید توسط خود مراقب انجام شود)" if rapid else "شرایط همکاری (فرم ۲)")
     elif not profile.work_preferences.terms_accepted:
         # A supervisor can fill out every other field in form 2 on the
